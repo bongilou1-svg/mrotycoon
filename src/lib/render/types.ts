@@ -42,6 +42,28 @@ export interface RenderStand {
   checkOnPlatform: boolean;
 }
 
+/** Pivot línea pura · Aeropuerto vivo: movimientos del schedule que NO son trabajables
+ *  por el jugador (no contratados o type rating no habilitado). Aparecen en el mapa
+ *  con halo tenue para dar sensación de aeropuerto vivo, pero no generan WO ni
+ *  ocupan stand del sim. Se calculan en cada `buildRenderState` desde el snapshot. */
+export interface RenderPassthroughTraffic {
+  callsign: string;
+  airlineCode: string;
+  /** OSM ref del parking position (e.g. "06", "08A"). Stands libres no usados por sim. */
+  standOsmRef: string;
+  /** Visualmente "rodando" tras aterrizaje — interpolación pista→stand. */
+  taxiing: boolean;
+  /** 0..1 progreso del taxi visual. */
+  taxiProgress: number;
+  /** True si modelo no es A320/A321 CFM56/V2500 (Embraer/CRJ/ATR/B737/A321neo).
+   *  Visual aún más muted. */
+  notHandled: boolean;
+  /** True si la aerolínea tiene contrato activo del jugador (handled visualmente más
+   *  brillante que un no-contratado). Hoy es false para todos los passthrough porque
+   *  los contratados+handled van por `airplanes`, no por aquí. Reservado para futuro. */
+  contracted: boolean;
+}
+
 /** Mecánico activo en mapa — solo los relevantes para visualización (ToPlane, Working,
  *  Returning, Idle). El driver decide qué pintar según state. */
 export interface RenderMechanic {
@@ -70,6 +92,9 @@ export interface RenderState {
   mechanics: RenderMechanic[];
   /** Hay un runway_closure activo ahora — el driver puede flashear "PISTA CERRADA". */
   runwayClosed: boolean;
+  /** Pivot línea pura · aeropuerto vivo: tráfico del schedule actualmente en stand
+   *  que NO genera trabajo MRO. Ver `RenderPassthroughTraffic`. */
+  passthroughTraffic: RenderPassthroughTraffic[];
   /** Pivot MRO línea pura: si false, NO renderizar los plots ghost Stage 3/4 (están
    *  reservados para endgame y aún no son comprables). El sim también rechaza startBuild
    *  para target>2 con este flag false. Default false en arranque post-pivot. */

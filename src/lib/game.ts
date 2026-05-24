@@ -4,9 +4,10 @@
 import type {
   Airplane, Airline, Contract, Mechanic, WorkOrderInstance, WorkOrderTemplate, Balance, FleetAircraft,
   CheckDefinition, MaintenanceCheckInstance, ComplianceState, Candidate, MroStage, ActiveBuild,
-  RandomEvent,
+  RandomEvent, DepartureKPI,
 } from "$lib/types";
 import { STAGE_CONFIG } from "./types/mroStage.ts";
+import { createDepartureKPI, AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR } from "./types/departureKPI.ts";
 import { rollDailyEvents, runwayClosedAt } from "./sim/events.ts";
 import { type ClockState, createClock, advance, DAY_MINUTES, WEEK_MINUTES } from "./sim/time.ts";
 import { type Rng, createRng } from "./sim/rng.ts";
@@ -163,6 +164,9 @@ export interface GameState {
    *   - El sistema de competencia usa tickLineCompetition (no el legacy tickContractMarket).
    *  Cuando false (default): comportamiento legacy completo (tests, partidas migradas v8). */
   lineModeEnabled: boolean;
+  /** Pivot línea pura · KPI departures + TDR. Acumulador desde el inicio de la partida.
+   *  Se actualiza en `processDepartures` cuando un avión sale del stand. */
+  departureKPI: DepartureKPI;
 }
 
 export interface CreateGameOptions {
@@ -245,6 +249,7 @@ export function createGame(
     // Línea pura: schedule real OVD activo por default. Legacy: arrivals stocásticos.
     useScheduleArrivals: lineMode,
     lineModeEnabled: lineMode,
+    departureKPI: createDepartureKPI(),
   };
 }
 
@@ -358,6 +363,74 @@ function ensureArrivals(g: GameState, daysAhead = 3): void {
     g.maintenanceChecks = checks;
     for (const nc of newlyScheduled) {
       pushNotification(g, `🛠️ ${nc.registration} programado para ${nc.type}-check`, "warning");
+    }
+  }
+}
+
+/**
+ * Pivot MRO línea pura · Para cada avión cuyo scheduledDepartureMinute ya pasó:
+ *  - Si NO tiene WOs activas → marca Departed, computa delayMinutes, registra KPI.
+ *    Si delay > 0 → notif info. Si delay ≥ AOG_DELAY_THRESHOLD_MIN (3h) → escalada
+ *    AOG: penalty AOG_ESCALATION_PENALTY_EUR + rep delta aogFailed.
+ *  - Si SÍ tiene WOs activas → sigue en stand (delay acumula hasta que cierren).
+ */
+function processDepartures(g: GameState, nowMinute: number): void {
+  for (const a of g.airplanes) {
+    if (a.status === "Departed") continue;
+    if (nowMinute < a.scheduledDepartureMinute) continue;
+    // WOs que bloquean salida: cualquiera no cerrada (Completed/Failed/Deferred no bloquean —
+    // las diferidas tienen su propio ciclo de vida MEL, el avión puede salir).
+    const blocking = g.workOrders.filter(
+      (w) =>
+        w.airplaneInstanceId === a.instanceId &&
+        w.phase !== "Completed" &&
+        w.phase !== "Failed" &&
+        w.phase !== "Deferred",
+    );
+    if (blocking.length > 0) continue;
+
+    // Marcar Departed con timing real
+    const delay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
+    a.actualDepartureMinute = nowMinute;
+    a.delayMinutes = delay;
+    a.status = "Departed";
+    if (delay >= AOG_DELAY_THRESHOLD_MIN) a.aogEscalated = true;
+
+    // KPI acumulador (global + por aerolínea)
+    const kpi = g.departureKPI;
+    kpi.totalDepartures += 1;
+    kpi.sumDelayMinutes += delay;
+    if (delay === 0) kpi.totalOnTime += 1;
+    else kpi.totalLate += 1;
+    if (a.aogEscalated) kpi.totalAog += 1;
+    const c = g.contracts.find((cc) => cc.id === a.contractId);
+    if (c) {
+      let b = kpi.perAirline[c.airlineId];
+      if (!b) {
+        b = { departures: 0, onTime: 0, late: 0, aog: 0, sumDelayMinutes: 0 };
+        kpi.perAirline[c.airlineId] = b;
+      }
+      b.departures += 1;
+      b.sumDelayMinutes += delay;
+      if (delay === 0) b.onTime += 1;
+      else b.late += 1;
+      if (a.aogEscalated) b.aog += 1;
+    }
+
+    // Notifs + AOG escalation
+    if (a.aogEscalated) {
+      pushNotification(
+        g,
+        `🛑 AOG escalado: ${a.registration} salió con ${delay}m de retraso (>3h)`,
+        "danger",
+      );
+      g.economy = addTransaction(
+        g.economy,
+        createTransaction("penalty", -AOG_ESCALATION_PENALTY_EUR, nowMinute, `AOG escalado ${a.registration} (delay ${delay}m)`),
+      );
+      if (c) g.reputation = applyDelta(g.reputation, c.airlineId, g.balance.reputation.aogFailed);
+    } else if (delay > 0) {
+      pushNotification(g, `✈️ ${a.registration} salió con ${delay}m de retraso`, "warning");
     }
   }
 }
@@ -626,6 +699,12 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       }
     }
   }
+
+  // 5c. Pivot línea pura · processDepartures: detectar aviones cuya scheduledDeparture
+  //     pasó y todas sus WOs cerraron → marcar Departed + computar delay + KPI + AOG
+  //     escalation si delay ≥ AOG_DELAY_THRESHOLD_MIN (3h). Si tienen WO activa, siguen
+  //     ocupando stand (delay acumula).
+  processDepartures(g, next);
 
   // 6. Avanzar reloj
   g.clock = advance(g.clock, stepMinutes);

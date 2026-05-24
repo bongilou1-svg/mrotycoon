@@ -38,3 +38,8 @@ export type { ContractTier } from "./contract";
 export type {
   RandomEventType, RandomEvent, RandomEventBase, RunwayClosureEvent, ServiceBulletinEvent,
 } from "./randomEvent";
+export type { DepartureAirlineBucket, DepartureKPI } from "./departureKPI";
+export {
+  createDepartureKPI, getTdrGlobal, getTdrForAirline,
+  AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
+} from "./departureKPI";

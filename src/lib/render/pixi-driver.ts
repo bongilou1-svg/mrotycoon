@@ -2674,6 +2674,43 @@ export class PixiDriver {
       this.worldDynamic!.addChild(apHit);
     }
 
+    // ── Pivot línea pura · aeropuerto vivo: passthrough traffic ──
+    // Aviones del schedule en stand AHORA mismo que NO son trabajables (no contratados
+    // o type rating no habilitado). Halo cyan tenue para sensación de aeropuerto vivo
+    // sin competir visualmente con los aviones "reales" que sí son trabajo MRO.
+    for (const pt of state.passthroughTraffic) {
+      const pos = standPositions.get(pt.standOsmRef);
+      if (!pos) continue;
+      // notHandled (Embraer/CRJ/ATR/B737) → halo aún más muted, color gris-cyan.
+      // contracted=false handled (operadores con vuelos pero sin contrato firmado) →
+      // halo cyan tenue, da pista visual de "podrías contratar esta aerolínea".
+      const baseColor = pt.notHandled ? 0x5d6677 : 0x3aa9ff;
+      const haloAlpha = pt.notHandled ? 0.06 : 0.12;
+      const dotAlpha = pt.notHandled ? 0.5 : 0.75;
+      if (pt.taxiing) {
+        const entryX = area.x + area.w * 0.3, entryY = area.y + area.h * 0.65;
+        const px = entryX + (pos.x - entryX) * pt.taxiProgress;
+        const py = entryY + (pos.y - entryY) * pt.taxiProgress;
+        this.worldDynamic!.addChild(new Graphics().moveTo(entryX, entryY).lineTo(px, py).stroke({ width: 0.8, color: baseColor, alpha: 0.2 }));
+        this.worldDynamic!.addChild(new Graphics().circle(px, py, 10).fill({ color: baseColor, alpha: haloAlpha }));
+        this.worldDynamic!.addChild(new Graphics().circle(px, py, 6).fill({ color: baseColor, alpha: haloAlpha * 1.5 }));
+        this.worldDynamic!.addChild(new Graphics().circle(px, py, 2).fill({ color: baseColor, alpha: dotAlpha }));
+      } else {
+        // Parado en stand
+        this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 14).fill({ color: baseColor, alpha: haloAlpha * 0.6 }));
+        this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 8).fill({ color: baseColor, alpha: haloAlpha }));
+        this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 2).fill({ color: baseColor, alpha: dotAlpha }));
+        // Label callsign tenue
+        const lbl = new Text({
+          text: pt.callsign,
+          style: { fontFamily: "Inter, sans-serif", fontSize: 9, fill: baseColor },
+        });
+        lbl.alpha = pt.notHandled ? 0.45 : 0.65;
+        lbl.position.set(pos.x + 8, pos.y - 3);
+        this.worldDynamic!.addChild(lbl);
+      }
+    }
+
     // ── P-ε: Plots ghost Stage 3 / Stage 4 (zonas vacías reservadas para hangares) ──
     // Posicionados al sur del apron OSM en zonas con espacio. Click → onBuildClick.
     const ghostY = area.y + area.h + 80;

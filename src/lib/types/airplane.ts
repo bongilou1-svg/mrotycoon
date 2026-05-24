@@ -45,4 +45,14 @@ export interface AirplaneInstance {
    *  Su `scheduledDepartureMinute` está en la mañana del día siguiente. Habilita la generación
    *  automática de daily checks + posible A-check nocturno si cumple trigger. Default false. */
   overnight?: boolean;
+  /** Pivot línea pura (2026-05-24): minuto en que el avión REALMENTE sale del stand
+   *  (puede ser >= scheduledDepartureMinute si tenía WO activa al llegar la hora prevista).
+   *  Set cuando processDepartures detecta que todas las WOs cerraron y marca Departed. */
+  actualDepartureMinute?: number;
+  /** Pivot línea pura: minutos de retraso real = actualDep - scheduledDep. ≥0. Computed
+   *  al departure. Sirve como base para el KPI TDR y para el threshold AOG (>180min). */
+  delayMinutes?: number;
+  /** Pivot línea pura: true si el delay >= AOG_DELAY_THRESHOLD_MIN (3h). Cobra penalty
+   *  AOG_ESCALATION_PENALTY_EUR adicional + rep delta aogFailed. */
+  aogEscalated?: boolean;
 }

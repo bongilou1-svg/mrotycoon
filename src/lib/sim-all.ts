@@ -22,6 +22,10 @@ export * from "./sim/storage.ts";
 export * from "./game.ts";
 // Constantes runtime de types/* (no las typed-only)
 export { STAGE_CONFIG } from "./types/mroStage.ts";
+export {
+  createDepartureKPI, getTdrGlobal, getTdrForAirline,
+  AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
+} from "./types/departureKPI.ts";
 // data
 import workordersJson from "./data/workorders.json";
 import airlinesJson from "./data/airlines.json";

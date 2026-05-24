@@ -7,7 +7,24 @@ import { canUnlockHangars, type GameState } from "../game.ts";
 import { currentStands } from "../sim/stands.ts";
 import { runwayClosedAt } from "../sim/events.ts";
 import { DAY_MINUTES } from "../sim/time.ts";
-import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, TimeOfDay } from "./types.ts";
+import { getFlightsForGameDay } from "../sim/schedule.ts";
+import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay } from "./types.ts";
+
+/** OSM parking positions de LEAS NO mapeadas al sim (F5D_STAND_MAP usa 01-05).
+ *  Estos stands los usa el render para los aviones del schedule no trabajables
+ *  por el jugador (passthrough traffic). */
+const PASSTHROUGH_OSM_STANDS = ["06", "07", "08", "08A", "09"];
+
+/** Duración visual del turnaround para passthroughs en minutos. Igual que el
+ *  SCHEDULED_TURNAROUND_MIN del sim (55 min) — el avión se ve en stand 55min
+ *  desde su arrival, luego desaparece. Salvo si pernocta (heurística overnight). */
+const PASSTHROUGH_TURNAROUND_MIN = 55;
+/** Minuto del día (≥ 19:00 = 1140) por encima del cual el último arrival de la
+ *  aerolínea se considera overnight: se queda en stand toda la noche hasta 06:30
+ *  del día siguiente. Mismo umbral que `schedule.ts`. */
+const PASSTHROUGH_OVERNIGHT_THRESHOLD_MIN = 19 * 60;
+/** Hora de salida overnight (minuto desde dayStart del día siguiente). 06:30. */
+const PASSTHROUGH_OVERNIGHT_DEPARTURE_MIN = 6 * 60 + 30;
 
 /** Día: 06:00-21:59. Noche: 22:00-05:59. Alineado con el badge HUD ☀️/🌙 ya existente. */
 export function timeOfDayFor(minute: number): TimeOfDay {
@@ -24,12 +41,12 @@ export function buildRenderState(g: GameState): RenderState {
   const stage = g.mroStage;
   const stands = currentStands(stage);
 
-  // Filtramos por ventana física [arrivalMinute, scheduledDepartureMinute) en lugar de
-  // confiar en `status`: el campo `Departed` no se actualiza automáticamente en advanceGame
-  // (deuda pre-F5D), así que la única verdad fiable de presencia es la ventana de vuelo.
+  // Pivot línea pura: el filtro de presencia ahora respeta `actualDepartureMinute` (set
+  // por processDepartures) — un avión con WO activa sigue en stand más allá de su
+  // scheduledDeparture hasta que la WO cierre. Si no tiene actualDeparture aún, está presente.
   const now = g.clock.minute;
   const airplanes: RenderAirplane[] = g.airplanes
-    .filter((a) => a.arrivalMinute <= now && a.scheduledDepartureMinute > now)
+    .filter((a) => a.arrivalMinute <= now && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now))
     .map((a) => {
       const contract = g.contracts.find((c) => c.id === a.contractId);
       const taxiAge = now - a.arrivalMinute;
@@ -104,6 +121,61 @@ export function buildRenderState(g: GameState): RenderState {
     };
   });
 
+  // Pivot línea pura · aeropuerto vivo: para cada flight del día actualmente en
+  // ventana de turnaround que NO es uno de los aviones reales (sin contrato firmado
+  // o type rating no habilitado), construimos un pseudo-render entry. Stand asignado
+  // round-robin sobre los PASSTHROUGH_OSM_STANDS libres.
+  const passthroughTraffic: RenderPassthroughTraffic[] = [];
+  if (g.useScheduleArrivals && g.lineModeEnabled) {
+    const today = Math.floor(g.clock.minute / DAY_MINUTES) + 1;
+    const dayStart = (today - 1) * DAY_MINUTES;
+    const flights = getFlightsForGameDay(today);
+    const realCallsigns = new Set(airplanes.map((a) => a.registration));
+    const contractsByCode = new Map<string, string>();
+    for (const c of g.contracts) {
+      if (c.status !== "active") continue;
+      const al = g.airlines.find((a) => a.id === c.airlineId);
+      if (al?.iataCode) contractsByCode.set(al.iataCode, c.id);
+    }
+    // Heurística overnight de los passthroughs (mismo criterio que schedule.ts):
+    // por aerolínea, el último arrival ≥19:00 se queda en stand toda la noche.
+    const lastArrivalByCode = new Map<string, number>();
+    for (const f of flights) {
+      if (f.type !== "arrival") continue;
+      const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
+      if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
+    }
+
+    let standIdx = 0;
+    for (const f of flights) {
+      if (f.type !== "arrival") continue;
+      const arrAbs = dayStart + f.scheduledMinute;
+      const isOvernight =
+        f.scheduledMinute >= PASSTHROUGH_OVERNIGHT_THRESHOLD_MIN &&
+        lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute;
+      const depAbs = isOvernight
+        ? dayStart + DAY_MINUTES + PASSTHROUGH_OVERNIGHT_DEPARTURE_MIN
+        : arrAbs + PASSTHROUGH_TURNAROUND_MIN;
+      if (g.clock.minute < arrAbs || g.clock.minute >= depAbs) continue;
+      if (realCallsigns.has(f.callsign)) continue; // ya es real, no doblar
+      if (standIdx >= PASSTHROUGH_OSM_STANDS.length) break; // overflow, los extras se saltan
+      const taxiAge = g.clock.minute - arrAbs;
+      const taxiing = taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN;
+      const taxiProgress = TAXIING_DURATION_MIN > 0
+        ? Math.max(0, Math.min(1, taxiAge / TAXIING_DURATION_MIN))
+        : 1;
+      passthroughTraffic.push({
+        callsign: f.callsign,
+        airlineCode: f.airlineCode,
+        standOsmRef: PASSTHROUGH_OSM_STANDS[standIdx++],
+        taxiing,
+        taxiProgress,
+        notHandled: f.notHandled === true,
+        contracted: contractsByCode.has(f.airlineCode),
+      });
+    }
+  }
+
   return {
     minute: g.clock.minute,
     timeOfDay: timeOfDayFor(g.clock.minute),
@@ -115,5 +187,6 @@ export function buildRenderState(g: GameState): RenderState {
     // En lineMode el unlock depende de progreso (rep+balance+contratos). En legacy
     // los plots ghost están siempre disponibles (comportamiento pre-pivot).
     hangarBuildUnlocked: g.lineModeEnabled ? canUnlockHangars(g) : true,
+    passthroughTraffic,
   };
 }

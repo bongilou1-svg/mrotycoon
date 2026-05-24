@@ -935,8 +935,68 @@ function renderDashboard(){
   const compliance = h.map(s => s.complianceScore);
   const mechs = h.map(s => s.mechanicsCount);
 
+  // Pivot línea pura · KPI departures + TDR
+  const kpi = game.departureKPI ?? S.createDepartureKPI();
+  const tdr = S.getTdrGlobal(kpi);
+  const onTimePct = kpi.totalDepartures > 0 ? (kpi.totalOnTime / kpi.totalDepartures * 100) : 0;
+  const aogPct = kpi.totalDepartures > 0 ? (kpi.totalAog / kpi.totalDepartures * 100) : 0;
+  const tdrColor = tdr < 5 ? "var(--success)" : tdr < 20 ? "var(--warning)" : "var(--danger)";
+
+  // Tabla por aerolínea contratada (que aparezcan en kpi.perAirline al menos una vez)
+  let perAirlineRows = '';
+  const airlineEntries = Object.entries(kpi.perAirline).map(([id, b]) => {
+    const al = game.airlines.find(a => a.id === id);
+    const tdrA = b.departures > 0 ? b.sumDelayMinutes / b.departures : 0;
+    return { id, name: al?.name ?? id, color: al?.color ?? "#888", bucket: b, tdr: tdrA };
+  });
+  airlineEntries.sort((a, b) => b.bucket.departures - a.bucket.departures);
+  if (airlineEntries.length === 0) {
+    perAirlineRows = '<tr><td colspan="6" class="muted" style="text-align:center;padding:1rem">Sin departures registrados todavía.</td></tr>';
+  } else {
+    for (const e of airlineEntries) {
+      const tdrCol = e.tdr < 5 ? "var(--success)" : e.tdr < 20 ? "var(--warning)" : "var(--danger)";
+      const aogColAg = e.bucket.aog > 0 ? 'var(--danger)' : 'var(--muted)';
+      perAirlineRows += \`<tr>
+        <td><span style="display:inline-block;width:8px;height:8px;background:\${e.color};border-radius:50%;margin-right:.4rem"></span>\${esc(e.name)}</td>
+        <td class="mono">\${e.bucket.departures}</td>
+        <td class="mono">\${e.bucket.onTime}</td>
+        <td class="mono">\${e.bucket.late}</td>
+        <td class="mono" style="color:\${aogColAg};font-weight:600">\${e.bucket.aog}</td>
+        <td class="mono" style="color:\${tdrCol}"><strong>\${e.tdr.toFixed(1)} min/dep</strong></td>
+      </tr>\`;
+    }
+  }
+
   return \`<h2>📊 Dashboard KPI</h2>
   <p class="muted" style="margin-bottom:.75rem">Series semanales (último año ingame, max 52 semanas). Cada punto = cierre de semana.</p>
+
+  <h3 style="margin-top:1rem">📈 TDR — Total Delay Ratio</h3>
+  <p class="muted" style="margin-bottom:.5rem">Minutos medios de retraso por departure. Si una WO bloquea al avión más allá de su hora prevista, acumula delay. Departure con delay ≥ 3h escala a AOG (penalty extra + rep delta).</p>
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-title">📊 TDR Global</div>
+      <div class="dash-big" style="color:\${tdrColor}">\${tdr.toFixed(1)} <span style="font-size:.85rem;color:var(--muted)">min/dep</span></div>
+      <div class="muted" style="font-size:.75rem">Sobre \${kpi.totalDepartures} departures totales · Σ delay \${fmt(kpi.sumDelayMinutes)} min</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">✓ On-time ratio</div>
+      <div class="dash-big" style="color:var(--success)">\${onTimePct.toFixed(1)}%</div>
+      <div class="muted" style="font-size:.75rem">\${kpi.totalOnTime} on-time / \${kpi.totalLate} late / \${kpi.totalAog} AOG</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">🛑 AOG ratio (delay ≥3h)</div>
+      <div class="dash-big" style="color:\${aogPct > 5 ? 'var(--danger)' : 'var(--muted)'}">\${aogPct.toFixed(1)}%</div>
+      <div class="muted" style="font-size:.75rem">\${kpi.totalAog} AOG escalados · penalty €\${S.AOG_ESCALATION_PENALTY_EUR.toLocaleString("es-ES")} c/u</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:1rem">TDR por aerolínea contratada</h4>
+  <table>
+    <thead><tr><th>Aerolínea</th><th>Departures</th><th>On-time</th><th>Late</th><th>AOG</th><th>TDR</th></tr></thead>
+    <tbody>\${perAirlineRows}</tbody>
+  </table>
+
+  <h3 style="margin-top:1.5rem">📊 Series semanales</h3>
   <div class="dash-grid">
     <div class="dash-card">
       <div class="dash-title">💰 Balance</div>

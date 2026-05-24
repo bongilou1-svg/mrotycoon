@@ -300,26 +300,47 @@ Implementación cuando aplique:
 
 Por ahora (OVD): 2 min fijo es suficiente.
 
-### Pivot MRO línea pura — balancing económico (2026-05-24) ⚠️ HEROE BUG
+### Pivot MRO línea pura — balancing económico (2026-05-24) ⚠️ HEROE BUG ESCALADO
 
-Auto-playtest 10×28d en lineMode:
-- Δbal medio **-290k €**, 4/10 game over (bankruptcy)
-- Fuga dominante: penalty SLA **-408k €/28d** (140% del gasto total)
-- 24.6 WOs late / 45.1 completed = 54% late ratio
-- Solo Iberia (12 vuelos/día) → 69 WOs/28d (vs 168 esperadas → capacidad perdida)
+**Post-Fase 1 KPIs (mismo día)** — el AOG escalation por delay ≥3h endurece más
+el problema. Auto-playtest 5×28d en lineMode:
+- Δbal medio **-880k €**, **5/5 game over** (era 4/10 sin AOG escalation)
+- Penalty total **-977k €/28d** (era -408k antes de Fase 1)
+- Cada WO nocturna no atendida → pernocta sale ≥3h tarde al amanecer → 25k €
+  penalty AOG + rep delta aogFailed
+- WOs/28d: 62 generadas
 
-Causa raíz: 4 mecs sin night vs 7 mecs con 2 night anteriores. No hay cobertura nocturna,
-los daily checks de pernoctas no se ejecutan hasta 06:00, las WOs late explotan, penalty
-SLA mata la economía.
+Causa raíz amplificada: además de 4 mecs sin night → death-spiral via AOG. Las
+pernoctas con WO al landing (50% prob) no la atienden hasta el equipo morning a
+las 06:00. Si la WO dura >3h, el departure se retrasa >3h → AOG. 1-2 AOG/día ×
+25k = 25-50k €/día solo por AOG escalation.
 
-Tunings candidatos (NO auto-aplicados, brief lo prohíbe — sesión siguiente):
-1. **Subir baseFee Iberia inicial** 12-22k → 20-30k €/sem en `rollContractTerms`
-2. **Subir paymentPerWOMinute** 50-72 → 65-90 €/min
-3. **Bajar penaltyPerLateMinute** 3-8 → 2-4 €/min
-4. **Cap mecánicos 5 + 1 night** en vez de 4 sin night
-5. **Tutorial / hint**: cuando rep Iberia ≥70 → notif "tu rep es alta, espera ofertas"
+Tunings candidatos (actualizado tras Fase 1, prioridad reordenada):
+1. **Cobertura night mínima**: cap mecs 5 + 1 night junior (B1 CFM56). Lo más
+   urgente — sin night el sim mata cualquier balanceo de fees.
+2. **AOG threshold 3h → 6h**: `AOG_DELAY_THRESHOLD_MIN = 180` → 360. Solo true
+   AOGs (avión grounded mañana entera) cuentan como escalation.
+3. **AOG penalty 25k → 10k**: bajar `AOG_ESCALATION_PENALTY_EUR`.
+4. **Subir baseFee Iberia inicial** 12-22k → 20-30k €/sem
+5. **Subir paymentPerWOMinute** 50-72 → 65-90 €/min
+6. **Bajar penaltyPerLateMinute** 3-8 → 2-4 €/min (reduce doble-counting con AOG)
+7. Tutorial/hint cuando rep Iberia ≥70 → "espera ofertas"
 
-Una pasada Q6-style (20 seeds × 28d iterativa) debería bajar game over a ≤2/10.
+Orden recomendado: aplicar 1 + 2 primero (cubrir gap night y relajar AOG). Si
+sigue rojo, sumar 4+5. Target: ≤2/10 game over en 20×28d.
+
+### Pivot línea pura · Fase 2 evitable/no evitable (2026-05-24) — diseño parking
+
+Pendiente instrumentar causa raíz de cada delay:
+- `WorkOrderInstance.delayRootCause`: "mec_busy" | "mec_offshift" | "no_rated_cert" |
+  "external_event" | "aog_inevitable" | "other"
+- Etiquetar en cada transición del WO state machine cuándo no hay mec disponible.
+- AOG evitable (mec_busy / mec_offshift / no_rated_cert) → penalty ×1.5 + rep
+  delta ×1.5 + KPI bucket `aogEvitable` aparte.
+- AOG no evitable (external_event / aog_inevitable) → penalty normal.
+- Dashboard: descomposición TDR/AOG en evitable vs no evitable.
+
+Estimado: 1.5-2h. Save v11.
 
 
 
