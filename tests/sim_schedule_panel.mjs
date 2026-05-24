@@ -63,14 +63,15 @@ console.log("\n=== generateScheduledArrivals filtra por iataCode → contratos a
   expect(g.airlines.find(a => a.id === ibActive.airlineId)?.iataCode === "IB", "Iberia airlineId tiene iataCode IB");
 
   const { arrivals } = generateScheduledArrivals(1, g.contracts, g.fleet, new Set(), g.airlines);
-  // Todos los arrivals deben ser de callsigns que empiecen por IB (o de aerolíneas contratadas).
+  // Pivot iteración 2026-05-24: registration es matrícula física (EC-XXX). El filtro
+  // por aerolínea contratada se valida via arrivalCallsign (callsign IATA del leg).
   const contractedCodes = new Set(g.airlines.filter(a => a.iataCode && g.contracts.some(c => c.airlineId === a.id && c.status === "active")).map(a => a.iataCode));
   expect(arrivals.length > 0, `algún arrival generado para Iberia (got ${arrivals.length})`);
-  const onlyContracted = arrivals.every(a => [...contractedCodes].some(code => a.registration.startsWith(code)));
-  expect(onlyContracted, `todos los arrivals son de aerolíneas contratadas (got ${arrivals.map(a => a.registration).slice(0,5).join(",")})`);
+  const onlyContracted = arrivals.every(a => [...contractedCodes].some(code => a.arrivalCallsign?.startsWith(code)));
+  expect(onlyContracted, `todos los arrivals son de aerolíneas contratadas (callsigns: ${arrivals.map(a => a.arrivalCallsign).slice(0,5).join(",")})`);
 
   // En el schedule lunes hay vuelos VY (Vueling), pero NO se generan arrivals para ellos.
-  const vy = arrivals.filter(a => a.registration.startsWith("VY"));
+  const vy = arrivals.filter(a => a.arrivalCallsign?.startsWith("VY"));
   expect(vy.length === 0, `0 VY arrivals (Vueling sin contrato) — got ${vy.length}`);
 }
 
@@ -118,10 +119,13 @@ console.log("\n=== Game integra useScheduleArrivals=true en lineMode ===");
   g.shiftGatingEnabled = false;
   g.clock.speed = 1;
   for (let i = 0; i < 20; i++) advanceGame(g, 60);
-  // Si el sched está activo, los registrations son callsigns IATA (e.g. IB3217), no EC-XYZ.
-  const sampleReg = g.airplanes[0]?.registration ?? "";
+  // Pivot iteración 2026-05-24: registration es matrícula física real (EC-XXX o G-XXX),
+  // el callsign IATA del leg vive en arrivalCallsign.
   if (g.airplanes.length > 0) {
-    expect(/^[A-Z]{1,2}\d/.test(sampleReg), `arrivals son del schedule (callsign IATA, got: ${sampleReg})`);
+    const sampleReg = g.airplanes[0].registration;
+    const sampleCall = g.airplanes[0].arrivalCallsign;
+    expect(/^(EC|G)-/.test(sampleReg), `registration es matrícula física (got: ${sampleReg})`);
+    expect(sampleCall && /^[A-Z]{1,2}\d/.test(sampleCall), `arrivalCallsign IATA (got: ${sampleCall})`);
   } else {
     console.log("  ⚠️ no airplanes en 20×60min — schedule day1 puede no haber comenzado");
   }

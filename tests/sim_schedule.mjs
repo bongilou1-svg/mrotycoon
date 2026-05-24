@@ -62,10 +62,13 @@ expect(f1.length > 0, `fleet auto-poblado (${f1.length} entries)`);
 const { arrivals: arrEmpty } = generateScheduledArrivals(1, [], []);
 expect(arrEmpty.length === 0, "sin contracts activos → 0 arrivals");
 
-// 7. Pool: callsign IB tiene matrícula EC-Ixx/Lxx/Mxx/Nxx
-const ibFleetEntry = f1.find((f) => f.registration.startsWith("IB"));
-expect(ibFleetEntry !== undefined, `fleet contiene callsigns IB (sample: ${ibFleetEntry?.registration})`);
-expect(ibFleetEntry.totalFH > 0, `IB callsign arranca con FH realista (${ibFleetEntry.totalFH})`);
+// 7. Pivot línea pura · iteración 2026-05-24: registration es matrícula física REAL
+// (EC-XXX o G-XXX del fleet pool), NO el callsign IB3217. Mismo callsign sigue
+// hasheando a misma matrícula (determinista). El callsign vive en arrivalCallsign.
+const ibFleetEntry = f1.find((f) => f.registration.startsWith("EC-") || f.registration.startsWith("G-"));
+expect(ibFleetEntry !== undefined, `fleet contiene matrículas reales (sample: ${ibFleetEntry?.registration})`);
+expect(ibFleetEntry.totalFH > 0, `matrícula real arranca con FH realista (${ibFleetEntry.totalFH})`);
+expect(arr1.length > 0 && arr1[0].arrivalCallsign && arr1[0].arrivalCallsign.match(/^[A-Z]{1,2}\d/), `Airplane lleva arrivalCallsign del schedule (got ${arr1[0]?.arrivalCallsign})`);
 
 // 8. Determinismo callsign → stats: mismo callsign en otra ejecución, mismas stats
 const { updatedFleet: f1b } = generateScheduledArrivals(1, contracts, []);

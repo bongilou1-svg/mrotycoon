@@ -169,9 +169,27 @@ export function generateScheduledArrivals(
     return lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute;
   }
 
+  // Helper para encontrar el next departure pareja de un arrival (misma aerolínea,
+  // tras la hora del arrival, en el mismo día). Si overnight, busca el primer DEP
+  // de la misma aerolínea en el día siguiente (no podemos saberlo desde aquí porque
+  // generateScheduledArrivals procesa día a día; lo dejamos undefined para overnight
+  // y la UI lo deriva del scheduledDeparture o lo busca en otro tick).
+  function findNextDepartureCallsign(arr: { scheduledMinute: number; airlineCode: string }): string | undefined {
+    const candidates = flights
+      .filter((g) => g.type === "departure" && g.airlineCode === arr.airlineCode && g.scheduledMinute > arr.scheduledMinute)
+      .sort((a, b) => a.scheduledMinute - b.scheduledMinute);
+    return candidates[0]?.callsign;
+  }
+
   for (const f of flights) {
     if (f.type !== "arrival") continue;
-    if (busyRegistrations.has(f.callsign)) continue;
+    // Pivot línea pura · iteración 2026-05-24: el `registration` del Airplane es la
+    // matrícula física REAL (EC-XXX / G-XXX del fleet pool), NO el callsign del vuelo.
+    // Mismo callsign hashea siempre a la misma matrícula (determinista). El callsign
+    // se guarda en arrivalCallsign para info contextual del leg.
+    const poolStats = pickPoolStatsForCallsign(f.callsign, f.airlineCode);
+    const physicalReg = poolStats?.registration ?? f.callsign; // fallback al callsign si no hay pool
+    if (busyRegistrations.has(physicalReg)) continue;
     // Pivot línea pura: vuelos con modelo/motor no habilitado (Embraer, CRJ, ATR, B737)
     // se ven en el panel Schedule pero NO generan Airplane en el sim hasta que se
     // habilite el type rating correspondiente.
@@ -181,7 +199,7 @@ export function generateScheduledArrivals(
       : fallbackContract;
     if (!contract) continue; // aerolínea sin contrato → skip vuelo
     const airlineId = contract.airlineId;
-    workingFleet = ensureFleetEntry(workingFleet, f.callsign, f.airlineCode, airlineId, f.model as AircraftModel, f.engineVariant as EngineVariant);
+    workingFleet = ensureFleetEntry(workingFleet, physicalReg, f.airlineCode, airlineId, f.model as AircraftModel, f.engineVariant as EngineVariant);
     const arrivalMinute = dayOffset + f.scheduledMinute;
     const overnight = isOvernightCandidate(f);
     const scheduledDepartureMinute = overnight
@@ -189,9 +207,9 @@ export function generateScheduledArrivals(
       : arrivalMinute + SCHEDULED_TURNAROUND_MIN;
     arrivals.push({
       instanceId: nextAirplaneInstanceId(),
-      registration: f.callsign,
-      model: f.model,
-      engineVariant: f.engineVariant,
+      registration: physicalReg,
+      model: f.model as AircraftModel,
+      engineVariant: f.engineVariant as EngineVariant,
       contractId: contract.id,
       standId: "",
       arrivalMinute,
@@ -199,8 +217,10 @@ export function generateScheduledArrivals(
       status: "Idle",
       flightHoursThisLeg: SCHEDULED_LEG_FH,
       overnight: overnight || undefined,
+      arrivalCallsign: f.callsign,
+      nextDepartureCallsign: findNextDepartureCallsign(f),
     });
-    workingFleet = applyLandingToFleet(workingFleet, f.callsign, SCHEDULED_LEG_FH);
+    workingFleet = applyLandingToFleet(workingFleet, physicalReg, SCHEDULED_LEG_FH);
   }
 
   return { arrivals, updatedFleet: workingFleet };

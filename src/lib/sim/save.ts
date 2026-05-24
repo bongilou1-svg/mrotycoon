@@ -4,9 +4,10 @@
 
 import type { GameState } from "$lib/game";
 import type {
-  Balance, Airline, WorkOrderTemplate, CheckDefinition, MroStage, ActiveBuild, RandomEvent, DepartureKPI,
+  Balance, Airline, WorkOrderTemplate, CheckDefinition, MroStage, ActiveBuild, RandomEvent, DepartureKPI, HoursKPI,
 } from "$lib/types";
 import { createDepartureKPI } from "../types/departureKPI.ts";
+import { createHoursKPI } from "../types/hoursKPI.ts";
 import { restoreRng } from "./rng.ts";
 import { getAirplaneInstanceCounter, resetAirplaneInstanceCounter } from "./fleet.ts";
 import { getMaintenanceCheckCounter, resetMaintenanceCheckCounter } from "./maintenance.ts";
@@ -22,8 +23,9 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  v8 = F5D: añade useScheduleArrivals (snapshot OVD opcional). Default false en migración v7.
  *  v9 = pivot MRO línea pura (2026-05-24): añade lineCompetitionLastTickMinute. Default 0 en migr.
  *  v10 = pivot línea pura · KPI departures: añade departureKPI + campos airplane
- *  (actualDepartureMinute, delayMinutes, aogEscalated). Defaults sanos en migración. */
-export const SAVE_VERSION = 10;
+ *  (actualDepartureMinute, delayMinutes, aogEscalated). Defaults sanos en migración.
+ *  v11 = pivot línea pura · Fase A modelo HH: añade hoursKPI (book vs actual). */
+export const SAVE_VERSION = 11;
 
 export interface GameSavePayload {
   version: number;
@@ -67,6 +69,8 @@ export interface GameSavePayload {
   lineModeEnabled?: boolean;
   // v10 (pivot línea pura · KPI): acumulador de departures + TDR.
   departureKPI?: DepartureKPI;
+  // v11 (pivot línea pura · Fase A modelo HH): acumulador horas-hombre.
+  hoursKPI?: HoursKPI;
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -108,6 +112,7 @@ export function serializeGame(g: GameState): GameSavePayload {
     lineCompetitionLastTickMinute: g.lineCompetitionLastTickMinute,
     lineModeEnabled: g.lineModeEnabled,
     departureKPI: g.departureKPI,
+    hoursKPI: g.hoursKPI,
   };
 }
 
@@ -125,8 +130,8 @@ export function deserializeGame(
   dailyCheckTemplates: WorkOrderTemplate[] = [],
 ): GameState {
   // v8 puede leer v7 y v6 con migración (campos nuevos default). v5 y previos requieren upgrade explícito.
-  if (payload.version !== SAVE_VERSION && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
-    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 9, 8, 7 o 6 con migración)`);
+  if (payload.version !== SAVE_VERSION && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
+    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 10, 9, 8, 7 o 6 con migración)`);
   }
   resetAirplaneInstanceCounter(payload.aliCounter);
   resetMaintenanceCheckCounter(payload.mcCounter);
@@ -177,5 +182,7 @@ export function deserializeGame(
     lineModeEnabled: payload.lineModeEnabled ?? false,
     // v10 (pivot línea pura · KPI): saves v9 y anteriores arrancan con KPI vacío.
     departureKPI: payload.departureKPI ?? createDepartureKPI(),
+    // v11 (pivot línea pura · Fase A modelo HH): saves v10 y anteriores arrancan vacío.
+    hoursKPI: payload.hoursKPI ?? createHoursKPI(),
   };
 }

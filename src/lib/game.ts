@@ -4,10 +4,13 @@
 import type {
   Airplane, Airline, Contract, Mechanic, WorkOrderInstance, WorkOrderTemplate, Balance, FleetAircraft,
   CheckDefinition, MaintenanceCheckInstance, ComplianceState, Candidate, MroStage, ActiveBuild,
-  RandomEvent, DepartureKPI,
+  RandomEvent, DepartureKPI, HoursKPI,
 } from "$lib/types";
 import { STAGE_CONFIG } from "./types/mroStage.ts";
 import { createDepartureKPI, AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR } from "./types/departureKPI.ts";
+import {
+  createHoursKPI, bookHoursForTemplate, actualHoursForCompletedWo, recordWoCompletionInHoursKPI,
+} from "./types/hoursKPI.ts";
 import { rollDailyEvents, runwayClosedAt } from "./sim/events.ts";
 import { type ClockState, createClock, advance, DAY_MINUTES, WEEK_MINUTES } from "./sim/time.ts";
 import { type Rng, createRng } from "./sim/rng.ts";
@@ -167,6 +170,9 @@ export interface GameState {
   /** Pivot línea pura · KPI departures + TDR. Acumulador desde el inicio de la partida.
    *  Se actualiza en `processDepartures` cuando un avión sale del stand. */
   departureKPI: DepartureKPI;
+  /** Pivot línea pura · Fase A modelo HH: acumulador horas-hombre book vs real.
+   *  Se actualiza en el wo_completed event handler. KPI ratio eficiencia = book/actual. */
+  hoursKPI: HoursKPI;
 }
 
 export interface CreateGameOptions {
@@ -250,6 +256,7 @@ export function createGame(
     useScheduleArrivals: lineMode,
     lineModeEnabled: lineMode,
     departureKPI: createDepartureKPI(),
+    hoursKPI: createHoursKPI(),
   };
 }
 
@@ -592,6 +599,13 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       if (wo && tpl && c) {
         const txs = payForCompletedWo(tpl, wo, c, g.balance, ev.onTime, next);
         for (const tx of txs) g.economy = addTransaction(g.economy, tx);
+        // Pivot línea pura · Fase A: registrar HH-book facturadas + HH-actual reales
+        recordWoCompletionInHoursKPI(
+          g.hoursKPI,
+          c.airlineId,
+          bookHoursForTemplate(tpl),
+          actualHoursForCompletedWo(wo.emissionMinute, next),
+        );
       }
       const repDelta = reputationDeltaForWo(g.balance, ev.onTime ? "completedOnTime" : "completedLate");
       // Bloque M: aplica solo a la aerolínea del contrato del avión. Si no hay contrato resoluble,

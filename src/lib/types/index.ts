@@ -43,3 +43,9 @@ export {
   createDepartureKPI, getTdrGlobal, getTdrForAirline,
   AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
 } from "./departureKPI";
+export type { HoursAirlineBucket, HoursKPI } from "./hoursKPI";
+export {
+  createHoursKPI, getHoursEfficiencyGlobal, getHoursEfficiencyForAirline,
+  bookHoursForTemplate, hourlyRateEur, actualHoursForCompletedWo,
+  recordWoCompletionInHoursKPI,
+} from "./hoursKPI";

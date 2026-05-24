@@ -261,6 +261,17 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .shift-select{font:inherit;font-size:.7rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:1px 4px}
 .state-Training{background:rgba(167,139,250,.18);color:var(--base)}
 .fleet-card.warn{border-color:var(--warning)}.fleet-card.active{border-color:var(--base)}
+/* Pivot línea pura · iteración 2026-05-24: stepper de fases WO */
+.phase-stepper{display:flex;gap:3px;margin:.5rem 0 1.1rem 0;align-items:center}
+.phase-step{flex:1;height:5px;background:var(--bg);border-radius:3px;position:relative;border:1px solid var(--border)}
+.phase-step.done{background:var(--success);border-color:var(--success)}
+.phase-step.active{background:linear-gradient(90deg,var(--accent) var(--pct,50%),var(--bg) var(--pct,50%));border-color:var(--accent);box-shadow:0 0 6px rgba(77,163,255,.4)}
+.phase-step.pending{background:var(--bg);border-color:var(--border-s)}
+.phase-step.failed{background:var(--danger);border-color:var(--danger)}
+.phase-step .lbl{position:absolute;top:8px;left:0;right:0;text-align:center;font-size:.65rem;color:var(--muted);white-space:nowrap}
+.phase-step.done .lbl{color:var(--success)}
+.phase-step.active .lbl{color:var(--accent);font-weight:600}
+.phase-step.failed .lbl{color:var(--danger)}
 .fleet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;gap:.4rem}
 .fleet-reg{font-family:var(--mono);font-weight:600;color:var(--text);font-size:.85rem}
 .fleet-meta{display:flex;flex-wrap:wrap;gap:.4rem;color:var(--muted)}
@@ -680,6 +691,54 @@ function buildEventFeed(){
   return events;
 }
 
+// Pivot línea pura · iteración 2026-05-24: stepper visual de fases del WO.
+// Mapeo del state machine sim → labels operacionales del MRO real:
+//  ToPlane → Travel · Inspection → T-shoot · MainTask → Fix · Test → Test · Completed → Release.
+// Daily checks (DC-*) y check A/C/D no usan este stepper (lo skipean).
+function renderPhaseStepper(wo, tpl){
+  if (tpl?.id?.startsWith?.("DC-")) return ""; // daily check subtask: no stepper
+  const phases = [
+    { key: "ToPlane",    label: "Travel" },
+    { key: "Inspection", label: "T-shoot" },
+    { key: "MainTask",   label: "Fix" },
+    { key: "Test",       label: "Test" },
+    { key: "Completed",  label: "Release" },
+  ];
+  const cur = wo.phase;
+  const isFailed = cur === "Failed";
+  const isDeferred = cur === "Deferred";
+  if (isDeferred) {
+    return '<div class="phase-stepper"><div class="phase-step done" style="background:var(--warning);border-color:var(--warning)"><span class="lbl" style="color:var(--warning)">📋 Diferido (MEL)</span></div></div>';
+  }
+  // Index de la fase actual
+  let curIdx = phases.findIndex(p => p.key === cur);
+  if (cur === "Rework") curIdx = phases.findIndex(p => p.key === "MainTask"); // rework = re-fix
+  // Progreso de la fase actual (0..1) — calculado con phaseElapsedMinutes vs duración esperada
+  const phaseDuration = (() => {
+    if (!tpl) return 1;
+    const r = game.balance.phaseDurationRatios;
+    const d = tpl.durationMinutes;
+    return cur === "Inspection" ? d * r.inspection
+      : cur === "MainTask" ? d * r.mainTask
+      : cur === "Test" ? d * r.test
+      : cur === "Rework" ? d * r.rework
+      : cur === "ToPlane" ? (game.balance.officeToStandMinutes ?? 2)
+      : d;
+  })();
+  const pct = phaseDuration > 0 ? Math.min(100, (wo.phaseElapsedMinutes / phaseDuration) * 100) : 0;
+  let html = '<div class="phase-stepper">';
+  phases.forEach((p, i) => {
+    let cls = "pending";
+    if (isFailed && i <= curIdx) cls = "failed";
+    else if (i < curIdx) cls = "done";
+    else if (i === curIdx && cur === "Completed") cls = "done";
+    else if (i === curIdx) cls = "active";
+    html += \`<div class="phase-step \${cls}" style="--pct:\${pct.toFixed(0)}%"><span class="lbl">\${p.label}</span></div>\`;
+  });
+  html += '</div>';
+  return html;
+}
+
 function renderHangarEventTracking(){
   const feed = buildEventFeed();
   const filtered = eventFilter === "open" ? feed.filter(e => e.open) : feed;
@@ -708,6 +767,14 @@ function renderHangarEventTracking(){
     const dataAttr = e.clickWoId ? \`data-wo="\${e.clickWoId}"\`
       : e.clickCheckId ? \`data-check-id="\${e.clickCheckId}"\` : "";
     const clickable = dataAttr ? 'style="cursor:pointer"' : '';
+    // Para WO callouts (no daily, no check, no random event), renderizar stepper
+    // visual de fases: Travel → T-shoot → Fix → Test → Release.
+    let stepper = "";
+    if (e.kind === "wo" && e.clickWoId) {
+      const w = game.workOrders.find(ww => ww.instanceId === e.clickWoId);
+      const tpl = w ? game.templates.find(t => t.id === w.templateId) : null;
+      if (w && tpl) stepper = renderPhaseStepper(w, tpl);
+    }
     h += \`<article class="wo-card\${e.open ? '' : ' base'}" \${dataAttr} \${clickable}>
       <header class="wo-head">
         <span class="event-kind" style="font-size:1.1rem">\${e.icon}</span>
@@ -717,6 +784,7 @@ function renderHangarEventTracking(){
       </header>
       <div class="wo-desc">\${e.title}</div>
       <div class="wo-meta">\${e.meta.map(m => \`<span>\${esc(String(m))}</span>\`).join("")}</div>
+      \${stepper}
     </article>\`;
   }
   h += '</div>';
@@ -941,6 +1009,12 @@ function renderDashboard(){
   const aogPct = kpi.totalDepartures > 0 ? (kpi.totalAog / kpi.totalDepartures * 100) : 0;
   const tdrColor = tdr < 5 ? "var(--success)" : tdr < 20 ? "var(--warning)" : "var(--danger)";
 
+  // Pivot línea pura · Fase A modelo HH
+  const hkpi = game.hoursKPI ?? S.createHoursKPI();
+  const eff = S.getHoursEfficiencyGlobal(hkpi);
+  const effColor = eff >= 1.0 ? "var(--success)" : eff >= 0.85 ? "var(--warning)" : "var(--danger)";
+  const billedEur = Math.round(hkpi.totalBookHoursBilled * 60 * 1.0); // ref aproximada (rate avg)
+
   // Tabla por aerolínea contratada (que aparezcan en kpi.perAirline al menos una vez)
   let perAirlineRows = '';
   const airlineEntries = Object.entries(kpi.perAirline).map(([id, b]) => {
@@ -993,6 +1067,49 @@ function renderDashboard(){
   <table>
     <thead><tr><th>Aerolínea</th><th>Departures</th><th>On-time</th><th>Late</th><th>AOG</th><th>TDR</th></tr></thead>
     <tbody>\${perAirlineRows}</tbody>
+  </table>
+
+  <h3 style="margin-top:1.5rem">💼 Horas-hombre (modelo MRO real)</h3>
+  <p class="muted" style="margin-bottom:.5rem">Cada tarea se factura por <strong>HH-book</strong> (referencia AMM/MPD del fabricante). El mecánico tarda más o menos según skill/moral/rating → <strong>HH-actual</strong>. Ratio book/actual mide tu eficiencia operativa (&gt;1 mecs rápidos, margen alto · &lt;1 lentos, margen comido).</p>
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-title">📘 HH-book facturadas</div>
+      <div class="dash-big">\${hkpi.totalBookHoursBilled.toFixed(1)} <span style="font-size:.85rem;color:var(--muted)">h</span></div>
+      <div class="muted" style="font-size:.75rem">Sobre \${kpi.totalDepartures} departures · cobro = HH-book × tarifa €/HH</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">⏱️ HH-actual dedicadas</div>
+      <div class="dash-big">\${hkpi.totalActualHoursWorked.toFixed(1)} <span style="font-size:.85rem;color:var(--muted)">h</span></div>
+      <div class="muted" style="font-size:.75rem">Tiempo real entre emisión y completion de cada WO</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">📊 Eficiencia HH (book/actual)</div>
+      <div class="dash-big" style="color:\${effColor}">\${eff.toFixed(2)}×</div>
+      <div class="muted" style="font-size:.75rem">\${eff >= 1.0 ? "Mecs rápidos · margen alto" : eff >= 0.85 ? "Cerca del book · OK" : "Mecs lentos · margen comido"}</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:1rem">HH por aerolínea contratada</h4>
+  <table>
+    <thead><tr><th>Aerolínea</th><th>HH-book</th><th>HH-actual</th><th>Eficiencia</th></tr></thead>
+    <tbody>\${(() => {
+      const rows = Object.entries(hkpi.perAirline).map(([id, b]) => {
+        const al = game.airlines.find(a => a.id === id);
+        const effA = b.actualHoursWorked > 0 ? b.bookHoursBilled / b.actualHoursWorked : 1;
+        return { id, name: al?.name ?? id, color: al?.color ?? "#888", bucket: b, eff: effA };
+      });
+      rows.sort((a, b) => b.bucket.bookHoursBilled - a.bucket.bookHoursBilled);
+      if (rows.length === 0) return '<tr><td colspan="4" class="muted" style="text-align:center;padding:1rem">Sin WOs cerradas todavía.</td></tr>';
+      return rows.map(r => {
+        const c = r.eff >= 1.0 ? "var(--success)" : r.eff >= 0.85 ? "var(--warning)" : "var(--danger)";
+        return \`<tr>
+          <td><span style="display:inline-block;width:8px;height:8px;background:\${r.color};border-radius:50%;margin-right:.4rem"></span>\${esc(r.name)}</td>
+          <td class="mono">\${r.bucket.bookHoursBilled.toFixed(1)} h</td>
+          <td class="mono">\${r.bucket.actualHoursWorked.toFixed(1)} h</td>
+          <td class="mono" style="color:\${c}"><strong>\${r.eff.toFixed(2)}×</strong></td>
+        </tr>\`;
+      }).join("");
+    })()}</tbody>
   </table>
 
   <h3 style="margin-top:1.5rem">📊 Series semanales</h3>
@@ -1199,7 +1316,7 @@ function pendingNightOvernighters(){
 function renderProductionPlanning(){
   const overnights = pendingNightOvernighters();
   let h = '<h2>📋 Production Planning · Noche</h2>';
-  h += '<p class="muted" style="margin-bottom:.5rem">Paquete de trabajo nocturno enviado por las aerolíneas contratadas para los aviones que pernoctan. Llega ~12:00 del día. Incluye daily checks emitidos al landing, cierre opcional de WO diferidas y (futuro) ítems MPD facilitados.</p>';
+  h += '<p class="muted" style="margin-bottom:.5rem">Paquete de trabajo nocturno PLANIFICADO que las aerolíneas contratadas envían al MRO para los aviones que pernoctan. Llega ~12:00 del día. Incluye <strong>1 daily check</strong> por avión (con sus subtareas), cierre opcional de WO diferidas vivas y (futuro) ítems MPD facilitados. Los callouts NO planificados viven en Operaciones · Event Tracking.</p>';
   if (overnights.length === 0) {
     h += '<div class="empty">Sin pernoctas confirmadas todavía. Los aviones que aterricen ≥19:00 y sean último arrival de su aerolínea pernoctarán — recibirás aquí su paquete de trabajo.</div>';
     return h;
@@ -1218,25 +1335,33 @@ function renderProductionPlanning(){
     h += \`<h3 style="margin-top:1rem"><span style="display:inline-block;width:10px;height:10px;background:\${airline.color};border-radius:50%;margin-right:.4rem;vertical-align:middle"></span>\${esc(airline.name)} · \${planes.length} avión\${planes.length>1?'es':''}</h3>\`;
     for (const ap of planes) {
       const wos = game.workOrders.filter(w => w.airplaneInstanceId === ap.instanceId);
-      const dailyChecks = wos.filter(w => w.templateId && w.templateId.startsWith("DC-"));
+      // Las DC-* del sim son SUBTAREAS del daily check (no daily checks separadas).
+      // Visualmente agrupamos como UN solo "Daily check" con counter X/Y subtareas.
+      const dcSubtasks = wos.filter(w => w.templateId && w.templateId.startsWith("DC-"));
+      const dcCompleted = dcSubtasks.filter(d => d.phase === "Completed").length;
+      const dcTotal = dcSubtasks.length;
+      const dcBookHours = dcSubtasks.reduce((s, d) => {
+        const tpl = game.dailyCheckTemplates?.find?.(t => t.id === d.templateId) || game.templates.find(t => t.id === d.templateId);
+        return s + (tpl?.durationMinutes ?? 0) / 60;
+      }, 0);
       const deferred = wos.filter(w => w.phase === "Deferred");
-      const callouts = wos.filter(w => (!w.templateId || !w.templateId.startsWith("DC-")) && w.phase !== "Deferred" && w.phase !== "Completed" && w.phase !== "Failed");
-      const completedDc = dailyChecks.filter(d => d.phase === "Completed").length;
-      const pendingDc = dailyChecks.length - completedDc;
+      const deferredBookHours = deferred.reduce((s, d) => {
+        const tpl = game.templates.find(t => t.id === d.templateId);
+        return s + (tpl?.durationMinutes ?? 0) / 60;
+      }, 0);
       h += \`<article class="wo-card" data-fleet-reg="\${esc(ap.registration)}" style="cursor:pointer">
         <header class="wo-head">
-          <span class="wo-id mono"><strong>\${esc(ap.registration)}</strong></span>
+          <span class="mono"><strong style="font-size:1rem">\${esc(ap.registration)}</strong></span>
           <span class="muted">\${ap.model}/\${ap.engineVariant}</span>
           <span class="wo-phase" style="background:rgba(80,80,140,.18);color:#cdf;border-color:rgba(140,150,200,.5)">🌙 Pernocta</span>
         </header>
         <div class="wo-meta">
-          <span>Llega: <strong>\${fmtClock(ap.arrivalMinute)}</strong></span>
-          <span>Salida prevista: <strong>\${fmtClock(ap.scheduledDepartureMinute)}</strong></span>
+          <span>Última llegada: <strong class="mono">\${esc(ap.arrivalCallsign ?? "?")}</strong> @ <strong>\${fmtClock(ap.arrivalMinute)}</strong></span>
+          <span>Próx. salida: <strong class="mono">\${esc(ap.nextDepartureCallsign ?? "—")}</strong> @ <strong>\${fmtClock(ap.scheduledDepartureMinute)}</strong></span>
         </div>
-        <div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.2rem;font-size:.85rem">
-          <div>🌙 Daily checks: <strong>\${dailyChecks.length}</strong> emitidos \${dailyChecks.length>0 ? \`(<span style="color:var(--success)">\${completedDc} ✓</span> · <span style="color:var(--warning)">\${pendingDc} pendientes</span>)\` : ''}</div>
-          <div>📋 WO diferidas (cierre opcional esta noche): <strong>\${deferred.length}</strong></div>
-          <div>🔧 Callouts activos sobre la matrícula: <strong>\${callouts.length}</strong></div>
+        <div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.25rem;font-size:.85rem">
+          \${dcTotal > 0 ? \`<div>🌙 <strong>Daily check</strong> · <strong>\${dcCompleted}/\${dcTotal}</strong> subtareas \${dcCompleted === dcTotal ? '<span style="color:var(--success)">✓</span>' : '<span style="color:var(--warning)">pendiente</span>'} · book <strong>\${dcBookHours.toFixed(1)}h</strong></div>\` : '<div class="muted">🌙 Daily check no emitido todavía</div>'}
+          \${deferred.length > 0 ? \`<div>📋 <strong>\${deferred.length}</strong> WO diferida\${deferred.length>1?'s':''} (cierre opcional) · book <strong>\${deferredBookHours.toFixed(1)}h</strong></div>\` : ''}
           <div class="muted">📄 MPD ítems facilitados por la aerolínea: <strong>—</strong> (próximamente)</div>
         </div>
       </article>\`;
@@ -1687,8 +1812,11 @@ function renderModal(){
 
   const mc = melCat(tpl);
   const melLabel = mc ? \`MEL \${mc} (\${S.MEL_DEFERRAL_DAYS[mc]}d)\` : 'NO diferible';
+  const bookHrsModal = (tpl.durationMinutes / 60).toFixed(1);
   let inner = \`<header class="modal-head"><h3>\${wo.instanceId} — \${esc(tpl.description)}</h3><button class="close" id="modal-close">×</button></header><div class="modal-body">
-    <div class="kvs"><span>ATA: <strong>\${tpl.ata}</strong></span><span>Categoría requerida: <strong>\${tpl.requiredCategory}</strong></span><span>Duración: <strong>\${tpl.durationMinutes} min</strong></span><span>Severidad: <strong>\${tpl.severity}</strong></span><span>SLA: <strong>\${wo.slaMinute - game.clock.minute}m restantes</strong></span><span>Avión: <strong>\${esc(ap.registration)} (\${ap.model}/\${ap.engineVariant})</strong></span><span>MEL: <strong>\${melLabel}</strong></span></div>\`;
+    <div class="kvs"><span>ATA: <strong>\${tpl.ata}</strong></span><span>Categoría: <strong>\${tpl.requiredCategory}</strong></span><span>Book HH: <strong>\${bookHrsModal}h</strong> (\${tpl.durationMinutes} min)</span><span>Severidad: <strong>\${tpl.severity}</strong></span><span>SLA: <strong>\${wo.slaMinute - game.clock.minute}m restantes</strong></span><span>Avión: <strong>\${esc(ap.registration)}</strong> (\${ap.model}/\${ap.engineVariant})\${ap.arrivalCallsign ? ' · vuelo <strong class="mono">' + esc(ap.arrivalCallsign) + '</strong>' : ''}</span><span>MEL: <strong>\${melLabel}</strong></span></div>
+    <h4 style="margin-top:.75rem;margin-bottom:.3rem">Fase actual</h4>
+    \${renderPhaseStepper(wo, tpl)}\`;
   if (tpl.isAOG) inner += '<div class="alert aog-alert">🛑 AOG · penalty ×5 · no diferible</div>';
 
   if (wo.assignedMechanicIds.length > 0) {

@@ -26,6 +26,11 @@ export {
   createDepartureKPI, getTdrGlobal, getTdrForAirline,
   AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
 } from "./types/departureKPI.ts";
+export {
+  createHoursKPI, getHoursEfficiencyGlobal, getHoursEfficiencyForAirline,
+  bookHoursForTemplate, hourlyRateEur, actualHoursForCompletedWo,
+  recordWoCompletionInHoursKPI,
+} from "./types/hoursKPI.ts";
 // data
 import workordersJson from "./data/workorders.json";
 import airlinesJson from "./data/airlines.json";

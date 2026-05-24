@@ -45,6 +45,16 @@ export interface AirplaneInstance {
    *  Su `scheduledDepartureMinute` está en la mañana del día siguiente. Habilita la generación
    *  automática de daily checks + posible A-check nocturno si cumple trigger. Default false. */
   overnight?: boolean;
+  /** Pivot línea pura · iteración 2026-05-24: callsign comercial del vuelo de llegada
+   *  (e.g. "IB3219"). Distinto del `registration` que es la matrícula física del avión
+   *  (e.g. "EC-MXY"). Una matrícula puede aparecer bajo distintos callsigns en cada
+   *  rotación. La UI muestra la matrícula como protagonista y el callsign como
+   *  info contextual del leg actual. */
+  arrivalCallsign?: string;
+  /** Pivot línea pura · iteración 2026-05-24: callsign comercial del próximo
+   *  departure programado (si se puede emparejar con el schedule). Útil para mostrar
+   *  "Próx. salida: IB3218 06:30" en panels. */
+  nextDepartureCallsign?: string;
   /** Pivot línea pura (2026-05-24): minuto en que el avión REALMENTE sale del stand
    *  (puede ser >= scheduledDepartureMinute si tenía WO activa al llegar la hora prevista).
    *  Set cuando processDepartures detecta que todas las WOs cerraron y marca Departed. */

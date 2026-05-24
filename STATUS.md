@@ -329,6 +329,46 @@ Tunings candidatos (actualizado tras Fase 1, prioridad reordenada):
 Orden recomendado: aplicar 1 + 2 primero (cubrir gap night y relajar AOG). Si
 sigue rojo, sumar 4+5. Target: ≤2/10 game over en 20×28d.
 
+### Pivot línea pura · Modelo HH + Tiers de contrato (2026-05-24) — game design core
+
+Modelo económico del juego que Dani definió al ver el bundle:
+
+**Tiers de contrato (progresión natural del jugador):**
+
+| Tier | Habilita | Requisito | Volumen |
+|---|---|---|---|
+| 1 · Line | Callouts + pernoctas (daily check) | (default arranque) | Bajo |
+| 2 · A-check | + A-checks (en plataforma, opcional) | Rep + experiencia con esa aerolínea | Medio |
+| 3 · C-check | + C-checks (multi-día) | **Hangar sí o sí** (Stage 3+) + rep | Alto |
+| 4 · D-check / mods / paint | + D-check, mods avionics, painting | Hangar mayor (Stage 4) + rep alta | Premium |
+
+Cada aerolínea contratada puede subir de tier contigo cuando lo gana. Los Stage 3-4 del MRO encajan: gating de C/D.
+
+**Modelo HH (horas-hombre):**
+
+- Cada tarea tiene `bookHours` (referencia AMM/MPD del fabricante)
+- Mecánico tarda `bookHours / skillMultiplier` (skill + moral + rating + estado)
+- Cobro a aerolínea = `bookHours × hourlyRateEur` (precio cerrado por tarea, MRO asume
+  riesgo de eficiencia — esto es el modelo realista)
+- Daily check tiene paquete con HH-book agregadas. Tiers superiores → más HH/paquete.
+- KPI eficiencia = `Σ bookHours / Σ actualHours`. >1 = mecs rápidos (bueno), <1 = lentos (malo).
+
+**Findings durante daily check:**
+
+- Al ejecutar daily, prob % de generar sub-WO (hallazgo no previsto en el plan)
+- Decisión jugador: resolver (más HH facturadas + rep) o diferir vía MEL (riesgo si vence)
+
+### Plan implementación 4 fases (orden estimado)
+
+| # | Fase | Esfuerzo | Estado |
+|---|---|---|---|
+| A | Modelo HH base: bookHours/actualHours/hourlyRateEur helpers + g.hoursKPI + Dashboard ratio eficiencia. Save v11. | 1.5-2h | EN CURSO 2026-05-24 |
+| B | Tiers contrato 1-4: ContractTier refactor a tier1_line/tier2_acheck/tier3_ccheck/tier4_premium. Cada tier define qué trabajos te manda + subscription HH/mes. Aerolínea sube tier según rep + tiempo. | 1-1.5h | parking |
+| C | Findings en daily check: prob % subWO durante ejecución, UI resolver/diferir, impacto HH+rep. | 1.5h | parking |
+| D | Subscription HH/mes: aerolínea paga mínimo garantizado, excede → cobras extra, no llega → mínimo. Reemplaza weekly fee fijo actual. | 30min | parking |
+
+Re-habilitar A/C/D checks vendrá con Fase B (gating tier 2/3).
+
 ### Pivot línea pura · Fase 2 evitable/no evitable (2026-05-24) — diseño parking
 
 Pendiente instrumentar causa raíz de cada delay:
