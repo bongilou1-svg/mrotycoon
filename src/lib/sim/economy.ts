@@ -110,6 +110,18 @@ export const WEEKLY_FIXED_COST_PER_EXTRA_HANGAR = 5000;
  * Default 0 (estado actual MVP). Cuando Fase 5 introduzca construir hangar 2º/3º, el caller
  * pasará el número y el coste fijo escala (5k €/sem por hangar extra).
  */
+export interface WeeklyCloseOptions {
+  /** HH-book facturadas acumuladas por aerolínea (g.hoursKPI.perAirline[id].bookHoursBilled).
+   *  Si presente + contract.subscriptionHoursPerWeek también, el weekly close calcula la
+   *  bonificación de subscription (Fase D pivot línea pura): cobra max(0, subscription-real)
+   *  como contractBaseFee. */
+  hoursBilledByAirline?: Record<string, number>;
+  /** Snapshot del HH-book por aerolínea AL FINAL del weekly close anterior. Permite calcular
+   *  el delta de la semana. El caller debe pasar el snapshot ANTERIOR y actualizar al
+   *  recibido en el return. */
+  lastWeeklyHoursSnapshot?: Record<string, number>;
+}
+
 export function applyWeeklyClose(
   eco: EconomyState,
   contracts: readonly Contract[],
@@ -117,18 +129,33 @@ export function applyWeeklyClose(
   balance: Balance,
   nowMinute: number,
   extraHangars = 0,
-): { eco: EconomyState; transactions: Transaction[] } {
+  opts: WeeklyCloseOptions = {},
+): { eco: EconomyState; transactions: Transaction[]; newHoursSnapshot: Record<string, number> } {
   const txs: Transaction[] = [];
+  const newHoursSnapshot: Record<string, number> = { ...(opts.lastWeeklyHoursSnapshot ?? {}) };
 
-  // Ingresos: base fees
+  // Ingresos: base fees (con lógica Fase D de subscription HH/sem)
   for (const c of contracts) {
     if (c.status !== "active") continue;
-    txs.push(createTransaction(
-      "contractBaseFee",
-      c.baseFeePerWeek,
-      nowMinute,
-      `Base fee ${c.id}`,
-    ));
+    // Fase D: si el contrato tiene subscription HH/sem, el cobro es max(0, subscription
+    // - real). Si no (contratos legacy), cobra baseFeePerWeek tal cual.
+    let feeToCharge = c.baseFeePerWeek;
+    let feeDesc = `Base fee ${c.id}`;
+    if (c.subscriptionHoursPerWeek !== undefined && opts.hoursBilledByAirline) {
+      const totalBilled = opts.hoursBilledByAirline[c.airlineId] ?? 0;
+      const lastSnap = (opts.lastWeeklyHoursSnapshot ?? {})[c.airlineId] ?? 0;
+      const deltaThisWeek = Math.max(0, totalBilled - lastSnap);
+      const rateEurPerHour = c.paymentPerWOMinute * 60;
+      const realRevenueThisWeek = deltaThisWeek * rateEurPerHour;
+      const subscriptionRevenue = c.subscriptionHoursPerWeek * rateEurPerHour;
+      const bonus = Math.max(0, subscriptionRevenue - realRevenueThisWeek);
+      feeToCharge = Math.round(bonus);
+      feeDesc = `Subscription mínima ${c.id} (${c.subscriptionHoursPerWeek}h/sem · real ${deltaThisWeek.toFixed(1)}h)`;
+      newHoursSnapshot[c.airlineId] = totalBilled;
+    }
+    if (feeToCharge > 0) {
+      txs.push(createTransaction("contractBaseFee", feeToCharge, nowMinute, feeDesc));
+    }
   }
 
   // Gastos: salarios. Bloque L L5: turno noche aplica ×1.5 al salario base.
@@ -163,7 +190,7 @@ export function applyWeeklyClose(
     newEco = { ...newEco, negativeStreakWeeks: 0 };
   }
 
-  return { eco: newEco, transactions: txs };
+  return { eco: newEco, transactions: txs, newHoursSnapshot };
 }
 
 /** Suma de ingresos en la última semana. */

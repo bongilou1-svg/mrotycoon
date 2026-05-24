@@ -7,7 +7,11 @@ import type {
   RandomEvent, DepartureKPI, HoursKPI,
 } from "$lib/types";
 import { STAGE_CONFIG } from "./types/mroStage.ts";
-import { createDepartureKPI, AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR } from "./types/departureKPI.ts";
+import {
+  createDepartureKPI, AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
+  AOG_EVITABLE_PENALTY_MULT, AOG_EVITABLE_REP_MULT, isDelayCauseEvitable,
+  type DelayRootCause,
+} from "./types/departureKPI.ts";
 import {
   createHoursKPI, bookHoursForTemplate, actualHoursForCompletedWo, recordWoCompletionInHoursKPI,
 } from "./types/hoursKPI.ts";
@@ -16,8 +20,10 @@ import { type ClockState, createClock, advance, DAY_MINUTES, WEEK_MINUTES } from
 import { type Rng, createRng } from "./sim/rng.ts";
 import {
   generateInitialContracts, generateInitialContractsLine, activeContracts, expireOffers, acceptOffer, rejectOffer,
-  tickContractMarket, tickLineCompetition, OFFER_TICK_DAYS, LINE_COMPETITION_TICK_DAYS, _resetContractCounter,
+  tickContractMarket, tickLineCompetition, tickContractTierUpgrade,
+  OFFER_TICK_DAYS, LINE_COMPETITION_TICK_DAYS, TIER_UPGRADE_TICK_DAYS, _resetContractCounter,
 } from "./sim/contracts.ts";
+import { tierLabel } from "./types/contract.ts";
 import { generateDailyArrivals, assignStand } from "./sim/airplanes.ts";
 import { generateScheduledArrivals } from "./sim/schedule.ts";
 import { currentLineStandIds, currentBaseStandIds } from "./sim/stands.ts";
@@ -107,6 +113,10 @@ export interface GameState {
   /** Pivot MRO línea pura (2026-05-24): minuto del último tick de competencia
    *  (ventana de renovación ~30d). Independiente del tick legacy de mercado. */
   lineCompetitionLastTickMinute: number;
+  /** Pivot línea pura · Fase B (2026-05-24): minuto del último tick de upgrade tier
+   *  (60d). Cuando una aerolínea con contrato activo alcanza rep umbral, se ofrece
+   *  upgrade al tier siguiente. */
+  tierUpgradeLastTickMinute: number;
   economy: EconomyState;
   reputation: ReputationState;
   notifications: NotificationItem[];
@@ -173,6 +183,10 @@ export interface GameState {
   /** Pivot línea pura · Fase A modelo HH: acumulador horas-hombre book vs real.
    *  Se actualiza en el wo_completed event handler. KPI ratio eficiencia = book/actual. */
   hoursKPI: HoursKPI;
+  /** Pivot línea pura · Fase D subscription HH/sem (2026-05-24): snapshot del
+   *  hoursKPI.perAirline[id].bookHoursBilled al último weekly close. Permite que el
+   *  próximo weekly close calcule las HH facturadas DELTA esa semana. */
+  lastWeeklyHoursSnapshot: Record<string, number>;
 }
 
 export interface CreateGameOptions {
@@ -226,6 +240,7 @@ export function createGame(
     marketLastRefreshMinute: 0,
     contractMarketLastTickMinute: 0,
     lineCompetitionLastTickMinute: 0,
+    tierUpgradeLastTickMinute: 0,
     economy: createEconomy(balance.startingBalance),
     // Línea pura: aerolínea contratada arranca a rep 60 (margen para subir/bajar);
     // legacy mantiene todas a startingReputation.
@@ -257,6 +272,7 @@ export function createGame(
     lineModeEnabled: lineMode,
     departureKPI: createDepartureKPI(),
     hoursKPI: createHoursKPI(),
+    lastWeeklyHoursSnapshot: {},
   };
 }
 
@@ -381,6 +397,26 @@ function ensureArrivals(g: GameState, daysAhead = 3): void {
  *    AOG: penalty AOG_ESCALATION_PENALTY_EUR + rep delta aogFailed.
  *  - Si SÍ tiene WOs activas → sigue en stand (delay acumula hasta que cierren).
  */
+/** Pivot Fase 2 (2026-05-24): determina causa raíz del delay post-hoc.
+ *  Heurística sin instrumentar el state machine:
+ *   - Si runway estaba cerrado durante el slot scheduledDeparture → external_event (no evitable)
+ *   - Si las WOs cerradas del avión incluyen AOG-template → aog_inevitable (no evitable)
+ *   - Default → mec_busy (evitable, falta de capacidad)
+ */
+function inferDelayRootCause(g: GameState, a: Airplane, nowMinute: number): DelayRootCause {
+  // runway closure activa durante la ventana de scheduledDeparture
+  if (runwayClosedAt(g.randomEvents, a.scheduledDepartureMinute) || runwayClosedAt(g.randomEvents, nowMinute)) {
+    return "external_event";
+  }
+  // WOs sobre este avión que sean template-AOG
+  const wosOnAp = g.workOrders.filter((w) => w.airplaneInstanceId === a.instanceId);
+  for (const w of wosOnAp) {
+    const tpl = g.templates.find((t) => t.id === w.templateId);
+    if (tpl?.isAOG) return "aog_inevitable";
+  }
+  return "mec_busy"; // default — el delay es por falta de capacidad operativa
+}
+
 function processDepartures(g: GameState, nowMinute: number): void {
   for (const a of g.airplanes) {
     if (a.status === "Departed") continue;
@@ -403,43 +439,109 @@ function processDepartures(g: GameState, nowMinute: number): void {
     a.status = "Departed";
     if (delay >= AOG_DELAY_THRESHOLD_MIN) a.aogEscalated = true;
 
+    // Pivot Fase 2: determinar causa raíz si hay delay
+    const rootCause: DelayRootCause | undefined = delay > 0 ? inferDelayRootCause(g, a, nowMinute) : undefined;
+    const evitable = a.aogEscalated && isDelayCauseEvitable(rootCause);
+
     // KPI acumulador (global + por aerolínea)
     const kpi = g.departureKPI;
     kpi.totalDepartures += 1;
     kpi.sumDelayMinutes += delay;
     if (delay === 0) kpi.totalOnTime += 1;
     else kpi.totalLate += 1;
-    if (a.aogEscalated) kpi.totalAog += 1;
+    if (a.aogEscalated) {
+      kpi.totalAog += 1;
+      if (evitable) kpi.totalAogEvitable += 1;
+    }
     const c = g.contracts.find((cc) => cc.id === a.contractId);
     if (c) {
       let b = kpi.perAirline[c.airlineId];
       if (!b) {
-        b = { departures: 0, onTime: 0, late: 0, aog: 0, sumDelayMinutes: 0 };
+        b = { departures: 0, onTime: 0, late: 0, aog: 0, aogEvitable: 0, sumDelayMinutes: 0 };
         kpi.perAirline[c.airlineId] = b;
       }
       b.departures += 1;
       b.sumDelayMinutes += delay;
       if (delay === 0) b.onTime += 1;
       else b.late += 1;
-      if (a.aogEscalated) b.aog += 1;
+      if (a.aogEscalated) {
+        b.aog += 1;
+        if (evitable) b.aogEvitable += 1;
+      }
     }
 
-    // Notifs + AOG escalation
+    // Notifs + AOG escalation con multiplicador evitable
     if (a.aogEscalated) {
+      const penaltyMult = evitable ? AOG_EVITABLE_PENALTY_MULT : 1.0;
+      const repMult = evitable ? AOG_EVITABLE_REP_MULT : 1.0;
+      const penaltyAmount = Math.round(AOG_ESCALATION_PENALTY_EUR * penaltyMult);
+      const evitableTag = evitable ? "EVITABLE" : "no evitable";
+      const rootCauseLabel = rootCause === "mec_busy" ? "mec ocupado"
+        : rootCause === "external_event" ? "evento externo"
+        : rootCause === "aog_inevitable" ? "AOG técnico"
+        : rootCause ?? "—";
       pushNotification(
         g,
-        `🛑 AOG escalado: ${a.registration} salió con ${delay}m de retraso (>3h)`,
+        `🛑 AOG ${evitableTag}: ${a.registration} +${delay}m (>3h · ${rootCauseLabel})`,
         "danger",
       );
       g.economy = addTransaction(
         g.economy,
-        createTransaction("penalty", -AOG_ESCALATION_PENALTY_EUR, nowMinute, `AOG escalado ${a.registration} (delay ${delay}m)`),
+        createTransaction("penalty", -penaltyAmount, nowMinute, `AOG ${evitableTag} ${a.registration} (delay ${delay}m · ${rootCauseLabel})`),
       );
-      if (c) g.reputation = applyDelta(g.reputation, c.airlineId, g.balance.reputation.aogFailed);
+      if (c) g.reputation = applyDelta(g.reputation, c.airlineId, Math.round(g.balance.reputation.aogFailed * repMult));
     } else if (delay > 0) {
       pushNotification(g, `✈️ ${a.registration} salió con ${delay}m de retraso`, "warning");
     }
   }
+}
+
+// ---- Pivot línea pura · Fase C (2026-05-24): findings en daily check ----
+
+/** Probabilidad de generar un finding al completar una daily check subtask. ~15% real
+ *  para daily; tunable según playtest. */
+export const DAILY_FINDING_PROB = 0.15;
+/** ID counter para WOs finding (FND-XXXXXX). */
+let _findingCounter = 0;
+function nextFindingId(): string {
+  _findingCounter += 1;
+  return `FND-${_findingCounter.toString().padStart(6, "0")}`;
+}
+
+/** Roll de finding al completar daily check. Si dice sí, elige un template plausible
+ *  (severity Minor o Major, no AOG) compatible con el modelo del avión y crea una
+ *  nueva WO con `parentWoInstanceId` apuntando a la daily. */
+function tryRollDailyFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airplane, nowMinute: number): void {
+  if (g.woRng.next() > DAILY_FINDING_PROB) return;
+  // Elegibles: severity Minor/Major, NO AOG, compatibles con modelo + variant del avión
+  const eligible = g.templates.filter(
+    (t) =>
+      !t.isAOG &&
+      (t.severity === "Minor" || t.severity === "Major") &&
+      t.aircraftModelsCompatibles.includes(ap.model) &&
+      t.engineVariantsCompatibles.includes(ap.engineVariant),
+  );
+  if (eligible.length === 0) return;
+  const tpl = eligible[Math.floor(g.woRng.next() * eligible.length)];
+  const slaMinute = nowMinute + Math.round(tpl.durationMinutes * g.balance.slaMultiplier);
+  const finding: WorkOrderInstance = {
+    instanceId: nextFindingId(),
+    templateId: tpl.id,
+    airplaneRegistration: ap.registration,
+    airplaneInstanceId: ap.instanceId,
+    emissionMinute: nowMinute,
+    assignedMechanicIds: [],
+    phase: "ToPlane",
+    phaseElapsedMinutes: 0,
+    slaMinute,
+    parentWoInstanceId: parentWo.instanceId,
+  };
+  g.workOrders.push(finding);
+  pushNotification(
+    g,
+    `🔍 Finding en ${ap.registration}: ${tpl.description.slice(0, 55)} (ATA ${tpl.ata}, book ${(tpl.durationMinutes/60).toFixed(1)}h)`,
+    "warning",
+  );
 }
 
 function pushNotification(g: GameState, text: string, type: NotificationItem["type"] = "info"): void {
@@ -606,6 +708,12 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
           bookHoursForTemplate(tpl),
           actualHoursForCompletedWo(wo.emissionMinute, next),
         );
+        // Pivot línea pura · Fase C: si era una daily check subtask, rollear finding
+        // con probabilidad DAILY_FINDING_PROB. El finding es una sub-WO normal (no DC-*)
+        // que se añade a g.workOrders — aparecerá como callout en Event Tracking.
+        if (tpl.id.startsWith("DC-") && wo && ap) {
+          tryRollDailyFinding(g, wo, ap, next);
+        }
       }
       const repDelta = reputationDeltaForWo(g.balance, ev.onTime ? "completedOnTime" : "completedLate");
       // Bloque M: aplica solo a la aerolínea del contrato del avión. Si no hay contrato resoluble,
@@ -728,8 +836,18 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
     // Fase 5A X: pasar extraHangars del stage actual (escala fixed cost).
     const extraHangars = STAGE_CONFIG[g.mroStage].extraHangars;
     const weekBeforeClose = Math.floor(now / WEEK_MINUTES) + 1; // semana que acaba de cerrar
-    const closeRes = applyWeeklyClose(g.economy, g.contracts, g.mechanics, g.balance, next, extraHangars);
+    // Pivot Fase D: pasar hoursBilled + lastSnapshot para que el weekly close
+    // calcule la bonificación de subscription HH/sem por contrato.
+    const hoursBilledByAirline: Record<string, number> = {};
+    for (const [aid, b] of Object.entries(g.hoursKPI.perAirline)) {
+      hoursBilledByAirline[aid] = b.bookHoursBilled;
+    }
+    const closeRes = applyWeeklyClose(g.economy, g.contracts, g.mechanics, g.balance, next, extraHangars, {
+      hoursBilledByAirline,
+      lastWeeklyHoursSnapshot: g.lastWeeklyHoursSnapshot,
+    });
     g.economy = closeRes.eco;
+    g.lastWeeklyHoursSnapshot = closeRes.newHoursSnapshot;
     pushNotification(g, `📊 Cierre semanal. Balance: ${g.economy.balance.toLocaleString()} €`, "info");
     // Fase 5B-δ: snapshot KPI semanal para dashboard.
     const repValues = Object.values(g.reputation.perAirline);
@@ -882,6 +1000,16 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       pushNotification(g, `❌ ${al?.name ?? cx.airlineId} rescinde — contrato adjudicado a competidor`, "danger");
     }
   }
+  // 7e-bis. Pivot línea pura · Fase B: tick upgrade tier de contratos cada 60d.
+  if (lineMode && g.clock.minute - g.tierUpgradeLastTickMinute >= TIER_UPGRADE_TICK_DAYS * DAY_MINUTES) {
+    const upRes = tickContractTierUpgrade(g.marketRng, g.contracts, g.reputation.perAirline, g.clock.minute);
+    g.contracts = upRes.contracts;
+    g.tierUpgradeLastTickMinute = g.clock.minute;
+    for (const offer of upRes.newUpgradeOffers) {
+      const al = g.airlines.find((a) => a.id === offer.airlineId);
+      pushNotification(g, `🆙 ${al?.name ?? offer.airlineId} te ofrece upgrade a ${tierLabel(offer.tier)}`, "success");
+    }
+  }
 
   // 7f. Fase 5A X: tick construcción. Si activeBuild + completionMinute pasado → finaliza,
   //     sube mroStage, notifica.
@@ -914,18 +1042,23 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
 // ---- Acciones del jugador ----
 
 export function acceptContractOffer(g: GameState, contractId: string): void {
+  // Detectar si es upgrade tier antes de aceptar (acceptOffer cancela el original).
+  const offer = g.contracts.find((c) => c.id === contractId);
+  const isUpgrade = offer?.upgradesContractId !== undefined;
   g.contracts = acceptOffer(g.contracts, contractId, g.clock.minute);
   const c = g.contracts.find((cc) => cc.id === contractId);
   const al = c ? g.airlines.find((a) => a.id === c.airlineId) : undefined;
   if (al) {
-    // Si aún no hay flota para esta aerolínea, sembrarla ahora (Bloque N fix: la flota
-    // sigue al contrato, no al inicio incondicional).
-    const had = g.fleet.some((f) => f.airlineId === al.id);
-    if (!had) {
-      g.fleet = seedFleetForAirline(g.marketRng, al, g.fleet);
-      pushNotification(g, `Contrato aceptado: ${al.name} · 8 aviones añadidos a flota`, "success");
+    if (isUpgrade) {
+      pushNotification(g, `🎉 Upgrade aceptado: ${al.name} → ${tierLabel(c?.tier)}`, "success");
     } else {
-      pushNotification(g, `Contrato aceptado: ${al.name}`, "success");
+      const had = g.fleet.some((f) => f.airlineId === al.id);
+      if (!had) {
+        g.fleet = seedFleetForAirline(g.marketRng, al, g.fleet);
+        pushNotification(g, `Contrato aceptado: ${al.name} · 8 aviones añadidos a flota`, "success");
+      } else {
+        pushNotification(g, `Contrato aceptado: ${al.name}`, "success");
+      }
     }
   }
 }

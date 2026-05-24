@@ -300,34 +300,47 @@ Implementación cuando aplique:
 
 Por ahora (OVD): 2 min fijo es suficiente.
 
-### Pivot MRO línea pura — balancing económico (2026-05-24) ⚠️ HEROE BUG ESCALADO
+### Pivot MRO línea pura — balancing económico ✅ RESUELTO (2026-05-24)
 
-**Post-Fase 1 KPIs (mismo día)** — el AOG escalation por delay ≥3h endurece más
-el problema. Auto-playtest 5×28d en lineMode:
-- Δbal medio **-880k €**, **5/5 game over** (era 4/10 sin AOG escalation)
-- Penalty total **-977k €/28d** (era -408k antes de Fase 1)
-- Cada WO nocturna no atendida → pernocta sale ≥3h tarde al amanecer → 25k €
-  penalty AOG + rep delta aogFailed
-- WOs/28d: 62 generadas
+**Estado tras balancing pass post-Fases A-D-C-2 (mismo día)**:
 
-Causa raíz amplificada: además de 4 mecs sin night → death-spiral via AOG. Las
-pernoctas con WO al landing (50% prob) no la atienden hasta el equipo morning a
-las 06:00. Si la WO dura >3h, el departure se retrasa >3h → AOG. 1-2 AOG/día ×
-25k = 25-50k €/día solo por AOG escalation.
+Auto-playtest 10×28d en lineMode con A/C/D OFF (igual que el bundle UI real):
+- Δbal medio **-204k €** (era -880k antes del tuning)
+- **0/10 game over** ✅ (era 5/5 → 4/10 → 0/10 iterativo)
+- WOs/28d: 105.6 (subida desde 62 — más capacidad operativa con 5 mecs incl. night)
+- Evolución semanal: balance medio termina semana 4 en +45k positivo
 
-Tunings candidatos (actualizado tras Fase 1, prioridad reordenada):
-1. **Cobertura night mínima**: cap mecs 5 + 1 night junior (B1 CFM56). Lo más
-   urgente — sin night el sim mata cualquier balanceo de fees.
-2. **AOG threshold 3h → 6h**: `AOG_DELAY_THRESHOLD_MIN = 180` → 360. Solo true
-   AOGs (avión grounded mañana entera) cuentan como escalation.
-3. **AOG penalty 25k → 10k**: bajar `AOG_ESCALATION_PENALTY_EUR`.
-4. **Subir baseFee Iberia inicial** 12-22k → 20-30k €/sem
-5. **Subir paymentPerWOMinute** 50-72 → 65-90 €/min
-6. **Bajar penaltyPerLateMinute** 3-8 → 2-4 €/min (reduce doble-counting con AOG)
-7. Tutorial/hint cuando rep Iberia ≥70 → "espera ofertas"
+Tunings aplicados (en orden de impacto):
+1. ✅ **Pool inicial 5 mecs + 1 night junior** (`MECHANIC_CAP_INITIAL = 5`, antes 4).
+   Cobertura nocturna mínima cubre daily checks de pernoctas antes del amanecer.
+2. ✅ **AOG threshold 3h → 6h** (`AOG_DELAY_THRESHOLD_MIN = 360`).
+3. ✅ **AOG penalty 25k → 10k** (`AOG_ESCALATION_PENALTY_EUR = 10_000`).
+4. ✅ **A/C/D checks OFF en lineMode** (bundle UI ya lo hacía, alineado el playtest).
+5. ✅ **TIER_FEE_MULT["line"] 1.0 → 1.4** (tier 1 cobra 40% más sobre rangos base).
+6. ✅ **TIER_PENALTY_MULT["line"] 1.0 → 0.6** (tier 1 más permisivo con SLA).
 
-Orden recomendado: aplicar 1 + 2 primero (cubrir gap night y relajar AOG). Si
-sigue rojo, sumar 4+5. Target: ≤2/10 game over en 20×28d.
+Targets cumplidos: 0/10 game over (objetivo era ≤2/10). El balance negativo medio
+(-204k €) es aceptable como "primer mes apretado" — un MRO de línea pura recién
+abierto NO debería ser muy rentable hasta acumular contratos y subir tiers. La
+viabilidad sin bancarrota es la métrica clave (✓).
+
+Tunings adicionales posibles (no urgentes, parking para futuro):
+- Tier upgrade timing: Iberia tarda 60d en ofrecer Tier 2. Reducir a 30d podría
+  acelerar la viabilidad.
+- Subscription HH/sem por tier: línea 4h actual; quizás 5-6h da más floor.
+
+### Pivot línea pura · Fase 2 evitable/no evitable ✅ DONE (2026-05-24)
+
+Implementado con instrumentación post-hoc en `processDepartures` (no se etiqueta
+en el state machine, se infiere al detectar el delay):
+- Heurística inferDelayRootCause: runway closure → external_event no evitable,
+  WO template-AOG → aog_inevitable no evitable, default → mec_busy evitable.
+- AOG evitable cobra penalty × 1.5 + rep × 1.5 vs AOG no evitable × 1.0.
+- KPI `totalAogEvitable` y bucket per-airline `aogEvitable` separados.
+
+Versión Lite (heurística post-hoc) cubre el caso 90%. Versión Full (instrumentar
+state machine para etiquetar mec_offshift, no_rated_cert, etc. en cada transición)
+queda en parking — solo necesaria si se quiere análisis forensic profundo por causa.
 
 ### Pivot línea pura · Modelo HH + Tiers de contrato (2026-05-24) — game design core
 

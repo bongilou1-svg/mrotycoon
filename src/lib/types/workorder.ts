@@ -101,6 +101,14 @@ export interface WorkOrderInstance {
    *  pasa a `Failed` con penalty regulatoria. Undefined si nunca se difirió.
    *  Para melCategory='D' (indefinida), se setea a un valor MUY alto (ver `MEL_DEFERRAL_DAYS`). */
   deferralExpiryMinute?: number;
+  /** Pivot línea pura · Fase C (2026-05-24): si esta WO es un FINDING generado durante
+   *  una daily check subtask, lleva el instanceId del WO padre (la DC-* que lo originó).
+   *  Útil para trazar y para que la UI agrupe findings con su daily check origen. */
+  parentWoInstanceId?: string;
+  /** Pivot línea pura · Fase 2 (2026-05-24): causa raíz del delay si la WO terminó tarde.
+   *  Determinado al momento del completion / departure. Usado por el sistema AOG
+   *  escalation para decidir penalty evitable vs no evitable. */
+  delayRootCause?: "mec_busy" | "mec_offshift" | "no_rated_cert" | "external_event" | "aog_inevitable" | "other";
 }
 
 // ---- Type guards ----

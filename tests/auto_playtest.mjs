@@ -62,7 +62,10 @@ function captureWeeklySnapshot(g, weekIdx) {
 
 const results = [];
 for (const seed of SEEDS) {
-  const g = createGame(balance, airlines, templates, seed, defs, dailyChecks, CREATE_OPTS);
+  // Pivot línea pura: el bundle UI desactiva A/C/D checks (callouts-only).
+  // El playtest en modo "line" se alinea — pasa [] para checkDefinitions.
+  const checkDefs = MODE === "line" ? [] : defs;
+  const g = createGame(balance, airlines, templates, seed, checkDefs, dailyChecks, CREATE_OPTS);
   g.clock.speed = 1;
   g.autoPauseEnabled = false;
 

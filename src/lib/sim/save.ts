@@ -24,8 +24,10 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  v9 = pivot MRO línea pura (2026-05-24): añade lineCompetitionLastTickMinute. Default 0 en migr.
  *  v10 = pivot línea pura · KPI departures: añade departureKPI + campos airplane
  *  (actualDepartureMinute, delayMinutes, aogEscalated). Defaults sanos en migración.
- *  v11 = pivot línea pura · Fase A modelo HH: añade hoursKPI (book vs actual). */
-export const SAVE_VERSION = 11;
+ *  v11 = pivot línea pura · Fase A modelo HH: añade hoursKPI (book vs actual).
+ *  v12 = pivot línea pura · Fase B Tiers: añade tierUpgradeLastTickMinute + upgrade
+ *  field en Contract. */
+export const SAVE_VERSION = 12;
 
 export interface GameSavePayload {
   version: number;
@@ -71,6 +73,10 @@ export interface GameSavePayload {
   departureKPI?: DepartureKPI;
   // v11 (pivot línea pura · Fase A modelo HH): acumulador horas-hombre.
   hoursKPI?: HoursKPI;
+  // v12 (pivot línea pura · Fase B Tiers): tick upgrade tier de contratos.
+  tierUpgradeLastTickMinute?: number;
+  // v12 (pivot línea pura · Fase D): snapshot HH al último weekly close por aerolínea.
+  lastWeeklyHoursSnapshot?: Record<string, number>;
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -113,6 +119,8 @@ export function serializeGame(g: GameState): GameSavePayload {
     lineModeEnabled: g.lineModeEnabled,
     departureKPI: g.departureKPI,
     hoursKPI: g.hoursKPI,
+    tierUpgradeLastTickMinute: g.tierUpgradeLastTickMinute,
+    lastWeeklyHoursSnapshot: g.lastWeeklyHoursSnapshot,
   };
 }
 
@@ -130,8 +138,8 @@ export function deserializeGame(
   dailyCheckTemplates: WorkOrderTemplate[] = [],
 ): GameState {
   // v8 puede leer v7 y v6 con migración (campos nuevos default). v5 y previos requieren upgrade explícito.
-  if (payload.version !== SAVE_VERSION && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
-    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 10, 9, 8, 7 o 6 con migración)`);
+  if (payload.version !== SAVE_VERSION && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
+    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 11, 10, 9, 8, 7 o 6 con migración)`);
   }
   resetAirplaneInstanceCounter(payload.aliCounter);
   resetMaintenanceCheckCounter(payload.mcCounter);
@@ -184,5 +192,9 @@ export function deserializeGame(
     departureKPI: payload.departureKPI ?? createDepartureKPI(),
     // v11 (pivot línea pura · Fase A modelo HH): saves v10 y anteriores arrancan vacío.
     hoursKPI: payload.hoursKPI ?? createHoursKPI(),
+    // v12 (pivot línea pura · Fase B Tiers): saves v11 y anteriores arrancan en 0.
+    tierUpgradeLastTickMinute: payload.tierUpgradeLastTickMinute ?? 0,
+    // v12 (pivot línea pura · Fase D): snapshot inicial vacío.
+    lastWeeklyHoursSnapshot: payload.lastWeeklyHoursSnapshot ?? {},
   };
 }

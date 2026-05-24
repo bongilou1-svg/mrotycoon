@@ -42,7 +42,9 @@ export type { DepartureAirlineBucket, DepartureKPI } from "./departureKPI";
 export {
   createDepartureKPI, getTdrGlobal, getTdrForAirline,
   AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
+  AOG_EVITABLE_PENALTY_MULT, AOG_EVITABLE_REP_MULT, isDelayCauseEvitable,
 } from "./departureKPI";
+export type { DelayRootCause } from "./departureKPI";
 export type { HoursAirlineBucket, HoursKPI } from "./hoursKPI";
 export {
   createHoursKPI, getHoursEfficiencyGlobal, getHoursEfficiencyForAirline,

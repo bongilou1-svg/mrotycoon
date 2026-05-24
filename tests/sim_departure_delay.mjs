@@ -24,8 +24,8 @@ function expect(cond, msg) {
 }
 
 console.log("\n=== Constantes ===");
-expect(AOG_DELAY_THRESHOLD_MIN === 180, `umbral AOG 180 min (got ${AOG_DELAY_THRESHOLD_MIN})`);
-expect(AOG_ESCALATION_PENALTY_EUR === 25_000, `penalty AOG 25k € (got ${AOG_ESCALATION_PENALTY_EUR})`);
+expect(AOG_DELAY_THRESHOLD_MIN === 360, `umbral AOG 360 min / 6h (got ${AOG_DELAY_THRESHOLD_MIN})`);
+expect(AOG_ESCALATION_PENALTY_EUR === 10_000, `penalty AOG 10k € (got ${AOG_ESCALATION_PENALTY_EUR})`);
 
 console.log("\n=== createGame inicializa KPI vacío ===");
 {
@@ -155,18 +155,21 @@ console.log("\n=== AOG escalation (delay >= 180 min) ===");
     phaseElapsedMinutes: 0,
     assignedMechanicIds: [],
   });
-  // Avanzar 200 min — supera scheduledDep+180 → cuando cierre WO, será AOG
-  advanceGame(g, 200);
+  // Avanzar suficiente — supera scheduledDep+360min (AOG threshold) → al cerrar WO, será AOG
+  advanceGame(g, 400);
   // Cerrar WO y avanzar otro tick
   g.workOrders = g.workOrders.map(w => w.instanceId === "WO-AOG" ? { ...w, phase: "Completed" } : w);
   advanceGame(g, 5);
   const ap = g.airplanes.find(a => a.instanceId === "ALI-AOG");
   expect(ap.status === "Departed", `Departed tras WO close`);
-  expect(ap.delayMinutes >= AOG_DELAY_THRESHOLD_MIN, `delay ≥ 180 (got ${ap.delayMinutes})`);
+  expect(ap.delayMinutes >= AOG_DELAY_THRESHOLD_MIN, `delay ≥ ${AOG_DELAY_THRESHOLD_MIN} (got ${ap.delayMinutes})`);
   expect(ap.aogEscalated === true, `aogEscalated true`);
   expect(g.departureKPI.totalAog === 1, `KPI AOG = 1`);
-  // Penalty cobrado
-  expect(g.economy.balance === balBefore - AOG_ESCALATION_PENALTY_EUR, `balance -= ${AOG_ESCALATION_PENALTY_EUR}`);
+  // Penalty cobrado — Pivot Fase 2: post-hoc inferDelayRootCause clasifica como
+  // "mec_busy" (default cuando no hay runway closure ni WO AOG) → evitable → ×1.5.
+  // El balance bajó AOG_ESCALATION_PENALTY × 1.5 = 37500 €.
+  const expectedPenalty = Math.round(AOG_ESCALATION_PENALTY_EUR * 1.5);
+  expect(g.economy.balance === balBefore - expectedPenalty, `balance -= ${expectedPenalty} (AOG evitable ×1.5)`);
   // Rep delta negativa
   expect(g.reputation.perAirline[g.contracts[0].airlineId] < repBefore, `rep aerolínea bajó`);
 }
@@ -174,17 +177,17 @@ console.log("\n=== AOG escalation (delay >= 180 min) ===");
 console.log("\n=== TDR helpers ===");
 {
   const g = createGame(balance, airlines, templates, 42, defs, dailyChecks);
-  // Simular 4 departures: 2 on-time, 1 late 30min, 1 AOG 200min
+  // Simular 4 departures: 2 on-time, 1 late 30min, 1 AOG 400min
   g.departureKPI.totalDepartures = 4;
   g.departureKPI.totalOnTime = 2;
   g.departureKPI.totalLate = 1;
   g.departureKPI.totalAog = 1;
-  g.departureKPI.sumDelayMinutes = 0 + 0 + 30 + 200;
-  g.departureKPI.perAirline["AL-001"] = { departures: 3, onTime: 2, late: 1, aog: 0, sumDelayMinutes: 30 };
-  g.departureKPI.perAirline["AL-002"] = { departures: 1, onTime: 0, late: 0, aog: 1, sumDelayMinutes: 200 };
-  expect(Math.round(getTdrGlobal(g.departureKPI)) === 58, `TDR global = (30+200)/4 = 57.5 (got ${getTdrGlobal(g.departureKPI)})`);
+  g.departureKPI.sumDelayMinutes = 0 + 0 + 30 + 400;
+  g.departureKPI.perAirline["AL-001"] = { departures: 3, onTime: 2, late: 1, aog: 0, aogEvitable: 0, sumDelayMinutes: 30 };
+  g.departureKPI.perAirline["AL-002"] = { departures: 1, onTime: 0, late: 0, aog: 1, aogEvitable: 1, sumDelayMinutes: 400 };
+  expect(Math.round(getTdrGlobal(g.departureKPI)) === 108, `TDR global = (30+400)/4 = 107.5 (got ${getTdrGlobal(g.departureKPI)})`);
   expect(Math.round(getTdrForAirline(g.departureKPI, "AL-001")) === 10, `TDR AL-001 = 30/3 = 10 (got ${getTdrForAirline(g.departureKPI, "AL-001")})`);
-  expect(getTdrForAirline(g.departureKPI, "AL-002") === 200, `TDR AL-002 = 200/1 = 200`);
+  expect(getTdrForAirline(g.departureKPI, "AL-002") === 400, `TDR AL-002 = 400/1 = 400`);
   expect(getTdrForAirline(g.departureKPI, "AL-NONE") === 0, `TDR aerolínea inexistente = 0`);
 }
 

@@ -23,8 +23,13 @@ export * from "./game.ts";
 // Constantes runtime de types/* (no las typed-only)
 export { STAGE_CONFIG } from "./types/mroStage.ts";
 export {
+  tierLabel, tierAllowsACheck, tierAllowsCCheck, tierAllowsDCheck,
+  defaultSubscriptionHoursPerWeek, nextTierUp,
+} from "./types/contract.ts";
+export {
   createDepartureKPI, getTdrGlobal, getTdrForAirline,
   AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
+  AOG_EVITABLE_PENALTY_MULT, AOG_EVITABLE_REP_MULT, isDelayCauseEvitable,
 } from "./types/departureKPI.ts";
 export {
   createHoursKPI, getHoursEfficiencyGlobal, getHoursEfficiencyForAirline,

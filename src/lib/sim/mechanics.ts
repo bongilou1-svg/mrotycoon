@@ -9,12 +9,13 @@ import type { Mechanic, Balance, WorkOrderTemplate } from "$lib/types";
 import { randFloat, randPick, type Rng } from "./rng.ts";
 
 /**
- * Pivot MRO línea pura (2026-05-24): la oficina del MRO sólo cabe 4 técnicos. El pool
- * inicial de 4 + cap de hire en 4 modela "técnico local de aeropuerto regional" hasta el
- * endgame. Lead Foreman cuenta — el espacio físico es el mismo. Se desbloquea con el
- * mismo flag que el hangar (rep+balance+contratos múltiples).
+ * Pivot MRO línea pura (2026-05-24): cap inicial 5 técnicos (subido de 4 en balancing pass
+ * post-Fase 2). Pool inicial cubre 2 morning / 2 afternoon / 1 night junior — la
+ * cobertura nocturna mínima es crítica para atender daily checks de pernoctas antes del
+ * amanecer y evitar AOG escalation por delays >6h. Se desbloquea con canUnlockHangars
+ * (rep+balance+contratos múltiples).
  */
-export const MECHANIC_CAP_INITIAL = 4;
+export const MECHANIC_CAP_INITIAL = 5;
 
 const FIRST_NAMES = [
   "Pedro", "Lucía", "Javi", "Miguel", "Carla", "Andrés", "María",
@@ -131,14 +132,15 @@ function generateLegacyPoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
 }
 
 /**
- * Pool línea pura (pivot 2026-05-24): plantilla mínima de 4 técnicos para arrancar como
- * "técnico local del aeropuerto regional".
- *   - 1 B1 senior morning con CFM56+V2500 (cubre toda la flota Iberia/VY narrowbody)
- *   - 1 B1 junior afternoon CFM56 (refuerzo turno tarde, vuelos U2/V7)
+ * Pool línea pura (pivot 2026-05-24, tuning balancing post-Fase 2): plantilla mínima
+ * de 5 técnicos para "técnico local del aeropuerto regional".
+ *   - 1 B1 senior morning CFM56+V2500 (cubre toda la flota Iberia/VY narrowbody)
+ *   - 1 B1 junior afternoon CFM56 (refuerzo tarde, vuelos U2/V7)
  *   - 1 B2 senior morning CFM56+V2500 (avionics)
  *   - 1 helper afternoon
- * Sin night: los daily checks de pernocta tardarán en arrancar (mecs llegan a las 06:00).
- * Aceptable como trade-off del juego inicial — el jugador desbloquea night/más mecs en endgame.
+ *   - 1 B1 junior night CFM56 (NUEVO — cubre daily checks de pernoctas antes 06:00)
+ * El night junior es el upgrade crítico: sin él los pernoctas acumulan delay >6h y
+ * disparan AOG escalation que mata la economía. Con night la viabilidad sube.
  */
 function generateLinePoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
   const mechanics: Mechanic[] = [];
@@ -205,6 +207,11 @@ function generateLinePoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
     { model: "A321", engineVariant: "V2500", category: "B2" },
   ], true, "morning");
   addHelper("afternoon");
+  // Night junior B1 — clave para daily checks de pernoctas
+  addCertifier("B1", [
+    { model: "A320", engineVariant: "CFM56", category: "B1" },
+    { model: "A321", engineVariant: "CFM56", category: "B1" },
+  ], false, "night");
 
   return mechanics;
 }

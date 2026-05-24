@@ -161,27 +161,31 @@ console.log("\n=== Integración: createGame lineMode tiene 1 active + rep Iberia
   }
 }
 
-console.log("\n=== Integración: advanceGame en lineMode dispara tickLineCompetition cada 30d ===");
+console.log("\n=== Integración: advanceGame en lineMode dispara tickLineCompetition + tier upgrade ===");
 {
-  // Saturamos rep + corremos varios seeds para evitar flakiness por marketRng consumido por
-  // otros sistemas (refreshMarket, tickTraining, tickContractMarket). Con prob ~0.4 por
-  // aerolínea por tick, en N seeds × 60d debería haber al menos 1 oferta acumulada.
+  // Saturamos rep + corremos varios seeds. Las ofertas pueden venir de DOS sistemas:
+  // tickLineCompetition (aerolíneas sin contrato, threshold rep 70) y tickContractTierUpgrade
+  // (Iberia con rep alta → ofrecen subir a a-check, threshold 60). Ambos consumen marketRng,
+  // así que aumentamos seeds + minutos para garantizar al menos 1 oferta.
   let totalOffers = 0;
-  for (let seed = 1; seed <= 5; seed++) {
+  for (let seed = 1; seed <= 10; seed++) {
     const g = createGame(balance, airlines, templates, seed, defs, dailyChecks, { lineMode: true });
     g.autoPauseEnabled = false;
     g.shiftGatingEnabled = false;
     g.clock.speed = 1;
-    for (let i = 1; i < airlines.length; i++) g.reputation.perAirline[airlines[i].id] = 95;
+    // Iberia a 95 (dispara tier upgrade), demás a 95 (dispara competencia)
+    for (let i = 0; i < airlines.length; i++) g.reputation.perAirline[airlines[i].id] = 95;
     let safety = 0;
-    while (g.clock.minute < 90 * DAY_MINUTES && safety < 6000) {
+    while (g.clock.minute < 120 * DAY_MINUTES && safety < 10000) {
       advanceGame(g, 60);
+      // Saturar rep cada tick — el sistema de WO bajaría la rep
+      for (let i = 0; i < airlines.length; i++) g.reputation.perAirline[airlines[i].id] = 95;
       safety++;
     }
     const newOffers = g.contracts.filter(c => c.status === "offered" && c.id !== "C-001").length;
     totalOffers += newOffers;
   }
-  expect(totalOffers >= 1, `≥1 oferta total en 5 seeds × 90d con rep saturada (got ${totalOffers})`);
+  expect(totalOffers >= 1, `≥1 oferta total en 10 seeds × 120d con rep saturada (got ${totalOffers})`);
 }
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);
