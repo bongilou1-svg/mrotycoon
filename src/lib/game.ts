@@ -430,7 +430,39 @@ function processDepartures(g: GameState, nowMinute: number): void {
         w.phase !== "Failed" &&
         w.phase !== "Deferred",
     );
-    if (blocking.length > 0) continue;
+    // Pivot línea pura · iteración 2026-05-24: AOG escalation EN VIVO mientras el avión
+    // está bloqueado. Si el delay current ya supera el threshold y aún no se ha marcado
+    // aogEscalated, marcarlo + cobrar penalty UNA VEZ (no esperar al departure final).
+    // Cuando finalmente despegue, processDepartures ya verá aogEscalated=true y no doblará.
+    if (blocking.length > 0) {
+      const currentDelay = nowMinute - a.scheduledDepartureMinute;
+      if (currentDelay >= AOG_DELAY_THRESHOLD_MIN && !a.aogEscalated) {
+        a.aogEscalated = true;
+        a.aogEscalatedAtMinute = nowMinute;
+        const rootCause = inferDelayRootCause(g, a, nowMinute);
+        const evitable = isDelayCauseEvitable(rootCause);
+        const penaltyMult = evitable ? AOG_EVITABLE_PENALTY_MULT : 1.0;
+        const repMult = evitable ? AOG_EVITABLE_REP_MULT : 1.0;
+        const penaltyAmount = Math.round(AOG_ESCALATION_PENALTY_EUR * penaltyMult);
+        const evitableTag = evitable ? "EVITABLE" : "no evitable";
+        const rootCauseLabel = rootCause === "mec_busy" ? "mec ocupado"
+          : rootCause === "external_event" ? "evento externo"
+          : rootCause === "aog_inevitable" ? "AOG técnico"
+          : rootCause ?? "—";
+        const c = g.contracts.find((cc) => cc.id === a.contractId);
+        pushNotification(
+          g,
+          `🛑 AOG ${evitableTag} EN CURSO: ${a.registration} +${currentDelay}m (>6h, sigue bloqueado · ${rootCauseLabel})`,
+          "danger",
+        );
+        g.economy = addTransaction(
+          g.economy,
+          createTransaction("penalty", -penaltyAmount, nowMinute, `AOG en curso ${a.registration} (delay ${currentDelay}m · ${rootCauseLabel})`),
+        );
+        if (c) g.reputation = applyDelta(g.reputation, c.airlineId, Math.round(g.balance.reputation.aogFailed * repMult));
+      }
+      continue;
+    }
 
     // Marcar Departed con timing real
     const delay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
@@ -470,8 +502,10 @@ function processDepartures(g: GameState, nowMinute: number): void {
       }
     }
 
-    // Notifs + AOG escalation con multiplicador evitable
-    if (a.aogEscalated) {
+    // Notifs + AOG escalation. Si ya estaba aogEscalated EN VIVO antes del departure
+    // (aogEscalatedAtMinute set), NO doblar el penalty — ya se cobró al cruzar threshold.
+    const wasAlreadyEscalated = a.aogEscalatedAtMinute !== undefined;
+    if (a.aogEscalated && !wasAlreadyEscalated) {
       const penaltyMult = evitable ? AOG_EVITABLE_PENALTY_MULT : 1.0;
       const repMult = evitable ? AOG_EVITABLE_REP_MULT : 1.0;
       const penaltyAmount = Math.round(AOG_ESCALATION_PENALTY_EUR * penaltyMult);
@@ -482,7 +516,7 @@ function processDepartures(g: GameState, nowMinute: number): void {
         : rootCause ?? "—";
       pushNotification(
         g,
-        `🛑 AOG ${evitableTag}: ${a.registration} +${delay}m (>3h · ${rootCauseLabel})`,
+        `🛑 AOG ${evitableTag}: ${a.registration} +${delay}m (>6h · ${rootCauseLabel})`,
         "danger",
       );
       g.economy = addTransaction(
@@ -490,6 +524,8 @@ function processDepartures(g: GameState, nowMinute: number): void {
         createTransaction("penalty", -penaltyAmount, nowMinute, `AOG ${evitableTag} ${a.registration} (delay ${delay}m · ${rootCauseLabel})`),
       );
       if (c) g.reputation = applyDelta(g.reputation, c.airlineId, Math.round(g.balance.reputation.aogFailed * repMult));
+    } else if (a.aogEscalated && wasAlreadyEscalated) {
+      pushNotification(g, `✈️ ${a.registration} finalmente sale tras AOG (+${delay}m total)`, "warning");
     } else if (delay > 0) {
       pushNotification(g, `✈️ ${a.registration} salió con ${delay}m de retraso`, "warning");
     }
@@ -646,9 +682,13 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
 
   // 2. Auto-asignar WOs sin asignar (greedy: primer certifier eligible). El jugador podrá
   // reasignar manualmente desde el modal.
+  // Pivot línea pura · iteración 2026-05-24: buscar template también en
+  // dailyCheckTemplates — antes los DC-* (subtareas de daily) no se auto-asignaban
+  // porque el find solo miraba en templates.
   for (const wo of g.workOrders) {
     if (wo.assignedMechanicIds.length > 0 || wo.phase !== "ToPlane") continue;
-    const tpl = g.templates.find((t) => t.id === wo.templateId);
+    const tpl = g.templates.find((t) => t.id === wo.templateId)
+      || g.dailyCheckTemplates.find((t) => t.id === wo.templateId);
     const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
     if (!tpl || !ap) continue;
     const certs = eligibleCertifiers(g.mechanics, tpl, ap.model, ap.engineVariant);
@@ -684,8 +724,15 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
 
   // 4. Tick state machine. `nowMinute = next` activa el filtro de shift en teamEffectiveEfficiency
   //    cuando shiftGatingEnabled; pasamos -1 para deshabilitarlo (tests legacy).
+  // Pivot línea pura · iteración 2026-05-24 fix: las DC-* (subtareas daily) viven en
+  // `dailyCheckTemplates`, no en `templates`. Si solo pasamos `g.templates`, tickWorkOrders
+  // no encuentra el template, retorna undefined y la WO se queda sin progresar (mec asignado
+  // pero progress congelado). Concatenar ambos catálogos para que las DC-* avancen igual.
+  const allTemplates = g.dailyCheckTemplates.length > 0
+    ? [...g.templates, ...g.dailyCheckTemplates]
+    : g.templates;
   const machineRes = tickWorkOrders(
-    g.workOrders, g.mechanics, g.templates, g.balance, stepMinutes, g.machineRng,
+    g.workOrders, g.mechanics, allTemplates, g.balance, stepMinutes, g.machineRng,
     g.shiftGatingEnabled ? next : -1,
   );
   g.mechanics = machineRes.mechanics;
@@ -695,7 +742,11 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   for (const ev of machineRes.events) {
     if (ev.type === "wo_completed") {
       const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
-      const tpl = g.templates.find((t) => t.id === ev.templateId);
+      // Pivot iteración 2026-05-24: el template puede vivir en `templates` (callouts/AOG)
+      // o `dailyCheckTemplates` (DC-* subtareas). Antes solo se buscaba en templates → las
+      // DC-* nunca se cobraban ni registraban HH (bug silencioso).
+      const tpl = g.templates.find((t) => t.id === ev.templateId)
+        || g.dailyCheckTemplates.find((t) => t.id === ev.templateId);
       const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : undefined;
       const c = ap ? g.contracts.find((cc) => cc.id === ap.contractId) : undefined;
       if (wo && tpl && c) {
@@ -713,6 +764,40 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
         // que se añade a g.workOrders — aparecerá como callout en Event Tracking.
         if (tpl.id.startsWith("DC-") && wo && ap) {
           tryRollDailyFinding(g, wo, ap, next);
+        }
+        // Pivot iteración 2026-05-24: chaining de daily check subtareas. El mec hace TODAS
+        // las DC-* del mismo avión EN UN VIAJE — no vuelve a la oficina entre subtareas.
+        // Al completar una DC-*, si hay otra DC-* unassigned sobre el mismo avión y el cert
+        // sigue presente, encadenar con stateRemainingMinutes=0 (skip Travel).
+        if (tpl.id.startsWith("DC-") && wo && ap && wo.assignedMechanicIds.length > 0) {
+          const nextDc = g.workOrders.find((w2) =>
+            w2.airplaneInstanceId === wo.airplaneInstanceId &&
+            w2.templateId.startsWith("DC-") &&
+            w2.assignedMechanicIds.length === 0 &&
+            w2.phase === "ToPlane",
+          );
+          if (nextDc) {
+            const certId = wo.assignedMechanicIds[0];
+            const cert = g.mechanics.find((m) => m.id === certId);
+            if (cert) {
+              // Forzar mec a Idle (cancelar Returning que el state machine acaba de iniciar),
+              // luego asignar la siguiente DC-* con stateRemainingMinutes=0 (ya en stand).
+              g.mechanics = g.mechanics.map((m) =>
+                m.id === certId
+                  ? { ...m, state: "Idle" as const, assignedWoInstanceId: null, assignedCheckInstanceId: null, stateRemainingMinutes: 0 }
+                  : m,
+              );
+              const r = assignMechanicsToWo(g.mechanics, g.workOrders, nextDc.instanceId, certId, [], g.balance);
+              if (!r.error) {
+                g.mechanics = r.mechanics;
+                g.workOrders = r.workOrders;
+                // Saltar Travel — el mec ya está físicamente en el stand
+                g.mechanics = g.mechanics.map((m) =>
+                  m.id === certId ? { ...m, stateRemainingMinutes: 0 } : m,
+                );
+              }
+            }
+          }
         }
       }
       const repDelta = reputationDeltaForWo(g.balance, ev.onTime ? "completedOnTime" : "completedLate");
@@ -1183,8 +1268,12 @@ export function fireMechanic(g: GameState, mechanicId: string): { ok: boolean; e
 
 /**
  * Acción del jugador: diferir una WO vía MEL.
- * - Devuelve {ok:false, error} si la WO no es diferible o ya está cerrada.
- * - Si hay mecánicos asignados, los libera a Idle (la WO ya no necesita team activo).
+ *  - Devuelve {ok:false, error} si la WO no es diferible o ya está cerrada.
+ *  - Pivot línea pura (2026-05-24): requiere un B1 ELEGIBLE (con type rating válido
+ *    para modelo+motor del avión) para firmar la decisión MEL. Sin certifier
+ *    habilitado disponible, no se puede diferir — el regulador exige firma.
+ *  - El cert firmante NO se bloquea (decisión administrativa rápida, ~5-10min real).
+ *  - Si hay mecánicos asignados, los libera a Idle (la WO ya no necesita team activo).
  */
 export function deferWoManually(
   g: GameState,
@@ -1194,11 +1283,27 @@ export function deferWoManually(
   if (!wo) return { ok: false, error: "WO no encontrada" };
   const tpl = g.templates.find((t) => t.id === wo.templateId);
   if (!tpl) return { ok: false, error: "Template no encontrado" };
+  const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
+  if (!ap) return { ok: false, error: "Avión no encontrado" };
+
+  // Pivot · validar B1 elegible disponible para firmar el MEL. La función eligibleCertifiers
+  // filtra mecs Idle con base = requiredCategory + type rating válido para (model, engine).
+  // Para diferir SIEMPRE se exige B1 con rating válido (sin importar la requiredCategory del
+  // template — el MEL lo firma siempre un B1, no un B2).
+  const eligibleSigners = g.mechanics.filter((m) =>
+    m.state === "Idle" &&
+    m.base === "B1" &&
+    !m.isLeadForeman &&
+    m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === "B1"),
+  );
+  if (eligibleSigners.length === 0) {
+    return { ok: false, error: `Sin B1 habilitado para firmar MEL (${ap.model}/${ap.engineVariant})` };
+  }
+  const signer = eligibleSigners[0]; // first match — el primer cert con rating disponible
+
   const newWo = deferWorkOrder(wo, tpl, g.clock.minute);
   if (!newWo) return { ok: false, error: "WO no diferible (AOG / Critical / sin melCategory) o ya cerrada" };
-  // Liberar mecánicos asignados (si los había) — vuelven a Idle directamente, no Returning.
-  // Decisión MVP: cuando difieres, los mecánicos no tienen que "volver de la rampa"; asumimos
-  // que la decisión se toma antes de moverlos. En Fase 4 podría matizarse.
+  // Liberar mecánicos asignados al fix (si los había) — la WO ya no necesita team activo.
   const releasedIds = new Set(wo.assignedMechanicIds);
   g.mechanics = g.mechanics.map((m) =>
     releasedIds.has(m.id)
@@ -1206,7 +1311,7 @@ export function deferWoManually(
       : m,
   );
   g.workOrders = g.workOrders.map((w) => (w.instanceId === woInstanceId ? newWo : w));
-  pushNotification(g, `📋 ${wo.airplaneRegistration}: WO diferida vía MEL`, "info");
+  pushNotification(g, `✍️ ${signer.name} firma MEL · ${wo.airplaneRegistration} diferida`, "info");
   return { ok: true };
 }
 

@@ -2336,9 +2336,13 @@ export class PixiDriver {
   // Proyección equirectangular pre-normalizada a [0..1] en el convertidor.
   // El renderer escala al viewport actual preservando aspect ratio del bbox.
 
-  /** Mapping sim stand id → ref OSM parking_position. */
+  /** Mapping sim stand id → ref OSM parking_position.
+   *  Pivot línea pura · iteración 2026-05-24: extendido para cubrir los 5 line stands
+   *  iniciales (H1-S1..H1-S5 → 01-05) + R1 (06) y H2-S1 (07) de progresión. Los
+   *  passthroughs ahora usan solo 08, 08A, 09 (3 stands para tráfico no contratado). */
   private static readonly F5D_STAND_MAP: Record<string, string> = {
-    "H1-S1": "01", "H1-S2": "02", "H1-S3": "03", "R1": "04", "H2-S1": "05",
+    "H1-S1": "01", "H1-S2": "02", "H1-S3": "03", "H1-S4": "04", "H1-S5": "05",
+    "R1": "06", "H2-S1": "07",
   };
 
   /** Rect dibujable en world coords F5D (fijo, no depende del viewport). El world tiene

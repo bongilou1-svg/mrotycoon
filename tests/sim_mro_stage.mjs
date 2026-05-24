@@ -34,24 +34,26 @@ expect(STAGE_CONFIG[4].buildDays === 30, "stage 4 30d");
 expect(STAGE_CONFIG[4].extraHangars === 3, "stage 4 +3 hangares (escala fixed cost)");
 
 // ---- currentStands según stage ----
+// Pivot línea pura · iteración 2026-05-24: stage 1 sube de 3 a 5 line stands
+// (aeropuerto regional realista). Progresión escala.
 console.log("\n=== currentStands escala con stage ===");
 {
   const s1 = currentStands(1);
-  expect(s1.length === 4 && s1.filter(s=>s.type==="line").length === 3 && s1.filter(s=>s.type==="base").length === 1, "stage 1: 3 line + 1 base");
+  expect(s1.length === 6 && s1.filter(s=>s.type==="line").length === 5 && s1.filter(s=>s.type==="base").length === 1, "stage 1: 5 line + 1 base");
   const s2 = currentStands(2);
-  expect(s2.length === 5 && s2.filter(s=>s.type==="line").length === 4, "stage 2: 4 line + 1 base");
+  expect(s2.length === 7 && s2.filter(s=>s.type==="line").length === 6, "stage 2: 6 line + 1 base");
   const s3 = currentStands(3);
-  expect(s3.length === 7 && s3.filter(s=>s.type==="line").length === 5 && s3.filter(s=>s.type==="base").length === 2, "stage 3: 5 line + 2 base");
+  expect(s3.length === 9 && s3.filter(s=>s.type==="line").length === 7 && s3.filter(s=>s.type==="base").length === 2, "stage 3: 7 line + 2 base");
   const s4 = currentStands(4);
-  expect(s4.length === 9 && s4.filter(s=>s.type==="line").length === 5 && s4.filter(s=>s.type==="base").length === 4, "stage 4: 5 line + 4 base");
+  expect(s4.length === 11 && s4.filter(s=>s.type==="line").length === 7 && s4.filter(s=>s.type==="base").length === 4, "stage 4: 7 line + 4 base");
 }
 
 // ---- currentLineStandIds y currentBaseStandIds ----
 console.log("\n=== current{Line,Base}StandIds ===");
 {
-  expect(currentLineStandIds(1).length === 3, "stage 1 line=3");
+  expect(currentLineStandIds(1).length === 5, "stage 1 line=5");
   expect(currentBaseStandIds(1).length === 1, "stage 1 base=1");
-  expect(currentLineStandIds(4).length === 5, "stage 4 line=5");
+  expect(currentLineStandIds(4).length === 7, "stage 4 line=7");
   expect(currentBaseStandIds(4).length === 4, "stage 4 base=4");
 }
 
@@ -142,9 +144,9 @@ console.log("\n=== tickConstruction finaliza build cuando completionMinute pasa 
 console.log("\n=== Stage 3 expande stands disponibles ===");
 {
   const g = createGame(balance, airlines, templates, 42, defs, dailyChecks);
-  expect(currentLineStandIds(g.mroStage).length === 3, "stage 1: 3 line stands");
+  expect(currentLineStandIds(g.mroStage).length === 5, "stage 1: 5 line stands");
   g.mroStage = 3;
-  expect(currentLineStandIds(g.mroStage).length === 5, "stage 3: 5 line stands");
+  expect(currentLineStandIds(g.mroStage).length === 7, "stage 3: 7 line stands");
   expect(currentBaseStandIds(g.mroStage).length === 2, "stage 3: 2 base stands");
 }
 

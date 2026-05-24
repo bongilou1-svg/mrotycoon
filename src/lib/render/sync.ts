@@ -10,10 +10,10 @@ import { DAY_MINUTES } from "../sim/time.ts";
 import { getFlightsForGameDay } from "../sim/schedule.ts";
 import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay } from "./types.ts";
 
-/** OSM parking positions de LEAS NO mapeadas al sim (F5D_STAND_MAP usa 01-05).
- *  Estos stands los usa el render para los aviones del schedule no trabajables
- *  por el jugador (passthrough traffic). */
-const PASSTHROUGH_OSM_STANDS = ["06", "07", "08", "08A", "09"];
+/** OSM parking positions de LEAS NO mapeadas al sim. Pivot iteración 2026-05-24:
+ *  F5D_STAND_MAP ahora usa 01-07 (sim ampliado). Passthroughs usan los 3 restantes
+ *  para tráfico del schedule no trabajable por el jugador (no contratado o not handled). */
+const PASSTHROUGH_OSM_STANDS = ["08", "08A", "09"];
 
 /** Duración visual del turnaround para passthroughs en minutos. Igual que el
  *  SCHEDULED_TURNAROUND_MIN del sim (55 min) — el avión se ve en stand 55min
@@ -130,7 +130,16 @@ export function buildRenderState(g: GameState): RenderState {
     const today = Math.floor(g.clock.minute / DAY_MINUTES) + 1;
     const dayStart = (today - 1) * DAY_MINUTES;
     const flights = getFlightsForGameDay(today);
-    const realCallsigns = new Set(airplanes.map((a) => a.registration));
+    // Pivot línea pura · iteración 2026-05-24 fix: comparar callsign del leg, NO la
+    // matrícula. Tras el cambio "registration = matrícula real EC-XXX + arrivalCallsign
+    // = IB3219 callsign IATA", el filtro de duplicados debe usar el callsign para no
+    // pintar el mismo vuelo dos veces (una como real EC-XXX en sim stand y otra como
+    // passthrough con callsign en OSM stand).
+    const realCallsigns = new Set(
+      g.airplanes
+        .filter((a) => a.arrivalMinute <= g.clock.minute && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > g.clock.minute))
+        .map((a) => a.arrivalCallsign ?? a.registration),
+    );
     const contractsByCode = new Map<string, string>();
     for (const c of g.contracts) {
       if (c.status !== "active") continue;

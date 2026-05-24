@@ -600,6 +600,31 @@ function renderMap(){
 // MEL deferrals, random events (runway closure, SB), audits Part-145. Por default
 // muestra solo eventos OPEN (activos). Toggle "All" añade los cerrados.
 // Click en cada card abre el modal de detalle existente (WO/check/contract).
+// Pivot línea pura · iteración 2026-05-24: explica por qué un callout sigue sin asignar
+// en lugar del genérico "⚠️ sin asignar". Casos:
+//  - Sin mec con type rating válido → "contrata o entrena"
+//  - Mec Idle disponible → "X B1 idle" (raro: auto-assign debería haberlo cogido)
+//  - Mecs OffShift → "X OffShift · hora extra +2h"
+//  - Mecs Working → "todos ocupados"
+function inferAssignmentStatus(wo, tpl, ap) {
+  if (wo.assignedMechanicIds.length > 0) return \`team \${wo.assignedMechanicIds.length}\`;
+  if (!tpl || !ap) return "⚠️ sin asignar";
+  const elig = game.mechanics.filter(m =>
+    !m.isLeadForeman &&
+    m.base === tpl.requiredCategory &&
+    m.typeRatings.some(r => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === tpl.requiredCategory)
+  );
+  if (elig.length === 0) return \`⚠️ sin \${tpl.requiredCategory}/\${ap.model}-\${ap.engineVariant} habilitado · contrata o entrena\`;
+  const idle = elig.filter(m => m.state === "Idle");
+  if (idle.length > 0) return \`⚠️ \${idle.length} \${tpl.requiredCategory} idle disponible (click)\`;
+  const offshift = elig.filter(m => m.state === "OffShift");
+  if (offshift.length > 0) {
+    const next = offshift[0].shift; // first one's shift
+    return \`⚠️ requiere \${tpl.requiredCategory} · \${offshift.length} OffShift (turno \${next} · hora extra +2h)\`;
+  }
+  return \`⚠️ \${tpl.requiredCategory} todos ocupados\`;
+}
+
 function buildEventFeed(){
   const events = [];
   // WOs callout + diferidas + completadas/failed (NO daily checks — esos van agrupados).
@@ -610,6 +635,7 @@ function buildEventFeed(){
     const isDeferred = wo.phase === "Deferred";
     const isClosed = wo.phase === "Completed" || wo.phase === "Failed";
     const isFinding = wo.parentWoInstanceId !== undefined;
+    const ap = game.airplanes.find(a => a.instanceId === wo.airplaneInstanceId);
     events.push({
       kind: "wo",
       id: wo.instanceId,
@@ -622,7 +648,7 @@ function buildEventFeed(){
         \`ATA \${tpl?.ata ?? "?"}\`,
         \`\${tpl?.requiredCategory ?? "?"}\`,
         \`SLA \${wo.slaMinute - game.clock.minute}m\`,
-        wo.assignedMechanicIds.length === 0 ? "⚠️ sin asignar" : \`team \${wo.assignedMechanicIds.length}\`,
+        inferAssignmentStatus(wo, tpl, ap),
       ],
       clickWoId: wo.instanceId,
     });
@@ -639,6 +665,8 @@ function buildEventFeed(){
     dailyByAirplane.get(key).wos.push(wo);
   }
   for (const { ap, wos } of dailyByAirplane.values()) {
+    // Ordenar subtareas por templateId (DC-001, DC-002, ...) para visualizar consistente
+    wos.sort((a, b) => (a.templateId || "").localeCompare(b.templateId || ""));
     const completed = wos.filter(w => w.phase === "Completed").length;
     const failed = wos.filter(w => w.phase === "Failed").length;
     const total = wos.length;
@@ -650,6 +678,17 @@ function buildEventFeed(){
       const tpl = game.dailyCheckTemplates?.find?.(t => t.id === w.templateId) || game.templates.find(t => t.id === w.templateId);
       return s + (tpl?.durationMinutes ?? 0) / 60;
     }, 0);
+    // Phase agregado del daily — mira fases reales de las subtareas
+    const anyActive = wos.some(w => w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework" || w.phase === "Inspection");
+    const anyAssigned = assignedSet.size > 0;
+    const aggPhase = isClosed ? (failed > 0 ? "Failed" : "Completed")
+      : anyActive ? "InProgress"
+      : anyAssigned ? "ToPlane"
+      : "Pending";
+    // Nombres de mecs asignados (no solo count)
+    const assignedNames = [...assignedSet]
+      .map(id => game.mechanics.find(m => m.id === id)?.name)
+      .filter(Boolean);
     events.push({
       kind: "daily",
       id: \`DC-\${ap.registration}\`,
@@ -657,13 +696,16 @@ function buildEventFeed(){
       open: !isClosed,
       icon: "🌙",
       title: \`\${esc(ap.registration)} · Daily check · \${completed}/\${total} subtareas\`,
-      phase: isClosed ? (failed > 0 ? "Failed" : "Completed") : "InProgress",
+      phase: aggPhase,
       meta: [
         \`book \${bookHours.toFixed(1)}h\`,
-        assignedSet.size === 0 ? "⚠️ sin asignar" : \`team \${assignedSet.size}\`,
+        assignedNames.length === 0 ? "⚠️ sin B1 idle" : \`👤 \${esc(assignedNames.join(", "))}\`,
         failed > 0 ? \`\${failed} subtarea\${failed>1?'s':''} failed\` : null,
       ].filter(Boolean),
       clickFleetReg: ap.registration,  // click abre modal del avión
+      // Pivot iteración 2026-05-24: stepper de subtareas (no de fases) — cada step
+      // = una DC-* WO. Visual: done verde · active azul con % · pending gris · failed rojo.
+      subtaskBar: wos,
     });
   }
   // A/C/D checks
@@ -730,6 +772,39 @@ function buildEventFeed(){
   // Orden cronológico inverso (más reciente primero).
   events.sort((a, b) => b.sortMinute - a.sortMinute);
   return events;
+}
+
+// Pivot iteración 2026-05-24: stepper de subtareas para daily check (WP que agrupa WOs).
+// Cada step = una DC-* WO. Done verde, active azul con %, pending gris, failed rojo.
+function renderSubtaskStepper(wos) {
+  let html = '<div class="phase-stepper">';
+  for (const w of wos) {
+    let cls = "pending";
+    let pct = 0;
+    if (w.phase === "Completed") cls = "done";
+    else if (w.phase === "Failed") cls = "failed";
+    else if (w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework" || w.phase === "Inspection") {
+      cls = "active";
+      const tpl = game.dailyCheckTemplates?.find?.(t => t.id === w.templateId) || game.templates.find(t => t.id === w.templateId);
+      if (tpl) {
+        const r = game.balance.phaseDurationRatios;
+        const d = tpl.durationMinutes;
+        const phaseDur = w.phase === "Inspection" ? d * r.inspection
+          : w.phase === "MainTask" ? d * r.mainTask
+          : w.phase === "Test" ? d * r.test
+          : w.phase === "Rework" ? d * r.rework
+          : d;
+        pct = phaseDur > 0 ? Math.min(100, (w.phaseElapsedMinutes / phaseDur) * 100) : 0;
+      }
+    } else if (w.phase === "ToPlane") {
+      cls = w.assignedMechanicIds.length > 0 ? "active" : "pending";
+      pct = 0;
+    }
+    const label = (w.templateId || "").replace("DC-", "");
+    html += \`<div class="phase-step \${cls}" style="--pct:\${pct.toFixed(0)}%"><span class="lbl">\${label}</span></div>\`;
+  }
+  html += '</div>';
+  return html;
 }
 
 // Pivot línea pura · iteración 2026-05-24: stepper visual de fases del WO.
@@ -811,11 +886,14 @@ function renderHangarEventTracking(){
     const clickable = dataAttr ? 'style="cursor:pointer"' : '';
     // Para WO callouts (no daily, no check, no random event), renderizar stepper
     // visual de fases: Travel → T-shoot → Fix → Test → Release.
+    // Para daily checks, renderizar stepper de SUBTAREAS (N subtareas, cada una un step).
     let stepper = "";
     if (e.kind === "wo" && e.clickWoId) {
       const w = game.workOrders.find(ww => ww.instanceId === e.clickWoId);
       const tpl = w ? game.templates.find(t => t.id === w.templateId) : null;
       if (w && tpl) stepper = renderPhaseStepper(w, tpl);
+    } else if (e.kind === "daily" && e.subtaskBar) {
+      stepper = renderSubtaskStepper(e.subtaskBar);
     }
     h += \`<article class="wo-card\${e.open ? '' : ' base'}" \${dataAttr} \${clickable}>
       <header class="wo-head">
@@ -1708,7 +1786,23 @@ function renderContractDetailModal(){
     </div>
 
     <h4>Flota basada en este aeropuerto (\${fleetAl.length})</h4>
-    <p class="muted" style="font-size:.85rem">\${fleetAl.map(f => esc(f.registration) + " (" + f.model + ")").join(" · ") || "Sin flota sembrada"}</p>
+    \${(() => {
+      if (fleetAl.length === 0) return '<p class="muted" style="font-size:.85rem">Sin flota sembrada</p>';
+      // Agrupar por modelo+motor para saber qué type ratings necesitas
+      const byType = {};
+      for (const f of fleetAl) {
+        const k = f.model + " / " + f.engineVariant;
+        if (!byType[k]) byType[k] = [];
+        byType[k].push(f.registration);
+      }
+      const summary = Object.entries(byType)
+        .map(([k, regs]) => \`<span class="chip" title="\${regs.join(', ')}"><strong>\${k}</strong> · \${regs.length}</span>\`)
+        .join(" ");
+      const detail = Object.entries(byType)
+        .map(([k, regs]) => \`<div style="margin:.25rem 0;font-size:.78rem"><strong class="mono">\${k}</strong> (\${regs.length}): <span class="muted">\${regs.join(", ")}</span></div>\`)
+        .join("");
+      return \`<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem">\${summary}</div>\${detail}<p class="muted" style="font-size:.75rem;margin-top:.3rem">Necesitas mecánicos B1 + B2 con type rating para CADA combo modelo/motor para certificar trabajos.</p>\`;
+    })()}
 
     <h4>WOs históricas de esta flota</h4>
     <div class="kvs">

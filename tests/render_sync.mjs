@@ -154,10 +154,11 @@ const g6 = createGame(balance, airlines, templates, 42, checks, dailyChecks);
 const r6a = buildRenderState(g6);
 g6.mroStage = 4;
 const r6b = buildRenderState(g6);
-expect(r6a.stands.length === 4, `stage 1 → 4 stands (line 3 + base 1), got ${r6a.stands.length}`);
-expect(r6b.stands.length === 9, `stage 4 → 9 stands (line 5 + base 4), got ${r6b.stands.length}`);
+// Pivot iteración 2026-05-24: stage 1 sube a 5 line stands, stage 4 a 7 line + 4 base.
+expect(r6a.stands.length === 6, `stage 1 → 6 stands (line 5 + base 1), got ${r6a.stands.length}`);
+expect(r6b.stands.length === 11, `stage 4 → 11 stands (line 7 + base 4), got ${r6b.stands.length}`);
 expect(r6b.stands.filter((s) => s.type === "base").length === 4, "stage 4 → 4 base stands");
-expect(r6b.stands.filter((s) => s.type === "line").length === 5, "stage 4 → 5 line stands");
+expect(r6b.stands.filter((s) => s.type === "line").length === 7, "stage 4 → 7 line stands");
 
 // --- 7. timeOfDay del RenderState refleja clock.minute ---
 const g7 = createGame(balance, airlines, templates, 42, checks, dailyChecks);

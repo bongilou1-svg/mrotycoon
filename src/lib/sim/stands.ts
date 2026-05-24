@@ -1,9 +1,13 @@
 // Catálogo de stands del MRO. Dinámico según `mroStage` desde Fase 5A Bloque X.
 //
-// Stage 1 (default): 3 line + 1 base (H1).
+// Pivot línea pura · iteración 2026-05-24: stage 1 sube de 3 a 5 line stands (alineado
+// con la realidad de OVD que tiene ~8-10 stands operativos en plataforma). La progresión
+// stage 2-4 desbloquea más capacidad + bases interiores.
+//
+// Stage 1 (default): 5 line + 1 base (H1) — aeropuerto regional con 5 plazas de plataforma.
 // Stage 2: +1 line extra (R1, "ramp expansion sin hangar").
 // Stage 3: +1 line + 1 base (H2 hangar interior 1 posición).
-// Stage 4: +2 base (H3 hangar mayor 3 posiciones, lo que da 4 base total — H1-B1, H2-B1, H3-B1, H3-B2).
+// Stage 4: +2 base (H3 hangar mayor 3 posiciones, lo que da 4 base total).
 
 import type { MroStage } from "$lib/types";
 
@@ -18,27 +22,29 @@ export interface Stand {
 
 /** Catálogo COMPLETO de stands posibles (stage 4 max). Para queries usar `currentStands(stage)`. */
 export const ALL_STANDS: readonly Stand[] = [
-  // Stage 1 base — siempre presentes
+  // Stage 1 base — 5 line stands operativos del aeropuerto regional
   { id: "H1-S1", type: "line" },
   { id: "H1-S2", type: "line" },
   { id: "H1-S3", type: "line" },
+  { id: "H1-S4", type: "line" },
+  { id: "H1-S5", type: "line" },
   { id: "H1-B1", type: "base" },
-  // Stage 2 — ramp expansion
+  // Stage 2 — ramp expansion (+1 line)
   { id: "R1",   type: "line" },
-  // Stage 3 — hangar interior 1 posición
+  // Stage 3 — hangar interior 1 posición (+1 line + 1 base)
   { id: "H2-S1", type: "line" },
   { id: "H2-B1", type: "base" },
-  // Stage 4 — hangar mayor 3 posiciones (3 base, 1 ya viene en stage 3)
+  // Stage 4 — hangar mayor 3 posiciones (+2 base)
   { id: "H3-B1", type: "base" },
   { id: "H3-B2", type: "base" },
 ] as const;
 
 /** Cuántos stands de cada tipo están disponibles en cada stage. */
 const COUNTS_PER_STAGE: Record<MroStage, { line: number; base: number }> = {
-  1: { line: 3, base: 1 },
-  2: { line: 4, base: 1 },
-  3: { line: 5, base: 2 },
-  4: { line: 5, base: 4 },
+  1: { line: 5, base: 1 },
+  2: { line: 6, base: 1 },
+  3: { line: 7, base: 2 },
+  4: { line: 7, base: 4 },
 };
 
 /** Stands disponibles en el stage actual. */

@@ -79,12 +79,17 @@ const a2 = { ...arrivals[1], arrivalMinute: a1.arrivalMinute + 5, scheduledDepar
 a2.standId = assignStand(a2, [a1]);
 expect(a2.standId !== a1.standId && INITIAL_STANDS.includes(a2.standId), `2do avión a stand distinto (${a2.standId})`);
 
-// 4to avión simultáneo sin stand libre
+// Overflow → ramp (stage 1 ahora tiene 5 line stands, así que el 6º sin stand)
+// Pivot iteración 2026-05-24: ampliada capacidad inicial 3→5 line.
 const a3 = { ...a2, registration: "EC-AAA", arrivalMinute: a1.arrivalMinute + 10, scheduledDepartureMinute: a1.scheduledDepartureMinute + 35 };
 a3.standId = assignStand(a3, [a1, a2]);
-const a4 = { ...a3, registration: "EC-BBB" };
+const a4 = { ...a3, registration: "EC-BBB", arrivalMinute: a1.arrivalMinute + 12 };
 a4.standId = assignStand(a4, [a1, a2, a3]);
-expect(a4.standId === "", "4to avión simultáneo NO gets stand (overflow → ramp)");
+const a5 = { ...a3, registration: "EC-CCC", arrivalMinute: a1.arrivalMinute + 14 };
+a5.standId = assignStand(a5, [a1, a2, a3, a4]);
+const a6 = { ...a3, registration: "EC-DDD", arrivalMinute: a1.arrivalMinute + 16 };
+a6.standId = assignStand(a6, [a1, a2, a3, a4, a5]);
+expect(a6.standId === "", "6º avión simultáneo NO gets stand (overflow → ramp)");
 
 // updateAirplaneStatuses
 const post = updateAirplaneStatuses([a1, a2, a3, a4], a1.scheduledDepartureMinute + 1);

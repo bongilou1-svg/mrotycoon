@@ -143,7 +143,13 @@ export function generateDailyArrivals(
 
 /**
  * Asigna stand a un avión nuevo. Devuelve el standId asignado o "" si no hay libre.
- * Un stand está ocupado si tiene un avión cuya ventana [arrivalMinute, scheduledDepartureMinute] solapa con el nuevo.
+ * Un stand está ocupado si tiene un avión cuya ventana de PRESENCIA REAL solapa con el nuevo.
+ *
+ * Pivot línea pura · iteración 2026-05-24 fix: antes el check usaba scheduledDeparture
+ * (lo planificado), pero un avión con WO bloqueante se queda más allá de su hora prevista.
+ * El nuevo avión llegaba y "veía libre" el stand → superposición visual. Fix: usar
+ * `actualDepartureMinute` si está set (avión ya salió), o tratarlo como ocupado hasta
+ * Infinity si sigue presente con departure pendiente.
  */
 export function assignStand(
   newArrival: Airplane,
@@ -151,13 +157,15 @@ export function assignStand(
   stands: readonly string[] = INITIAL_STANDS,
 ): string {
   for (const stand of stands) {
-    const conflicts = existing.some(
-      (p) =>
-        p.standId === stand &&
-        p.status !== "Departed" &&
-        !(p.scheduledDepartureMinute <= newArrival.arrivalMinute ||
-          p.arrivalMinute >= newArrival.scheduledDepartureMinute),
-    );
+    const conflicts = existing.some((p) => {
+      if (p.standId !== stand) return false;
+      if (p.status === "Departed") return false;
+      // Ventana de presencia REAL: desde arrival hasta actualDeparture (si ya salió).
+      // Si actualDeparture undefined → sigue presente, considerar Infinity (siempre ocupa).
+      const effectiveDep = p.actualDepartureMinute ?? Infinity;
+      // Conflicta si las ventanas se solapan: NOT (newArr ≥ effDep || newDep ≤ p.arr)
+      return !(effectiveDep <= newArrival.arrivalMinute || p.arrivalMinute >= newArrival.scheduledDepartureMinute);
+    });
     if (!conflicts) return stand;
   }
   return ""; // ramp / esperando

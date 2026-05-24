@@ -29,15 +29,16 @@ function expect(cond, msg, detail) {
 }
 
 // === H4+H5: stand catalog ===
+// Pivot iteración 2026-05-24: stage 1 ampliado a 5 line + 1 base = 6 stands totales.
 console.log("\n=== H4+H5: stand catalog ===");
-expect(STANDS.length === 4, `4 stands total (got ${STANDS.length})`);
-expect(LINE_STAND_IDS.length === 3, `3 line stands (got ${LINE_STAND_IDS.length})`);
+expect(STANDS.length === 6, `6 stands total stage 1 (got ${STANDS.length})`);
+expect(LINE_STAND_IDS.length === 5, `5 line stands (got ${LINE_STAND_IDS.length})`);
 expect(BASE_STAND_IDS.length === 1, `1 base stand (got ${BASE_STAND_IDS.length})`);
 expect(standType("H1-S1") === "line", "H1-S1 = line");
 expect(standType("H1-B1") === "base", "H1-B1 = base");
 expect(standType("noexiste") === undefined, "stand desconocido = undefined");
-expect(INITIAL_STANDS.length === 3 && !INITIAL_STANDS.includes("H1-B1"),
-  "INITIAL_STANDS (line landings) NO incluye base stand");
+expect(INITIAL_STANDS.length === 5 && !INITIAL_STANDS.includes("H1-B1"),
+  "INITIAL_STANDS (5 line landings) NO incluye base stand");
 
 // === H6: tick scheduled → in progress + completion ===
 console.log("\n=== H6: lifecycle Scheduled → InProgress → Completed ===");

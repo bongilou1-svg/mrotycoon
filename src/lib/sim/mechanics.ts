@@ -190,6 +190,10 @@ function generateLinePoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
     });
   }
 
+  // Pivot línea pura (tuning UX 2026-05-24): cada turno debe tener AL MENOS UN B1 con
+  // type rating completo CFM56+V2500 para todos los modelos A320/A321. Si Iberia te
+  // manda un A320 V2500 a las 22:00 (turno night) y solo tienes B1 CFM56-only, no
+  // puedes asignar → el juego no es jugable. Solución: los 3 B1 son dual-rating.
   addCertifier("B1", [
     { model: "A320", engineVariant: "CFM56", category: "B1" },
     { model: "A321", engineVariant: "CFM56", category: "B1" },
@@ -199,6 +203,8 @@ function generateLinePoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
   addCertifier("B1", [
     { model: "A320", engineVariant: "CFM56", category: "B1" },
     { model: "A321", engineVariant: "CFM56", category: "B1" },
+    { model: "A320", engineVariant: "V2500", category: "B1" },
+    { model: "A321", engineVariant: "V2500", category: "B1" },
   ], false, "afternoon");
   addCertifier("B2", [
     { model: "A320", engineVariant: "CFM56", category: "B2" },
@@ -207,10 +213,12 @@ function generateLinePoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
     { model: "A321", engineVariant: "V2500", category: "B2" },
   ], true, "morning");
   addHelper("afternoon");
-  // Night junior B1 — clave para daily checks de pernoctas
+  // Night junior B1 dual-rating — cobertura completa nocturna
   addCertifier("B1", [
     { model: "A320", engineVariant: "CFM56", category: "B1" },
     { model: "A321", engineVariant: "CFM56", category: "B1" },
+    { model: "A320", engineVariant: "V2500", category: "B1" },
+    { model: "A321", engineVariant: "V2500", category: "B1" },
   ], false, "night");
 
   return mechanics;

@@ -152,6 +152,20 @@ expect(deferableWo !== undefined, `WO diferible encontrada en ≤ 200 ticks (enc
 if (deferableWo) {
   const balBefore = g.economy.balance;
   const repBefore = Object.values(g.reputation.perAirline).reduce((s,v)=>s+v,0) / Object.keys(g.reputation.perAirline).length;
+  // Pivot línea pura · iteración 2026-05-24: deferWoManually requiere B1 elegible Idle
+  // con type rating válido para firmar el MEL. Aseguramos uno en el state del test.
+  const apForDefer = g.airplanes.find(a => a.instanceId === deferableWo.airplaneInstanceId);
+  if (apForDefer) {
+    const elig = g.mechanics.find(m =>
+      m.base === "B1" &&
+      m.typeRatings.some(r => r.model === apForDefer.model && r.engineVariant === apForDefer.engineVariant && r.category === "B1")
+    );
+    if (elig) {
+      elig.state = "Idle";
+      elig.assignedWoInstanceId = null;
+      elig.stateRemainingMinutes = 0;
+    }
+  }
   const res = deferWoManually(g, deferableWo.instanceId);
   expect(res.ok === true, "deferWoManually devuelve ok");
   const tpl = templates.find(t => t.id === deferableWo.templateId);
