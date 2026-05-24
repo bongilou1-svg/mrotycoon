@@ -1,9 +1,10 @@
 [
   {
     "id": "AL-001",
-    "name": "SkyAirlines",
+    "name": "Iberia Express",
+    "iataCode": "IB",
     "logo": "airlines/skyairlines.png",
-    "color": "#4DA3FF",
+    "color": "#E40000",
     "fleet": [
       { "model": "A320", "engineVariant": "CFM56" },
       { "model": "A320", "engineVariant": "V2500" },
@@ -13,9 +14,10 @@
   },
   {
     "id": "AL-002",
-    "name": "SunAirlines",
+    "name": "Vueling",
+    "iataCode": "VY",
     "logo": "airlines/sunairlines.png",
-    "color": "#FFB84D",
+    "color": "#FFCD00",
     "fleet": [
       { "model": "A320", "engineVariant": "CFM56" },
       { "model": "A321", "engineVariant": "V2500" }
@@ -24,9 +26,10 @@
   },
   {
     "id": "AL-003",
-    "name": "TreeAirlines",
+    "name": "Volotea",
+    "iataCode": "V7",
     "logo": "airlines/treeairlines.png",
-    "color": "#5BC97D",
+    "color": "#A20067",
     "fleet": [
       { "model": "A320", "engineVariant": "V2500" },
       { "model": "A321", "engineVariant": "V2500" }
@@ -35,9 +38,10 @@
   },
   {
     "id": "AL-004",
-    "name": "Starairlines",
+    "name": "easyJet",
+    "iataCode": "U2",
     "logo": "airlines/starairlines.png",
-    "color": "#C97DDC",
+    "color": "#FF6600",
     "fleet": [
       { "model": "A320", "engineVariant": "CFM56" },
       { "model": "A321", "engineVariant": "CFM56" },

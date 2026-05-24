@@ -11,8 +11,8 @@ import { rollDailyEvents, runwayClosedAt } from "./sim/events.ts";
 import { type ClockState, createClock, advance, DAY_MINUTES, WEEK_MINUTES } from "./sim/time.ts";
 import { type Rng, createRng } from "./sim/rng.ts";
 import {
-  generateInitialContracts, activeContracts, expireOffers, acceptOffer, rejectOffer,
-  tickContractMarket, OFFER_TICK_DAYS, _resetContractCounter,
+  generateInitialContracts, generateInitialContractsLine, activeContracts, expireOffers, acceptOffer, rejectOffer,
+  tickContractMarket, tickLineCompetition, OFFER_TICK_DAYS, LINE_COMPETITION_TICK_DAYS, _resetContractCounter,
 } from "./sim/contracts.ts";
 import { generateDailyArrivals, assignStand } from "./sim/airplanes.ts";
 import { generateScheduledArrivals } from "./sim/schedule.ts";
@@ -27,6 +27,33 @@ import {
   refreshMarket, shouldRefreshMarket, candidateToMechanic, signingBonusFor, severanceFor,
   tickTraining, resetCandidateCounter, MARKET_REFRESH_DAYS,
 } from "./sim/labor.ts";
+import { MECHANIC_CAP_INITIAL } from "./sim/mechanics.ts";
+
+/**
+ * Pivot MRO línea pura (2026-05-24): arrancamos siendo un MRO de línea de UNA aerolínea
+ * pequeña, sin hangares interiores. Stages 3-4 (hangar 1 posición y hangar mayor) quedan
+ * gated tras alcanzar madurez de endgame: rep media ≥80 con todas tus aerolíneas, balance
+ * sólido ≥1M €, y al menos 3 contratos activos (cartera diversificada). Cumple los tres
+ * → desbloquea hangares + amplía la oficina (cap mecánicos).
+ *
+ * Si alguna condición falla, los plots ghost se ocultan en el mapa y `startBuild` rechaza
+ * `target > 2`. `hireCandidate` también respeta el cap de oficina hasta el unlock.
+ */
+export const HANGAR_UNLOCK_MIN_REP_AVG = 80;
+export const HANGAR_UNLOCK_MIN_BALANCE_EUR = 1_000_000;
+export const HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS = 3;
+
+export function canUnlockHangars(g: GameState): boolean {
+  const reps = Object.values(g.reputation.perAirline);
+  if (reps.length === 0) return false;
+  const avg = reps.reduce((s, v) => s + v, 0) / reps.length;
+  const actives = g.contracts.filter((c) => c.status === "active").length;
+  return (
+    avg >= HANGAR_UNLOCK_MIN_REP_AVG &&
+    g.economy.balance >= HANGAR_UNLOCK_MIN_BALANCE_EUR &&
+    actives >= HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS
+  );
+}
 import {
   tickMoral, tickActiveTraining, startActiveTraining, applyMoralDelta, MORAL_EVENT_DELTAS,
   ACTIVE_TRAINING_COST_EUR, tickShiftTransitions,
@@ -73,6 +100,9 @@ export interface GameState {
   marketLastRefreshMinute: number;
   /** Minuto del último tick del mercado de contratos (Bloque M M4). */
   contractMarketLastTickMinute: number;
+  /** Pivot MRO línea pura (2026-05-24): minuto del último tick de competencia
+   *  (ventana de renovación ~30d). Independiente del tick legacy de mercado. */
+  lineCompetitionLastTickMinute: number;
   economy: EconomyState;
   reputation: ReputationState;
   notifications: NotificationItem[];
@@ -127,6 +157,17 @@ export interface GameState {
    *  (src/assets/airports/ovd.schedule.json) en lugar del generador estocástico.
    *  Default false para no romper save v7 ni tests legacy. */
   useScheduleArrivals?: boolean;
+  /** Pivot MRO línea pura (2026-05-24): modo de partida del jugador. Cuando true:
+   *   - El cap de oficina mecánicos aplica (hireCandidate respeta MECHANIC_CAP_INITIAL).
+   *   - Los plots ghost de hangares están ocultos hasta canUnlockHangars(g)===true.
+   *   - El sistema de competencia usa tickLineCompetition (no el legacy tickContractMarket).
+   *  Cuando false (default): comportamiento legacy completo (tests, partidas migradas v8). */
+  lineModeEnabled: boolean;
+}
+
+export interface CreateGameOptions {
+  /** Pivot MRO línea pura (2026-05-24). Default false (compat tests legacy). UI lo pasa true. */
+  lineMode?: boolean;
 }
 
 export function createGame(
@@ -136,7 +177,9 @@ export function createGame(
   seed = 42,
   checkDefinitions: CheckDefinition[] = [],
   dailyCheckTemplates: WorkOrderTemplate[] = [],
+  opts: CreateGameOptions = {},
 ): GameState {
+  const lineMode = opts.lineMode === true;
   const rng = createRng(seed);
   // Reset de contadores de instance IDs para que partidas con la misma seed sean
   // 100% reproducibles (ALI-* y MC-*).
@@ -144,10 +187,10 @@ export function createGame(
   resetMaintenanceCheckCounter(0);
   resetCandidateCounter(0);
   _resetContractCounter(1000);
-  // Contratos primero — necesitamos saber cuáles aerolíneas arrancan activas para sembrar
-  // flota solo en ellas (Bloque N fix). Las "offered" inicialmente NO traen flota — su flota
-  // nace al aceptar la oferta vía `acceptContractOffer`.
-  const initialContracts = generateInitialContracts(rng, airlines);
+  // Contratos: legacy (1 active + 2 offered) vs línea pura (1 active solo).
+  const initialContracts = lineMode
+    ? generateInitialContractsLine(rng, airlines)
+    : generateInitialContracts(rng, airlines);
   const activeAirlineIds = new Set(initialContracts.filter((c) => c.status === "active").map((c) => c.airlineId));
   const activeAirlines = airlines.filter((al) => activeAirlineIds.has(al.id));
   // Flota persistente solo para aerolíneas con contrato activo. FH=0 y luego envejece con
@@ -163,7 +206,7 @@ export function createGame(
     balance,
     fleet,
     contracts: initialContracts,
-    mechanics: generateInitialMechanics(rng, balance),
+    mechanics: generateInitialMechanics(rng, balance, { linePool: lineMode }),
     airplanes: [],
     workOrders: [],
     maintenanceChecks: [],
@@ -172,8 +215,17 @@ export function createGame(
     candidates: refreshMarket(marketRng, [], balance, 0),
     marketLastRefreshMinute: 0,
     contractMarketLastTickMinute: 0,
+    lineCompetitionLastTickMinute: 0,
     economy: createEconomy(balance.startingBalance),
-    reputation: createReputation(balance.startingReputation, airlines),
+    // Línea pura: aerolínea contratada arranca a rep 60 (margen para subir/bajar);
+    // legacy mantiene todas a startingReputation.
+    reputation: (() => {
+      const base = createReputation(balance.startingReputation, airlines);
+      if (lineMode) {
+        for (const id of activeAirlineIds) base.perAirline[id] = 60;
+      }
+      return base;
+    })(),
     notifications: [],
     rng,
     woRng: createRng(seed + 1),
@@ -190,7 +242,9 @@ export function createGame(
     kpiHistory: [],
     randomEvents: [],
     eventsRolledForDay: 0,
-    useScheduleArrivals: false,
+    // Línea pura: schedule real OVD activo por default. Legacy: arrivals stocásticos.
+    useScheduleArrivals: lineMode,
+    lineModeEnabled: lineMode,
   };
 }
 
@@ -241,9 +295,10 @@ function ensureArrivals(g: GameState, daysAhead = 3): void {
     for (const reg of inCheck) busyToday.add(reg);
 
     // F5D scope creep: si useScheduleArrivals está activo, generamos desde el snapshot
-    // OVD (sustituye al generador estocástico). Mapeo opaco al primer contract activo.
+    // OVD. Pivot MRO línea pura: pasamos `airlines` para mapear por iataCode (los vuelos
+    // VY/V7/U2 se descartan si no hay contrato firmado con esa aerolínea).
     if (g.useScheduleArrivals) {
-      const { arrivals, updatedFleet } = generateScheduledArrivals(d, g.contracts, g.fleet, busyToday);
+      const { arrivals, updatedFleet } = generateScheduledArrivals(d, g.contracts, g.fleet, busyToday, g.airlines);
       g.fleet = updatedFleet;
       const checkOccupied = new Set(
         g.maintenanceChecks.filter((c) => c.phase === "InProgress" && c.onPlatform).map((c) => c.standId),
@@ -706,17 +761,32 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
     g.candidates = g.candidates.filter((c) => c.expiresAtMinute > g.clock.minute);
   }
 
-  // 7e. Tick mercado de contratos (Bloque M M4): cada 7 días, aerolíneas con rep ≥20 sin
-  //     contrato activo/oferta viva pueden ofrecer uno nuevo, prob escalada por rep.
-  if (g.clock.minute - g.contractMarketLastTickMinute >= OFFER_TICK_DAYS * DAY_MINUTES) {
-    // Usa marketRng para no contaminar la trayectoria determinista principal (mismo patrón
-    // que el mercado laboral en Bloque K).
+  // 7e. Tick mercado de contratos. Dos sistemas según el modo de partida:
+  //  - Modo legacy (Fase 3 M4): aerolíneas sin iataCode → tickContractMarket cada 7d con
+  //    threshold rep≥20. Se mantiene para no romper tests pre-pivot.
+  //  - Modo línea pura (pivot 2026-05-24): aerolíneas con iataCode → tickLineCompetition
+  //    cada 30d con threshold rep≥70 + rescisión si rep≤20.
+  const lineMode = g.airlines.some((a) => a.iataCode);
+  if (!lineMode && g.clock.minute - g.contractMarketLastTickMinute >= OFFER_TICK_DAYS * DAY_MINUTES) {
     const cmRes = tickContractMarket(g.marketRng, g.contracts, g.airlines, g.reputation.perAirline, g.clock.minute);
     g.contracts = cmRes.contracts;
     g.contractMarketLastTickMinute = g.clock.minute;
     for (const offer of cmRes.newlyOffered) {
       const al = g.airlines.find((a) => a.id === offer.airlineId);
       pushNotification(g, `📨 Nueva oferta de ${al?.name ?? offer.airlineId} (${offer.id})`, "info");
+    }
+  }
+  if (lineMode && g.clock.minute - g.lineCompetitionLastTickMinute >= LINE_COMPETITION_TICK_DAYS * DAY_MINUTES) {
+    const lcRes = tickLineCompetition(g.marketRng, g.contracts, g.airlines, g.reputation.perAirline, g.clock.minute);
+    g.contracts = lcRes.contracts;
+    g.lineCompetitionLastTickMinute = g.clock.minute;
+    for (const offer of lcRes.newOffers) {
+      const al = g.airlines.find((a) => a.id === offer.airlineId);
+      pushNotification(g, `📋 ${al?.name ?? offer.airlineId} quiere contratar contigo (${offer.id})`, "success");
+    }
+    for (const cx of lcRes.cancellations) {
+      const al = g.airlines.find((a) => a.id === cx.airlineId);
+      pushNotification(g, `❌ ${al?.name ?? cx.airlineId} rescinde — contrato adjudicado a competidor`, "danger");
     }
   }
 
@@ -794,6 +864,12 @@ export function assignMechanicsManually(
  * Devuelve {ok:false} si el candidato no existe o no se puede pagar.
  */
 export function hireCandidate(g: GameState, candidateId: string): { ok: boolean; error?: string } {
+  // Pivot MRO línea pura: cap de oficina solo aplica en lineMode. Legacy (tests) no limita.
+  // Hasta que se desbloquee la ampliación (endgame) no se puede pasar de MECHANIC_CAP_INITIAL
+  // plantilla. Lead Foreman cuenta — el espacio físico es el mismo.
+  if (g.lineModeEnabled && g.mechanics.length >= MECHANIC_CAP_INITIAL && !canUnlockHangars(g)) {
+    return { ok: false, error: `Oficina llena (${MECHANIC_CAP_INITIAL}/${MECHANIC_CAP_INITIAL}) — amplía en endgame` };
+  }
   const cand = g.candidates.find((c) => c.id === candidateId);
   if (!cand) return { ok: false, error: "Candidato no encontrado o expirado" };
   const bonus = signingBonusFor(cand);
@@ -920,6 +996,10 @@ export function startBuild(g: GameState): { ok: boolean; error?: string } {
   if (g.activeBuild) return { ok: false, error: "Ya hay una construcción en curso" };
   if (g.mroStage >= 4) return { ok: false, error: "Etapa máxima alcanzada" };
   const target = (g.mroStage + 1) as MroStage;
+  // Pivot MRO línea pura: stages 3-4 bloqueados en lineMode hasta endgame. Legacy: libre.
+  if (g.lineModeEnabled && target > 2 && !canUnlockHangars(g)) {
+    return { ok: false, error: "Hangares bloqueados hasta endgame (rep≥80 · balance≥1M · ≥3 aerolíneas)" };
+  }
   const cfg = STAGE_CONFIG[target];
   if (g.economy.balance < cfg.costEur) {
     return { ok: false, error: `Balance insuficiente: necesitas ${cfg.costEur.toLocaleString()} €` };

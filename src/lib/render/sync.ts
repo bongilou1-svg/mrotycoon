@@ -3,7 +3,7 @@
 // Convierte GameState en RenderState puro y serializable. NO importa Pixi ni DOM.
 // Tests deterministas en `tests/render_sync.mjs`.
 
-import type { GameState } from "../game.ts";
+import { canUnlockHangars, type GameState } from "../game.ts";
 import { currentStands } from "../sim/stands.ts";
 import { runwayClosedAt } from "../sim/events.ts";
 import { DAY_MINUTES } from "../sim/time.ts";
@@ -112,5 +112,8 @@ export function buildRenderState(g: GameState): RenderState {
     stands: renderStands,
     mechanics,
     runwayClosed: runwayClosedAt(g.randomEvents, g.clock.minute),
+    // En lineMode el unlock depende de progreso (rep+balance+contratos). En legacy
+    // los plots ghost están siempre disponibles (comportamiento pre-pivot).
+    hangarBuildUnlocked: g.lineModeEnabled ? canUnlockHangars(g) : true,
   };
 }

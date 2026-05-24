@@ -270,7 +270,7 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 const BODY = `<div class="app">
   <header class="hud">
     <div class="hud-l"><span class="brand">MRO Tycoon</span><span class="ver">v0.2-alpha · Fase 3 H+I+J+K+L+M</span></div>
-    <div class="hud-c"><span class="clock" id="clock">Día 1 · 00:00</span><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="wk" id="week">Semana 1</span></div>
+    <div class="hud-c"><span class="clock" id="clock">Día 1 · 00:00</span><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="kpi" style="display:none;cursor:pointer;margin-left:.5rem" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
     <div class="hud-r">
       <div class="kpi">💰 <strong id="bal">250.000 €</strong></div>
       <div class="kpi compliance-kpi" id="kpi-rep" title="Reputación media — click para detalle por aerolínea">⭐ <strong id="rep">50</strong>/100</div>
@@ -294,6 +294,7 @@ const BODY = `<div class="app">
   <div class="body">
     <aside class="side">
       <button data-tab="hangar" class="active">🏭 Hangar <span class="badge" id="badge-wo">0</span></button>
+      <button data-tab="schedule">📅 Schedule <span class="badge" id="badge-schedule">0</span></button>
       <button data-tab="mechanics">⚙️ Mecánicos</button>
       <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
       <button data-tab="market">🤝 Mercado <span class="badge" id="badge-candidates">5</span></button>
@@ -307,9 +308,11 @@ const BODY = `<div class="app">
   <div class="modal-back" id="modal-back"><div class="modal" id="modal-content"></div></div>
 </div>`;
 
-const APP_JS = `// === MRO Tycoon vanilla UI driver — Fase 3 Bloque H ===
+const APP_JS = `// === MRO Tycoon vanilla UI driver — pivot MRO línea pura ===
 const S = window.Sim;
-let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, S.DATA.maintenanceChecks, S.DATA.dailyChecks);
+// Pivot MRO línea pura (2026-05-24): UI activa lineMode=true por default. Modo legacy
+// solo lo usan los tests automáticos.
+let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, S.DATA.maintenanceChecks, S.DATA.dailyChecks, { lineMode: true });
 let activeTab = "hangar";
 let hangarSubTab = "line"; // "line" | "base" | "fleet" | "deferrals"
 let selectedWoId = null;
@@ -319,6 +322,8 @@ let detailFleetReg = null;   // F5B-ε: matrícula seleccionada para modal de av
 let detailMechId = null;     // F5B-ε: id mecánico seleccionado para modal
 let detailCheckId = null;    // F5C extra: instanceId de check A/C/D para modal
 let detailContractId = null; // F5C extra: id de contrato para modal
+let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
+let scheduleFilter = "all";  // Pivot línea pura · P3: filtro panel schedule "all"|"arrival"|"departure"
 let manualCertId = "";
 let manualHelperIds = [];
 let hasSavedSlot = false;
@@ -883,6 +888,146 @@ function renderConstruction(){
   return h;
 }
 
+// ===========================================================================
+// Pivot MRO línea pura (2026-05-24) — P3: Panel Schedule del día
+// ===========================================================================
+function currentGameDay(){ return Math.floor(game.clock.minute / S.DAY_MINUTES) + 1; }
+function currentMinOfDay(){ return game.clock.minute % S.DAY_MINUTES; }
+function dayName(gd){
+  const idx = ((gd - 1) % 7 + 7) % 7;
+  return ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][idx];
+}
+
+function flightStatusFor(f, contractsActive){
+  // arrival sin contrato → "Sin contrato"
+  if (f.type === "arrival" && !contractsActive.has(f.airlineCode)) return { label: "Sin contrato", cls: "muted" };
+  const now = game.clock.minute;
+  const dayStart = (currentGameDay() - 1) * S.DAY_MINUTES;
+  const scheduledAbs = dayStart + f.scheduledMinute;
+  if (f.type === "arrival") {
+    // Buscar el avión real en g.airplanes cuyo registration coincida y arrivalMinute igual
+    const ap = game.airplanes.find(a => a.registration === f.callsign && Math.abs(a.arrivalMinute - scheduledAbs) < 5);
+    if (!ap) {
+      if (now < scheduledAbs - 5) return { label: "Esperado", cls: "" };
+      return { label: "—", cls: "muted" };
+    }
+    if (ap.status === "Departed") return { label: "Departed", cls: "muted" };
+    if (now >= ap.arrivalMinute && now < ap.scheduledDepartureMinute) return { label: ap.overnight ? "Pernocta 🌙" : "En stand", cls: "" };
+    if (now < ap.arrivalMinute) return { label: "Esperado", cls: "" };
+    return { label: "Departed", cls: "muted" };
+  } else {
+    // departure
+    if (now < scheduledAbs) return { label: "Pendiente salida", cls: "" };
+    if (now < scheduledAbs + 15) return { label: "Saliendo", cls: "" };
+    return { label: "Departed", cls: "muted" };
+  }
+}
+
+function renderSchedule(){
+  const gd = currentGameDay();
+  const flights = S.getFlightsForGameDay(gd);
+  const minOfDay = currentMinOfDay();
+  const contractsActive = new Set();
+  for (const c of game.contracts) {
+    if (c.status !== "active") continue;
+    const al = game.airlines.find(a => a.id === c.airlineId);
+    if (al?.iataCode) contractsActive.add(al.iataCode);
+  }
+  // Filtro
+  const filtered = scheduleFilter === "all" ? flights : flights.filter(f => f.type === scheduleFilter);
+  // Próximos 3 movimientos en la siguiente hora
+  const upcoming = flights
+    .filter(f => f.scheduledMinute >= minOfDay && f.scheduledMinute < minOfDay + 60)
+    .sort((a,b) => a.scheduledMinute - b.scheduledMinute)
+    .slice(0, 3);
+  const upcomingIds = new Set(upcoming.map(f => \`\${f.callsign}-\${f.type}-\${f.scheduledMinute}\`));
+
+  const arr = flights.filter(f => f.type === "arrival").length;
+  const dep = flights.filter(f => f.type === "departure").length;
+
+  let h = \`<h2>📅 Schedule — Día \${gd} (\${dayName(gd)})</h2>
+  <p class="muted" style="margin-bottom:.5rem">Aeropuerto LEAS (OVD) · \${flights.length} movimientos · \${arr} ARR / \${dep} DEP · \${contractsActive.size} aerolínea(s) contratada(s)</p>\`;
+
+  // Filtros + leyenda contratos activos
+  const fBtn = (id, label) => \`<button class="\${scheduleFilter===id?'active':''}" data-schedule-filter="\${id}" style="padding:.25rem .6rem;font-size:.8rem">\${label}</button>\`;
+  h += \`<div class="skin-bar" style="margin-bottom:.5rem">
+    <span class="skin-label">Filtro:</span>
+    \${fBtn('all','Todos')} \${fBtn('arrival','ARR')} \${fBtn('departure','DEP')}
+    <span class="skin-label" style="margin-left:1rem">Contratados:</span>
+    \${[...contractsActive].map(code => \`<span class="chip" style="background:rgba(63,185,80,.2);color:var(--success);border-color:var(--success)">\${code}</span>\`).join('') || '<span class="muted">ninguno</span>'}
+  </div>\`;
+
+  if (upcoming.length > 0) {
+    h += '<div class="warn-banner" style="background:rgba(77,163,255,.08);border-left-color:var(--accent);color:var(--text);margin-bottom:.75rem">📡 Próximos: ' +
+      upcoming.map(f => \`<strong>\${S.formatClock((gd-1)*S.DAY_MINUTES + f.scheduledMinute)} \${f.callsign}</strong> \${f.type==='arrival'?'ARR':'DEP'} \${f.remote}\`).join(' · ') + '</div>';
+  }
+
+  h += '<table><thead><tr><th>Hora</th><th>Callsign</th><th>Tipo</th><th>Ruta</th><th>Modelo</th><th>Operador</th><th>Estado</th></tr></thead><tbody>';
+  for (const f of filtered.sort((a,b) => a.scheduledMinute - b.scheduledMinute)) {
+    const time = String(Math.floor(f.scheduledMinute / 60)).padStart(2,'0') + ':' + String(f.scheduledMinute % 60).padStart(2,'0');
+    const st = flightStatusFor(f, contractsActive);
+    const isUpcoming = upcomingIds.has(\`\${f.callsign}-\${f.type}-\${f.scheduledMinute}\`);
+    const rowStyle = isUpcoming ? 'background:rgba(77,163,255,.08)' : '';
+    const typeBadge = f.type === "arrival"
+      ? '<span class="chip" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">ARR</span>'
+      : '<span class="chip" style="background:rgba(210,153,34,.15);color:var(--warning);border-color:rgba(210,153,34,.4)">DEP</span>';
+    const operatorBadge = contractsActive.has(f.airlineCode)
+      ? \`<span style="color:var(--success)">\${esc(f.airlineName)} (\${f.airlineCode})</span>\`
+      : \`<span class="muted">\${esc(f.airlineName)} (\${f.airlineCode})</span>\`;
+    h += \`<tr style="\${rowStyle}"><td class="mono">\${time}</td><td class="mono">\${esc(f.callsign)}</td><td>\${typeBadge}</td><td class="mono">\${f.type==='arrival'?'← ':'→ '}\${esc(f.remote)}</td><td>\${f.model}/\${f.engineVariant}</td><td>\${operatorBadge}</td><td class="\${st.cls}">\${st.label}</td></tr>\`;
+  }
+  h += '</tbody></table>';
+  return h;
+}
+
+// ===========================================================================
+// Pivot MRO línea pura (2026-05-24) — P4: Vista Pernocta nocturna
+// ===========================================================================
+/** Aviones que pernoctarán esta noche (flag overnight=true en g.airplanes,
+ *  scheduledDeparture en el día siguiente). */
+function overnightAirplanes(){
+  return game.airplanes.filter(a =>
+    a.overnight === true &&
+    a.scheduledDepartureMinute > game.clock.minute &&
+    a.status !== "Departed"
+  );
+}
+/** Solo mostramos el badge a partir de las 20:00 (informativo: la noche se acerca). */
+function shouldShowOvernightBadge(){
+  const hour = S.getHour(game.clock.minute);
+  return hour >= 20 || hour < 6;
+}
+
+function renderOvernightModal(){
+  if (!overnightModalOpen) return null;
+  const overnights = overnightAirplanes();
+  let inner = \`<header class="modal-head"><h3>🌙 Pernocta esta noche (\${overnights.length})</h3><button class="close" id="overnight-modal-close">×</button></header>
+  <div class="modal-body">\`;
+  if (overnights.length === 0) {
+    inner += '<p class="muted">Ningún avión pernocta esta noche. Los daily checks se programan automáticamente al detectar overnight (≥19:00).</p>';
+  } else {
+    inner += '<p class="muted" style="margin-bottom:.5rem">A las pernoctas se les emiten 2-4 daily checks automáticos (ruedas, frenos, fluidos, pre-flight). Los completa el equipo de mañana al arrancar a las 06:00.</p>';
+    inner += '<table><thead><tr><th>Matrícula</th><th>Modelo</th><th>Llegada</th><th>Salida prevista</th><th>Daily checks</th></tr></thead><tbody>';
+    for (const ap of overnights.sort((a,b) => a.arrivalMinute - b.arrivalMinute)) {
+      const dcs = game.workOrders.filter(w =>
+        w.airplaneInstanceId === ap.instanceId &&
+        w.templateId?.startsWith?.("DC-")
+      );
+      const dcStatus = dcs.length === 0 ? '<span class="muted">— (sin emitir aún)</span>'
+        : dcs.map(d => {
+            const tpl = game.dailyCheckTemplates?.find?.(t => t.id === d.templateId) || game.templates.find(t => t.id === d.templateId);
+            const lbl = tpl?.description?.slice?.(0, 24) ?? d.templateId;
+            const phase = d.phase === "Completed" ? "✓" : d.phase === "Failed" ? "✗" : "…";
+            return \`<span class="chip" title="\${esc(tpl?.description ?? d.templateId)}">\${phase} \${esc(lbl)}</span>\`;
+          }).join(" ");
+      inner += \`<tr><td class="mono"><strong>\${esc(ap.registration)}</strong></td><td>\${ap.model}/\${ap.engineVariant}</td><td class="mono">\${fmtClock(ap.arrivalMinute)}</td><td class="mono">\${fmtClock(ap.scheduledDepartureMinute)}</td><td>\${dcStatus}</td></tr>\`;
+    }
+    inner += '</tbody></table>';
+  }
+  inner += '</div>';
+  return inner;
+}
+
 function renderEconomy(){
   const startBal = game.balance.startingBalance;
   const delta = game.economy.balance - startBal;
@@ -1242,6 +1387,16 @@ function renderModal(){
     back.classList.add("open");
     return;
   }
+  // Pivot línea pura · P4: modal pernocta
+  if (overnightModalOpen) {
+    const html = renderOvernightModal();
+    if (html !== null && html !== lastModalHtml) {
+      document.getElementById("modal-content").innerHTML = html;
+      lastModalHtml = html;
+    }
+    back.classList.add("open");
+    return;
+  }
   if (!selectedWoId) { back.classList.remove("open"); lastModalHtml = ""; return; }
   const wo = game.workOrders.find(w => w.instanceId === selectedWoId);
   if (!wo) { back.classList.remove("open"); return; }
@@ -1423,6 +1578,26 @@ function render(){
   }
   document.getElementById("badge-offers").textContent = liveOffers().length;
   document.getElementById("badge-candidates").textContent = (game.candidates ?? []).length;
+  // Pivot línea pura · P3: badge schedule = movimientos restantes del día actual.
+  {
+    const minOfDay = currentMinOfDay();
+    const remainingFlights = S.getFlightsForGameDay(currentGameDay()).filter(f => f.scheduledMinute >= minOfDay).length;
+    const badgeSched = document.getElementById("badge-schedule");
+    if (badgeSched) badgeSched.textContent = remainingFlights;
+  }
+  // Pivot línea pura · P4: HUD overnight badge a partir de las 20:00.
+  {
+    const obadge = document.getElementById("overnight-badge");
+    if (obadge) {
+      if (shouldShowOvernightBadge()) {
+        const n = overnightAirplanes().length;
+        obadge.innerHTML = \`🌙 Pernocta: <strong>\${n}</strong>\`;
+        obadge.style.display = "";
+      } else {
+        obadge.style.display = "none";
+      }
+    }
+  }
 
   document.querySelectorAll(".side > button").forEach(b => {
     b.classList.toggle("active", b.dataset.tab === activeTab);
@@ -1450,6 +1625,7 @@ function render(){
         : "Fin de partida";
       html = \`<div class="game-over"><h1>🛑 GAME OVER</h1><p>\${reasonTxt}</p></div>\`;
     } else if (activeTab === "hangar")   html = renderHangar();
+    else if (activeTab === "schedule")   html = renderSchedule();
     else if (activeTab === "mechanics")  html = renderMechanics();
     else if (activeTab === "contracts")  html = renderContracts();
     else if (activeTab === "market")     html = renderMarket();
@@ -1496,6 +1672,12 @@ document.body.addEventListener("click", (e) => {
   if (e.target.id === "compliance-modal-close") { complianceModalOpen = false; invalidateModalCache(); render(); return; }
   if (e.target.closest("#kpi-rep")) { repModalOpen = true; invalidateModalCache(); render(); return; }
   if (e.target.id === "rep-modal-close") { repModalOpen = false; invalidateModalCache(); render(); return; }
+  // Pivot línea pura · P4: badge pernocta abre modal
+  if (e.target.closest("#overnight-badge")) { overnightModalOpen = true; invalidateModalCache(); render(); return; }
+  if (e.target.id === "overnight-modal-close") { overnightModalOpen = false; invalidateModalCache(); render(); return; }
+  // Pivot línea pura · P3: filtro panel schedule
+  const schedFilter = e.target.closest("[data-schedule-filter]");
+  if (schedFilter) { scheduleFilter = schedFilter.dataset.scheduleFilter; invalidatePanelCache(); render(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
   const toggleSched = e.target.closest("[data-toggle-schedule]");
@@ -1568,6 +1750,7 @@ document.body.addEventListener("click", (e) => {
     detailMechId = null;
     detailCheckId = null;
     detailContractId = null;
+    overnightModalOpen = false;
     invalidateModalCache();
     render();
     return;
@@ -1694,7 +1877,7 @@ async function doLoad() {
 async function doNewGame() {
   if (!confirm("¿Empezar nueva partida? Se perderá el progreso actual.")) return;
   await S.getStorage().clear();
-  const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, Math.floor(Math.random() * 1e9), S.DATA.maintenanceChecks, S.DATA.dailyChecks);
+  const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, Math.floor(Math.random() * 1e9), S.DATA.maintenanceChecks, S.DATA.dailyChecks, { lineMode: true });
   Object.assign(game, fresh);
   hasSavedSlot = false;
   selectedWoId = null;

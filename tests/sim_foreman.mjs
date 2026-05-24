@@ -118,6 +118,8 @@ console.log("\n=== Hire lead foreman activa autoAssignEnabled ===");
   const g = createGame(balance, airlines, templates, 42, defs, dailyChecks);
   g.autoPauseEnabled = false;
   expect(g.autoAssignEnabled === false, "default autoAssignEnabled=false");
+  // Pivot MRO línea pura: cap oficina 4. Despedir uno para abrir slot al lead.
+  fireMechanic(g, g.mechanics[g.mechanics.length - 1].id);
   // Inyectar un candidato lead manualmente
   g.candidates = [{
     id: "CND-LEAD", name: "TMA Test", age: 45, base: null, typeRatings: [],
@@ -136,6 +138,8 @@ console.log("\n=== Fire último lead foreman desactiva ===");
 {
   const g = createGame(balance, airlines, templates, 42, defs, dailyChecks);
   g.autoPauseEnabled = false;
+  // Pivot MRO línea pura: cap oficina 4. Despedir uno para abrir slot al lead.
+  fireMechanic(g, g.mechanics[g.mechanics.length - 1].id);
   g.candidates = [{
     id: "CND-LEAD-2", name: "TMA 2", age: 50, base: null, typeRatings: [],
     efficiency: 1.0, expectedWeeklySalary: 2500, experienceYears: 25,

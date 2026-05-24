@@ -69,13 +69,23 @@ console.log("\n=== airlines.json ===");
 const airlines = readJson(join(dataDir, "airlines.json"));
 expect(Array.isArray(airlines), "es un array");
 expect(airlines.length === 4, `4 aerolíneas (got ${airlines.length})`);
-const expectedNames = ["SkyAirlines", "SunAirlines", "TreeAirlines", "Starairlines"];
+// Pivot MRO línea pura (2026-05-24): aerolíneas renombradas a operadores OVD reales
+// con iataCode. La primera es Iberia Express (contrato inicial único del jugador).
+const expectedNames = ["Iberia Express", "Vueling", "Volotea", "easyJet"];
 for (const name of expectedNames) {
   expect(
     airlines.some((a) => a.name === name),
     `existe ${name}`,
   );
 }
+const expectedCodes = ["IB", "VY", "V7", "U2"];
+for (const code of expectedCodes) {
+  expect(
+    airlines.some((a) => a.iataCode === code),
+    `iataCode ${code} presente`,
+  );
+}
+expect(airlines[0].name === "Iberia Express", "primera aerolínea = Iberia Express (contrato inicial)");
 let fleetOk = true;
 for (const al of airlines) {
   if (!Array.isArray(al.fleet) || al.fleet.length === 0) fleetOk = false;

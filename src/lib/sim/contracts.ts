@@ -75,6 +75,8 @@ export function rollContractTerms(rng: Rng, params: ContractGenParams, tier: Con
 
 /**
  * Estado inicial al new game: 1 contrato activo (de la primera aerolínea) + 2 ofertados.
+ * Legacy — usado por tests pre-pivot. El nuevo arranque del juego usa
+ * `generateInitialContractsLine` (1 activo, sin ofertas).
  */
 export function generateInitialContracts(rng: Rng, airlines: readonly Airline[]): Contract[] {
   if (airlines.length < 3) {
@@ -106,6 +108,25 @@ export function generateInitialContracts(rng: Rng, airlines: readonly Airline[])
   }
 
   return out;
+}
+
+/**
+ * Pivot MRO línea pura (2026-05-24): arrancamos solo con la primera aerolínea (Iberia
+ * Express). Las demás existen pero sin contrato firmado — pueden ofrecer vía
+ * `tickLineCompetition` cuando ganes reputación. Aerolínea de arranque tier "standard".
+ */
+export function generateInitialContractsLine(rng: Rng, airlines: readonly Airline[]): Contract[] {
+  if (airlines.length < 1) {
+    throw new Error("Need at least 1 airline for initial contracts");
+  }
+  const activeTerms = rollContractTerms(rng, { reputation: 50, nowMinute: 0 }, "standard");
+  return [{
+    id: "C-001",
+    airlineId: airlines[0].id,
+    status: "active" as const,
+    offeredAtMinute: 0,
+    ...activeTerms,
+  }];
 }
 
 /** Aceptar una oferta (la mueve a "active"). Devuelve nueva lista. */
@@ -153,6 +174,19 @@ export function liveOffers(contracts: readonly Contract[], nowMinute: number): C
 export const AIRLINE_OFFER_REP_THRESHOLD = 20;
 /** Días entre ticks de generación de ofertas. */
 export const OFFER_TICK_DAYS = 7;
+
+// ---- Pivot MRO línea pura — competencia simple (2026-05-24) ----
+
+/** Rep mínima para que una aerolínea sin contrato te ofrezca uno. Más alto que el legacy
+ *  (20) porque arrancamos con rep base 50 — el umbral 70 obliga a ganar reputación real. */
+export const LINE_OFFER_REP_THRESHOLD = 70;
+/** Rep máxima bajo la cual una aerolínea con contrato te lo rescinde y se va con la
+ *  competencia. Mismo umbral que el legacy para coherencia. */
+export const LINE_CANCEL_REP_THRESHOLD = 20;
+/** Días entre ticks de competencia (ventana de renovación: ~mes ingame). */
+export const LINE_COMPETITION_TICK_DAYS = 30;
+/** Prob máxima de oferta cuando rep=100 (escala lineal desde 70). */
+export const LINE_OFFER_MAX_PROB = 0.6;
 
 let _contractCounter = 1000; // empezamos en 1000 para no chocar con C-001..C-003 iniciales
 export function _resetContractCounter(v = 1000): void { _contractCounter = v; }
@@ -207,4 +241,81 @@ export function tickContractMarket(
     newlyOffered.push(newContract);
   }
   return { contracts: updated, newlyOffered };
+}
+
+// ---- Pivot MRO línea pura — competencia simple (2026-05-24) ----
+
+export interface LineCompetitionResult {
+  contracts: Contract[];
+  /** Aerolíneas que acaban de ofrecerte un contrato (para notif "📋 X quiere contratar"). */
+  newOffers: Contract[];
+  /** Contratos que la competencia te ha arrebatado (rep ≤ LINE_CANCEL_REP_THRESHOLD).
+   *  Lleva el airlineId para que la UI pueda enseñar el nombre en la notif. */
+  cancellations: Array<{ contractId: string; airlineId: string }>;
+}
+
+/**
+ * Tick de competencia del MRO línea pura. Llamado desde `advanceGame` cada
+ * LINE_COMPETITION_TICK_DAYS días con un rng dedicado (marketRng) para no contaminar
+ * la trayectoria principal.
+ *
+ *  - Aerolíneas SIN contrato vivo (active u offered) + rep ≥ LINE_OFFER_REP_THRESHOLD
+ *    pueden ofrecerte un contrato. Probabilidad escala con (rep-70)/30 hasta MAX_PROB.
+ *  - Aerolíneas CON contrato activo y rep ≤ LINE_CANCEL_REP_THRESHOLD pierden el contrato
+ *    (status=cancelled) — "adjudicado a competidor".
+ *  - Solo cuentan aerolíneas con iataCode (las que aparecen en el schedule real).
+ */
+export function tickLineCompetition(
+  rng: Rng,
+  contracts: readonly Contract[],
+  airlines: readonly Airline[],
+  reputationByAirline: Readonly<Record<string, number>>,
+  nowMinute: number,
+): LineCompetitionResult {
+  const newOffers: Contract[] = [];
+  const cancellations: Array<{ contractId: string; airlineId: string }> = [];
+  let updated: Contract[] = [...contracts];
+
+  // 1) Rescisiones por rep baja.
+  for (let i = 0; i < updated.length; i++) {
+    const c = updated[i];
+    if (c.status !== "active") continue;
+    const rep = reputationByAirline[c.airlineId] ?? 50;
+    if (rep <= LINE_CANCEL_REP_THRESHOLD) {
+      updated[i] = { ...c, status: "cancelled" as const };
+      cancellations.push({ contractId: c.id, airlineId: c.airlineId });
+    }
+  }
+
+  // 2) Ofertas nuevas para aerolíneas sin contrato vivo con rep alta.
+  for (const al of airlines) {
+    if (!al.iataCode) continue; // solo aerolíneas reales del schedule
+    const rep = reputationByAirline[al.id] ?? 50;
+    if (rep < LINE_OFFER_REP_THRESHOLD) continue;
+    const alreadyEngaged = updated.some(
+      (c) =>
+        c.airlineId === al.id &&
+        (c.status === "active" ||
+          (c.status === "offered" && (c.expiresAtMinute === undefined || nowMinute < c.expiresAtMinute))),
+    );
+    if (alreadyEngaged) continue;
+    // Escala lineal: rep 70→0%, rep 100→MAX_PROB.
+    const slope = LINE_OFFER_MAX_PROB / (100 - LINE_OFFER_REP_THRESHOLD);
+    const prob = Math.max(0, Math.min(LINE_OFFER_MAX_PROB, (rep - LINE_OFFER_REP_THRESHOLD) * slope));
+    if (rng.next() > prob) continue;
+    const tier = pickTierForRep(rng, rep);
+    const terms = rollContractTerms(rng, { reputation: rep, nowMinute }, tier);
+    const newContract: Contract = {
+      id: nextContractId(),
+      airlineId: al.id,
+      status: "offered",
+      offeredAtMinute: nowMinute,
+      expiresAtMinute: nowMinute + OFFER_EXPIRY_MINUTES,
+      ...terms,
+    };
+    updated.push(newContract);
+    newOffers.push(newContract);
+  }
+
+  return { contracts: updated, newOffers, cancellations };
 }

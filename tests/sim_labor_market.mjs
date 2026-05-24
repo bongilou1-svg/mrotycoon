@@ -102,6 +102,12 @@ expect(m.trainingMinutes === 0, "training arranca a 0");
 
 console.log("\n=== integración: hireCandidate ===");
 const g = createGame(balance, airlines, templates, 42, defs);
+// Pivot MRO línea pura: cap oficina 4. Pool inicial ya está al cap; despedimos uno
+// para abrir slot y poder testear el flujo de hire.
+{
+  const sacrifice = g.mechanics[g.mechanics.length - 1];
+  fireMechanic(g, sacrifice.id);
+}
 const initialBalance = g.economy.balance;
 const initialMechCount = g.mechanics.length;
 const cand = g.candidates[0];

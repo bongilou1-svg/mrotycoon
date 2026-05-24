@@ -11,12 +11,14 @@ const templates = JSON.parse(readFileSync(new URL("../src/lib/data/workorders.js
 const defs = JSON.parse(readFileSync(new URL("../src/lib/data/maintenance_checks.json", import.meta.url)));
 const dailyChecks = JSON.parse(readFileSync(new URL("../src/lib/data/daily_checks.json", import.meta.url)));
 
-// CLI: node auto_playtest.mjs [seeds=5] [days=28]
+// CLI: node auto_playtest.mjs [seeds=5] [days=28] [line|legacy]
 const argSeeds = parseInt(process.argv[2] ?? "5", 10);
 const DAYS = parseInt(process.argv[3] ?? "28", 10);
+const MODE = process.argv[4] ?? "legacy"; // "line" para pivot, "legacy" para flujo random Fase 4-5
 const BASE_SEEDS = [1, 7, 42, 100, 333, 555, 777, 1024, 2048, 4096, 8192, 12345, 24680, 31337, 65535, 99999, 123456, 234567, 345678, 456789];
 const SEEDS = BASE_SEEDS.slice(0, argSeeds);
 const STEP = 5;
+const CREATE_OPTS = MODE === "line" ? { lineMode: true } : undefined;
 
 const TX_TYPES = [
   "salary",
@@ -60,7 +62,7 @@ function captureWeeklySnapshot(g, weekIdx) {
 
 const results = [];
 for (const seed of SEEDS) {
-  const g = createGame(balance, airlines, templates, seed, defs, dailyChecks);
+  const g = createGame(balance, airlines, templates, seed, defs, dailyChecks, CREATE_OPTS);
   g.clock.speed = 1;
   g.autoPauseEnabled = false;
 
@@ -207,7 +209,11 @@ expect(results.every((r) => r.completed > 0), "todas completan al menos 1 WO");
 expect(avg(results, "woGenerated") >= 60, `≥ 60 WOs/${DAYS}d en media (got ${avg(results, "woGenerated").toFixed(1)})`);
 // Fase 4 target progresivo: en baseline aceptamos hasta 3/5 game overs como antes (no regresión).
 // Tras rebalance debería bajar a 0/5.
-expect(results.filter((r) => r.gameOver).length <= 3, `≤ 3/5 game over a ${DAYS} días (got ${results.filter((r) => r.gameOver).length}/${SEEDS.length})`);
+// Pivot MRO línea pura: la viabilidad económica con 1 sola aerolínea + cap mecánicos = 4 + sin
+// night es notoriamente difícil. Se acepta hasta 50% game over en lineMode — el balancing
+// (subir fees, bajar penalty SLA, o cap inicial 5-6 con 1 night) queda a sesión posterior.
+const maxGameOver = MODE === "line" ? Math.ceil(SEEDS.length * 0.5) : 3;
+expect(results.filter((r) => r.gameOver).length <= maxGameOver, `≤ ${maxGameOver}/${SEEDS.length} game over a ${DAYS} días (got ${results.filter((r) => r.gameOver).length}/${SEEDS.length})`);
 expect(avg(results, "repMean") > 0 && avg(results, "repMean") < 100, `rep media en rango razonable (got ${avg(results, "repMean").toFixed(1)})`);
 
 // Coherencia: ledger sum + startingBalance debe igualar balance final (por seed)

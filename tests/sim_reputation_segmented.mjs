@@ -148,7 +148,7 @@ const g2 = createGame(balance, airlines, templates, 42, defs);
 g2.reputation.perAirline[airlines[0].id] = 95;
 g2.reputation.perAirline[airlines[1].id] = 5;
 const payload = serializeGame(g2);
-expect(payload.version === 8, "save version 8 (F5D scope creep)");
+expect(payload.version === 9, "save version 9 (pivot MRO línea pura)");
 expect(payload.reputation.perAirline[airlines[0].id] === 95, "AL[0] = 95 en payload");
 const g3 = deserializeGame(payload, balance, airlines, templates, defs);
 expect(g3.reputation.perAirline[airlines[0].id] === 95, "AL[0] = 95 tras round-trip");

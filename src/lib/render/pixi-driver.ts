@@ -2679,9 +2679,12 @@ export class PixiDriver {
     const ghostY = area.y + area.h + 80;
     const ghostW = 360, ghostH = 220, ghostGap = 80;
     const ghostStartX = area.x + area.w * 0.25;
+    // Pivot MRO línea pura (2026-05-24): los plots ghost solo se muestran si los hangares
+    // están desbloqueados (endgame). En el arranque del juego están ocultos — el jugador
+    // es un MRO de línea sin acceso a hangar interior.
     const ghosts: Array<{ stage: number; cost: string; x: number; available: boolean }> = [
-      { stage: 3, cost: "500.000 €", x: ghostStartX, available: state.mroStage < 3 },
-      { stage: 4, cost: "1.500.000 €", x: ghostStartX + ghostW + ghostGap, available: state.mroStage < 4 && state.mroStage >= 2 },
+      { stage: 3, cost: "500.000 €", x: ghostStartX, available: state.hangarBuildUnlocked && state.mroStage < 3 },
+      { stage: 4, cost: "1.500.000 €", x: ghostStartX + ghostW + ghostGap, available: state.hangarBuildUnlocked && state.mroStage < 4 && state.mroStage >= 2 },
     ];
     for (const ghost of ghosts) {
       if (!ghost.available) continue;

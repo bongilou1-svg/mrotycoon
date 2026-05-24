@@ -93,9 +93,17 @@ const SCHEDULED_LEG_FH = 1.5;
 const SCHEDULED_TURNAROUND_MIN = 55;
 
 /**
- * Genera arrivals desde el schedule para el game day N. Cada arrival se asigna
- * al primer contract activo (mapeo opaco — todos los IB/VY/V7/U2 se mapean a la
- * misma aerolínea del sim, perdiendo distinción operadora pero respetando horarios).
+ * Genera arrivals desde el schedule para el game day N. Pivot MRO línea pura (2026-05-24):
+ * cada vuelo se mapea por su `airlineCode` IATA al contrato activo cuya aerolínea tenga
+ * el mismo `iataCode`. Si no hay contrato vivo para esa aerolínea, el vuelo se SKIPea —
+ * el aeropuerto opera ese movimiento pero el jugador no recibe el avión (otro MRO o
+ * "self-handling" de la aerolínea).
+ *
+ * Fallback legacy (mapeo opaco al primer contract activo) cuando ninguna airline tiene
+ * `iataCode` definido — preserva compat con tests pre-pivot.
+ *
+ * @param airlines aerolíneas del game state (necesarias para resolver iataCode → airlineId).
+ *                 Si omitidas, usa el fallback legacy.
  *
  * @returns aviones a añadir + fleet actualizado (lazy entries para callsigns nuevos)
  */
@@ -104,22 +112,62 @@ export function generateScheduledArrivals(
   contracts: readonly Contract[],
   fleet: readonly FleetAircraft[],
   busyRegistrations: ReadonlySet<string> = new Set(),
+  airlines: readonly { id: string; iataCode?: string }[] = [],
 ): { arrivals: Airplane[]; updatedFleet: FleetAircraft[] } {
   const flights = getFlightsForGameDay(gameDay);
   const activeContracts = contracts.filter((c) => c.status === "active");
   if (activeContracts.length === 0) return { arrivals: [], updatedFleet: fleet as FleetAircraft[] };
-  const contract = activeContracts[0]; // mapeo opaco
-  const airlineId = contract.airlineId;
+
+  // Map iataCode → contract (solo si tenemos airlines con iataCode).
+  const contractByIata = new Map<string, Contract>();
+  let anyIata = false;
+  for (const c of activeContracts) {
+    const al = airlines.find((a) => a.id === c.airlineId);
+    if (al?.iataCode) {
+      contractByIata.set(al.iataCode, c);
+      anyIata = true;
+    }
+  }
+  // Fallback legacy: si nadie tiene iataCode, usa el primer contract (mapeo opaco).
+  const fallbackContract = activeContracts[0];
+
   const dayOffset = (gameDay - 1) * DAY_MINUTES;
   const arrivals: Airplane[] = [];
   let workingFleet: FleetAircraft[] = [...fleet];
 
+  // Pivot MRO línea pura: detección de pernoctas. Realidad AENA: arrival/departure
+  // llevan callsigns distintos (IB3217 arriba, IB3216 sale — son el mismo avión físico
+  // con números adyacentes). Heurística: por aerolínea, el ÚLTIMO arrival del día
+  // pernocta si llega a partir de las 19:00 (no hay rotación posterior). Modela
+  // realidad aeropuertos regionales europeos: el último vuelo se queda hasta primera
+  // hora del día siguiente.
+  const overnightDepartureOffset = 30 + 6 * 60; // 06:30 día siguiente
+  const OVERNIGHT_THRESHOLD_MIN = 19 * 60; // 19:00
+  const lastArrivalByCode = new Map<string, number>();
+  for (const f of flights) {
+    if (f.type !== "arrival") continue;
+    const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
+    if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
+  }
+  function isOvernightCandidate(f: { scheduledMinute: number; airlineCode: string }): boolean {
+    if (f.scheduledMinute < OVERNIGHT_THRESHOLD_MIN) return false;
+    return lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute;
+  }
+
   for (const f of flights) {
     if (f.type !== "arrival") continue;
     if (busyRegistrations.has(f.callsign)) continue;
+    const contract = anyIata
+      ? contractByIata.get(f.airlineCode)
+      : fallbackContract;
+    if (!contract) continue; // aerolínea sin contrato → skip vuelo
+    const airlineId = contract.airlineId;
     workingFleet = ensureFleetEntry(workingFleet, f.callsign, f.airlineCode, airlineId, f.model, f.engineVariant);
     const arrivalMinute = dayOffset + f.scheduledMinute;
-    const scheduledDepartureMinute = arrivalMinute + SCHEDULED_TURNAROUND_MIN;
+    const overnight = isOvernightCandidate(f);
+    const scheduledDepartureMinute = overnight
+      ? dayOffset + DAY_MINUTES + overnightDepartureOffset
+      : arrivalMinute + SCHEDULED_TURNAROUND_MIN;
     arrivals.push({
       instanceId: nextAirplaneInstanceId(),
       registration: f.callsign,
@@ -131,8 +179,8 @@ export function generateScheduledArrivals(
       scheduledDepartureMinute,
       status: "Idle",
       flightHoursThisLeg: SCHEDULED_LEG_FH,
+      overnight: overnight || undefined,
     });
-    // Aplica FH+cycles al fleet (la matrícula acumula como rotación real)
     workingFleet = applyLandingToFleet(workingFleet, f.callsign, SCHEDULED_LEG_FH);
   }
 

@@ -24,7 +24,7 @@ g1.autoPauseEnabled = false;
 for (let i = 0; i < 50; i++) advanceGame(g1, 30);
 
 const payload = serializeGame(g1);
-expect(payload.version === 8, "version=8 (F5D: useScheduleArrivals + snapshot OVD)");
+expect(payload.version === 9, "version=9 (pivot MRO línea pura)");
 expect(typeof payload.savedAt === "string", "savedAt presente");
 expect(payload.clock.minute === g1.clock.minute, `minuto guardado coincide (${payload.clock.minute})`);
 expect(payload.contracts.length === g1.contracts.length, "contratos guardados");
@@ -144,7 +144,7 @@ expect(gV7.useScheduleArrivals === false, `v7 sin flag → default false en v8 (
 const gWithSchedule = createGame(balance, airlines, templates, 42);
 gWithSchedule.useScheduleArrivals = true;
 const v8Payload = serializeGame(gWithSchedule);
-expect(v8Payload.version === 8, "v8 al serializar");
+expect(v8Payload.version === 9, "v9 al serializar (incluye lineCompetitionLastTickMinute)");
 expect(v8Payload.useScheduleArrivals === true, "v8 preserva flag true");
 const gV8 = deserializeGame(v8Payload, balance, airlines, templates);
 expect(gV8.useScheduleArrivals === true, "v8 round-trip preserva flag");

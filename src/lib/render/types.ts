@@ -70,4 +70,8 @@ export interface RenderState {
   mechanics: RenderMechanic[];
   /** Hay un runway_closure activo ahora — el driver puede flashear "PISTA CERRADA". */
   runwayClosed: boolean;
+  /** Pivot MRO línea pura: si false, NO renderizar los plots ghost Stage 3/4 (están
+   *  reservados para endgame y aún no son comprables). El sim también rechaza startBuild
+   *  para target>2 con este flag false. Default false en arranque post-pivot. */
+  hangarBuildUnlocked: boolean;
 }

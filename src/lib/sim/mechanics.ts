@@ -8,6 +8,14 @@
 import type { Mechanic, Balance, WorkOrderTemplate } from "$lib/types";
 import { randFloat, randPick, type Rng } from "./rng.ts";
 
+/**
+ * Pivot MRO línea pura (2026-05-24): la oficina del MRO sólo cabe 4 técnicos. El pool
+ * inicial de 4 + cap de hire en 4 modela "técnico local de aeropuerto regional" hasta el
+ * endgame. Lead Foreman cuenta — el espacio físico es el mismo. Se desbloquea con el
+ * mismo flag que el hangar (rep+balance+contratos múltiples).
+ */
+export const MECHANIC_CAP_INITIAL = 4;
+
 const FIRST_NAMES = [
   "Pedro", "Lucía", "Javi", "Miguel", "Carla", "Andrés", "María",
   "Diego", "Sofía", "Rubén", "Marta", "Iván", "Elena", "Carlos",
@@ -28,9 +36,19 @@ function generateMechanicId(idx: number): string {
 }
 
 /**
- * Pool inicial determinista (con seed). 7 mecánicos cubriendo el universo CFM56/V2500.
+ * Pool inicial determinista (con seed). Dos modos:
+ *  - legacy (default, Fase 4-5): 7 mecánicos · 3 morning / 2 afternoon / 2 night.
+ *  - linePool (pivot MRO línea pura 2026-05-24): 4 mecánicos · 2 morning / 2 afternoon / 0 night.
+ *
+ * El modo línea pura cabe en la oficina mínima del MRO regional. Sin night → daily checks
+ * empiezan a las 06:00 (penalty parcial aceptable hasta endgame unlock).
  */
-export function generateInitialMechanics(rng: Rng, balance: Balance): Mechanic[] {
+export function generateInitialMechanics(rng: Rng, balance: Balance, opts: { linePool?: boolean } = {}): Mechanic[] {
+  if (opts.linePool) return generateLinePoolMechanics(rng, balance);
+  return generateLegacyPoolMechanics(rng, balance);
+}
+
+function generateLegacyPoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
   const mechanics: Mechanic[] = [];
   let idx = 1;
 
@@ -108,6 +126,85 @@ export function generateInitialMechanics(rng: Rng, balance: Balance): Mechanic[]
   // 2 helpers — uno reforzando morning (la franja más activa), otro a night para apoyo nocturno
   addHelper("morning");
   addHelper("night");
+
+  return mechanics;
+}
+
+/**
+ * Pool línea pura (pivot 2026-05-24): plantilla mínima de 4 técnicos para arrancar como
+ * "técnico local del aeropuerto regional".
+ *   - 1 B1 senior morning con CFM56+V2500 (cubre toda la flota Iberia/VY narrowbody)
+ *   - 1 B1 junior afternoon CFM56 (refuerzo turno tarde, vuelos U2/V7)
+ *   - 1 B2 senior morning CFM56+V2500 (avionics)
+ *   - 1 helper afternoon
+ * Sin night: los daily checks de pernocta tardarán en arrancar (mecs llegan a las 06:00).
+ * Aceptable como trade-off del juego inicial — el jugador desbloquea night/más mecs en endgame.
+ */
+function generateLinePoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
+  const mechanics: Mechanic[] = [];
+  let idx = 1;
+
+  function addCertifier(
+    base: "B1" | "B2",
+    ratings: Array<{ model: "A320" | "A321"; engineVariant: "CFM56" | "V2500"; category: "B1" | "B2" }>,
+    isSenior: boolean,
+    shift: "morning" | "afternoon" | "night" = "morning",
+  ): void {
+    const salaryKey = isSenior
+      ? base === "B1" ? "b1Senior" : "b2Senior"
+      : base === "B1" ? "b1Junior" : "b2Junior";
+    mechanics.push({
+      id: generateMechanicId(idx++),
+      name: generateName(rng),
+      base,
+      typeRatings: ratings,
+      efficiency: Number(randFloat(rng, isSenior ? 0.95 : 0.85, isSenior ? 1.15 : 1.0).toFixed(2)),
+      weeklySalary: balance.salaries[salaryKey],
+      state: "Idle",
+      assignedWoInstanceId: null,
+      assignedCheckInstanceId: null,
+      stateRemainingMinutes: 0,
+      trainingMinutes: 0,
+      shift,
+      moral: 70,
+    });
+  }
+
+  function addHelper(shift: "morning" | "afternoon" | "night" = "morning"): void {
+    mechanics.push({
+      id: generateMechanicId(idx++),
+      name: generateName(rng),
+      base: null,
+      typeRatings: [],
+      efficiency: Number(randFloat(rng, 0.6, 0.85).toFixed(2)),
+      weeklySalary: balance.salaries.helper,
+      state: "Idle",
+      assignedWoInstanceId: null,
+      assignedCheckInstanceId: null,
+      stateRemainingMinutes: 0,
+      trainingMinutes: 0,
+      shift,
+      moral: 70,
+    });
+  }
+
+  addCertifier("B1", [
+    { model: "A320", engineVariant: "CFM56", category: "B1" },
+    { model: "A321", engineVariant: "CFM56", category: "B1" },
+    { model: "A320", engineVariant: "V2500", category: "B1" },
+    { model: "A321", engineVariant: "V2500", category: "B1" },
+  ], true, "morning");
+  addCertifier("B1", [
+    { model: "A320", engineVariant: "CFM56", category: "B1" },
+    { model: "A321", engineVariant: "CFM56", category: "B1" },
+  ], false, "afternoon");
+  addCertifier("B2", [
+    { model: "A320", engineVariant: "CFM56", category: "B2" },
+    { model: "A321", engineVariant: "CFM56", category: "B2" },
+    { model: "A320", engineVariant: "V2500", category: "B2" },
+    { model: "A321", engineVariant: "V2500", category: "B2" },
+  ], true, "morning");
+  addHelper("afternoon");
 
   return mechanics;
 }

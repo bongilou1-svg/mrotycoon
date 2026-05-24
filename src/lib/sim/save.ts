@@ -18,8 +18,9 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  v5 = añade candidates + marketLastRefreshMinute + candidateCounter (Bloque K).
  *  v6 = reputation pasa de {value:n} a {perAirline:{id:n,…}} + contractMarketLastTickMinute (Bloque M).
  *  v7 = Fase 5: mroStage + activeBuild + kpiHistory + randomEvents + flags.
- *  v8 = F5D: añade useScheduleArrivals (snapshot OVD opcional). Default false en migración v7. */
-export const SAVE_VERSION = 8;
+ *  v8 = F5D: añade useScheduleArrivals (snapshot OVD opcional). Default false en migración v7.
+ *  v9 = pivot MRO línea pura (2026-05-24): añade lineCompetitionLastTickMinute. Default 0 en migr. */
+export const SAVE_VERSION = 9;
 
 export interface GameSavePayload {
   version: number;
@@ -57,6 +58,10 @@ export interface GameSavePayload {
   eventsRolledForDay?: number;
   // v8 (F5D scope creep): toggle snapshot OVD real.
   useScheduleArrivals?: boolean;
+  // v9 (pivot MRO línea pura): tick de competencia simple (ventana 30d).
+  lineCompetitionLastTickMinute?: number;
+  // v9 (pivot MRO línea pura): modo de partida — cap oficina + competencia diferente.
+  lineModeEnabled?: boolean;
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -95,6 +100,8 @@ export function serializeGame(g: GameState): GameSavePayload {
     randomEvents: g.randomEvents,
     eventsRolledForDay: g.eventsRolledForDay,
     useScheduleArrivals: g.useScheduleArrivals ?? false,
+    lineCompetitionLastTickMinute: g.lineCompetitionLastTickMinute,
+    lineModeEnabled: g.lineModeEnabled,
   };
 }
 
@@ -112,8 +119,8 @@ export function deserializeGame(
   dailyCheckTemplates: WorkOrderTemplate[] = [],
 ): GameState {
   // v8 puede leer v7 y v6 con migración (campos nuevos default). v5 y previos requieren upgrade explícito.
-  if (payload.version !== SAVE_VERSION && payload.version !== 7 && payload.version !== 6) {
-    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 7 o 6 con migración)`);
+  if (payload.version !== SAVE_VERSION && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
+    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 8, 7 o 6 con migración)`);
   }
   resetAirplaneInstanceCounter(payload.aliCounter);
   resetMaintenanceCheckCounter(payload.mcCounter);
@@ -158,5 +165,9 @@ export function deserializeGame(
     eventsRolledForDay: payload.eventsRolledForDay ?? 0,
     // v8 (F5D): default false para saves v7 — el snapshot OVD entra sólo si el jugador activa toggle.
     useScheduleArrivals: payload.useScheduleArrivals ?? false,
+    // v9 (pivot línea pura): default 0 para saves v8 — el primer tick disparará a los 30d ingame.
+    lineCompetitionLastTickMinute: payload.lineCompetitionLastTickMinute ?? 0,
+    // v9 (pivot línea pura): saves v8 y anteriores eran legacy → default false.
+    lineModeEnabled: payload.lineModeEnabled ?? false,
   };
 }

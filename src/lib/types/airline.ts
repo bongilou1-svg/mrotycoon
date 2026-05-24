@@ -14,4 +14,8 @@ export interface Airline {
   /** Fase 5A Y1: matrículas que pernoctan/operan habitualmente desde NUESTRO aeropuerto.
    *  Pequeña 3-5 / mediana 6-10 / grande 12-15. Default 8 si missing (backward compat). */
   basedAircraftCount?: number;
+  /** Pivot MRO línea pura (2026-05-24): código IATA real para enlazar con el snapshot
+   *  OVD (callsigns IB/VY/V7/U2). Permite filtrar arrivals del schedule por contratos
+   *  vivos. Si missing, la aerolínea no aparece en el schedule real. */
+  iataCode?: string;
 }

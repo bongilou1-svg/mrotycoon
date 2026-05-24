@@ -3,6 +3,8 @@
 > Panel central. Estado por fase, alertas vivas, parking de ideas.
 
 ## Resumen 1-line
+**Pivot MRO línea pura ✅ DONE** (2026-05-24, sesión intra-F6) — Arranque del juego cambia a "técnico local aeropuerto regional": 1 aerolínea contratada (Iberia Express, rep 60), oficina cap 4 mecs sin night, hangares Stage 3-4 gated hasta endgame (rep avg≥80 + balance≥1M + ≥3 contratos), schedule OVD real activo por default, **panel 📅 Schedule del día** + **HUD badge 🌙 Pernocta** (modal con tabla matrícula/llegada/daily checks), competencia 30d (rep≥70 oferta auto, rep≤20 rescisión). 4 aerolíneas renombradas a operadores OVD reales con iataCode (IB/VY/V7/U2). Save v9 backward compat v8/v7/v6. Opt-in `{lineMode:true}` en createGame preserva tests legacy. **940/940 tests verdes** (+67 net). Release: [`builds/v0.6-line-mro.html`](builds/v0.6-line-mro.html) (~1.4 MB). Doc cierre: [`docs/CIERRE_pivot_line.md`](docs/CIERRE_pivot_line.md). ⚠️ Parking: viabilidad económica auto-playtest 10×28d Δ-290k € + 4/10 bankruptcy (penalty SLA -408k € dominante — tunear baseFee/payment/penalty Iberia inicial en próxima sesión).
+
 **Fase 5D ✅ CERRADA (mapa Pixi v8 + OSM real OVD)** (2026-05-24) — Skin esquemático CIC dark navy con paleta exacta del SVG north-star + OSM real LEAS (pista 11/29, 13 taxiways, terminal, 16 parking_positions) + pan/zoom/WASD/minimapa + interacción clicks + scope creep schedule OVD (86 vuelos × 7 días + pool 24 matrículas con FC/FH plausibles + toggle UI). Save v8 con migración v7. **873/873 tests verdes** (+70 net F5D). Release: [`builds/v0.5d-pixi-map.html`](builds/v0.5d-pixi-map.html) (~1.4 MB). Doc: [`docs/CIERRE_fase5d.md`](docs/CIERRE_fase5d.md). Atribución ODbL visible. Próximo paso: F6 Pre-Steam.
 
 **Modal Check + Modal Contrato + X5 A en plataforma** (extensión misma sesión 2026-05-15) — Click-to-detail completado: modal Check con team/fee/penalty/manMinutes/parking + nightStarted/onPlatform flags, modal Contrato con tier/términos/flota basada/WO stats. X5: stage 2 habilita A-check en LINE_STAND con efficiency 0.7× (tarda +43% acumular manMinutes) cuando no hay BaseStand libre. Badge ⛅ en cards de check. `assignStand` excluye line stands ocupados por A-check on-platform. **803/803 tests verdes**. Bundle final: [`builds/v0.5g-final.html`](builds/v0.5g-final.html) (271 KB).
@@ -282,6 +284,29 @@ Ver sección "Decisiones cerradas" en `CLAUDE.md`.
 
 ## 🌟 Parking (ideas que aparecen a mitad, NO al código)
 
+### Pivot MRO línea pura — balancing económico (2026-05-24) ⚠️ HEROE BUG
+
+Auto-playtest 10×28d en lineMode:
+- Δbal medio **-290k €**, 4/10 game over (bankruptcy)
+- Fuga dominante: penalty SLA **-408k €/28d** (140% del gasto total)
+- 24.6 WOs late / 45.1 completed = 54% late ratio
+- Solo Iberia (12 vuelos/día) → 69 WOs/28d (vs 168 esperadas → capacidad perdida)
+
+Causa raíz: 4 mecs sin night vs 7 mecs con 2 night anteriores. No hay cobertura nocturna,
+los daily checks de pernoctas no se ejecutan hasta 06:00, las WOs late explotan, penalty
+SLA mata la economía.
+
+Tunings candidatos (NO auto-aplicados, brief lo prohíbe — sesión siguiente):
+1. **Subir baseFee Iberia inicial** 12-22k → 20-30k €/sem en `rollContractTerms`
+2. **Subir paymentPerWOMinute** 50-72 → 65-90 €/min
+3. **Bajar penaltyPerLateMinute** 3-8 → 2-4 €/min
+4. **Cap mecánicos 5 + 1 night** en vez de 4 sin night
+5. **Tutorial / hint**: cuando rep Iberia ≥70 → notif "tu rep es alta, espera ofertas"
+
+Una pasada Q6-style (20 seeds × 28d iterativa) debería bajar game over a ≤2/10.
+
+
+
 ### Para Fase 4 (rebalance + progresión)
 
 - **Día/noche como pilar de simulación MRO** (playtest Dani 2026-05-15). De día: vuelos, escalas, turnarounds cortos, AOG ocasional, line en plataforma. De noche: pernocta → daily checks (ruedas, frenos, fluidos), pre-flight, incluso A-check si hay personal. Mete un eje temporal nuevo en sim que hoy no existe.
@@ -310,6 +335,8 @@ Ver sección "Decisiones cerradas" en `CLAUDE.md`.
 ---
 
 ## Última actualización
+2026-05-24 (**PIVOT MRO LÍNEA PURA DONE**) — Tras cerrar F5D, Dani pivotó scope del juego a "técnico local aeropuerto regional". 5 puntos del brief implementados en 1 sesión: hangares fuera del onboarding (gating Stage 3-4 hasta endgame), oficina cap 4 mecs en terminal OSM real, panel Schedule del día (tabla cronológica + filtros ARR/DEP + chips operadores contratados), HUD badge pernocta 🌙 + modal con tabla matrícula/checks asignados, contrato inicial único Iberia Express + competencia simple 30d (rep≥70 oferta, rep≤20 rescisión). Decisión arquitectural: opt-in `{lineMode:true}` en createGame para preservar comportamiento legacy (40+ tests pasan sin tocarse). Save v9 con migración v8/v7/v6. Aerolíneas renombradas a operadores OVD reales: Iberia Express/Vueling/Volotea/easyJet con iataCode IB/VY/V7/U2. `generateScheduledArrivals` filtra por iataCode → solo IB genera arrivals; VY/V7/U2 aparecen en panel Schedule pero NO son trabajo MRO (lead potencial). Pernoctas: heurística "último arrival del día por aerolínea ≥19:00" → marca overnight + departure 06:30 día siguiente. **940/940 tests verdes** (+67 net). Bundle [`builds/v0.6-line-mro.html`](builds/v0.6-line-mro.html). Doc cierre [`docs/CIERRE_pivot_line.md`](docs/CIERRE_pivot_line.md). ⚠️ Parking heroe: viabilidad económica (Δ-290k € + 4/10 game over por penalty SLA dominante — tuning sesión siguiente).
+
 2026-05-15 (**FASE 5D · CALLE AUXILIAR AÑADIDA v5**) — Dani pregunta cómo accede un avión a la fila inferior de stands → solución: la callecita horizontal central pasa a ser explícitamente **"calle auxiliar"** = único acceso a fila inferior. Aviones desde pista bajan por callecita vertical → giran 90° en la auxiliar → entran a stand de fila superior (norte) o fila inferior (sur). Furgo usa el mismo road network. CLAUDE.md y STATUS.md actualizados con la calle auxiliar como elemento spec separado.
 
 2026-05-15 (**FASE 5D · LAYOUT REVISADO (sketch Dani v4)**) — Dani aporta sketch manuscrito que reorienta el layout: **Espacio hangares al flanco IZQUIERDO** del apron (no rincón inferior-derecho), zona grande dashed con plots Stage 3+4 dentro. **Grid 2×3 de stands** marcados con códigos airport-style (351/451/551 arriba, 352/452/552 abajo). **Callecitas rectas** estructuran el apron: verticales entre bloques + horizontal central + perimetral inferior. **Furgo de mecs** (no mec andando) sale de oficina (esquina inferior-DERECHA) y recorre las callecitas con **giros estrictos de 90°, cero curvas**, hasta el stand asignado. CLAUDE.md + STATUS.md actualizados. Layout definitivo confirmado por Dani: zona hangares izquierda + grid stands centro/derecha + oficina bottom-right + road network estricto perpendicular.
