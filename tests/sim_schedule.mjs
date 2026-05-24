@@ -52,8 +52,10 @@ const contracts = [
   { id: "C-1", status: "active", airlineId: "AL-1", expectedLandingsPerDay: 3, minReputation: 50 },
 ];
 const { arrivals: arr1, updatedFleet: f1 } = generateScheduledArrivals(1, contracts, []);
-const arrivalCount = day1.filter((f) => f.type === "arrival").length;
-expect(arr1.length === arrivalCount, `arrivals matchea conteo del día (${arr1.length}=${arrivalCount})`);
+// Snapshot v2: solo handled (A320/A321 CFM56/V2500) generan Airplane. Embraer/CRJ/ATR/B737
+// están en el snapshot con notHandled:true — visibles en panel Schedule, pero no son trabajo MRO.
+const arrivalCount = day1.filter((f) => f.type === "arrival" && !f.notHandled).length;
+expect(arr1.length === arrivalCount, `arrivals handled matchea conteo del día (${arr1.length}=${arrivalCount})`);
 expect(f1.length > 0, `fleet auto-poblado (${f1.length} entries)`);
 
 // 6. Sin contracts activos → no arrivals

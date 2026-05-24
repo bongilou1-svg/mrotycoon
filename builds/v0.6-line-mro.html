@@ -179,7 +179,8 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
   </header>
   <div class="body">
     <aside class="side">
-      <button data-tab="hangar" class="active">🏭 Hangar <span class="badge" id="badge-wo">0</span></button>
+      <button data-tab="map" class="active">🗺️ Mapa</button>
+      <button data-tab="operations">🏭 Operaciones <span class="badge" id="badge-wo">0</span></button>
       <button data-tab="schedule">📅 Schedule <span class="badge" id="badge-schedule">0</span></button>
       <button data-tab="mechanics">⚙️ Mecánicos</button>
       <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
@@ -344,16 +345,20 @@ var Sim = (() => {
     generateInitialFleet: () => generateInitialFleet,
     generateInitialMechanics: () => generateInitialMechanics,
     generateRegistration: () => generateRegistration,
+    generateScheduledArrivals: () => generateScheduledArrivals,
     getAirplaneInstanceCounter: () => getAirplaneInstanceCounter,
     getAverageRep: () => getAverageRep,
     getCandidateCounter: () => getCandidateCounter,
     getDay: () => getDay,
+    getFlightsForGameDay: () => getFlightsForGameDay,
     getHour: () => getHour,
     getMaintenanceCheckCounter: () => getMaintenanceCheckCounter,
     getMelCategory: () => getMelCategory,
     getMinuteOfDay: () => getMinuteOfDay,
     getMinuteOfHour: () => getMinuteOfHour,
     getRep: () => getRep,
+    getScheduleMetadata: () => getScheduleMetadata,
+    getScheduleTotalFlights: () => getScheduleTotalFlights,
     getStorage: () => getStorage,
     getWeek: () => getWeek,
     hireCandidate: () => hireCandidate,
@@ -1009,6 +1014,385 @@ var Sim = (() => {
   }
   function standsOccupiedNow(airplanes, nowMinute) {
     return airplanesOnStand(airplanes, nowMinute).filter((p) => p.standId !== "").length;
+  }
+
+  // ../../mrotycoon/src/assets/airports/ovd.schedule.json
+  var ovd_schedule_default = {
+    airport: "OVD",
+    icao: "LEAS",
+    name: "Asturias",
+    source: "Snapshot OVD (LEAS) plausible 2024-2025 \u2014 basado en informaci\xF3n p\xFAblica AENA, Wikipedia, EUROCONTROL y trackings tipo Flightradar24. Incluye TODOS los movimientos comerciales scheduled del aeropuerto SIN duplicar codeshares (solo callsign del operador f\xEDsico). Vuelos con avi\xF3n que el sim a\xFAn NO maneja (Embraer, CRJ, ATR, B737, A321neo LEAP) llevan flag notHandled:true \u2014 aparecen en panel Schedule pero no generan trabajo MRO hasta que se habilite el type rating correspondiente.",
+    version: 2,
+    notes: "Plantillas por d\xEDa de semana. Game day rota mod 7 sobre el array. Operadores f\xEDsicos reales: IB Iberia/Iberia Express (A320/A321 CFM56/V2500), YW Iberia Regional / Air Nostrum (CRJ-1000 CF34-8C5, ATR72-600 PW127M, E190 CF34-10E, E195-E2 PW1900G), VY Vueling (A320 CFM56), V7 Volotea (A320 CFM56), U2 easyJet (A320 CFM56), FR Ryanair (B737-800 CFM56-7B), W6 Wizz Air (A321neo PW1100G). Las not handled cubren ~50% del tr\xE1fico real \u2014 Dani habilitar\xE1 type ratings en futuras fases.",
+    patterns: {
+      monday: [
+        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8511", type: "arrival", remote: "MAD", scheduledMinute: 540, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8541", type: "arrival", remote: "BIO", scheduledMinute: 570, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8510", type: "departure", remote: "MAD", scheduledMinute: 595, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8540", type: "departure", remote: "BIO", scheduledMinute: 625, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "YW8513", type: "arrival", remote: "MAD", scheduledMinute: 780, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8512", type: "departure", remote: "MAD", scheduledMinute: 835, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "V72107", type: "arrival", remote: "PMI", scheduledMinute: 870, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72108", type: "departure", remote: "PMI", scheduledMinute: 925, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "YW8517", type: "arrival", remote: "MAD", scheduledMinute: 890, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8516", type: "departure", remote: "MAD", scheduledMinute: 945, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8543", type: "arrival", remote: "BIO", scheduledMinute: 945, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8542", type: "departure", remote: "BIO", scheduledMinute: 1e3, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "U22461", type: "arrival", remote: "LGW", scheduledMinute: 1020, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "U22462", type: "departure", remote: "LGW", scheduledMinute: 1075, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8519", type: "arrival", remote: "MAD", scheduledMinute: 1230, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8518", type: "departure", remote: "MAD", scheduledMinute: 1285, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1320, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "FR4571", type: "arrival", remote: "STN", scheduledMinute: 1350, model: "B737-800", engineVariant: "CFM56-7B", airlineCode: "FR", airlineName: "Ryanair", notHandled: true },
+        { callsign: "FR4572", type: "departure", remote: "STN", scheduledMinute: 1405, model: "B737-800", engineVariant: "CFM56-7B", airlineCode: "FR", airlineName: "Ryanair", notHandled: true }
+      ],
+      tuesday: [
+        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8511", type: "arrival", remote: "MAD", scheduledMinute: 540, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8541", type: "arrival", remote: "BIO", scheduledMinute: 570, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "VY1808", type: "arrival", remote: "BCN", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1809", type: "departure", remote: "BCN", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "YW8510", type: "departure", remote: "MAD", scheduledMinute: 595, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8540", type: "departure", remote: "BIO", scheduledMinute: 625, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 645, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 700, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8513", type: "arrival", remote: "MAD", scheduledMinute: 780, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8512", type: "departure", remote: "MAD", scheduledMinute: 835, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8543", type: "arrival", remote: "BIO", scheduledMinute: 870, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8542", type: "departure", remote: "BIO", scheduledMinute: 925, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "V72143", type: "arrival", remote: "TFS", scheduledMinute: 990, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72144", type: "departure", remote: "TFS", scheduledMinute: 1050, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8519", type: "arrival", remote: "MAD", scheduledMinute: 1230, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8518", type: "departure", remote: "MAD", scheduledMinute: 1285, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1320, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
+      ],
+      wednesday: [
+        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8511", type: "arrival", remote: "MAD", scheduledMinute: 540, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8541", type: "arrival", remote: "BIO", scheduledMinute: 570, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8510", type: "departure", remote: "MAD", scheduledMinute: 595, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8540", type: "departure", remote: "BIO", scheduledMinute: 625, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "YW8513", type: "arrival", remote: "MAD", scheduledMinute: 780, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8512", type: "departure", remote: "MAD", scheduledMinute: 835, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8543", type: "arrival", remote: "BIO", scheduledMinute: 945, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8542", type: "departure", remote: "BIO", scheduledMinute: 1e3, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "U22461", type: "arrival", remote: "LGW", scheduledMinute: 1180, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "U22462", type: "departure", remote: "LGW", scheduledMinute: 1240, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "YW8519", type: "arrival", remote: "MAD", scheduledMinute: 1230, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8518", type: "departure", remote: "MAD", scheduledMinute: 1285, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1320, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
+      ],
+      thursday: [
+        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8511", type: "arrival", remote: "MAD", scheduledMinute: 540, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "VY1808", type: "arrival", remote: "BCN", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1809", type: "departure", remote: "BCN", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "YW8541", type: "arrival", remote: "BIO", scheduledMinute: 570, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8510", type: "departure", remote: "MAD", scheduledMinute: 595, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8540", type: "departure", remote: "BIO", scheduledMinute: 625, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 645, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 700, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8513", type: "arrival", remote: "MAD", scheduledMinute: 780, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8512", type: "departure", remote: "MAD", scheduledMinute: 835, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8543", type: "arrival", remote: "BIO", scheduledMinute: 945, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8542", type: "departure", remote: "BIO", scheduledMinute: 1e3, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8519", type: "arrival", remote: "MAD", scheduledMinute: 1230, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8518", type: "departure", remote: "MAD", scheduledMinute: 1285, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1320, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "W66305", type: "arrival", remote: "KTW", scheduledMinute: 1190, model: "A321neo", engineVariant: "PW1100G", airlineCode: "W6", airlineName: "Wizz Air", notHandled: true },
+        { callsign: "W66306", type: "departure", remote: "KTW", scheduledMinute: 1245, model: "A321neo", engineVariant: "PW1100G", airlineCode: "W6", airlineName: "Wizz Air", notHandled: true }
+      ],
+      friday: [
+        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8511", type: "arrival", remote: "MAD", scheduledMinute: 540, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8541", type: "arrival", remote: "BIO", scheduledMinute: 570, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8510", type: "departure", remote: "MAD", scheduledMinute: 595, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8540", type: "departure", remote: "BIO", scheduledMinute: 625, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1840", type: "arrival", remote: "SVQ", scheduledMinute: 760, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1841", type: "departure", remote: "SVQ", scheduledMinute: 815, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "YW8513", type: "arrival", remote: "MAD", scheduledMinute: 780, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8512", type: "departure", remote: "MAD", scheduledMinute: 835, model: "E195-E2", engineVariant: "PW1900G", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "V72107", type: "arrival", remote: "PMI", scheduledMinute: 870, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72108", type: "departure", remote: "PMI", scheduledMinute: 925, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72143", type: "arrival", remote: "TFS", scheduledMinute: 970, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72144", type: "departure", remote: "TFS", scheduledMinute: 1030, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "YW8543", type: "arrival", remote: "BIO", scheduledMinute: 945, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8542", type: "departure", remote: "BIO", scheduledMinute: 1e3, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "U22461", type: "arrival", remote: "LGW", scheduledMinute: 1020, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "U22462", type: "departure", remote: "LGW", scheduledMinute: 1075, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8519", type: "arrival", remote: "MAD", scheduledMinute: 1230, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8518", type: "departure", remote: "MAD", scheduledMinute: 1285, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1320, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "FR4571", type: "arrival", remote: "DUB", scheduledMinute: 1335, model: "B737-800", engineVariant: "CFM56-7B", airlineCode: "FR", airlineName: "Ryanair", notHandled: true },
+        { callsign: "FR4572", type: "departure", remote: "DUB", scheduledMinute: 1390, model: "B737-800", engineVariant: "CFM56-7B", airlineCode: "FR", airlineName: "Ryanair", notHandled: true }
+      ],
+      saturday: [
+        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 480, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 535, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8511", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8510", type: "departure", remote: "MAD", scheduledMinute: 610, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 645, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 700, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "YW8541", type: "arrival", remote: "BIO", scheduledMinute: 770, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8540", type: "departure", remote: "BIO", scheduledMinute: 825, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "V72143", type: "arrival", remote: "TFS", scheduledMinute: 970, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72144", type: "departure", remote: "TFS", scheduledMinute: 1030, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72175", type: "arrival", remote: "LPA", scheduledMinute: 1010, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72176", type: "departure", remote: "LPA", scheduledMinute: 1070, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "U22461", type: "arrival", remote: "LGW", scheduledMinute: 1020, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "U22462", type: "departure", remote: "LGW", scheduledMinute: 1075, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "FR4571", type: "arrival", remote: "STN", scheduledMinute: 1200, model: "B737-800", engineVariant: "CFM56-7B", airlineCode: "FR", airlineName: "Ryanair", notHandled: true },
+        { callsign: "FR4572", type: "departure", remote: "STN", scheduledMinute: 1255, model: "B737-800", engineVariant: "CFM56-7B", airlineCode: "FR", airlineName: "Ryanair", notHandled: true },
+        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1320, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
+      ],
+      sunday: [
+        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8511", type: "arrival", remote: "MAD", scheduledMinute: 645, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8510", type: "departure", remote: "MAD", scheduledMinute: 700, model: "CRJ-1000", engineVariant: "CF34-8C5", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "VY1808", type: "arrival", remote: "BCN", scheduledMinute: 720, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "VY1809", type: "departure", remote: "BCN", scheduledMinute: 775, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
+        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 765, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 820, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8541", type: "arrival", remote: "BIO", scheduledMinute: 830, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8540", type: "departure", remote: "BIO", scheduledMinute: 885, model: "ATR72-600", engineVariant: "PW127M", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 945, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 1e3, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "V72107", type: "arrival", remote: "PMI", scheduledMinute: 1020, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72108", type: "departure", remote: "PMI", scheduledMinute: 1080, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72143", type: "arrival", remote: "TFS", scheduledMinute: 1060, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "V72144", type: "departure", remote: "TFS", scheduledMinute: 1120, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
+        { callsign: "U22461", type: "arrival", remote: "LGW", scheduledMinute: 1140, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "U22462", type: "departure", remote: "LGW", scheduledMinute: 1195, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
+        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1175, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1230, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "YW8519", type: "arrival", remote: "MAD", scheduledMinute: 1240, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "YW8518", type: "departure", remote: "MAD", scheduledMinute: 1295, model: "E190", engineVariant: "CF34-10E", airlineCode: "YW", airlineName: "Iberia Regional", notHandled: true },
+        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1295, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1350, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
+        { callsign: "W66305", type: "arrival", remote: "KTW", scheduledMinute: 1200, model: "A321neo", engineVariant: "PW1100G", airlineCode: "W6", airlineName: "Wizz Air", notHandled: true },
+        { callsign: "W66306", type: "departure", remote: "KTW", scheduledMinute: 1255, model: "A321neo", engineVariant: "PW1100G", airlineCode: "W6", airlineName: "Wizz Air", notHandled: true }
+      ]
+    }
+  };
+
+  // ../../mrotycoon/src/assets/airports/ovd.fleet.json
+  var ovd_fleet_default = {
+    airport: "OVD",
+    icao: "LEAS",
+    source: "Pool plausible de matr\xEDculas que rotan por OVD seg\xFAn schedule. Matr\xEDculas dentro de rangos EASA Espa\xF1a (EC-Ixx/Lxx/Mxx/Nxx) y UK G-Ezxx, pero el dataset es sint\xE9tico \u2014 no afirma que cada matr\xEDcula concreta vuele realmente este vuelo. FH/FC estimados desde fecha de entrega plausible \xD7 utilizaci\xF3n t\xEDpica del operador (Iberia 3000FH/a\xF1o, Vueling 3500, Volotea 2500, easyJet 3200). Coloca cada avi\xF3n en un punto realista de su ciclo A/C/D.",
+    version: 1,
+    notes: "Modelos normalizados al cluster del sim MRO Tycoon: A320/A321 + CFM56/V2500. Real ratio FC/FH \u2248 0.6-0.7 para vuelos cortos europeos.",
+    fleet: [
+      { registration: "EC-IXM", airlineCode: "IB", model: "A321", engineVariant: "CFM56", deliveryDate: "2007-04-12", totalFH: 57e3, totalCycles: 36e3, fhSinceLastA: 412, cyclesSinceLastA: 268, fhSinceLastC: 2840, cyclesSinceLastC: 1850, fhSinceLastD: 18200, cyclesSinceLastD: 11800 },
+      { registration: "EC-IZD", airlineCode: "IB", model: "A320", engineVariant: "V2500", deliveryDate: "2007-08-22", totalFH: 55500, totalCycles: 35200, fhSinceLastA: 658, cyclesSinceLastA: 417, fhSinceLastC: 4120, cyclesSinceLastC: 2680, fhSinceLastD: 22500, cyclesSinceLastD: 14600 },
+      { registration: "EC-LRA", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2011-03-05", totalFH: 45e3, totalCycles: 28800, fhSinceLastA: 285, cyclesSinceLastA: 182, fhSinceLastC: 1620, cyclesSinceLastC: 1040, fhSinceLastD: 8400, cyclesSinceLastD: 5380 },
+      { registration: "EC-LXR", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2014-07-18", totalFH: 36e3, totalCycles: 23200, fhSinceLastA: 198, cyclesSinceLastA: 128, fhSinceLastC: 3260, cyclesSinceLastC: 2090, fhSinceLastD: 11800, cyclesSinceLastD: 7560 },
+      { registration: "EC-LZD", airlineCode: "IB", model: "A321", engineVariant: "CFM56", deliveryDate: "2014-11-04", totalFH: 35200, totalCycles: 22600, fhSinceLastA: 540, cyclesSinceLastA: 345, fhSinceLastC: 5180, cyclesSinceLastC: 3320, fhSinceLastD: 14200, cyclesSinceLastD: 9100 },
+      { registration: "EC-MGZ", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2016-05-30", totalFH: 3e4, totalCycles: 19200, fhSinceLastA: 120, cyclesSinceLastA: 78, fhSinceLastC: 920, cyclesSinceLastC: 590, fhSinceLastD: 6400, cyclesSinceLastD: 4100 },
+      { registration: "EC-MUC", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2018-09-14", totalFH: 22800, totalCycles: 14600, fhSinceLastA: 380, cyclesSinceLastA: 245, fhSinceLastC: 2480, cyclesSinceLastC: 1590, fhSinceLastD: 3200, cyclesSinceLastD: 2050 },
+      { registration: "EC-NSY", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2022-04-10", totalFH: 12e3, totalCycles: 7700, fhSinceLastA: 620, cyclesSinceLastA: 398, fhSinceLastC: 1840, cyclesSinceLastC: 1180, fhSinceLastD: 12e3, cyclesSinceLastD: 7700 },
+      { registration: "EC-MOG", airlineCode: "IB", model: "A321", engineVariant: "V2500", deliveryDate: "2017-02-28", totalFH: 27e3, totalCycles: 17300, fhSinceLastA: 152, cyclesSinceLastA: 98, fhSinceLastC: 4680, cyclesSinceLastC: 3e3, fhSinceLastD: 9800, cyclesSinceLastD: 6280 },
+      { registration: "EC-LVD", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2013-10-21", totalFH: 39e3, totalCycles: 25e3, fhSinceLastA: 720, cyclesSinceLastA: 460, fhSinceLastC: 6420, cyclesSinceLastC: 4110, fhSinceLastD: 16800, cyclesSinceLastD: 10760 },
+      { registration: "EC-LUK", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2013-05-14", totalFH: 45500, totalCycles: 32500, fhSinceLastA: 340, cyclesSinceLastA: 243, fhSinceLastC: 1820, cyclesSinceLastC: 1300, fhSinceLastD: 9200, cyclesSinceLastD: 6570 },
+      { registration: "EC-MAH", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2015-08-03", totalFH: 38500, totalCycles: 27500, fhSinceLastA: 580, cyclesSinceLastA: 414, fhSinceLastC: 4920, cyclesSinceLastC: 3510, fhSinceLastD: 14600, cyclesSinceLastD: 10430 },
+      { registration: "EC-MEH", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2016-01-19", totalFH: 35500, totalCycles: 25400, fhSinceLastA: 105, cyclesSinceLastA: 75, fhSinceLastC: 2240, cyclesSinceLastC: 1600, fhSinceLastD: 11200, cyclesSinceLastD: 8e3 },
+      { registration: "EC-MJB", airlineCode: "VY", model: "A321", engineVariant: "CFM56", deliveryDate: "2016-11-25", totalFH: 33e3, totalCycles: 23600, fhSinceLastA: 415, cyclesSinceLastA: 296, fhSinceLastC: 3120, cyclesSinceLastC: 2230, fhSinceLastD: 13e3, cyclesSinceLastD: 9290 },
+      { registration: "EC-MTK", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2017-07-08", totalFH: 3e4, totalCycles: 21400, fhSinceLastA: 245, cyclesSinceLastA: 175, fhSinceLastC: 5340, cyclesSinceLastC: 3810, fhSinceLastD: 1e4, cyclesSinceLastD: 7140 },
+      { registration: "EC-NAO", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2020-03-12", totalFH: 18e3, totalCycles: 12900, fhSinceLastA: 690, cyclesSinceLastA: 493, fhSinceLastC: 2120, cyclesSinceLastC: 1510, fhSinceLastD: 18e3, cyclesSinceLastD: 12900 },
+      { registration: "EC-NHR", airlineCode: "VY", model: "A321", engineVariant: "CFM56", deliveryDate: "2021-09-05", totalFH: 14500, totalCycles: 10350, fhSinceLastA: 88, cyclesSinceLastA: 62, fhSinceLastC: 980, cyclesSinceLastC: 700, fhSinceLastD: 14500, cyclesSinceLastD: 10350 },
+      { registration: "EC-MTM", airlineCode: "V7", model: "A319", engineVariant: "CFM56", deliveryDate: "2018-06-20", totalFH: 18500, totalCycles: 12e3, fhSinceLastA: 320, cyclesSinceLastA: 207, fhSinceLastC: 3460, cyclesSinceLastC: 2240, fhSinceLastD: 6800, cyclesSinceLastD: 4400 },
+      { registration: "EC-NEU", airlineCode: "V7", model: "A320", engineVariant: "CFM56", deliveryDate: "2020-11-18", totalFH: 13e3, totalCycles: 8400, fhSinceLastA: 540, cyclesSinceLastA: 350, fhSinceLastC: 1620, cyclesSinceLastC: 1050, fhSinceLastD: 13e3, cyclesSinceLastD: 8400 },
+      { registration: "EC-NOM", airlineCode: "V7", model: "A320", engineVariant: "CFM56", deliveryDate: "2022-07-11", totalFH: 8500, totalCycles: 5500, fhSinceLastA: 180, cyclesSinceLastA: 116, fhSinceLastC: 880, cyclesSinceLastC: 570, fhSinceLastD: 8500, cyclesSinceLastD: 5500 },
+      { registration: "EC-MQU", airlineCode: "V7", model: "A319", engineVariant: "CFM56", deliveryDate: "2017-04-25", totalFH: 22e3, totalCycles: 14200, fhSinceLastA: 475, cyclesSinceLastA: 308, fhSinceLastC: 2680, cyclesSinceLastC: 1730, fhSinceLastD: 8e3, cyclesSinceLastD: 5160 },
+      { registration: "G-EZAA", airlineCode: "U2", model: "A320", engineVariant: "CFM56", deliveryDate: "2015-09-30", totalFH: 41e3, totalCycles: 25400, fhSinceLastA: 290, cyclesSinceLastA: 180, fhSinceLastC: 4800, cyclesSinceLastC: 2980, fhSinceLastD: 12500, cyclesSinceLastD: 7750 },
+      { registration: "G-EZRT", airlineCode: "U2", model: "A320", engineVariant: "CFM56", deliveryDate: "2019-03-15", totalFH: 22500, totalCycles: 14e3, fhSinceLastA: 615, cyclesSinceLastA: 383, fhSinceLastC: 2240, cyclesSinceLastC: 1390, fhSinceLastD: 4800, cyclesSinceLastD: 2980 },
+      { registration: "G-UZHA", airlineCode: "U2", model: "A320", engineVariant: "CFM56", deliveryDate: "2017-12-08", totalFH: 28500, totalCycles: 17700, fhSinceLastA: 150, cyclesSinceLastA: 93, fhSinceLastC: 1860, cyclesSinceLastC: 1160, fhSinceLastD: 9500, cyclesSinceLastD: 5900 }
+    ]
+  };
+
+  // ../../mrotycoon/src/lib/sim/schedule.ts
+  var HANDLED_MODELS = /* @__PURE__ */ new Set(["A320", "A321"]);
+  var HANDLED_ENGINES = /* @__PURE__ */ new Set(["CFM56", "V2500"]);
+  function isFlightHandled(f) {
+    if (f.notHandled === true) return false;
+    return HANDLED_MODELS.has(f.model) && HANDLED_ENGINES.has(f.engineVariant);
+  }
+  var PATTERN_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  function getFlightsForGameDay(gameDay) {
+    const idx = ((gameDay - 1) % 7 + 7) % 7;
+    const key = PATTERN_KEYS[idx];
+    return ovd_schedule_default.patterns[key];
+  }
+  function pickPoolStatsForCallsign(callsign, airlineCode) {
+    const candidates = ovd_fleet_default.fleet.filter((f) => f.airlineCode === airlineCode);
+    if (candidates.length === 0) return null;
+    let h = 0;
+    for (let i = 0; i < callsign.length; i++) h = (h << 5) - h + callsign.charCodeAt(i) | 0;
+    return candidates[Math.abs(h) % candidates.length];
+  }
+  function ensureFleetEntry(fleet, registration, airlineCode, airlineId, model, engineVariant) {
+    const existing = fleet.find((f) => f.registration === registration);
+    if (existing) return fleet;
+    const poolStats = pickPoolStatsForCallsign(registration, airlineCode);
+    const stats = poolStats ?? {
+      totalFH: 0,
+      totalCycles: 0,
+      fhSinceLastA: 0,
+      cyclesSinceLastA: 0,
+      fhSinceLastC: 0,
+      cyclesSinceLastC: 0,
+      fhSinceLastD: 0,
+      cyclesSinceLastD: 0
+    };
+    return [
+      ...fleet,
+      {
+        registration,
+        airlineId,
+        model,
+        engineVariant,
+        totalFH: stats.totalFH,
+        totalCycles: stats.totalCycles,
+        fhSinceLastA: stats.fhSinceLastA,
+        cyclesSinceLastA: stats.cyclesSinceLastA,
+        fhSinceLastC: stats.fhSinceLastC,
+        cyclesSinceLastC: stats.cyclesSinceLastC,
+        fhSinceLastD: stats.fhSinceLastD,
+        cyclesSinceLastD: stats.cyclesSinceLastD,
+        warnedA: false,
+        warnedC: false,
+        warnedD: false
+      }
+    ];
+  }
+  var SCHEDULED_LEG_FH = 1.5;
+  var SCHEDULED_TURNAROUND_MIN = 55;
+  function generateScheduledArrivals(gameDay, contracts, fleet, busyRegistrations = /* @__PURE__ */ new Set(), airlines = []) {
+    const flights = getFlightsForGameDay(gameDay);
+    const activeContracts2 = contracts.filter((c) => c.status === "active");
+    if (activeContracts2.length === 0) return { arrivals: [], updatedFleet: fleet };
+    const contractByIata = /* @__PURE__ */ new Map();
+    let anyIata = false;
+    for (const c of activeContracts2) {
+      const al = airlines.find((a) => a.id === c.airlineId);
+      if (al?.iataCode) {
+        contractByIata.set(al.iataCode, c);
+        anyIata = true;
+      }
+    }
+    const fallbackContract = activeContracts2[0];
+    const dayOffset = (gameDay - 1) * DAY_MINUTES;
+    const arrivals = [];
+    let workingFleet = [...fleet];
+    const overnightDepartureOffset = 30 + 6 * 60;
+    const OVERNIGHT_THRESHOLD_MIN = 19 * 60;
+    const lastArrivalByCode = /* @__PURE__ */ new Map();
+    for (const f of flights) {
+      if (f.type !== "arrival") continue;
+      const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
+      if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
+    }
+    function isOvernightCandidate(f) {
+      if (f.scheduledMinute < OVERNIGHT_THRESHOLD_MIN) return false;
+      return lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute;
+    }
+    for (const f of flights) {
+      if (f.type !== "arrival") continue;
+      if (busyRegistrations.has(f.callsign)) continue;
+      if (!isFlightHandled(f)) continue;
+      const contract = anyIata ? contractByIata.get(f.airlineCode) : fallbackContract;
+      if (!contract) continue;
+      const airlineId = contract.airlineId;
+      workingFleet = ensureFleetEntry(workingFleet, f.callsign, f.airlineCode, airlineId, f.model, f.engineVariant);
+      const arrivalMinute = dayOffset + f.scheduledMinute;
+      const overnight = isOvernightCandidate(f);
+      const scheduledDepartureMinute = overnight ? dayOffset + DAY_MINUTES + overnightDepartureOffset : arrivalMinute + SCHEDULED_TURNAROUND_MIN;
+      arrivals.push({
+        instanceId: nextAirplaneInstanceId(),
+        registration: f.callsign,
+        model: f.model,
+        engineVariant: f.engineVariant,
+        contractId: contract.id,
+        standId: "",
+        arrivalMinute,
+        scheduledDepartureMinute,
+        status: "Idle",
+        flightHoursThisLeg: SCHEDULED_LEG_FH,
+        overnight: overnight || void 0
+      });
+      workingFleet = applyLandingToFleet(workingFleet, f.callsign, SCHEDULED_LEG_FH);
+    }
+    return { arrivals, updatedFleet: workingFleet };
+  }
+  function getScheduleTotalFlights() {
+    let total = 0;
+    for (const k of PATTERN_KEYS) total += ovd_schedule_default.patterns[k].length;
+    return total;
+  }
+  function getScheduleMetadata() {
+    const airlines = {};
+    for (const k of PATTERN_KEYS) {
+      for (const f of ovd_schedule_default.patterns[k]) {
+        airlines[f.airlineCode] = (airlines[f.airlineCode] ?? 0) + 1;
+      }
+    }
+    return {
+      airport: ovd_schedule_default.airport,
+      icao: ovd_schedule_default.icao,
+      totalFlights: getScheduleTotalFlights(),
+      airlines
+    };
   }
 
   // ../../mrotycoon/src/lib/sim/workorders.ts
@@ -2775,261 +3159,6 @@ var Sim = (() => {
   }
   function runwayClosedAt(events, nowMinute) {
     return events.some((e) => e.type === "runway_closure" && nowMinute >= e.startMinute && nowMinute < e.endMinute);
-  }
-
-  // ../../mrotycoon/src/assets/airports/ovd.schedule.json
-  var ovd_schedule_default = {
-    airport: "OVD",
-    icao: "LEAS",
-    name: "Asturias",
-    source: "Snapshot sint\xE9tico \u2014 F5D scope creep. Basado en informaci\xF3n p\xFAblica del aeropuerto (rutas hist\xF3ricas AENA/Wikipedia 2024-2025): Iberia/Iberia Regional (Air Nostrum) MAD/BIO, Vueling BCN/SVQ, Volotea TFS/PMI/LPA, easyJet LGW estacional. Modelos normalizados a A320/A321 + CFM56/V2500 (cluster del sim MRO Tycoon). Horarios t\xEDpicos invierno; verano a\xF1adir\xEDa +30% volumen estacional.",
-    version: 1,
-    notes: "Plantillas por d\xEDa de semana (0=Sunday, 6=Saturday). El sim del juego itera game day mod 7 para mapear a plantilla. Cycling de 1 semana evita repetici\xF3n obvia con variaci\xF3n de d\xEDa laboral / fin de semana.",
-    patterns: {
-      monday: [
-        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1310, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
-      ],
-      tuesday: [
-        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "VY1808", type: "arrival", remote: "BCN", scheduledMinute: 540, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "VY1809", type: "departure", remote: "BCN", scheduledMinute: 595, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 645, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 700, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "V72143", type: "arrival", remote: "TFS", scheduledMinute: 990, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
-        { callsign: "V72144", type: "departure", remote: "TFS", scheduledMinute: 1050, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
-        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1310, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
-      ],
-      wednesday: [
-        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "U22461", type: "arrival", remote: "LGW", scheduledMinute: 1180, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
-        { callsign: "U22462", type: "departure", remote: "LGW", scheduledMinute: 1240, model: "A320", engineVariant: "CFM56", airlineCode: "U2", airlineName: "easyJet" },
-        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1310, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
-      ],
-      thursday: [
-        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "VY1808", type: "arrival", remote: "BCN", scheduledMinute: 540, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "VY1809", type: "departure", remote: "BCN", scheduledMinute: 595, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 645, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 700, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1310, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
-      ],
-      friday: [
-        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 415, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 470, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "V72107", type: "arrival", remote: "PMI", scheduledMinute: 970, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
-        { callsign: "V72108", type: "departure", remote: "PMI", scheduledMinute: 1030, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
-        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1310, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" }
-      ],
-      saturday: [
-        { callsign: "IB3221", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3220", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "VY1804", type: "arrival", remote: "BCN", scheduledMinute: 680, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "VY1805", type: "departure", remote: "BCN", scheduledMinute: 735, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "V72143", type: "arrival", remote: "TFS", scheduledMinute: 990, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
-        { callsign: "V72144", type: "departure", remote: "TFS", scheduledMinute: 1050, model: "A320", engineVariant: "CFM56", airlineCode: "V7", airlineName: "Volotea" },
-        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
-      ],
-      sunday: [
-        { callsign: "IB3217", type: "arrival", remote: "MAD", scheduledMinute: 555, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3216", type: "departure", remote: "MAD", scheduledMinute: 610, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "VY1808", type: "arrival", remote: "BCN", scheduledMinute: 720, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "VY1809", type: "departure", remote: "BCN", scheduledMinute: 775, model: "A320", engineVariant: "CFM56", airlineCode: "VY", airlineName: "Vueling" },
-        { callsign: "IB3223", type: "arrival", remote: "MAD", scheduledMinute: 855, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3222", type: "departure", remote: "MAD", scheduledMinute: 910, model: "A321", engineVariant: "V2500", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3225", type: "arrival", remote: "MAD", scheduledMinute: 1090, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3224", type: "departure", remote: "MAD", scheduledMinute: 1145, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3219", type: "arrival", remote: "MAD", scheduledMinute: 1265, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" },
-        { callsign: "IB3218", type: "departure", remote: "MAD", scheduledMinute: 1310, model: "A320", engineVariant: "CFM56", airlineCode: "IB", airlineName: "Iberia" }
-      ]
-    }
-  };
-
-  // ../../mrotycoon/src/assets/airports/ovd.fleet.json
-  var ovd_fleet_default = {
-    airport: "OVD",
-    icao: "LEAS",
-    source: "Pool plausible de matr\xEDculas que rotan por OVD seg\xFAn schedule. Matr\xEDculas dentro de rangos EASA Espa\xF1a (EC-Ixx/Lxx/Mxx/Nxx) y UK G-Ezxx, pero el dataset es sint\xE9tico \u2014 no afirma que cada matr\xEDcula concreta vuele realmente este vuelo. FH/FC estimados desde fecha de entrega plausible \xD7 utilizaci\xF3n t\xEDpica del operador (Iberia 3000FH/a\xF1o, Vueling 3500, Volotea 2500, easyJet 3200). Coloca cada avi\xF3n en un punto realista de su ciclo A/C/D.",
-    version: 1,
-    notes: "Modelos normalizados al cluster del sim MRO Tycoon: A320/A321 + CFM56/V2500. Real ratio FC/FH \u2248 0.6-0.7 para vuelos cortos europeos.",
-    fleet: [
-      { registration: "EC-IXM", airlineCode: "IB", model: "A321", engineVariant: "CFM56", deliveryDate: "2007-04-12", totalFH: 57e3, totalCycles: 36e3, fhSinceLastA: 412, cyclesSinceLastA: 268, fhSinceLastC: 2840, cyclesSinceLastC: 1850, fhSinceLastD: 18200, cyclesSinceLastD: 11800 },
-      { registration: "EC-IZD", airlineCode: "IB", model: "A320", engineVariant: "V2500", deliveryDate: "2007-08-22", totalFH: 55500, totalCycles: 35200, fhSinceLastA: 658, cyclesSinceLastA: 417, fhSinceLastC: 4120, cyclesSinceLastC: 2680, fhSinceLastD: 22500, cyclesSinceLastD: 14600 },
-      { registration: "EC-LRA", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2011-03-05", totalFH: 45e3, totalCycles: 28800, fhSinceLastA: 285, cyclesSinceLastA: 182, fhSinceLastC: 1620, cyclesSinceLastC: 1040, fhSinceLastD: 8400, cyclesSinceLastD: 5380 },
-      { registration: "EC-LXR", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2014-07-18", totalFH: 36e3, totalCycles: 23200, fhSinceLastA: 198, cyclesSinceLastA: 128, fhSinceLastC: 3260, cyclesSinceLastC: 2090, fhSinceLastD: 11800, cyclesSinceLastD: 7560 },
-      { registration: "EC-LZD", airlineCode: "IB", model: "A321", engineVariant: "CFM56", deliveryDate: "2014-11-04", totalFH: 35200, totalCycles: 22600, fhSinceLastA: 540, cyclesSinceLastA: 345, fhSinceLastC: 5180, cyclesSinceLastC: 3320, fhSinceLastD: 14200, cyclesSinceLastD: 9100 },
-      { registration: "EC-MGZ", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2016-05-30", totalFH: 3e4, totalCycles: 19200, fhSinceLastA: 120, cyclesSinceLastA: 78, fhSinceLastC: 920, cyclesSinceLastC: 590, fhSinceLastD: 6400, cyclesSinceLastD: 4100 },
-      { registration: "EC-MUC", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2018-09-14", totalFH: 22800, totalCycles: 14600, fhSinceLastA: 380, cyclesSinceLastA: 245, fhSinceLastC: 2480, cyclesSinceLastC: 1590, fhSinceLastD: 3200, cyclesSinceLastD: 2050 },
-      { registration: "EC-NSY", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2022-04-10", totalFH: 12e3, totalCycles: 7700, fhSinceLastA: 620, cyclesSinceLastA: 398, fhSinceLastC: 1840, cyclesSinceLastC: 1180, fhSinceLastD: 12e3, cyclesSinceLastD: 7700 },
-      { registration: "EC-MOG", airlineCode: "IB", model: "A321", engineVariant: "V2500", deliveryDate: "2017-02-28", totalFH: 27e3, totalCycles: 17300, fhSinceLastA: 152, cyclesSinceLastA: 98, fhSinceLastC: 4680, cyclesSinceLastC: 3e3, fhSinceLastD: 9800, cyclesSinceLastD: 6280 },
-      { registration: "EC-LVD", airlineCode: "IB", model: "A320", engineVariant: "CFM56", deliveryDate: "2013-10-21", totalFH: 39e3, totalCycles: 25e3, fhSinceLastA: 720, cyclesSinceLastA: 460, fhSinceLastC: 6420, cyclesSinceLastC: 4110, fhSinceLastD: 16800, cyclesSinceLastD: 10760 },
-      { registration: "EC-LUK", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2013-05-14", totalFH: 45500, totalCycles: 32500, fhSinceLastA: 340, cyclesSinceLastA: 243, fhSinceLastC: 1820, cyclesSinceLastC: 1300, fhSinceLastD: 9200, cyclesSinceLastD: 6570 },
-      { registration: "EC-MAH", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2015-08-03", totalFH: 38500, totalCycles: 27500, fhSinceLastA: 580, cyclesSinceLastA: 414, fhSinceLastC: 4920, cyclesSinceLastC: 3510, fhSinceLastD: 14600, cyclesSinceLastD: 10430 },
-      { registration: "EC-MEH", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2016-01-19", totalFH: 35500, totalCycles: 25400, fhSinceLastA: 105, cyclesSinceLastA: 75, fhSinceLastC: 2240, cyclesSinceLastC: 1600, fhSinceLastD: 11200, cyclesSinceLastD: 8e3 },
-      { registration: "EC-MJB", airlineCode: "VY", model: "A321", engineVariant: "CFM56", deliveryDate: "2016-11-25", totalFH: 33e3, totalCycles: 23600, fhSinceLastA: 415, cyclesSinceLastA: 296, fhSinceLastC: 3120, cyclesSinceLastC: 2230, fhSinceLastD: 13e3, cyclesSinceLastD: 9290 },
-      { registration: "EC-MTK", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2017-07-08", totalFH: 3e4, totalCycles: 21400, fhSinceLastA: 245, cyclesSinceLastA: 175, fhSinceLastC: 5340, cyclesSinceLastC: 3810, fhSinceLastD: 1e4, cyclesSinceLastD: 7140 },
-      { registration: "EC-NAO", airlineCode: "VY", model: "A320", engineVariant: "CFM56", deliveryDate: "2020-03-12", totalFH: 18e3, totalCycles: 12900, fhSinceLastA: 690, cyclesSinceLastA: 493, fhSinceLastC: 2120, cyclesSinceLastC: 1510, fhSinceLastD: 18e3, cyclesSinceLastD: 12900 },
-      { registration: "EC-NHR", airlineCode: "VY", model: "A321", engineVariant: "CFM56", deliveryDate: "2021-09-05", totalFH: 14500, totalCycles: 10350, fhSinceLastA: 88, cyclesSinceLastA: 62, fhSinceLastC: 980, cyclesSinceLastC: 700, fhSinceLastD: 14500, cyclesSinceLastD: 10350 },
-      { registration: "EC-MTM", airlineCode: "V7", model: "A319", engineVariant: "CFM56", deliveryDate: "2018-06-20", totalFH: 18500, totalCycles: 12e3, fhSinceLastA: 320, cyclesSinceLastA: 207, fhSinceLastC: 3460, cyclesSinceLastC: 2240, fhSinceLastD: 6800, cyclesSinceLastD: 4400 },
-      { registration: "EC-NEU", airlineCode: "V7", model: "A320", engineVariant: "CFM56", deliveryDate: "2020-11-18", totalFH: 13e3, totalCycles: 8400, fhSinceLastA: 540, cyclesSinceLastA: 350, fhSinceLastC: 1620, cyclesSinceLastC: 1050, fhSinceLastD: 13e3, cyclesSinceLastD: 8400 },
-      { registration: "EC-NOM", airlineCode: "V7", model: "A320", engineVariant: "CFM56", deliveryDate: "2022-07-11", totalFH: 8500, totalCycles: 5500, fhSinceLastA: 180, cyclesSinceLastA: 116, fhSinceLastC: 880, cyclesSinceLastC: 570, fhSinceLastD: 8500, cyclesSinceLastD: 5500 },
-      { registration: "EC-MQU", airlineCode: "V7", model: "A319", engineVariant: "CFM56", deliveryDate: "2017-04-25", totalFH: 22e3, totalCycles: 14200, fhSinceLastA: 475, cyclesSinceLastA: 308, fhSinceLastC: 2680, cyclesSinceLastC: 1730, fhSinceLastD: 8e3, cyclesSinceLastD: 5160 },
-      { registration: "G-EZAA", airlineCode: "U2", model: "A320", engineVariant: "CFM56", deliveryDate: "2015-09-30", totalFH: 41e3, totalCycles: 25400, fhSinceLastA: 290, cyclesSinceLastA: 180, fhSinceLastC: 4800, cyclesSinceLastC: 2980, fhSinceLastD: 12500, cyclesSinceLastD: 7750 },
-      { registration: "G-EZRT", airlineCode: "U2", model: "A320", engineVariant: "CFM56", deliveryDate: "2019-03-15", totalFH: 22500, totalCycles: 14e3, fhSinceLastA: 615, cyclesSinceLastA: 383, fhSinceLastC: 2240, cyclesSinceLastC: 1390, fhSinceLastD: 4800, cyclesSinceLastD: 2980 },
-      { registration: "G-UZHA", airlineCode: "U2", model: "A320", engineVariant: "CFM56", deliveryDate: "2017-12-08", totalFH: 28500, totalCycles: 17700, fhSinceLastA: 150, cyclesSinceLastA: 93, fhSinceLastC: 1860, cyclesSinceLastC: 1160, fhSinceLastD: 9500, cyclesSinceLastD: 5900 }
-    ]
-  };
-
-  // ../../mrotycoon/src/lib/sim/schedule.ts
-  var PATTERN_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-  function getFlightsForGameDay(gameDay) {
-    const idx = ((gameDay - 1) % 7 + 7) % 7;
-    const key = PATTERN_KEYS[idx];
-    return ovd_schedule_default.patterns[key];
-  }
-  function pickPoolStatsForCallsign(callsign, airlineCode) {
-    const candidates = ovd_fleet_default.fleet.filter((f) => f.airlineCode === airlineCode);
-    if (candidates.length === 0) return null;
-    let h = 0;
-    for (let i = 0; i < callsign.length; i++) h = (h << 5) - h + callsign.charCodeAt(i) | 0;
-    return candidates[Math.abs(h) % candidates.length];
-  }
-  function ensureFleetEntry(fleet, registration, airlineCode, airlineId, model, engineVariant) {
-    const existing = fleet.find((f) => f.registration === registration);
-    if (existing) return fleet;
-    const poolStats = pickPoolStatsForCallsign(registration, airlineCode);
-    const stats = poolStats ?? {
-      totalFH: 0,
-      totalCycles: 0,
-      fhSinceLastA: 0,
-      cyclesSinceLastA: 0,
-      fhSinceLastC: 0,
-      cyclesSinceLastC: 0,
-      fhSinceLastD: 0,
-      cyclesSinceLastD: 0
-    };
-    return [
-      ...fleet,
-      {
-        registration,
-        airlineId,
-        model,
-        engineVariant,
-        totalFH: stats.totalFH,
-        totalCycles: stats.totalCycles,
-        fhSinceLastA: stats.fhSinceLastA,
-        cyclesSinceLastA: stats.cyclesSinceLastA,
-        fhSinceLastC: stats.fhSinceLastC,
-        cyclesSinceLastC: stats.cyclesSinceLastC,
-        fhSinceLastD: stats.fhSinceLastD,
-        cyclesSinceLastD: stats.cyclesSinceLastD,
-        warnedA: false,
-        warnedC: false,
-        warnedD: false
-      }
-    ];
-  }
-  var SCHEDULED_LEG_FH = 1.5;
-  var SCHEDULED_TURNAROUND_MIN = 55;
-  function generateScheduledArrivals(gameDay, contracts, fleet, busyRegistrations = /* @__PURE__ */ new Set(), airlines = []) {
-    const flights = getFlightsForGameDay(gameDay);
-    const activeContracts2 = contracts.filter((c) => c.status === "active");
-    if (activeContracts2.length === 0) return { arrivals: [], updatedFleet: fleet };
-    const contractByIata = /* @__PURE__ */ new Map();
-    let anyIata = false;
-    for (const c of activeContracts2) {
-      const al = airlines.find((a) => a.id === c.airlineId);
-      if (al?.iataCode) {
-        contractByIata.set(al.iataCode, c);
-        anyIata = true;
-      }
-    }
-    const fallbackContract = activeContracts2[0];
-    const dayOffset = (gameDay - 1) * DAY_MINUTES;
-    const arrivals = [];
-    let workingFleet = [...fleet];
-    const overnightDepartureOffset = 30 + 6 * 60;
-    const OVERNIGHT_THRESHOLD_MIN = 19 * 60;
-    const lastArrivalByCode = /* @__PURE__ */ new Map();
-    for (const f of flights) {
-      if (f.type !== "arrival") continue;
-      const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
-      if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
-    }
-    function isOvernightCandidate(f) {
-      if (f.scheduledMinute < OVERNIGHT_THRESHOLD_MIN) return false;
-      return lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute;
-    }
-    for (const f of flights) {
-      if (f.type !== "arrival") continue;
-      if (busyRegistrations.has(f.callsign)) continue;
-      const contract = anyIata ? contractByIata.get(f.airlineCode) : fallbackContract;
-      if (!contract) continue;
-      const airlineId = contract.airlineId;
-      workingFleet = ensureFleetEntry(workingFleet, f.callsign, f.airlineCode, airlineId, f.model, f.engineVariant);
-      const arrivalMinute = dayOffset + f.scheduledMinute;
-      const overnight = isOvernightCandidate(f);
-      const scheduledDepartureMinute = overnight ? dayOffset + DAY_MINUTES + overnightDepartureOffset : arrivalMinute + SCHEDULED_TURNAROUND_MIN;
-      arrivals.push({
-        instanceId: nextAirplaneInstanceId(),
-        registration: f.callsign,
-        model: f.model,
-        engineVariant: f.engineVariant,
-        contractId: contract.id,
-        standId: "",
-        arrivalMinute,
-        scheduledDepartureMinute,
-        status: "Idle",
-        flightHoursThisLeg: SCHEDULED_LEG_FH,
-        overnight: overnight || void 0
-      });
-      workingFleet = applyLandingToFleet(workingFleet, f.callsign, SCHEDULED_LEG_FH);
-    }
-    return { arrivals, updatedFleet: workingFleet };
   }
 
   // ../../mrotycoon/src/lib/sim/foreman.ts
@@ -9185,8 +9314,8 @@ const S = window.Sim;
 // Pivot MRO línea pura (2026-05-24): UI activa lineMode=true por default. Modo legacy
 // solo lo usan los tests automáticos.
 let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, S.DATA.maintenanceChecks, S.DATA.dailyChecks, { lineMode: true });
-let activeTab = "hangar";
-let hangarSubTab = "line"; // "line" | "base" | "fleet" | "deferrals"
+let activeTab = "map"; // pivot línea pura: arrancamos en mapa (wow factor) y operaciones aparte
+let opsSubTab = "events"; // "events" | "base" | "fleet" | "deferrals"
 let selectedWoId = null;
 let complianceModalOpen = false;
 let repModalOpen = false;
@@ -9196,6 +9325,7 @@ let detailCheckId = null;    // F5C extra: instanceId de check A/C/D para modal
 let detailContractId = null; // F5C extra: id de contrato para modal
 let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
 let scheduleFilter = "all";  // Pivot línea pura · P3: filtro panel schedule "all"|"arrival"|"departure"
+let eventFilter = "open";    // Pivot línea pura · Event Tracking: "open" (activos) | "all"
 let manualCertId = "";
 let manualHelperIds = [];
 let hasSavedSlot = false;
@@ -9208,18 +9338,19 @@ let lastPanelRenderMs = 0;
 function invalidatePanelCache(){ lastPanelHtml = ""; lastPanelRenderMs = 0; }
 function invalidateModalCache(){ lastModalHtml = ""; }
 
-// Fase 5D · P-α: driver Pixi del mapa. Se monta solo cuando hangarSubTab === "map".
+// Fase 5D · P-α / pivot línea pura: driver Pixi del mapa. Se monta cuando activeTab === "map".
 // Vive fuera del cache de panel para que el canvas no se destruya entre ticks.
 let mapDriver = null;
 let mapMounting = false; // evita carreras durante el await mount()
-// Skin seleccionada (persistida en localStorage). Defaults a "cic" (el P-γ actual).
-let mapSkin = (typeof localStorage !== "undefined" && localStorage.getItem("mroMapSkin")) || "cic";
+// Pivot línea pura: skin hardcoded a "f5d" (OSM real OVD con paleta CIC north-star).
+// El selector de variantes está eliminado del UI para no distraer.
+const mapSkin = "f5d";
 function destroyMapDriver(){
   if (mapDriver) { try { mapDriver.destroy(); } catch(e){} mapDriver = null; }
   mapMounting = false;
 }
 function syncMapRender(){
-  const inMap = activeTab === "hangar" && hangarSubTab === "map" && !game.gameOver.isOver;
+  const inMap = activeTab === "map" && !game.gameOver.isOver;
   if (!inMap) { destroyMapDriver(); return; }
   const host = document.getElementById("pixi-host");
   if (!host) { destroyMapDriver(); return; } // el HTML todavía no se ha inyectado
@@ -9440,41 +9571,171 @@ function renderHangarDeferrals(){
   return h;
 }
 
-function renderHangar(){
-  const activeWoCount = activeWos().length;
+// Pivot línea pura: tab Mapa = solo el canvas Pixi en skin F5D, sin selector de variantes.
+// El canvas se monta vía syncMapRender() — aquí solo damos el host.
+function renderMap(){
+  return `<div class="pixi-host" id="pixi-host" style="height:calc(100vh - 96px);min-height:480px"></div>`;
+}
+
+// ===========================================================================
+// Event Tracking (pivot línea pura, 2026-05-24) — vista unificada Lite
+// ===========================================================================
+// Reconstruye un feed cronológico desde el state actual: WOs line, A/C/D checks,
+// MEL deferrals, random events (runway closure, SB), audits Part-145. Por default
+// muestra solo eventos OPEN (activos). Toggle "All" añade los cerrados.
+// Click en cada card abre el modal de detalle existente (WO/check/contract).
+function buildEventFeed(){
+  const events = [];
+  // WOs line + diferidas + completadas/failed
+  for (const wo of game.workOrders) {
+    const tpl = game.templates.find(t => t.id === wo.templateId);
+    const isDeferred = wo.phase === "Deferred";
+    const isClosed = wo.phase === "Completed" || wo.phase === "Failed";
+    const isDaily = tpl?.id?.startsWith?.("DC-");
+    events.push({
+      kind: isDaily ? "daily" : "wo",
+      id: wo.instanceId,
+      sortMinute: wo.emissionMinute,
+      open: !isClosed,  // deferred cuenta como open (hay decisión pendiente: reparar o dejar vencer)
+      icon: tpl?.isAOG ? "🛑" : isDaily ? "🌙" : isDeferred ? "📋" : "🔧",
+      title: `${esc(wo.airplaneRegistration)} · ${esc(tpl?.description?.slice(0,55) ?? wo.templateId)}`,
+      phase: wo.phase,
+      meta: [
+        `ATA ${tpl?.ata ?? "?"}`,
+        `${tpl?.requiredCategory ?? "?"}`,
+        `SLA ${wo.slaMinute - game.clock.minute}m`,
+        wo.assignedMechanicIds.length === 0 ? "⚠️ sin asignar" : `team ${wo.assignedMechanicIds.length}`,
+      ],
+      clickWoId: wo.instanceId,
+    });
+  }
+  // A/C/D checks
+  for (const c of game.maintenanceChecks) {
+    const isOpen = c.phase === "Scheduled" || c.phase === "InProgress";
+    events.push({
+      kind: "check",
+      id: c.instanceId,
+      sortMinute: c.scheduledMinute,
+      open: isOpen,
+      icon: "🛠️",
+      title: `${esc(c.registration)} · ${c.type}-check${c.nightStarted ? " 🌙" : ""}${c.onPlatform ? " ⛅" : ""}`,
+      phase: c.phase,
+      meta: [
+        `Stand ${c.standId || "—"}`,
+        `Team ${c.assignedMechanicIds.length}/${Math.max(1, Math.ceil(c.manDaysIdeal / c.parkingDays))}`,
+        `Fee +${(c.baseFee).toLocaleString("es-ES")} €`,
+        c.overrunDaysPenalized > 0 ? `Overrun ${c.overrunDaysPenalized}d` : null,
+      ].filter(Boolean),
+      clickCheckId: c.instanceId,
+    });
+  }
+  // Random events
+  for (const ev of (game.randomEvents ?? [])) {
+    const isOpen = ev.type === "runway_closure"
+      ? ev.endMinute > game.clock.minute
+      : (game.clock.minute - ev.startMinute) < 7 * S.DAY_MINUTES;
+    const icon = ev.type === "runway_closure" ? "🚧" : "📢";
+    const title = ev.type === "runway_closure"
+      ? `Pista ${isOpen ? "CERRADA" : "normalizada"} · ${esc(ev.reason)}`
+      : `SB Airbus · ${esc(ev.description ?? "")} (${esc((ev.affectedRegistrations ?? []).join(", "))})`;
+    events.push({
+      kind: "randomEvent",
+      id: ev.id,
+      sortMinute: ev.startMinute,
+      open: isOpen,
+      icon,
+      title,
+      phase: isOpen ? "ACTIVE" : "ENDED",
+      meta: ev.type === "runway_closure"
+        ? [`${fmtClock(ev.startMinute)} → ${fmtClock(ev.endMinute)}`]
+        : [`Modelo ${ev.model}`, `Motor ${ev.engineVariant}`],
+    });
+  }
+  // Audits Part-145 (de compliance state)
+  if (game.compliance && game.compliance.lastAuditMinute !== null) {
+    events.push({
+      kind: "audit",
+      id: `audit-${game.compliance.totalAudits}`,
+      sortMinute: game.compliance.lastAuditMinute,
+      open: false,
+      icon: "🛡️",
+      title: `Auditoría Part-145 #${game.compliance.totalAudits} · score ${game.compliance.score}/100`,
+      phase: "DONE",
+      meta: [
+        `Findings: ${(game.compliance.openFindings ?? []).length}`,
+        `Próxima en ${Math.max(0, Math.ceil((game.compliance.nextAuditMinute - game.clock.minute) / S.DAY_MINUTES))}d`,
+      ],
+    });
+  }
+  // Pre-aviso audit pendiente (si existe en notificaciones recientes y aún no auditada)
+  // Lite: skip — el detalle ya está en el badge HUD Compliance.
+
+  // Orden cronológico inverso (más reciente primero).
+  events.sort((a, b) => b.sortMinute - a.sortMinute);
+  return events;
+}
+
+function renderHangarEventTracking(){
+  const feed = buildEventFeed();
+  const filtered = eventFilter === "open" ? feed.filter(e => e.open) : feed;
+  const openCount = feed.filter(e => e.open).length;
+  const closedCount = feed.length - openCount;
+
+  let h = `<div class="skin-bar" style="margin-bottom:.75rem">
+    <span class="skin-label">Vista:</span>
+    <button class="${eventFilter==='open'?'active':''}" data-event-filter="open" style="padding:.25rem .6rem;font-size:.8rem">Activos (${openCount})</button>
+    <button class="${eventFilter==='all'?'active':''}" data-event-filter="all" style="padding:.25rem .6rem;font-size:.8rem">Todos (${feed.length})</button>
+    <span class="skin-label" style="margin-left:1rem;color:var(--muted)">cerrados: ${closedCount}</span>
+  </div>`;
+
+  if (filtered.length === 0) {
+    h += eventFilter === "open"
+      ? '<div class="empty">No hay eventos activos. Pulsa 1× / 2× / 5× para que el reloj avance.</div>'
+      : '<div class="empty">Sin eventos todavía.</div>';
+    return h;
+  }
+
+  h += '<div style="display:flex;flex-direction:column;gap:.5rem">';
+  for (const e of filtered) {
+    const stateBadge = e.open
+      ? `<span class="wo-phase phase-${e.phase}" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">OPEN · ${esc(e.phase)}</span>`
+      : `<span class="wo-phase" style="background:rgba(139,150,180,.15);color:var(--muted);border-color:rgba(139,150,180,.3)">CLOSED · ${esc(e.phase)}</span>`;
+    const dataAttr = e.clickWoId ? `data-wo="${e.clickWoId}"`
+      : e.clickCheckId ? `data-check-id="${e.clickCheckId}"` : "";
+    const clickable = dataAttr ? 'style="cursor:pointer"' : '';
+    h += `<article class="wo-card${e.open ? '' : ' base'}" ${dataAttr} ${clickable}>
+      <header class="wo-head">
+        <span class="event-kind" style="font-size:1.1rem">${e.icon}</span>
+        <span class="wo-id mono">${fmtClock(e.sortMinute)}</span>
+        <span class="wo-id">${e.id}</span>
+        ${stateBadge}
+      </header>
+      <div class="wo-desc">${e.title}</div>
+      <div class="wo-meta">${e.meta.map(m => `<span>${esc(String(m))}</span>`).join("")}</div>
+    </article>`;
+  }
+  h += '</div>';
+  return h;
+}
+
+// Pivot línea pura: tab Operaciones reune lo que antes eran subtabs del Hangar.
+// Subtab principal "Event Tracking" (unificada). Resto = vistas filtradas.
+function renderOperations(){
+  const openEvents = buildEventFeed().filter(e => e.open).length;
   const baseCheckCount = activeBaseChecks().length;
   const warnCount = upcomingWarnings().length;
   const defCount = deferredWos().length;
-  let h = '<h2>Hangar</h2>';
+  let h = '<h2>Operaciones</h2>';
   h += `<div class="subtabs">
-    <button data-subtab="line" class="${hangarSubTab==='line'?'active':''}">Line WOs <span class="count">${activeWoCount}</span></button>
-    <button data-subtab="base" class="base ${hangarSubTab==='base'?'active':''}">Base Checks <span class="count">${baseCheckCount}</span></button>
-    <button data-subtab="deferrals" class="${hangarSubTab==='deferrals'?'active':''}">Deferrals ${defCount>0?`<span class="count" style="background:var(--warning);color:#fff">${defCount}</span>`:`<span class="count">0</span>`}</button>
-    <button data-subtab="fleet" class="${hangarSubTab==='fleet'?'active':''}">Flota ${warnCount>0?`<span class="count" style="background:var(--warning);color:#fff">⚠ ${warnCount}</span>`:''}</button>
-    <button data-subtab="map" class="${hangarSubTab==='map'?'active':''}">🗺️ Mapa</button>
+    <button data-subtab="events" class="${opsSubTab==='events' || opsSubTab==='line' ?'active':''}">📡 Event Tracking <span class="count">${openEvents}</span></button>
+    <button data-subtab="base" class="base ${opsSubTab==='base'?'active':''}">Base Checks <span class="count">${baseCheckCount}</span></button>
+    <button data-subtab="deferrals" class="${opsSubTab==='deferrals'?'active':''}">Deferrals ${defCount>0?`<span class="count" style="background:var(--warning);color:#fff">${defCount}</span>`:`<span class="count">0</span>`}</button>
+    <button data-subtab="fleet" class="${opsSubTab==='fleet'?'active':''}">Flota ${warnCount>0?`<span class="count" style="background:var(--warning);color:#fff">⚠ ${warnCount}</span>`:''}</button>
   </div>`;
-  if (hangarSubTab === "line") h += renderHangarLine();
-  else if (hangarSubTab === "base") h += renderHangarBase();
-  else if (hangarSubTab === "deferrals") h += renderHangarDeferrals();
-  else if (hangarSubTab === "map") {
-    const skin = mapSkin || "cic";
-    const sk = (id, label) => `<button class="skin-btn ${skin===id?'active':''}" data-skin="${id}">${label}</button>`;
-    h += `<div class="skin-bar">
-      <span class="skin-label">Skin:</span>
-      ${sk('cic','CIC actual')} ${sk('blueprint','Blueprint')} ${sk('faa','FAA papel')} ${sk('iso','Iso 2.5D')} ${sk('neon','Neon glow')} ${sk('steam','Steam look')} ${sk('three','3D real')}
-      <span class="skin-label" style="margin-left:.5rem">Radical:</span>
-      ${sk('lateral','Lateral perfil')} ${sk('network','Network flow')} ${sk('isodiag','Iso diag')}
-      <span class="skin-label" style="margin-left:.5rem">Clones:</span>
-      ${sk('simairport','SimAirport')} ${sk('airportceo','AirportCEO mini')} ${sk('ceofull','AirportCEO FULL')} ${sk('ceopng','CEO + PNG sprites')}
-      <span class="skin-label" style="margin-left:.5rem">Huge:</span>
-      ${sk('huge','HUGE 60k×36k · Bus Manager')}
-      <span class="skin-label" style="margin-left:.5rem">F5D:</span>
-      ${sk('f5d','F5D scaffold · CIC north-star')}
-      <span class="skin-label" style="margin-left:.5rem">Vuelos reales:</span>
-      <button class="skin-btn ${game.useScheduleArrivals?'active':''}" data-toggle-schedule="1">Schedule OVD ${game.useScheduleArrivals?'ON':'OFF'}</button>
-    </div>
-    <div class="pixi-host" id="pixi-host"></div>`;
-  }
+  // "line" legacy → "events" (backward compat con saves o estado en memoria viejo)
+  if (opsSubTab === "events" || opsSubTab === "line") h += renderHangarEventTracking();
+  else if (opsSubTab === "base") h += renderHangarBase();
+  else if (opsSubTab === "deferrals") h += renderHangarDeferrals();
   else h += renderHangarFleet();
   return h;
 }
@@ -9771,6 +10032,9 @@ function dayName(gd){
 }
 
 function flightStatusFor(f, contractsActive){
+  // Pivot línea pura: vuelos no habilitados (Embraer, CRJ, ATR, B737, A321neo) ven en
+  // panel pero no son trabajo MRO hasta desbloquear type rating.
+  if (f.notHandled) return { label: "🚫 Sin habilitación", cls: "muted" };
   // arrival sin contrato → "Sin contrato"
   if (f.type === "arrival" && !contractsActive.has(f.airlineCode)) return { label: "Sin contrato", cls: "muted" };
   const now = game.clock.minute;
@@ -9816,9 +10080,11 @@ function renderSchedule(){
 
   const arr = flights.filter(f => f.type === "arrival").length;
   const dep = flights.filter(f => f.type === "departure").length;
+  const notHandled = flights.filter(f => f.notHandled).length;
+  const handled = flights.length - notHandled;
 
   let h = `<h2>📅 Schedule — Día ${gd} (${dayName(gd)})</h2>
-  <p class="muted" style="margin-bottom:.5rem">Aeropuerto LEAS (OVD) · ${flights.length} movimientos · ${arr} ARR / ${dep} DEP · ${contractsActive.size} aerolínea(s) contratada(s)</p>`;
+  <p class="muted" style="margin-bottom:.5rem">Aeropuerto LEAS (OVD) · ${flights.length} movimientos (${arr} ARR / ${dep} DEP) · <strong style="color:var(--success)">${handled} handled</strong> + <strong style="color:var(--muted)">${notHandled} sin habilitación</strong> · ${contractsActive.size} aerolínea(s) contratada(s)</p>`;
 
   // Filtros + leyenda contratos activos
   const fBtn = (id, label) => `<button class="${scheduleFilter===id?'active':''}" data-schedule-filter="${id}" style="padding:.25rem .6rem;font-size:.8rem">${label}</button>`;
@@ -9839,14 +10105,18 @@ function renderSchedule(){
     const time = String(Math.floor(f.scheduledMinute / 60)).padStart(2,'0') + ':' + String(f.scheduledMinute % 60).padStart(2,'0');
     const st = flightStatusFor(f, contractsActive);
     const isUpcoming = upcomingIds.has(`${f.callsign}-${f.type}-${f.scheduledMinute}`);
-    const rowStyle = isUpcoming ? 'background:rgba(77,163,255,.08)' : '';
+    let rowStyle = isUpcoming ? 'background:rgba(77,163,255,.08)' : '';
+    if (f.notHandled) rowStyle += ';opacity:0.55';
     const typeBadge = f.type === "arrival"
       ? '<span class="chip" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">ARR</span>'
       : '<span class="chip" style="background:rgba(210,153,34,.15);color:var(--warning);border-color:rgba(210,153,34,.4)">DEP</span>';
     const operatorBadge = contractsActive.has(f.airlineCode)
       ? `<span style="color:var(--success)">${esc(f.airlineName)} (${f.airlineCode})</span>`
       : `<span class="muted">${esc(f.airlineName)} (${f.airlineCode})</span>`;
-    h += `<tr style="${rowStyle}"><td class="mono">${time}</td><td class="mono">${esc(f.callsign)}</td><td>${typeBadge}</td><td class="mono">${f.type==='arrival'?'← ':'→ '}${esc(f.remote)}</td><td>${f.model}/${f.engineVariant}</td><td>${operatorBadge}</td><td class="${st.cls}">${st.label}</td></tr>`;
+    const modelCell = f.notHandled
+      ? `<span class="muted" title="Type rating no habilitado todavía">${esc(f.model)}/${esc(f.engineVariant)}</span>`
+      : `${esc(f.model)}/${esc(f.engineVariant)}`;
+    h += `<tr style="${rowStyle}"><td class="mono">${time}</td><td class="mono">${esc(f.callsign)}</td><td>${typeBadge}</td><td class="mono">${f.type==='arrival'?'← ':'→ '}${esc(f.remote)}</td><td>${modelCell}</td><td>${operatorBadge}</td><td class="${st.cls}">${st.label}</td></tr>`;
   }
   h += '</tbody></table>';
   return h;
@@ -10482,11 +10752,11 @@ function render(){
   const nowMs = Date.now();
   const panelLocked = selectedWoId !== null; // modal abierto = no tocar panel debajo
   const throttleOk = game.clock.speed === 0 || (nowMs - lastPanelRenderMs) >= 250;
-  // Fase 5D · P-α: si estamos en hangar+map Y ya hay canvas montado, NO regeneramos
-  // el HTML del panel — el canvas vive dentro de #pixi-host y un innerHTML lo destruiría.
-  // Las actualizaciones del mapa se hacen vía syncMapRender() al final del tick.
+  // Fase 5D · P-α / pivot línea pura: si estamos en tab Mapa Y ya hay canvas montado, NO
+  // regeneramos el HTML del panel — el canvas vive dentro de #pixi-host y un innerHTML lo
+  // destruiría. Las actualizaciones del mapa se hacen vía syncMapRender() al final del tick.
   const inMapWithCanvas =
-    activeTab === "hangar" && hangarSubTab === "map" &&
+    activeTab === "map" &&
     !game.gameOver.isOver && document.getElementById("pixi-host") !== null;
   if (!panelLocked && throttleOk && !inMapWithCanvas) {
     let html;
@@ -10496,8 +10766,9 @@ function render(){
         : game.gameOver.reason === "compliance" ? "Certificación Part-145 revocada"
         : "Fin de partida";
       html = `<div class="game-over"><h1>🛑 GAME OVER</h1><p>${reasonTxt}</p></div>`;
-    } else if (activeTab === "hangar")   html = renderHangar();
-    else if (activeTab === "schedule")   html = renderSchedule();
+    } else if (activeTab === "map")       html = renderMap();
+    else if (activeTab === "operations")  html = renderOperations();
+    else if (activeTab === "schedule")    html = renderSchedule();
     else if (activeTab === "mechanics")  html = renderMechanics();
     else if (activeTab === "contracts")  html = renderContracts();
     else if (activeTab === "market")     html = renderMarket();
@@ -10550,39 +10821,13 @@ document.body.addEventListener("click", (e) => {
   // Pivot línea pura · P3: filtro panel schedule
   const schedFilter = e.target.closest("[data-schedule-filter]");
   if (schedFilter) { scheduleFilter = schedFilter.dataset.scheduleFilter; invalidatePanelCache(); render(); return; }
+  // Event Tracking · filtro Open / All
+  const evFilter = e.target.closest("[data-event-filter]");
+  if (evFilter) { eventFilter = evFilter.dataset.eventFilter; invalidatePanelCache(); render(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
-  const toggleSched = e.target.closest("[data-toggle-schedule]");
-  if (toggleSched) {
-    game.useScheduleArrivals = !game.useScheduleArrivals;
-    // Re-generar arrivals desde la nueva fuente: limpia arrivals futuros y resetea cursor
-    game.airplanes = game.airplanes.filter(a => a.scheduledDepartureMinute <= game.clock.minute);
-    game.arrivalsGeneratedUpToDay = Math.floor(game.clock.minute / 1440);
-    game.notifCounter += 1;
-    game.notifications.push({ id: game.notifCounter, minute: game.clock.minute, text: `✈️ Schedule OVD ${game.useScheduleArrivals?'ACTIVADO (vuelos reales LEAS)':'desactivado'}`, type: "info" });
-    invalidatePanelCache();
-    render();
-    return;
-  }
-  const skinBtn = e.target.closest(".skin-btn");
-  if (skinBtn && skinBtn.dataset.skin) {
-    mapSkin = skinBtn.dataset.skin;
-    try { localStorage.setItem("mroMapSkin", mapSkin); } catch(e){}
-    // Si cambiamos entre Pixi y Three (o viceversa), hay que destruir y remontar.
-    const wantKind = mapSkin === "three" ? "three" : "pixi";
-    if (mapDriver && mapDriver.kind !== wantKind) {
-      destroyMapDriver();
-      // syncMapRender en el próximo render() montará el correcto
-      render();
-    } else if (mapDriver) {
-      try { mapDriver.setTheme(mapSkin); } catch(e){ console.error("[skin] setTheme", e); }
-      try { mapDriver.apply(window.Render.buildRenderState(game)); } catch(e){}
-    }
-    document.querySelectorAll(".skin-btn").forEach(b => b.classList.toggle("active", b.dataset.skin === mapSkin));
-    return;
-  }
   const subBtn = e.target.closest(".subtabs button");
-  if (subBtn) { hangarSubTab = subBtn.dataset.subtab; invalidatePanelCache(); render(); return; }
+  if (subBtn) { opsSubTab = subBtn.dataset.subtab; invalidatePanelCache(); render(); return; }
   const tabBtn = e.target.closest(".side > button");
   if (tabBtn) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
   const woCard = e.target.closest(".wo-card:not(.base)");
@@ -10753,7 +10998,7 @@ async function doNewGame() {
   Object.assign(game, fresh);
   hasSavedSlot = false;
   selectedWoId = null;
-  hangarSubTab = "line";
+  opsSubTab = "events";
   render();
 }
 

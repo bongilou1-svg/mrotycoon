@@ -293,7 +293,8 @@ const BODY = `<div class="app">
   </header>
   <div class="body">
     <aside class="side">
-      <button data-tab="hangar" class="active">🏭 Hangar <span class="badge" id="badge-wo">0</span></button>
+      <button data-tab="map" class="active">🗺️ Mapa</button>
+      <button data-tab="operations">🏭 Operaciones <span class="badge" id="badge-wo">0</span></button>
       <button data-tab="schedule">📅 Schedule <span class="badge" id="badge-schedule">0</span></button>
       <button data-tab="mechanics">⚙️ Mecánicos</button>
       <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
@@ -313,8 +314,8 @@ const S = window.Sim;
 // Pivot MRO línea pura (2026-05-24): UI activa lineMode=true por default. Modo legacy
 // solo lo usan los tests automáticos.
 let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, S.DATA.maintenanceChecks, S.DATA.dailyChecks, { lineMode: true });
-let activeTab = "hangar";
-let hangarSubTab = "line"; // "line" | "base" | "fleet" | "deferrals"
+let activeTab = "map"; // pivot línea pura: arrancamos en mapa (wow factor) y operaciones aparte
+let opsSubTab = "events"; // "events" | "base" | "fleet" | "deferrals"
 let selectedWoId = null;
 let complianceModalOpen = false;
 let repModalOpen = false;
@@ -324,6 +325,7 @@ let detailCheckId = null;    // F5C extra: instanceId de check A/C/D para modal
 let detailContractId = null; // F5C extra: id de contrato para modal
 let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
 let scheduleFilter = "all";  // Pivot línea pura · P3: filtro panel schedule "all"|"arrival"|"departure"
+let eventFilter = "open";    // Pivot línea pura · Event Tracking: "open" (activos) | "all"
 let manualCertId = "";
 let manualHelperIds = [];
 let hasSavedSlot = false;
@@ -336,18 +338,19 @@ let lastPanelRenderMs = 0;
 function invalidatePanelCache(){ lastPanelHtml = ""; lastPanelRenderMs = 0; }
 function invalidateModalCache(){ lastModalHtml = ""; }
 
-// Fase 5D · P-α: driver Pixi del mapa. Se monta solo cuando hangarSubTab === "map".
+// Fase 5D · P-α / pivot línea pura: driver Pixi del mapa. Se monta cuando activeTab === "map".
 // Vive fuera del cache de panel para que el canvas no se destruya entre ticks.
 let mapDriver = null;
 let mapMounting = false; // evita carreras durante el await mount()
-// Skin seleccionada (persistida en localStorage). Defaults a "cic" (el P-γ actual).
-let mapSkin = (typeof localStorage !== "undefined" && localStorage.getItem("mroMapSkin")) || "cic";
+// Pivot línea pura: skin hardcoded a "f5d" (OSM real OVD con paleta CIC north-star).
+// El selector de variantes está eliminado del UI para no distraer.
+const mapSkin = "f5d";
 function destroyMapDriver(){
   if (mapDriver) { try { mapDriver.destroy(); } catch(e){} mapDriver = null; }
   mapMounting = false;
 }
 function syncMapRender(){
-  const inMap = activeTab === "hangar" && hangarSubTab === "map" && !game.gameOver.isOver;
+  const inMap = activeTab === "map" && !game.gameOver.isOver;
   if (!inMap) { destroyMapDriver(); return; }
   const host = document.getElementById("pixi-host");
   if (!host) { destroyMapDriver(); return; } // el HTML todavía no se ha inyectado
@@ -568,41 +571,171 @@ function renderHangarDeferrals(){
   return h;
 }
 
-function renderHangar(){
-  const activeWoCount = activeWos().length;
+// Pivot línea pura: tab Mapa = solo el canvas Pixi en skin F5D, sin selector de variantes.
+// El canvas se monta vía syncMapRender() — aquí solo damos el host.
+function renderMap(){
+  return \`<div class="pixi-host" id="pixi-host" style="height:calc(100vh - 96px);min-height:480px"></div>\`;
+}
+
+// ===========================================================================
+// Event Tracking (pivot línea pura, 2026-05-24) — vista unificada Lite
+// ===========================================================================
+// Reconstruye un feed cronológico desde el state actual: WOs line, A/C/D checks,
+// MEL deferrals, random events (runway closure, SB), audits Part-145. Por default
+// muestra solo eventos OPEN (activos). Toggle "All" añade los cerrados.
+// Click en cada card abre el modal de detalle existente (WO/check/contract).
+function buildEventFeed(){
+  const events = [];
+  // WOs line + diferidas + completadas/failed
+  for (const wo of game.workOrders) {
+    const tpl = game.templates.find(t => t.id === wo.templateId);
+    const isDeferred = wo.phase === "Deferred";
+    const isClosed = wo.phase === "Completed" || wo.phase === "Failed";
+    const isDaily = tpl?.id?.startsWith?.("DC-");
+    events.push({
+      kind: isDaily ? "daily" : "wo",
+      id: wo.instanceId,
+      sortMinute: wo.emissionMinute,
+      open: !isClosed,  // deferred cuenta como open (hay decisión pendiente: reparar o dejar vencer)
+      icon: tpl?.isAOG ? "🛑" : isDaily ? "🌙" : isDeferred ? "📋" : "🔧",
+      title: \`\${esc(wo.airplaneRegistration)} · \${esc(tpl?.description?.slice(0,55) ?? wo.templateId)}\`,
+      phase: wo.phase,
+      meta: [
+        \`ATA \${tpl?.ata ?? "?"}\`,
+        \`\${tpl?.requiredCategory ?? "?"}\`,
+        \`SLA \${wo.slaMinute - game.clock.minute}m\`,
+        wo.assignedMechanicIds.length === 0 ? "⚠️ sin asignar" : \`team \${wo.assignedMechanicIds.length}\`,
+      ],
+      clickWoId: wo.instanceId,
+    });
+  }
+  // A/C/D checks
+  for (const c of game.maintenanceChecks) {
+    const isOpen = c.phase === "Scheduled" || c.phase === "InProgress";
+    events.push({
+      kind: "check",
+      id: c.instanceId,
+      sortMinute: c.scheduledMinute,
+      open: isOpen,
+      icon: "🛠️",
+      title: \`\${esc(c.registration)} · \${c.type}-check\${c.nightStarted ? " 🌙" : ""}\${c.onPlatform ? " ⛅" : ""}\`,
+      phase: c.phase,
+      meta: [
+        \`Stand \${c.standId || "—"}\`,
+        \`Team \${c.assignedMechanicIds.length}/\${Math.max(1, Math.ceil(c.manDaysIdeal / c.parkingDays))}\`,
+        \`Fee +\${(c.baseFee).toLocaleString("es-ES")} €\`,
+        c.overrunDaysPenalized > 0 ? \`Overrun \${c.overrunDaysPenalized}d\` : null,
+      ].filter(Boolean),
+      clickCheckId: c.instanceId,
+    });
+  }
+  // Random events
+  for (const ev of (game.randomEvents ?? [])) {
+    const isOpen = ev.type === "runway_closure"
+      ? ev.endMinute > game.clock.minute
+      : (game.clock.minute - ev.startMinute) < 7 * S.DAY_MINUTES;
+    const icon = ev.type === "runway_closure" ? "🚧" : "📢";
+    const title = ev.type === "runway_closure"
+      ? \`Pista \${isOpen ? "CERRADA" : "normalizada"} · \${esc(ev.reason)}\`
+      : \`SB Airbus · \${esc(ev.description ?? "")} (\${esc((ev.affectedRegistrations ?? []).join(", "))})\`;
+    events.push({
+      kind: "randomEvent",
+      id: ev.id,
+      sortMinute: ev.startMinute,
+      open: isOpen,
+      icon,
+      title,
+      phase: isOpen ? "ACTIVE" : "ENDED",
+      meta: ev.type === "runway_closure"
+        ? [\`\${fmtClock(ev.startMinute)} → \${fmtClock(ev.endMinute)}\`]
+        : [\`Modelo \${ev.model}\`, \`Motor \${ev.engineVariant}\`],
+    });
+  }
+  // Audits Part-145 (de compliance state)
+  if (game.compliance && game.compliance.lastAuditMinute !== null) {
+    events.push({
+      kind: "audit",
+      id: \`audit-\${game.compliance.totalAudits}\`,
+      sortMinute: game.compliance.lastAuditMinute,
+      open: false,
+      icon: "🛡️",
+      title: \`Auditoría Part-145 #\${game.compliance.totalAudits} · score \${game.compliance.score}/100\`,
+      phase: "DONE",
+      meta: [
+        \`Findings: \${(game.compliance.openFindings ?? []).length}\`,
+        \`Próxima en \${Math.max(0, Math.ceil((game.compliance.nextAuditMinute - game.clock.minute) / S.DAY_MINUTES))}d\`,
+      ],
+    });
+  }
+  // Pre-aviso audit pendiente (si existe en notificaciones recientes y aún no auditada)
+  // Lite: skip — el detalle ya está en el badge HUD Compliance.
+
+  // Orden cronológico inverso (más reciente primero).
+  events.sort((a, b) => b.sortMinute - a.sortMinute);
+  return events;
+}
+
+function renderHangarEventTracking(){
+  const feed = buildEventFeed();
+  const filtered = eventFilter === "open" ? feed.filter(e => e.open) : feed;
+  const openCount = feed.filter(e => e.open).length;
+  const closedCount = feed.length - openCount;
+
+  let h = \`<div class="skin-bar" style="margin-bottom:.75rem">
+    <span class="skin-label">Vista:</span>
+    <button class="\${eventFilter==='open'?'active':''}" data-event-filter="open" style="padding:.25rem .6rem;font-size:.8rem">Activos (\${openCount})</button>
+    <button class="\${eventFilter==='all'?'active':''}" data-event-filter="all" style="padding:.25rem .6rem;font-size:.8rem">Todos (\${feed.length})</button>
+    <span class="skin-label" style="margin-left:1rem;color:var(--muted)">cerrados: \${closedCount}</span>
+  </div>\`;
+
+  if (filtered.length === 0) {
+    h += eventFilter === "open"
+      ? '<div class="empty">No hay eventos activos. Pulsa 1× / 2× / 5× para que el reloj avance.</div>'
+      : '<div class="empty">Sin eventos todavía.</div>';
+    return h;
+  }
+
+  h += '<div style="display:flex;flex-direction:column;gap:.5rem">';
+  for (const e of filtered) {
+    const stateBadge = e.open
+      ? \`<span class="wo-phase phase-\${e.phase}" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">OPEN · \${esc(e.phase)}</span>\`
+      : \`<span class="wo-phase" style="background:rgba(139,150,180,.15);color:var(--muted);border-color:rgba(139,150,180,.3)">CLOSED · \${esc(e.phase)}</span>\`;
+    const dataAttr = e.clickWoId ? \`data-wo="\${e.clickWoId}"\`
+      : e.clickCheckId ? \`data-check-id="\${e.clickCheckId}"\` : "";
+    const clickable = dataAttr ? 'style="cursor:pointer"' : '';
+    h += \`<article class="wo-card\${e.open ? '' : ' base'}" \${dataAttr} \${clickable}>
+      <header class="wo-head">
+        <span class="event-kind" style="font-size:1.1rem">\${e.icon}</span>
+        <span class="wo-id mono">\${fmtClock(e.sortMinute)}</span>
+        <span class="wo-id">\${e.id}</span>
+        \${stateBadge}
+      </header>
+      <div class="wo-desc">\${e.title}</div>
+      <div class="wo-meta">\${e.meta.map(m => \`<span>\${esc(String(m))}</span>\`).join("")}</div>
+    </article>\`;
+  }
+  h += '</div>';
+  return h;
+}
+
+// Pivot línea pura: tab Operaciones reune lo que antes eran subtabs del Hangar.
+// Subtab principal "Event Tracking" (unificada). Resto = vistas filtradas.
+function renderOperations(){
+  const openEvents = buildEventFeed().filter(e => e.open).length;
   const baseCheckCount = activeBaseChecks().length;
   const warnCount = upcomingWarnings().length;
   const defCount = deferredWos().length;
-  let h = '<h2>Hangar</h2>';
+  let h = '<h2>Operaciones</h2>';
   h += \`<div class="subtabs">
-    <button data-subtab="line" class="\${hangarSubTab==='line'?'active':''}">Line WOs <span class="count">\${activeWoCount}</span></button>
-    <button data-subtab="base" class="base \${hangarSubTab==='base'?'active':''}">Base Checks <span class="count">\${baseCheckCount}</span></button>
-    <button data-subtab="deferrals" class="\${hangarSubTab==='deferrals'?'active':''}">Deferrals \${defCount>0?\`<span class="count" style="background:var(--warning);color:#fff">\${defCount}</span>\`:\`<span class="count">0</span>\`}</button>
-    <button data-subtab="fleet" class="\${hangarSubTab==='fleet'?'active':''}">Flota \${warnCount>0?\`<span class="count" style="background:var(--warning);color:#fff">⚠ \${warnCount}</span>\`:''}</button>
-    <button data-subtab="map" class="\${hangarSubTab==='map'?'active':''}">🗺️ Mapa</button>
+    <button data-subtab="events" class="\${opsSubTab==='events' || opsSubTab==='line' ?'active':''}">📡 Event Tracking <span class="count">\${openEvents}</span></button>
+    <button data-subtab="base" class="base \${opsSubTab==='base'?'active':''}">Base Checks <span class="count">\${baseCheckCount}</span></button>
+    <button data-subtab="deferrals" class="\${opsSubTab==='deferrals'?'active':''}">Deferrals \${defCount>0?\`<span class="count" style="background:var(--warning);color:#fff">\${defCount}</span>\`:\`<span class="count">0</span>\`}</button>
+    <button data-subtab="fleet" class="\${opsSubTab==='fleet'?'active':''}">Flota \${warnCount>0?\`<span class="count" style="background:var(--warning);color:#fff">⚠ \${warnCount}</span>\`:''}</button>
   </div>\`;
-  if (hangarSubTab === "line") h += renderHangarLine();
-  else if (hangarSubTab === "base") h += renderHangarBase();
-  else if (hangarSubTab === "deferrals") h += renderHangarDeferrals();
-  else if (hangarSubTab === "map") {
-    const skin = mapSkin || "cic";
-    const sk = (id, label) => \`<button class="skin-btn \${skin===id?'active':''}" data-skin="\${id}">\${label}</button>\`;
-    h += \`<div class="skin-bar">
-      <span class="skin-label">Skin:</span>
-      \${sk('cic','CIC actual')} \${sk('blueprint','Blueprint')} \${sk('faa','FAA papel')} \${sk('iso','Iso 2.5D')} \${sk('neon','Neon glow')} \${sk('steam','Steam look')} \${sk('three','3D real')}
-      <span class="skin-label" style="margin-left:.5rem">Radical:</span>
-      \${sk('lateral','Lateral perfil')} \${sk('network','Network flow')} \${sk('isodiag','Iso diag')}
-      <span class="skin-label" style="margin-left:.5rem">Clones:</span>
-      \${sk('simairport','SimAirport')} \${sk('airportceo','AirportCEO mini')} \${sk('ceofull','AirportCEO FULL')} \${sk('ceopng','CEO + PNG sprites')}
-      <span class="skin-label" style="margin-left:.5rem">Huge:</span>
-      \${sk('huge','HUGE 60k×36k · Bus Manager')}
-      <span class="skin-label" style="margin-left:.5rem">F5D:</span>
-      \${sk('f5d','F5D scaffold · CIC north-star')}
-      <span class="skin-label" style="margin-left:.5rem">Vuelos reales:</span>
-      <button class="skin-btn \${game.useScheduleArrivals?'active':''}" data-toggle-schedule="1">Schedule OVD \${game.useScheduleArrivals?'ON':'OFF'}</button>
-    </div>
-    <div class="pixi-host" id="pixi-host"></div>\`;
-  }
+  // "line" legacy → "events" (backward compat con saves o estado en memoria viejo)
+  if (opsSubTab === "events" || opsSubTab === "line") h += renderHangarEventTracking();
+  else if (opsSubTab === "base") h += renderHangarBase();
+  else if (opsSubTab === "deferrals") h += renderHangarDeferrals();
   else h += renderHangarFleet();
   return h;
 }
@@ -899,6 +1032,9 @@ function dayName(gd){
 }
 
 function flightStatusFor(f, contractsActive){
+  // Pivot línea pura: vuelos no habilitados (Embraer, CRJ, ATR, B737, A321neo) ven en
+  // panel pero no son trabajo MRO hasta desbloquear type rating.
+  if (f.notHandled) return { label: "🚫 Sin habilitación", cls: "muted" };
   // arrival sin contrato → "Sin contrato"
   if (f.type === "arrival" && !contractsActive.has(f.airlineCode)) return { label: "Sin contrato", cls: "muted" };
   const now = game.clock.minute;
@@ -944,9 +1080,11 @@ function renderSchedule(){
 
   const arr = flights.filter(f => f.type === "arrival").length;
   const dep = flights.filter(f => f.type === "departure").length;
+  const notHandled = flights.filter(f => f.notHandled).length;
+  const handled = flights.length - notHandled;
 
   let h = \`<h2>📅 Schedule — Día \${gd} (\${dayName(gd)})</h2>
-  <p class="muted" style="margin-bottom:.5rem">Aeropuerto LEAS (OVD) · \${flights.length} movimientos · \${arr} ARR / \${dep} DEP · \${contractsActive.size} aerolínea(s) contratada(s)</p>\`;
+  <p class="muted" style="margin-bottom:.5rem">Aeropuerto LEAS (OVD) · \${flights.length} movimientos (\${arr} ARR / \${dep} DEP) · <strong style="color:var(--success)">\${handled} handled</strong> + <strong style="color:var(--muted)">\${notHandled} sin habilitación</strong> · \${contractsActive.size} aerolínea(s) contratada(s)</p>\`;
 
   // Filtros + leyenda contratos activos
   const fBtn = (id, label) => \`<button class="\${scheduleFilter===id?'active':''}" data-schedule-filter="\${id}" style="padding:.25rem .6rem;font-size:.8rem">\${label}</button>\`;
@@ -967,14 +1105,18 @@ function renderSchedule(){
     const time = String(Math.floor(f.scheduledMinute / 60)).padStart(2,'0') + ':' + String(f.scheduledMinute % 60).padStart(2,'0');
     const st = flightStatusFor(f, contractsActive);
     const isUpcoming = upcomingIds.has(\`\${f.callsign}-\${f.type}-\${f.scheduledMinute}\`);
-    const rowStyle = isUpcoming ? 'background:rgba(77,163,255,.08)' : '';
+    let rowStyle = isUpcoming ? 'background:rgba(77,163,255,.08)' : '';
+    if (f.notHandled) rowStyle += ';opacity:0.55';
     const typeBadge = f.type === "arrival"
       ? '<span class="chip" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">ARR</span>'
       : '<span class="chip" style="background:rgba(210,153,34,.15);color:var(--warning);border-color:rgba(210,153,34,.4)">DEP</span>';
     const operatorBadge = contractsActive.has(f.airlineCode)
       ? \`<span style="color:var(--success)">\${esc(f.airlineName)} (\${f.airlineCode})</span>\`
       : \`<span class="muted">\${esc(f.airlineName)} (\${f.airlineCode})</span>\`;
-    h += \`<tr style="\${rowStyle}"><td class="mono">\${time}</td><td class="mono">\${esc(f.callsign)}</td><td>\${typeBadge}</td><td class="mono">\${f.type==='arrival'?'← ':'→ '}\${esc(f.remote)}</td><td>\${f.model}/\${f.engineVariant}</td><td>\${operatorBadge}</td><td class="\${st.cls}">\${st.label}</td></tr>\`;
+    const modelCell = f.notHandled
+      ? \`<span class="muted" title="Type rating no habilitado todavía">\${esc(f.model)}/\${esc(f.engineVariant)}</span>\`
+      : \`\${esc(f.model)}/\${esc(f.engineVariant)}\`;
+    h += \`<tr style="\${rowStyle}"><td class="mono">\${time}</td><td class="mono">\${esc(f.callsign)}</td><td>\${typeBadge}</td><td class="mono">\${f.type==='arrival'?'← ':'→ '}\${esc(f.remote)}</td><td>\${modelCell}</td><td>\${operatorBadge}</td><td class="\${st.cls}">\${st.label}</td></tr>\`;
   }
   h += '</tbody></table>';
   return h;
@@ -1610,11 +1752,11 @@ function render(){
   const nowMs = Date.now();
   const panelLocked = selectedWoId !== null; // modal abierto = no tocar panel debajo
   const throttleOk = game.clock.speed === 0 || (nowMs - lastPanelRenderMs) >= 250;
-  // Fase 5D · P-α: si estamos en hangar+map Y ya hay canvas montado, NO regeneramos
-  // el HTML del panel — el canvas vive dentro de #pixi-host y un innerHTML lo destruiría.
-  // Las actualizaciones del mapa se hacen vía syncMapRender() al final del tick.
+  // Fase 5D · P-α / pivot línea pura: si estamos en tab Mapa Y ya hay canvas montado, NO
+  // regeneramos el HTML del panel — el canvas vive dentro de #pixi-host y un innerHTML lo
+  // destruiría. Las actualizaciones del mapa se hacen vía syncMapRender() al final del tick.
   const inMapWithCanvas =
-    activeTab === "hangar" && hangarSubTab === "map" &&
+    activeTab === "map" &&
     !game.gameOver.isOver && document.getElementById("pixi-host") !== null;
   if (!panelLocked && throttleOk && !inMapWithCanvas) {
     let html;
@@ -1624,8 +1766,9 @@ function render(){
         : game.gameOver.reason === "compliance" ? "Certificación Part-145 revocada"
         : "Fin de partida";
       html = \`<div class="game-over"><h1>🛑 GAME OVER</h1><p>\${reasonTxt}</p></div>\`;
-    } else if (activeTab === "hangar")   html = renderHangar();
-    else if (activeTab === "schedule")   html = renderSchedule();
+    } else if (activeTab === "map")       html = renderMap();
+    else if (activeTab === "operations")  html = renderOperations();
+    else if (activeTab === "schedule")    html = renderSchedule();
     else if (activeTab === "mechanics")  html = renderMechanics();
     else if (activeTab === "contracts")  html = renderContracts();
     else if (activeTab === "market")     html = renderMarket();
@@ -1678,39 +1821,13 @@ document.body.addEventListener("click", (e) => {
   // Pivot línea pura · P3: filtro panel schedule
   const schedFilter = e.target.closest("[data-schedule-filter]");
   if (schedFilter) { scheduleFilter = schedFilter.dataset.scheduleFilter; invalidatePanelCache(); render(); return; }
+  // Event Tracking · filtro Open / All
+  const evFilter = e.target.closest("[data-event-filter]");
+  if (evFilter) { eventFilter = evFilter.dataset.eventFilter; invalidatePanelCache(); render(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
-  const toggleSched = e.target.closest("[data-toggle-schedule]");
-  if (toggleSched) {
-    game.useScheduleArrivals = !game.useScheduleArrivals;
-    // Re-generar arrivals desde la nueva fuente: limpia arrivals futuros y resetea cursor
-    game.airplanes = game.airplanes.filter(a => a.scheduledDepartureMinute <= game.clock.minute);
-    game.arrivalsGeneratedUpToDay = Math.floor(game.clock.minute / 1440);
-    game.notifCounter += 1;
-    game.notifications.push({ id: game.notifCounter, minute: game.clock.minute, text: \`✈️ Schedule OVD \${game.useScheduleArrivals?'ACTIVADO (vuelos reales LEAS)':'desactivado'}\`, type: "info" });
-    invalidatePanelCache();
-    render();
-    return;
-  }
-  const skinBtn = e.target.closest(".skin-btn");
-  if (skinBtn && skinBtn.dataset.skin) {
-    mapSkin = skinBtn.dataset.skin;
-    try { localStorage.setItem("mroMapSkin", mapSkin); } catch(e){}
-    // Si cambiamos entre Pixi y Three (o viceversa), hay que destruir y remontar.
-    const wantKind = mapSkin === "three" ? "three" : "pixi";
-    if (mapDriver && mapDriver.kind !== wantKind) {
-      destroyMapDriver();
-      // syncMapRender en el próximo render() montará el correcto
-      render();
-    } else if (mapDriver) {
-      try { mapDriver.setTheme(mapSkin); } catch(e){ console.error("[skin] setTheme", e); }
-      try { mapDriver.apply(window.Render.buildRenderState(game)); } catch(e){}
-    }
-    document.querySelectorAll(".skin-btn").forEach(b => b.classList.toggle("active", b.dataset.skin === mapSkin));
-    return;
-  }
   const subBtn = e.target.closest(".subtabs button");
-  if (subBtn) { hangarSubTab = subBtn.dataset.subtab; invalidatePanelCache(); render(); return; }
+  if (subBtn) { opsSubTab = subBtn.dataset.subtab; invalidatePanelCache(); render(); return; }
   const tabBtn = e.target.closest(".side > button");
   if (tabBtn) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
   const woCard = e.target.closest(".wo-card:not(.base)");
@@ -1881,7 +1998,7 @@ async function doNewGame() {
   Object.assign(game, fresh);
   hasSavedSlot = false;
   selectedWoId = null;
-  hangarSubTab = "line";
+  opsSubTab = "events";
   render();
 }
 

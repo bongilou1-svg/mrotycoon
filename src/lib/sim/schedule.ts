@@ -26,10 +26,25 @@ export interface ScheduledFlight {
   type: "arrival" | "departure";
   remote: string;
   scheduledMinute: number; // minuto del día [0..1439]
-  model: AircraftModel;
-  engineVariant: EngineVariant;
+  /** Modelo físico del avión. El sim sólo trabaja con A320/A321 hoy. Otros modelos
+   *  (E190, CRJ-1000, ATR72-600, B737-800, etc.) aparecen en el panel Schedule como
+   *  movimientos del aeropuerto, pero `generateScheduledArrivals` los skipea hasta
+   *  que se habilite el type rating correspondiente (futuro). */
+  model: string;
+  engineVariant: string;
   airlineCode: string;
   airlineName: string;
+  /** Si true, este vuelo es informativo (aparece en panel Schedule) pero NO genera
+   *  Airplane real ni trabajo MRO. Útil para Embraer/CRJ/ATR/B737 hasta habilitación. */
+  notHandled?: boolean;
+}
+
+const HANDLED_MODELS = new Set(["A320", "A321"]);
+const HANDLED_ENGINES = new Set(["CFM56", "V2500"]);
+
+function isFlightHandled(f: { model: string; engineVariant: string; notHandled?: boolean }): boolean {
+  if (f.notHandled === true) return false;
+  return HANDLED_MODELS.has(f.model) && HANDLED_ENGINES.has(f.engineVariant);
 }
 
 const PATTERN_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
@@ -157,12 +172,16 @@ export function generateScheduledArrivals(
   for (const f of flights) {
     if (f.type !== "arrival") continue;
     if (busyRegistrations.has(f.callsign)) continue;
+    // Pivot línea pura: vuelos con modelo/motor no habilitado (Embraer, CRJ, ATR, B737)
+    // se ven en el panel Schedule pero NO generan Airplane en el sim hasta que se
+    // habilite el type rating correspondiente.
+    if (!isFlightHandled(f)) continue;
     const contract = anyIata
       ? contractByIata.get(f.airlineCode)
       : fallbackContract;
     if (!contract) continue; // aerolínea sin contrato → skip vuelo
     const airlineId = contract.airlineId;
-    workingFleet = ensureFleetEntry(workingFleet, f.callsign, f.airlineCode, airlineId, f.model, f.engineVariant);
+    workingFleet = ensureFleetEntry(workingFleet, f.callsign, f.airlineCode, airlineId, f.model as AircraftModel, f.engineVariant as EngineVariant);
     const arrivalMinute = dayOffset + f.scheduledMinute;
     const overnight = isOvernightCandidate(f);
     const scheduledDepartureMinute = overnight

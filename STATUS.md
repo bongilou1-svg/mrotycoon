@@ -284,6 +284,22 @@ Ver sección "Decisiones cerradas" en `CLAUDE.md`.
 
 ## 🌟 Parking (ideas que aparecen a mitad, NO al código)
 
+### Tiempo tránsito oficina→stand variable por distancia (2026-05-24)
+
+Actualmente `balance.officeToStandMinutes = 2` minutos FIJO para todos los stands.
+En OVD la diferencia entre stand más cercano y más lejano es ~150 m → 30 segundos en
+furgo, irrelevante. Pero en escenarios futuros (hangares de endgame con stand alejado,
+multi-aeropuerto con apron grande tipo MAD/BCN) sí debería variar.
+
+Implementación cuando aplique:
+1. Añadir `transitMinutesFromOffice` a `StandDefinition` en `sim/stands.ts` (calculado
+   desde coords reales con velocidad furgo asumida ~30 km/h).
+2. `assignMechanicsToWo` lee ese campo en vez de `balance.officeToStandMinutes`.
+3. `RenderMechanic.progress` usa el mismo valor para interpolación visual.
+4. Tests sim_assignment con stands de distancias distintas.
+
+Por ahora (OVD): 2 min fijo es suficiente.
+
 ### Pivot MRO línea pura — balancing económico (2026-05-24) ⚠️ HEROE BUG
 
 Auto-playtest 10×28d en lineMode:
