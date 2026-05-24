@@ -602,19 +602,21 @@ function renderMap(){
 // Click en cada card abre el modal de detalle existente (WO/check/contract).
 function buildEventFeed(){
   const events = [];
-  // WOs line + diferidas + completadas/failed
+  // WOs callout + diferidas + completadas/failed (NO daily checks — esos van agrupados).
   for (const wo of game.workOrders) {
-    const tpl = game.templates.find(t => t.id === wo.templateId);
+    const tpl = game.templates.find(t => t.id === wo.templateId) || game.dailyCheckTemplates?.find?.(t => t.id === wo.templateId);
+    const isDaily = wo.templateId?.startsWith?.("DC-");
+    if (isDaily) continue; // agrupados abajo, no entries sueltas
     const isDeferred = wo.phase === "Deferred";
     const isClosed = wo.phase === "Completed" || wo.phase === "Failed";
-    const isDaily = tpl?.id?.startsWith?.("DC-");
+    const isFinding = wo.parentWoInstanceId !== undefined;
     events.push({
-      kind: isDaily ? "daily" : "wo",
+      kind: "wo",
       id: wo.instanceId,
       sortMinute: wo.emissionMinute,
-      open: !isClosed,  // deferred cuenta como open (hay decisión pendiente: reparar o dejar vencer)
-      icon: tpl?.isAOG ? "🛑" : isDaily ? "🌙" : isDeferred ? "📋" : "🔧",
-      title: \`\${esc(wo.airplaneRegistration)} · \${esc(tpl?.description?.slice(0,55) ?? wo.templateId)}\`,
+      open: !isClosed,
+      icon: tpl?.isAOG ? "🛑" : isFinding ? "🔍" : isDeferred ? "📋" : "🔧",
+      title: \`\${esc(wo.airplaneRegistration)} · \${esc(tpl?.description?.slice(0,55) ?? wo.templateId)}\${isFinding ? ' (finding)' : ''}\`,
       phase: wo.phase,
       meta: [
         \`ATA \${tpl?.ata ?? "?"}\`,
@@ -623,6 +625,45 @@ function buildEventFeed(){
         wo.assignedMechanicIds.length === 0 ? "⚠️ sin asignar" : \`team \${wo.assignedMechanicIds.length}\`,
       ],
       clickWoId: wo.instanceId,
+    });
+  }
+  // Daily check: AGRUPADO por avión (un solo entry con subtareas X/Y, no N cards sueltas).
+  // Una pernocta → un daily check → N subtareas internas (las DC-* del sim).
+  const dailyByAirplane = new Map();
+  for (const wo of game.workOrders) {
+    if (!wo.templateId?.startsWith?.("DC-")) continue;
+    const ap = game.airplanes.find(a => a.instanceId === wo.airplaneInstanceId);
+    if (!ap) continue;
+    const key = ap.instanceId;
+    if (!dailyByAirplane.has(key)) dailyByAirplane.set(key, { ap, wos: [] });
+    dailyByAirplane.get(key).wos.push(wo);
+  }
+  for (const { ap, wos } of dailyByAirplane.values()) {
+    const completed = wos.filter(w => w.phase === "Completed").length;
+    const failed = wos.filter(w => w.phase === "Failed").length;
+    const total = wos.length;
+    const isClosed = completed + failed === total;
+    const sortMin = Math.min(...wos.map(w => w.emissionMinute));
+    const assignedSet = new Set();
+    for (const w of wos) for (const id of w.assignedMechanicIds) assignedSet.add(id);
+    const bookHours = wos.reduce((s, w) => {
+      const tpl = game.dailyCheckTemplates?.find?.(t => t.id === w.templateId) || game.templates.find(t => t.id === w.templateId);
+      return s + (tpl?.durationMinutes ?? 0) / 60;
+    }, 0);
+    events.push({
+      kind: "daily",
+      id: \`DC-\${ap.registration}\`,
+      sortMinute: sortMin,
+      open: !isClosed,
+      icon: "🌙",
+      title: \`\${esc(ap.registration)} · Daily check · \${completed}/\${total} subtareas\`,
+      phase: isClosed ? (failed > 0 ? "Failed" : "Completed") : "InProgress",
+      meta: [
+        \`book \${bookHours.toFixed(1)}h\`,
+        assignedSet.size === 0 ? "⚠️ sin asignar" : \`team \${assignedSet.size}\`,
+        failed > 0 ? \`\${failed} subtarea\${failed>1?'s':''} failed\` : null,
+      ].filter(Boolean),
+      clickFleetReg: ap.registration,  // click abre modal del avión
     });
   }
   // A/C/D checks
@@ -765,7 +806,8 @@ function renderHangarEventTracking(){
       ? \`<span class="wo-phase phase-\${e.phase}" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">OPEN · \${esc(e.phase)}</span>\`
       : \`<span class="wo-phase" style="background:rgba(139,150,180,.15);color:var(--muted);border-color:rgba(139,150,180,.3)">CLOSED · \${esc(e.phase)}</span>\`;
     const dataAttr = e.clickWoId ? \`data-wo="\${e.clickWoId}"\`
-      : e.clickCheckId ? \`data-check-id="\${e.clickCheckId}"\` : "";
+      : e.clickCheckId ? \`data-check-id="\${e.clickCheckId}"\`
+      : e.clickFleetReg ? \`data-fleet-reg="\${esc(e.clickFleetReg)}"\` : "";
     const clickable = dataAttr ? 'style="cursor:pointer"' : '';
     // Para WO callouts (no daily, no check, no random event), renderizar stepper
     // visual de fases: Travel → T-shoot → Fix → Test → Release.
@@ -1360,7 +1402,7 @@ function renderProductionPlanning(){
           <span>Próx. salida: <strong class="mono">\${esc(ap.nextDepartureCallsign ?? "—")}</strong> @ <strong>\${fmtClock(ap.scheduledDepartureMinute)}</strong></span>
         </div>
         <div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.25rem;font-size:.85rem">
-          \${dcTotal > 0 ? \`<div>🌙 <strong>Daily check</strong> · <strong>\${dcCompleted}/\${dcTotal}</strong> subtareas \${dcCompleted === dcTotal ? '<span style="color:var(--success)">✓</span>' : '<span style="color:var(--warning)">pendiente</span>'} · book <strong>\${dcBookHours.toFixed(1)}h</strong></div>\` : '<div class="muted">🌙 Daily check no emitido todavía</div>'}
+          \${dcTotal > 0 ? \`<div>🌙 <strong>Daily check</strong> · <strong>\${dcCompleted}/\${dcTotal}</strong> subtareas \${dcCompleted === dcTotal ? '<span style="color:var(--success)">✓</span>' : '<span style="color:var(--warning)">pendiente</span>'} · book <strong>\${dcBookHours.toFixed(1)}h</strong></div>\` : (ap.arrivalMinute > game.clock.minute ? \`<div class="muted">🌙 Daily check se emitirá al aterrizar a las <strong>\${fmtClock(ap.arrivalMinute)}</strong></div>\` : '<div class="muted">🌙 Daily check pendiente de emisión</div>')}
           \${deferred.length > 0 ? \`<div>📋 <strong>\${deferred.length}</strong> WO diferida\${deferred.length>1?'s':''} (cierre opcional) · book <strong>\${deferredBookHours.toFixed(1)}h</strong></div>\` : ''}
           <div class="muted">📄 MPD ítems facilitados por la aerolínea: <strong>—</strong> (próximamente)</div>
         </div>
@@ -2135,6 +2177,8 @@ document.body.addEventListener("click", (e) => {
   }
   // F5C pulido: hora extra. El cert hace este trabajo fuera de su turno; cobra overtime al volver
   // a Idle y se le restaura el turno original. Moral -5 inmediata por el cambio forzado.
+  // Pivot línea pura · iteración 2026-05-24: el mec en overtime viene DE CASA, no de la
+  // oficina → +120min al stateRemainingMinutes inicial del trayecto ToPlane.
   if (e.target.id === "btn-shift-and-assign" && selectedWoId && manualCertId) {
     const minOfDay = game.clock.minute % S.DAY_MINUTES;
     const hour = Math.floor(minOfDay / 60);
@@ -2151,7 +2195,25 @@ document.body.addEventListener("click", (e) => {
     // Moral -5 inmediata
     mech.moral = Math.max(0, (mech.moral ?? 70) - 5);
     const r = S.assignMechanicsManually(game, selectedWoId, manualCertId, manualHelperIds);
-    if (r.ok) { selectedWoId = null; render(); }
+    if (r.ok) {
+      // +120min de tránsito al cert (viene de casa, no de la oficina). Si llevó helpers
+      // que también estaban OffShift, asumimos lo mismo (en realidad solo el cert podría
+      // estar OffShift en este flujo, pero curamos por seguridad).
+      const assignedIds = [manualCertId, ...manualHelperIds];
+      for (const id of assignedIds) {
+        const m = game.mechanics.find(mm => mm.id === id);
+        if (m && m.state === "ToPlane") {
+          m.stateRemainingMinutes += 120;
+        }
+      }
+      game.notifCounter += 1;
+      game.notifications.push({
+        id: game.notifCounter, minute: game.clock.minute,
+        text: \`⏱️ \${mech.name} viene de casa (+2h tránsito a stand)\`,
+        type: "info",
+      });
+      selectedWoId = null; render();
+    }
     else alert("No se pudo asignar tras hora extra: " + (r.error ?? ""));
     return;
   }
