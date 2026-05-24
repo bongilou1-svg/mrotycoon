@@ -8,7 +8,7 @@ import { currentStands } from "../sim/stands.ts";
 import { runwayClosedAt } from "../sim/events.ts";
 import { DAY_MINUTES } from "../sim/time.ts";
 import { getFlightsForGameDay } from "../sim/schedule.ts";
-import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay } from "./types.ts";
+import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay, AirplaneDisplayState } from "./types.ts";
 
 /** OSM parking positions de LEAS NO mapeadas al sim. Pivot iteración 2026-05-24:
  *  F5D_STAND_MAP ahora usa 01-07 (sim ampliado). Passthroughs usan los 3 restantes
@@ -54,6 +54,35 @@ export function buildRenderState(g: GameState): RenderState {
       const taxiProgress = TAXIING_DURATION_MIN > 0
         ? Math.max(0, Math.min(1, taxiAge / TAXIING_DURATION_MIN))
         : 1;
+      // Pivot iteración 2026-05-24: derivar displayState semántico para que el driver
+      // pinte el avión con color/badge según situación operativa. Prioridad:
+      // aog > delayed > working > daily > idle. Los IDs activos permiten click contextual.
+      const woOnPlane = g.workOrders.filter(
+        (w) => w.airplaneInstanceId === a.instanceId &&
+          w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred",
+      );
+      const dailyOpen = woOnPlane.filter((w) => w.templateId?.startsWith?.("DC-"));
+      const calloutsOpen = woOnPlane.filter((w) => !w.templateId?.startsWith?.("DC-"));
+      const checkOnPlane = g.maintenanceChecks.find(
+        (c) => c.registration === a.registration && c.phase === "InProgress",
+      );
+      const hasMechWorking = woOnPlane.some(
+        (w) => w.assignedMechanicIds.length > 0 && (w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework" || w.phase === "Inspection"),
+      ) || (checkOnPlane !== undefined && checkOnPlane.assignedMechanicIds.length > 0);
+      let displayState: AirplaneDisplayState = "idle";
+      if (a.aogEscalated) {
+        displayState = "aog";
+      } else if (a.scheduledDepartureMinute < now && woOnPlane.length > 0) {
+        displayState = "delayed";
+      } else if (hasMechWorking) {
+        displayState = "working";
+      } else if (dailyOpen.length > 0) {
+        displayState = "daily";
+      }
+      // Callout activo prioritario para click; si no hay callout pero hay check, ése.
+      const activeWoInstanceId = calloutsOpen[0]?.instanceId;
+      const activeCheckInstanceId = checkOnPlane?.instanceId;
+      const hasOpenDaily = dailyOpen.length > 0;
       return {
         instanceId: a.instanceId,
         registration: a.registration,
@@ -63,6 +92,10 @@ export function buildRenderState(g: GameState): RenderState {
         overnight: a.overnight ?? false,
         taxiing,
         taxiProgress,
+        displayState,
+        ...(activeWoInstanceId ? { activeWoInstanceId } : {}),
+        ...(activeCheckInstanceId ? { activeCheckInstanceId } : {}),
+        ...(hasOpenDaily ? { hasOpenDaily } : {}),
       };
     });
 

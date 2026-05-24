@@ -25,7 +25,7 @@ function expect(cond, msg) {
 }
 
 console.log("\n=== Constantes ===");
-expect(AOG_DELAY_THRESHOLD_MIN === 360, `umbral AOG 360 min / 6h (got ${AOG_DELAY_THRESHOLD_MIN})`);
+expect(AOG_DELAY_THRESHOLD_MIN === 180, `umbral AOG 180 min / 3h (got ${AOG_DELAY_THRESHOLD_MIN})`);
 expect(AOG_ESCALATION_PENALTY_EUR === 10_000, `penalty AOG 10k € (got ${AOG_ESCALATION_PENALTY_EUR})`);
 
 console.log("\n=== createGame inicializa KPI vacío ===");

@@ -10,7 +10,12 @@
     "tauri": "tauri",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "eslint . --ext .ts,.svelte",
-    "format": "prettier --write \"src/**/*.{ts,svelte,css,html,json}\""
+    "format": "prettier --write \"src/**/*.{ts,svelte,css,html,json}\"",
+    "bundle": "node .scripts/build-vanilla.mjs v0.6-line-mro.html",
+    "smoke": "node .scripts/smoke-runtime.mjs",
+    "smoke:verbose": "node .scripts/smoke-runtime.mjs 42 3 line --verbose",
+    "smoke:long": "node .scripts/smoke-runtime.mjs 42 7 line",
+    "smoke:legacy": "node .scripts/smoke-runtime.mjs 42 7 legacy"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

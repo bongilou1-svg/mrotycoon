@@ -280,6 +280,55 @@ export function tickContractTierUpgrade(
 
 // ---- Pivot MRO línea pura — competencia simple (2026-05-24) ----
 
+// ───────────────────────────────────────────────────────────────────────────
+// BRAND REPUTATION del MRO (pivot iteración 2026-05-25 · método objetivo + escalable)
+// ───────────────────────────────────────────────────────────────────────────
+// El bug histórico: `tickLineCompetition` miraba `reputationByAirline[al.id]` para
+// aerolíneas sin contrato, pero esa rep nunca subía (las acciones solo afectan a la
+// aerolínea del avión implicado). Las outsiders quedaban en 50 inicial → nunca 70 →
+// deadlock: nunca aparecía oferta nueva.
+//
+// FIX: las aerolíneas SIN trato directo miran un score objetivo = "brand del MRO",
+// derivado de KPIs observables (rep media de contratadas + on-time ratio + 1-aogRatio).
+// Es:
+//   - OBJETIVO: función pura de datos del sim (sin RNG).
+//   - ESCALABLE: en el futuro tier upgrades, fees premium, ratings de aerolíneas
+//     pioneer (Lufthansa, Ryanair) se desbloquean cuando brand cruza umbrales más altos.
+//   - JUSTO: un MRO que cuida a su única aerolínea muy bien empieza a ser visible
+//     para el resto sin necesidad de "magia". Imita reality: el reputation spillover
+//     en MRO regionales es por boca-a-boca entre operadores y publicaciones del sector.
+//
+// Pesos elegidos:
+//   - 50% rep media de aerolíneas activas (resultado tangible visible al cliente).
+//   - 30% on-time ratio global (KPI más publicitado en aviación).
+//   - 20% (1 - aog ratio) — los AOG son veneno reputacional, pero son raros.
+// Floor: requiere ≥10 departures gestionados para tener "fama" (sin track record → 0).
+
+/** Inputs puros para calcular el brand reputation. */
+export interface BrandRepInput {
+  /** Total departures gestionados (g.departureKPI.totalDepartures). */
+  totalDepartures: number;
+  /** Departures on-time (g.departureKPI.totalOnTime). */
+  totalOnTime: number;
+  /** Departures que escalaron a AOG (g.departureKPI.totalAog). */
+  totalAog: number;
+  /** Reps actuales de aerolíneas con contrato activo. */
+  contractedReps: number[];
+}
+
+/** Score 0-100 que las aerolíneas SIN contrato observan del MRO. Las CON contrato
+ *  miran su rep individual (más estricto). Mínimo 10 departures para tener fama. */
+export function brandReputation(input: BrandRepInput): number {
+  if (input.totalDepartures < 10) return 0;
+  const onTimeRatio = input.totalOnTime / input.totalDepartures;
+  const aogRatio = input.totalAog / input.totalDepartures;
+  const avgRep = input.contractedReps.length > 0
+    ? input.contractedReps.reduce((s, r) => s + r, 0) / input.contractedReps.length
+    : 0;
+  const score = avgRep * 0.5 + onTimeRatio * 100 * 0.3 + (1 - aogRatio) * 100 * 0.2;
+  return Math.round(Math.max(0, Math.min(100, score)));
+}
+
 /** Rep mínima para que una aerolínea sin contrato te ofrezca uno. Más alto que el legacy
  *  (20) porque arrancamos con rep base 50 — el umbral 70 obliga a ganar reputación real. */
 export const LINE_OFFER_REP_THRESHOLD = 70;
@@ -374,12 +423,18 @@ export function tickLineCompetition(
   airlines: readonly Airline[],
   reputationByAirline: Readonly<Record<string, number>>,
   nowMinute: number,
+  /** Pivot 2026-05-25: score objetivo del MRO observable por aerolíneas SIN trato directo.
+   *  Si se pasa, las outsiders evalúan el threshold contra ESTE valor (en lugar de su rep
+   *  individual estática que nunca cambia). Mantiene backwards-compat: si undefined,
+   *  comportamiento antiguo. */
+  brandRepForOutsiders?: number,
 ): LineCompetitionResult {
   const newOffers: Contract[] = [];
   const cancellations: Array<{ contractId: string; airlineId: string }> = [];
   let updated: Contract[] = [...contracts];
 
-  // 1) Rescisiones por rep baja.
+  // 1) Rescisiones por rep baja. Se mira la rep INDIVIDUAL de la aerolínea contratada
+  // (no el brand) — el cliente directo ve su servicio, no la fama generalizada.
   for (let i = 0; i < updated.length; i++) {
     const c = updated[i];
     if (c.status !== "active") continue;
@@ -390,11 +445,17 @@ export function tickLineCompetition(
     }
   }
 
-  // 2) Ofertas nuevas para aerolíneas sin contrato vivo con rep alta.
+  // 2) Ofertas nuevas para aerolíneas sin contrato vivo. Pivot iteración 2026-05-25:
+  // cada aerolínea tiene su PROPIO `brandThreshold` en airlines.json (Volotea 55, IB 60,
+  // VY 70, U2 80) basado en presencia/volumen OVD + favoritismo local. Esto crea el orden
+  // natural: a medida que tu brand sube, primero te oferta Volotea (operador local),
+  // luego Iberia (rescue si la perdiste), luego Vueling, finalmente easyJet.
   for (const al of airlines) {
     if (!al.iataCode) continue; // solo aerolíneas reales del schedule
-    const rep = reputationByAirline[al.id] ?? 50;
-    if (rep < LINE_OFFER_REP_THRESHOLD) continue;
+    const repIndividual = reputationByAirline[al.id] ?? 50;
+    const repToEvaluate = brandRepForOutsiders ?? repIndividual;
+    const threshold = al.brandThreshold ?? LINE_OFFER_REP_THRESHOLD;
+    if (repToEvaluate < threshold) continue;
     const alreadyEngaged = updated.some(
       (c) =>
         c.airlineId === al.id &&
@@ -402,12 +463,21 @@ export function tickLineCompetition(
           (c.status === "offered" && (c.expiresAtMinute === undefined || nowMinute < c.expiresAtMinute))),
     );
     if (alreadyEngaged) continue;
-    // Escala lineal: rep 70→0%, rep 100→MAX_PROB.
-    const slope = LINE_OFFER_MAX_PROB / (100 - LINE_OFFER_REP_THRESHOLD);
-    const prob = Math.max(0, Math.min(LINE_OFFER_MAX_PROB, (rep - LINE_OFFER_REP_THRESHOLD) * slope));
+    // Escala lineal sobre EL UMBRAL DE LA AEROLÍNEA: brand=threshold→0%, brand=100→MAX_PROB.
+    // Aerolíneas con threshold bajo (Volotea 55) tienen ventana grande de probabilidad;
+    // las exigentes (easyJet 80) solo ofertan con brand muy alto.
+    const range = Math.max(1, 100 - threshold);
+    const slope = LINE_OFFER_MAX_PROB / range;
+    const prob = Math.max(0, Math.min(LINE_OFFER_MAX_PROB, (repToEvaluate - threshold) * slope));
     if (rng.next() > prob) continue;
-    const tier = pickTierForRep(rng, rep);
-    const terms = rollContractTerms(rng, { reputation: rep, nowMinute }, tier);
+    // CONDICIONES DEL CONTRATO escalan con cuánto el brand SUPERE el threshold de
+    // esta aerolínea — pasamos repForTerms = 50 (baseline) + qualityFactor·50, donde
+    // qualityFactor ∈ [0..1] mide qué tan por encima del umbral estás. Brand justo
+    // por encima del umbral → terms estándar. Brand muy por encima → terms premium.
+    const qualityFactor = Math.min(1, (repToEvaluate - threshold) / range);
+    const repForTerms = Math.round(50 + qualityFactor * 50); // 50..100
+    const tier = pickTierForRep(rng, repForTerms);
+    const terms = rollContractTerms(rng, { reputation: repForTerms, nowMinute }, tier);
     const newContract: Contract = {
       id: nextContractId(),
       airlineId: al.id,

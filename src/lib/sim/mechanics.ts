@@ -5,8 +5,8 @@
 //
 // Nombres españoles deterministas. Salarios sacados de balance.json.
 
-import type { Mechanic, Balance, WorkOrderTemplate } from "$lib/types";
-import { randFloat, randPick, type Rng } from "./rng.ts";
+import type { Mechanic, Balance, WorkOrderTemplate, Candidate } from "$lib/types";
+import { randFloat, randInt, randPick, type Rng } from "./rng.ts";
 
 /**
  * Pivot MRO línea pura (2026-05-24): cap inicial 5 técnicos (subido de 4 en balancing pass
@@ -190,38 +190,76 @@ function generateLinePoolMechanics(rng: Rng, balance: Balance): Mechanic[] {
     });
   }
 
-  // Pivot línea pura (tuning UX 2026-05-24): cada turno debe tener AL MENOS UN B1 con
-  // type rating completo CFM56+V2500 para todos los modelos A320/A321. Si Iberia te
-  // manda un A320 V2500 a las 22:00 (turno night) y solo tienes B1 CFM56-only, no
-  // puedes asignar → el juego no es jugable. Solución: los 3 B1 son dual-rating.
+  // Pivot iteración 2026-05-24: arranque AUSTERO INTENCIONAL — 1 solo mec dual
+  // B1+B2 con type ratings completos A320/A321 × CFM56/V2500. Cubre la mañana
+  // del día 1 pero NO los turnos tarde/noche → el jugador debe fichar a los 2
+  // candidatos dual pre-cargados en el mercado en los primeros días para no
+  // colapsar por delays/AOG. "La jugada buena para no perder en 4 días".
+  // base=B1 es informativa (formación principal). El segundo type rating B2
+  // representa cursos posteriores. eligibleCertifiers ahora mira solo typeRatings,
+  // no base, así que este mec atiende tanto WO B1 como WO B2 sobre A320/A321.
   addCertifier("B1", [
     { model: "A320", engineVariant: "CFM56", category: "B1" },
     { model: "A321", engineVariant: "CFM56", category: "B1" },
     { model: "A320", engineVariant: "V2500", category: "B1" },
     { model: "A321", engineVariant: "V2500", category: "B1" },
-  ], true, "morning");
-  addCertifier("B1", [
-    { model: "A320", engineVariant: "CFM56", category: "B1" },
-    { model: "A321", engineVariant: "CFM56", category: "B1" },
-    { model: "A320", engineVariant: "V2500", category: "B1" },
-    { model: "A321", engineVariant: "V2500", category: "B1" },
-  ], false, "afternoon");
-  addCertifier("B2", [
     { model: "A320", engineVariant: "CFM56", category: "B2" },
     { model: "A321", engineVariant: "CFM56", category: "B2" },
     { model: "A320", engineVariant: "V2500", category: "B2" },
     { model: "A321", engineVariant: "V2500", category: "B2" },
   ], true, "morning");
-  addHelper("afternoon");
-  // Night junior B1 dual-rating — cobertura completa nocturna
-  addCertifier("B1", [
-    { model: "A320", engineVariant: "CFM56", category: "B1" },
-    { model: "A321", engineVariant: "CFM56", category: "B1" },
-    { model: "A320", engineVariant: "V2500", category: "B1" },
-    { model: "A321", engineVariant: "V2500", category: "B1" },
-  ], false, "night");
 
   return mechanics;
+}
+
+/** Pivot iteración 2026-05-24: genera N candidatos dual-rated B1+B2 con type ratings
+ *  completos para A320/A321 × CFM56/V2500. Pre-cargados en el mercado al iniciar
+ *  partida lineMode — son la "jugada buena" para que el jugador refuerce la oficina
+ *  desde el día 1. Senior, salario alto, perfil polivalente realista (B1 de base
+ *  con type rating B2 añadido por cursos). */
+export function generateInitialDualCandidates(rng: Rng, balance: Balance, count = 2): Candidate[] {
+  const out: Candidate[] = [];
+  const FIRST = ["María", "Javier", "Andrea", "Pablo", "Sara", "Diego", "Lucía", "Adrián"];
+  const LAST = ["García", "Martínez", "López", "Sánchez", "Pérez", "González", "Romero", "Ruiz"];
+  const PERS = ["Meticuloso", "Polivalente", "Senior", "Curioso", "Tranquilo", "Pragmático"];
+  for (let i = 0; i < count; i++) {
+    const age = randInt(rng, 38, 55); // senior dual-rated
+    const experienceYears = randInt(rng, 12, 25);
+    const efficiency = Number(randFloat(rng, 1.0, 1.18).toFixed(2));
+    const baseSalary = balance.salaries.b1Senior;
+    // Dual-rating cobra ~15% extra (combo B1+B2)
+    const expectedWeeklySalary = Math.round(baseSalary * randFloat(rng, 1.10, 1.25));
+    const personality: string[] = [];
+    const seenP = new Set<string>();
+    while (personality.length < 3) {
+      const p = PERS[randInt(rng, 0, PERS.length - 1)];
+      if (!seenP.has(p)) { seenP.add(p); personality.push(p); }
+    }
+    out.push({
+      id: `CND-DUAL${(i + 1).toString().padStart(5, "0")}`,
+      name: `${FIRST[randInt(rng, 0, FIRST.length - 1)]} ${LAST[randInt(rng, 0, LAST.length - 1)]}`,
+      age,
+      base: "B1",
+      typeRatings: [
+        { model: "A320", engineVariant: "CFM56", category: "B1" },
+        { model: "A321", engineVariant: "CFM56", category: "B1" },
+        { model: "A320", engineVariant: "V2500", category: "B1" },
+        { model: "A321", engineVariant: "V2500", category: "B1" },
+        { model: "A320", engineVariant: "CFM56", category: "B2" },
+        { model: "A321", engineVariant: "CFM56", category: "B2" },
+        { model: "A320", engineVariant: "V2500", category: "B2" },
+        { model: "A321", engineVariant: "V2500", category: "B2" },
+      ],
+      efficiency,
+      expectedWeeklySalary,
+      experienceYears,
+      personality,
+      generatedAtMinute: 0,
+      // Caducidad larga para que el jugador tenga margen
+      expiresAtMinute: 21 * 24 * 60, // 21 días
+    });
+  }
+  return out;
 }
 
 // ---- Queries ----
@@ -234,8 +272,13 @@ export function availableMechanics(mechanics: readonly Mechanic[]): Mechanic[] {
 /**
  * Mecánicos elegibles como CERTIFIER para una WO concreta — necesitan:
  *  - estado Idle
- *  - base que coincida con requiredCategory
- *  - type rating válido para (model, engineVariant, category) del avión + WO
+ *  - type rating válido con la categoría requerida (modelo + motor + categoría)
+ *
+ * Pivot iteración 2026-05-24: la `base` del mecánico es informativa (su formación
+ * inicial EASA Part-66) pero NO bloquea la elegibilidad. Lo decisivo es el type
+ * rating: un mec con base B1 puede certificar tareas B2 si tiene type rating B2
+ * para ese modelo+motor (caso real EASA — mecs senior dual-rated). Igualmente,
+ * un B2 con type rating B1 en cierto avión puede certificar WO B1 ahí.
  */
 export function eligibleCertifiers(
   mechanics: readonly Mechanic[],
@@ -245,7 +288,6 @@ export function eligibleCertifiers(
 ): Mechanic[] {
   return mechanics.filter((m) => {
     if (m.state !== "Idle") return false;
-    if (m.base !== template.requiredCategory) return false;
     return m.typeRatings.some(
       (r) => r.model === airplaneModel && r.engineVariant === airplaneEngine && r.category === template.requiredCategory,
     );

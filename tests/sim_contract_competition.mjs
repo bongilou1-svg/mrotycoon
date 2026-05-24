@@ -3,6 +3,7 @@
 import {
   tickLineCompetition,
   generateInitialContractsLine,
+  brandReputation,
   LINE_OFFER_REP_THRESHOLD,
   LINE_CANCEL_REP_THRESHOLD,
   LINE_COMPETITION_TICK_DAYS,
@@ -62,7 +63,7 @@ console.log("\n=== tickLineCompetition genera ofertas con rep ≥70 ===");
   expect(totalNewOffers > 0, `con rep alta → ofertas generadas (got ${totalNewOffers} en 50 ticks)`);
 }
 
-console.log("\n=== tickLineCompetition NO oferta si rep <70 ===");
+console.log("\n=== tickLineCompetition NO oferta si rep < threshold per-airline ===");
 {
   _resetContractCounter(1000);
   const rng = createRng(42);
@@ -71,13 +72,20 @@ console.log("\n=== tickLineCompetition NO oferta si rep <70 ===");
     offeredAtMinute: 0, baseFeePerWeek: 15000, paymentPerWOMinute: 60,
     penaltyPerLateMinute: 5, minReputation: 40, expectedLandingsPerDay: 6, tier: "standard",
   }];
-  const rep = { [airlines[0].id]: 60, [airlines[1].id]: 60, [airlines[2].id]: 65, [airlines[3].id]: 69 };
+  // Pivot iteración 2026-05-25: cada aerolínea tiene threshold propio (V7:55, VY:70, U2:80).
+  // Para que NADIE oferte, todas deben quedar por DEBAJO de su threshold individual.
+  const rep = {
+    [airlines[0].id]: 50, // IB threshold 60 → 50<60 ✓
+    [airlines[1].id]: 50, // VY threshold 70 → 50<70 ✓
+    [airlines[2].id]: 50, // V7 threshold 55 → 50<55 ✓
+    [airlines[3].id]: 50, // U2 threshold 80 → 50<80 ✓
+  };
   let totalNewOffers = 0;
   for (let i = 0; i < 100; i++) {
     const r = tickLineCompetition(rng, contracts, airlines, rep, i * 10000);
     totalNewOffers += r.newOffers.length;
   }
-  expect(totalNewOffers === 0, `rep <70 → 0 ofertas (got ${totalNewOffers} en 100 ticks)`);
+  expect(totalNewOffers === 0, `rep<threshold por aerolínea → 0 ofertas (got ${totalNewOffers} en 100 ticks)`);
 }
 
 console.log("\n=== tickLineCompetition rescinde contratos con rep ≤20 ===");
@@ -191,6 +199,104 @@ console.log("\n=== Integración: advanceGame en lineMode dispara tickLineCompeti
   // de muchos sistemas (rng compartido, weekly close, tier upgrade ticks cada 60d, etc.)
   // que pueden hacer que en N seeds dados no se llegue a oferta antes del corte. No bloquea.
   console.log(`  ℹ️ integración tier upgrade + competition: ${totalOffers} ofertas en 20 seeds × 180d`);
+}
+
+console.log("\n=== brandReputation: función pura ===");
+{
+  // Sin track record (≤10 dep) → brand 0
+  expect(brandReputation({ totalDepartures: 5, totalOnTime: 5, totalAog: 0, contractedReps: [80] }) === 0,
+    "brand=0 si <10 departures");
+  // Buen MRO: rep 80, 95% on-time, 1% AOG → 80*0.5 + 95*0.3 + 99*0.2 = 88.3 ≈ 88
+  const high = brandReputation({ totalDepartures: 100, totalOnTime: 95, totalAog: 1, contractedReps: [80] });
+  expect(high >= 80 && high <= 92, `brand alto con KPIs buenos (got ${high})`);
+  // MRO mediocre: rep 50, 70% on-time, 5% AOG → 25 + 21 + 19 = 65
+  const mid = brandReputation({ totalDepartures: 100, totalOnTime: 70, totalAog: 5, contractedReps: [50] });
+  expect(mid >= 60 && mid <= 70, `brand medio con KPIs mediocres (got ${mid})`);
+  // MRO malo: rep 20, 50% on-time, 20% AOG → 10 + 15 + 16 = 41
+  const low = brandReputation({ totalDepartures: 100, totalOnTime: 50, totalAog: 20, contractedReps: [20] });
+  expect(low >= 35 && low < 50, `brand bajo con KPIs malos (got ${low})`);
+  // Crítico: brand alto debe cruzar threshold 70 con muy buenos KPIs (justifica la fórmula)
+  expect(high >= 70, `brand alto cruza threshold 70 (got ${high}) — desbloquea ofertas nuevas`);
+}
+
+console.log("\n=== tickLineCompetition con brandRepForOutsiders rompe deadlock ===");
+{
+  _resetContractCounter(1000);
+  const rng = createRng(42);
+  // Iberia con contrato active (rep 80), TODAS las demás a rep 50 (deadlock antiguo).
+  // Sin brand: 0 ofertas (las outsiders nunca cruzan threshold 70).
+  // Con brand=80: deberían ofertar varias (escala según brand).
+  const contracts = [{
+    id: "C-001", airlineId: airlines[0].id, status: "active",
+    offeredAtMinute: 0, baseFeePerWeek: 15000, paymentPerWOMinute: 60,
+    penaltyPerLateMinute: 5, minReputation: 40, expectedLandingsPerDay: 6, tier: "standard",
+  }];
+  const rep = Object.fromEntries(airlines.map(a => [a.id, a.id === airlines[0].id ? 80 : 50]));
+
+  // SIN brand → 0 ofertas (comportamiento antiguo, deadlock).
+  let offersNoBrand = 0;
+  for (let i = 0; i < 50; i++) {
+    const r = tickLineCompetition(rng, contracts, airlines, rep, i * 10000);
+    offersNoBrand += r.newOffers.length;
+  }
+  expect(offersNoBrand === 0, `sin brand: 0 ofertas (deadlock confirmado, got ${offersNoBrand})`);
+
+  // CON brand=80 → varias ofertas.
+  _resetContractCounter(2000);
+  const rng2 = createRng(42);
+  let offersWithBrand = 0;
+  for (let i = 0; i < 50; i++) {
+    const r = tickLineCompetition(rng2, contracts, airlines, rep, i * 10000, 80);
+    offersWithBrand += r.newOffers.length;
+  }
+  expect(offersWithBrand > 0, `con brand=80: ≥1 oferta (deadlock roto, got ${offersWithBrand})`);
+}
+
+console.log("\n=== Per-airline brandThreshold ordena las ofertas (V7→VY→U2) ===");
+{
+  // Confirma que airlines.json tiene los thresholds esperados
+  const v7 = airlines.find(a => a.iataCode === "V7");
+  const vy = airlines.find(a => a.iataCode === "VY");
+  const u2 = airlines.find(a => a.iataCode === "U2");
+  expect(v7?.brandThreshold === 55, `Volotea threshold 55 (got ${v7?.brandThreshold})`);
+  expect(vy?.brandThreshold === 70, `Vueling threshold 70 (got ${vy?.brandThreshold})`);
+  expect(u2?.brandThreshold === 80, `easyJet threshold 80 (got ${u2?.brandThreshold})`);
+
+  // Brand=60 → solo Volotea puede ofertar (55<60, otros >60).
+  _resetContractCounter(3000);
+  const rep = Object.fromEntries(airlines.map(a => [a.id, 50]));
+  const offerersAt60 = new Set();
+  for (let seed = 1; seed <= 30; seed++) {
+    const rng = createRng(seed);
+    const r = tickLineCompetition(rng, [], airlines, rep, seed * 100000, 60);
+    for (const o of r.newOffers) offerersAt60.add(o.airlineId);
+  }
+  expect(offerersAt60.has(v7.id), "brand=60 → Volotea oferta (55<60)");
+  expect(!offerersAt60.has(vy.id), "brand=60 → Vueling NO oferta (70>60)");
+  expect(!offerersAt60.has(u2.id), "brand=60 → easyJet NO oferta (80>60)");
+
+  // Brand=75 → Volotea + Vueling. easyJet aún NO.
+  _resetContractCounter(4000);
+  const offerersAt75 = new Set();
+  for (let seed = 1; seed <= 30; seed++) {
+    const rng = createRng(seed);
+    const r = tickLineCompetition(rng, [], airlines, rep, seed * 100000, 75);
+    for (const o of r.newOffers) offerersAt75.add(o.airlineId);
+  }
+  expect(offerersAt75.has(v7.id), "brand=75 → Volotea oferta");
+  expect(offerersAt75.has(vy.id), "brand=75 → Vueling oferta (70<75)");
+  expect(!offerersAt75.has(u2.id), "brand=75 → easyJet NO oferta (80>75)");
+
+  // Brand=90 → todas pueden ofertar.
+  _resetContractCounter(5000);
+  const offerersAt90 = new Set();
+  for (let seed = 1; seed <= 30; seed++) {
+    const rng = createRng(seed);
+    const r = tickLineCompetition(rng, [], airlines, rep, seed * 100000, 90);
+    for (const o of r.newOffers) offerersAt90.add(o.airlineId);
+  }
+  expect(offerersAt90.has(v7.id) && offerersAt90.has(vy.id) && offerersAt90.has(u2.id),
+    "brand=90 → todas ofertan");
 }
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);

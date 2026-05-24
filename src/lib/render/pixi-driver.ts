@@ -377,8 +377,14 @@ function pathHeading(pts: Pt[], t: number): number {
 
 export type DriverCallbacks = {
   onBuildClick?: () => void;
-  /** F5D P-ε: click sobre avión — abre modal con `detailFleetReg = registration`. */
-  onAirplaneClick?: (registration: string) => void;
+  /** F5D P-ε: click sobre avión — abre modal correspondiente.
+   *  Pivot iteración 2026-05-24: ahora recibe metadata para que la UI decida qué modal:
+   *   - si hay `activeWoInstanceId` → modal WO callout
+   *   - si hay `activeCheckInstanceId` → modal check A/C/D
+   *   - si hay `hasOpenDaily` (sin callout/check) → modal daily detallado por avión
+   *   - default → modal flota (matrícula)
+   *  Esto permite "jugar desde el mapa" — pulsa un avión working/AOG y vas directo a su tarea. */
+  onAirplaneClick?: (registration: string, ctx?: { instanceId: string; activeWoInstanceId?: string; activeCheckInstanceId?: string; hasOpenDaily?: boolean }) => void;
   /** F5D P-ε: click sobre stand — si tiene avión, abre modal del avión. */
   onStandClick?: (simId: string, hasAirplane: boolean, registration: string | null) => void;
 };
@@ -2642,38 +2648,78 @@ export class PixiDriver {
     }
 
     // ── Aviones parados en stand (P-δ: bloom doble + P-ε: hitbox click/hover) ──
+    // Pivot iteración 2026-05-24: paleta semántica según `displayState`:
+    //   idle    → cyan (color original blueprint)        — contratado, sin WO en marcha
+    //   daily   → cyan claro/azul marino                  — daily check abierto (overnight)
+    //   working → verde brillante                        — WO/check con mec asignado en marcha
+    //   delayed → ámbar                                  — pasada hora de salida, sigue en stand
+    //   aog     → rojo pulsante                          — escalado a AOG (>6h o flag in-vivo)
+    // El icono 🔧 (callout) / 🛠️ (A/C/D) / 🌙 (daily) aparece sobre el avión cuando hay
+    // tarea activa — visualmente comunica "hay algo que mirar aquí" y el click va al modal.
+    const stateColors: Record<string, { halo: number; core: number; ring: number; pulse: number }> = {
+      idle:    { halo: 0x3aa9ff, core: 0xa8dafc, ring: 0x5da0e0, pulse: 0 },
+      daily:   { halo: 0x6dc7ff, core: 0xcfeaff, ring: 0x8fb8e0, pulse: 0 },
+      working: { halo: 0x3fb950, core: 0xa6e3a1, ring: 0x7dd99c, pulse: 0 },
+      delayed: { halo: 0xf5b945, core: 0xffe399, ring: 0xf5b945, pulse: 0.5 },
+      aog:     { halo: 0xff4757, core: 0xffadb3, ring: 0xff4757, pulse: 1 },
+    };
+    const pulsePhase = (Math.sin(state.minute / 4) + 1) / 2; // 0..1 oscilación
     for (const ap of state.airplanes) {
       if (ap.taxiing || !ap.standId) continue;
       const ref = PixiDriver.F5D_STAND_MAP[ap.standId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
-      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 18).fill({ color: 0x3aa9ff, alpha: 0.08 }));
-      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 10).fill({ color: 0x3aa9ff, alpha: 0.22 }));
-      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 3.5).fill(0xa8dafc));
+      const ds = ap.displayState ?? "idle";
+      const sc = stateColors[ds] ?? stateColors.idle;
+      const haloAlpha = 0.08 + sc.pulse * pulsePhase * 0.18; // pulso si delayed/aog
+      const coreAlpha = 0.22 + sc.pulse * pulsePhase * 0.30;
+      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 18).fill({ color: sc.halo, alpha: haloAlpha }));
+      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 10).fill({ color: sc.halo, alpha: coreAlpha }));
+      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 3.5).fill(sc.core));
       const reg = new Text({
         text: ap.registration,
-        style: { fontFamily: "Inter, sans-serif", fontSize: 11, fill: 0x5da0e0 },
+        style: { fontFamily: "Inter, sans-serif", fontSize: 11, fill: sc.ring },
       });
       reg.position.set(standPos.x + 10, standPos.y - 4);
       this.worldDynamic!.addChild(reg);
+      // Iconito de tarea activa: prioridad check > callout > daily.
+      let taskIcon = "";
+      if (ap.activeCheckInstanceId) taskIcon = "🛠️";
+      else if (ap.activeWoInstanceId) taskIcon = "🔧";
+      else if (ap.hasOpenDaily) taskIcon = "🌙";
+      if (taskIcon) {
+        const iconT = new Text({
+          text: taskIcon,
+          style: { fontFamily: "Inter, sans-serif", fontSize: 12 },
+        });
+        iconT.anchor.set(0.5);
+        iconT.position.set(standPos.x - 11, standPos.y - 10);
+        this.worldDynamic!.addChild(iconT);
+      }
       // P-ε: hover outline
       if (this.f5dHoveredAirplane === ap.instanceId) {
         this.worldDynamic!.addChild(
           new Graphics().circle(standPos.x, standPos.y, 14).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
         );
       }
-      // P-ε: hitbox click
+      // P-ε: hitbox click — pasa contexto completo para que la UI decida qué modal abrir.
       const apHit = new Graphics().circle(standPos.x, standPos.y, 14).fill({ color: 0x000000, alpha: 0.001 });
       apHit.eventMode = "static";
       apHit.cursor = "pointer";
       const apId = ap.instanceId;
       const apReg = ap.registration;
+      const ctx = {
+        instanceId: apId,
+        activeWoInstanceId: ap.activeWoInstanceId,
+        activeCheckInstanceId: ap.activeCheckInstanceId,
+        hasOpenDaily: ap.hasOpenDaily,
+      };
       apHit.on("pointerover", () => { this.f5dHoveredAirplane = apId; if (this.lastState) this.apply(this.lastState); });
       apHit.on("pointerout", () => { if (this.f5dHoveredAirplane === apId) { this.f5dHoveredAirplane = null; if (this.lastState) this.apply(this.lastState); } });
       apHit.on("pointerdown", (ev) => {
         ev.stopPropagation();
-        if (this.callbacks.onAirplaneClick) this.callbacks.onAirplaneClick(apReg);
+        if (this.callbacks.onAirplaneClick) this.callbacks.onAirplaneClick(apReg, ctx);
       });
       this.worldDynamic!.addChild(apHit);
     }
@@ -2685,12 +2731,14 @@ export class PixiDriver {
     for (const pt of state.passthroughTraffic) {
       const pos = standPositions.get(pt.standOsmRef);
       if (!pos) continue;
-      // notHandled (Embraer/CRJ/ATR/B737) → halo aún más muted, color gris-cyan.
-      // contracted=false handled (operadores con vuelos pero sin contrato firmado) →
-      // halo cyan tenue, da pista visual de "podrías contratar esta aerolínea".
-      const baseColor = pt.notHandled ? 0x5d6677 : 0x3aa9ff;
-      const haloAlpha = pt.notHandled ? 0.06 : 0.12;
-      const dotAlpha = pt.notHandled ? 0.5 : 0.75;
+      // Pivot iteración 2026-05-24 · paleta passthrough refinada:
+      //   notHandled (Embraer/CRJ/ATR/B737/A321neo) → gris bajo (no habilitable hoy).
+      //   handled SIN contrato (operadores como Vueling/easyJet/Volotea con vuelos OVD)
+      //     → violeta suave (#a78bfa) — pista visual "podrías firmar este operador".
+      //   handled CON contrato (futuro: callsigns extra fuera de cap) → cyan tenue.
+      const baseColor = pt.notHandled ? 0x5d6677 : pt.contracted ? 0x3aa9ff : 0xa78bfa;
+      const haloAlpha = pt.notHandled ? 0.06 : 0.14;
+      const dotAlpha = pt.notHandled ? 0.5 : 0.85;
       if (pt.taxiing) {
         const entryX = area.x + area.w * 0.3, entryY = area.y + area.h * 0.65;
         const px = entryX + (pos.x - entryX) * pt.taxiProgress;

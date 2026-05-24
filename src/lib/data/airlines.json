@@ -10,7 +10,8 @@
       { "model": "A320", "engineVariant": "V2500" },
       { "model": "A321", "engineVariant": "CFM56" }
     ],
-    "basedAircraftCount": 8
+    "basedAircraftCount": 8,
+    "brandThreshold": 60
   },
   {
     "id": "AL-002",
@@ -22,7 +23,8 @@
       { "model": "A320", "engineVariant": "CFM56" },
       { "model": "A321", "engineVariant": "V2500" }
     ],
-    "basedAircraftCount": 6
+    "basedAircraftCount": 6,
+    "brandThreshold": 70
   },
   {
     "id": "AL-003",
@@ -34,7 +36,8 @@
       { "model": "A320", "engineVariant": "V2500" },
       { "model": "A321", "engineVariant": "V2500" }
     ],
-    "basedAircraftCount": 4
+    "basedAircraftCount": 4,
+    "brandThreshold": 55
   },
   {
     "id": "AL-004",
@@ -47,6 +50,7 @@
       { "model": "A321", "engineVariant": "CFM56" },
       { "model": "A321", "engineVariant": "V2500" }
     ],
-    "basedAircraftCount": 9
+    "basedAircraftCount": 9,
+    "brandThreshold": 80
   }
 ]

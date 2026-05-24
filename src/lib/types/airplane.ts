@@ -62,7 +62,7 @@ export interface AirplaneInstance {
   /** Pivot línea pura: minutos de retraso real = actualDep - scheduledDep. ≥0. Computed
    *  al departure. Sirve como base para el KPI TDR y para el threshold AOG (>180min). */
   delayMinutes?: number;
-  /** Pivot línea pura: true si el delay >= AOG_DELAY_THRESHOLD_MIN (6h). Cobra penalty
+  /** Pivot línea pura: true si el delay >= AOG_DELAY_THRESHOLD_MIN (3h). Cobra penalty
    *  AOG_ESCALATION_PENALTY_EUR adicional + rep delta aogFailed. */
   aogEscalated?: boolean;
   /** Pivot iteración 2026-05-24: minuto exacto en el que se hizo la escalation a AOG.

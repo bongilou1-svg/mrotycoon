@@ -75,6 +75,15 @@ export function instantiateWorkOrder(
   balance: Balance,
 ): WorkOrderInstance {
   _instanceCounter += 1;
+  // Pivot iteración 2026-05-25: SLA semánticamente correcto = scheduledDepartureMinute
+  // del avión. Una WO solo es "late" si NO se completa antes de la hora prevista de
+  // salida (es decir, si está causando delay real al vuelo). Antes el SLA se calculaba
+  // como arrivalMinute + duration*slaMultiplier, lo que marcaba late WOs que terminaban
+  // 23:00 sobre un avión que salía 06:30 al día siguiente — absurdo conceptualmente.
+  // Fallback al cálculo viejo si el avión no tiene scheduledDeparture (tests legacy).
+  const slaFromDeparture = airplane.scheduledDepartureMinute;
+  const slaLegacy = airplane.arrivalMinute + Math.round(template.durationMinutes * balance.slaMultiplier);
+  const slaMinute = slaFromDeparture > 0 ? slaFromDeparture : slaLegacy;
   return {
     instanceId: `WI-${_instanceCounter.toString().padStart(5, "0")}`,
     templateId: template.id,
@@ -84,7 +93,7 @@ export function instantiateWorkOrder(
     assignedMechanicIds: [],
     phase: "ToPlane", // empieza en ToPlane porque aún no hay mecánicos asignados; pasará a Inspection al asignar
     phaseElapsedMinutes: 0,
-    slaMinute: airplane.arrivalMinute + Math.round(template.durationMinutes * balance.slaMultiplier),
+    slaMinute,
   };
 }
 

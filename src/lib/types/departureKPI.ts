@@ -69,11 +69,14 @@ export function getTdrForAirline(kpi: DepartureKPI, airlineId: string): number {
   return b.sumDelayMinutes / b.departures;
 }
 
-/** Umbral de delay (en minutos) para escalar a AOG. Subido de 180→360 en balancing
- *  pass post-Fase 2 (2026-05-24): el threshold de 3h era demasiado agresivo para el
- *  flujo de daily checks nocturnos, generaba death-spiral. 6h captura solo AOGs
- *  realmente graves (avión grounded mañana entera). */
-export const AOG_DELAY_THRESHOLD_MIN = 360;
+/** Umbral de delay (en minutos) para escalar a AOG. Decisión iteración 2026-05-25:
+ *  vuelve a 180 (3h) según design original — un avión que tarda >3h en arrancar ya es
+ *  un problema operativo serio para la aerolínea (cancelaciones en cadena, repatriaciones,
+ *  rotación rota). El balancing post-Fase 2 que lo subió a 6h fue un parche temporal;
+ *  la solución estructural es que el jugador tenga mecs suficientes (1 inicial + 2 dual
+ *  en mercado) y sepa contratarlos. EC-MGZ con 360m en partida real era doloroso pero
+ *  realista — el problema es no tener cobertura, no el threshold. */
+export const AOG_DELAY_THRESHOLD_MIN = 180;
 /** Penalty fija al escalar a AOG por delay (€). Aplicada UNA VEZ al departure.
  *  Bajada de 25k→10k en balancing pass post-Fase 2 — coherente con AOG threshold
  *  6h: solo se aplica a AOGs realmente graves. Con multiplicador evitable 1.5×

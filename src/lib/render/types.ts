@@ -11,6 +11,16 @@
 
 export type TimeOfDay = "day" | "night";
 
+/** Pivot iteración 2026-05-24: estado visual derivado para colorear el avión en mapa.
+ *  Comunica al jugador qué hay que mirar:
+ *    - `idle`    → contratado, en stand sin WO viva → color base aerolínea (cyan blueprint).
+ *    - `working` → al menos 1 WO/check con mec asignado en marcha → verde.
+ *    - `delayed` → pasada `scheduledDeparture` y aún en stand (WO no cerrada) → ámbar.
+ *    - `aog`     → `aogEscalated` true (delay ≥ 6h o flag in-vivo) → rojo pulsante.
+ *    - `daily`   → tiene daily check abierto (subtareas DC-*) → cyan más claro/marino.
+ *  El driver mapea cada uno a su color/badge. */
+export type AirplaneDisplayState = "idle" | "working" | "delayed" | "aog" | "daily";
+
 /** Avión visible en el mapa. Posición la calcula el driver según standId y layout. */
 export interface RenderAirplane {
   instanceId: string;
@@ -28,6 +38,15 @@ export interface RenderAirplane {
   /** P-γ: 0..1 — progreso del taxi (arrival → arrival + TAXIING_DURATION_MIN). 1 una vez
    *  terminado el taxi. El driver interpola la posición. */
   taxiProgress: number;
+  /** Pivot 2026-05-24: estado visual semántico — el driver lo mapea a paleta. */
+  displayState: AirplaneDisplayState;
+  /** WO callout abierta más relevante (la primera open en orden de emisión). Si está set,
+   *  el click en el avión del mapa abre el modal de esta WO en lugar del modal flota. */
+  activeWoInstanceId?: string;
+  /** Check A/C/D InProgress sobre este avión. Click → modal check. Prevalece sobre WO. */
+  activeCheckInstanceId?: string;
+  /** Daily check (>=1 subtarea DC-* open). Click → modal daily detallado por avión. */
+  hasOpenDaily?: boolean;
 }
 
 /** Stand del mapa con estado de ocupación derivado. */

@@ -20,7 +20,7 @@ import { type ClockState, createClock, advance, DAY_MINUTES, WEEK_MINUTES } from
 import { type Rng, createRng } from "./sim/rng.ts";
 import {
   generateInitialContracts, generateInitialContractsLine, activeContracts, expireOffers, acceptOffer, rejectOffer,
-  tickContractMarket, tickLineCompetition, tickContractTierUpgrade,
+  tickContractMarket, tickLineCompetition, tickContractTierUpgrade, brandReputation,
   OFFER_TICK_DAYS, LINE_COMPETITION_TICK_DAYS, TIER_UPGRADE_TICK_DAYS, _resetContractCounter,
 } from "./sim/contracts.ts";
 import { tierLabel } from "./types/contract.ts";
@@ -68,7 +68,7 @@ import {
   tickMoral, tickActiveTraining, startActiveTraining, applyMoralDelta, MORAL_EVENT_DELTAS,
   ACTIVE_TRAINING_COST_EUR, tickShiftTransitions,
 } from "./sim/shifts.ts";
-import { generateInitialMechanics, eligibleCertifiers } from "./sim/mechanics.ts";
+import { generateInitialMechanics, generateInitialDualCandidates, eligibleCertifiers } from "./sim/mechanics.ts";
 import { assignMechanicsToWo, tickMechanicTravel } from "./sim/assignment.ts";
 import { tickAutoAssign, hasActiveLead, findHandoffReplacement } from "./sim/foreman.ts";
 import { tickWorkOrders } from "./sim/wo_state_machine.ts";
@@ -236,7 +236,13 @@ export function createGame(
     maintenanceChecks: [],
     checkDefinitions,
     compliance: createCompliance(rng, 0),
-    candidates: refreshMarket(marketRng, [], balance, 0),
+    // Pivot iteración 2026-05-24: en lineMode pre-cargamos 2 candidatos dual-rated
+    // B1+B2 con type rating completo A320/A321 × CFM56/V2500. Son "la jugada buena"
+    // para que el jugador refuerce el pool inicial (1 solo mec) en los primeros días.
+    // Se añaden ENCIMA del refreshMarket normal (que también genera random ~5-8 más).
+    candidates: lineMode
+      ? [...generateInitialDualCandidates(marketRng, balance, 2), ...refreshMarket(marketRng, [], balance, 0)]
+      : refreshMarket(marketRng, [], balance, 0),
     marketLastRefreshMinute: 0,
     contractMarketLastTickMinute: 0,
     lineCompetitionLastTickMinute: 0,
@@ -452,7 +458,7 @@ function processDepartures(g: GameState, nowMinute: number): void {
         const c = g.contracts.find((cc) => cc.id === a.contractId);
         pushNotification(
           g,
-          `🛑 AOG ${evitableTag} EN CURSO: ${a.registration} +${currentDelay}m (>6h, sigue bloqueado · ${rootCauseLabel})`,
+          `🛑 AOG ${evitableTag} EN CURSO: ${a.registration} +${currentDelay}m (>3h, sigue bloqueado · ${rootCauseLabel})`,
           "danger",
         );
         g.economy = addTransaction(
@@ -516,7 +522,7 @@ function processDepartures(g: GameState, nowMinute: number): void {
         : rootCause ?? "—";
       pushNotification(
         g,
-        `🛑 AOG ${evitableTag}: ${a.registration} +${delay}m (>6h · ${rootCauseLabel})`,
+        `🛑 AOG ${evitableTag}: ${a.registration} +${delay}m (>3h · ${rootCauseLabel})`,
         "danger",
       );
       g.economy = addTransaction(
@@ -559,7 +565,12 @@ function tryRollDailyFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airp
   );
   if (eligible.length === 0) return;
   const tpl = eligible[Math.floor(g.woRng.next() * eligible.length)];
-  const slaMinute = nowMinute + Math.round(tpl.durationMinutes * g.balance.slaMultiplier);
+  // Pivot iteración 2026-05-25: finding también respeta SLA = scheduledDeparture del
+  // avión. Si el finding se hace antes del próximo departure → on-time; si se queda
+  // colgado y bloquea el avión → late. Coherente con createWorkOrderInstance.
+  const slaMinute = ap.scheduledDepartureMinute > 0
+    ? ap.scheduledDepartureMinute
+    : nowMinute + Math.round(tpl.durationMinutes * g.balance.slaMultiplier);
   const finding: WorkOrderInstance = {
     instanceId: nextFindingId(),
     templateId: tpl.id,
@@ -1073,7 +1084,20 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
     }
   }
   if (lineMode && g.clock.minute - g.lineCompetitionLastTickMinute >= LINE_COMPETITION_TICK_DAYS * DAY_MINUTES) {
-    const lcRes = tickLineCompetition(g.marketRng, g.contracts, g.airlines, g.reputation.perAirline, g.clock.minute);
+    // Pivot iteración 2026-05-25: las aerolíneas SIN contrato observan el brand del MRO
+    // (score objetivo derivado de KPIs), no su rep individual estática. Esto rompe el
+    // deadlock histórico donde Vueling/Volotea/easyJet quedaban a 50 inicial sin nunca
+    // cruzar el threshold 70 → 0 ofertas nuevas en partidas reales.
+    const contractedReps = g.contracts
+      .filter((c) => c.status === "active")
+      .map((c) => g.reputation.perAirline[c.airlineId] ?? 50);
+    const brand = brandReputation({
+      totalDepartures: g.departureKPI.totalDepartures,
+      totalOnTime: g.departureKPI.totalOnTime,
+      totalAog: g.departureKPI.totalAog,
+      contractedReps,
+    });
+    const lcRes = tickLineCompetition(g.marketRng, g.contracts, g.airlines, g.reputation.perAirline, g.clock.minute, brand);
     g.contracts = lcRes.contracts;
     g.lineCompetitionLastTickMinute = g.clock.minute;
     for (const offer of lcRes.newOffers) {

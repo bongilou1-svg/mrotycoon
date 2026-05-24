@@ -2,6 +2,26 @@
 
 > Panel central. Estado por fase, alertas vivas, parking de ideas.
 
+## 🧪 Tester reaccional (canónico)
+
+Script `.scripts/smoke-runtime.mjs` (o `npm run smoke`) simula una partida sin
+UI y reporta los hitos lógicos del flujo línea pura (paquete 12:00, daily al
+overnight, callouts al landing, asignación, departures, AOG, fees, rep). Es
+el tester oficial — **mantener al día**: cuando añadamos features nuevas al
+sim, añadir el check correspondiente en la sección "HITOS LÓGICOS" del script.
+La lista "📋 IDEAS DE EXTENSIÓN" al final del script enumera checks pendientes
+(tier upgrade, competencia, findings, MEL deferral, AOG in-vivo, subscription
+HH, eventos, save round-trip, multi-seed, perf). Comandos npm:
+
+| Comando | Uso |
+|---|---|
+| `npm run smoke` | seed=42 days=3 line (default) |
+| `npm run smoke:verbose` | + log de cada tick |
+| `npm run smoke:long` | seed=42 days=7 |
+| `npm run smoke:legacy` | flujo legacy (sin lineMode) |
+| `node .scripts/smoke-runtime.mjs 100 5 line` | args custom: seed days mode |
+| `npm run bundle` | rebuild `builds/v0.6-line-mro.html` |
+
 ## Resumen 1-line
 **Pivot MRO línea pura ✅ DONE** (2026-05-24, sesión intra-F6) — Arranque del juego cambia a "técnico local aeropuerto regional": 1 aerolínea contratada (Iberia Express, rep 60), oficina cap 4 mecs sin night, hangares Stage 3-4 gated hasta endgame (rep avg≥80 + balance≥1M + ≥3 contratos), schedule OVD real activo por default, **panel 📅 Schedule del día** + **HUD badge 🌙 Pernocta** (modal con tabla matrícula/llegada/daily checks), competencia 30d (rep≥70 oferta auto, rep≤20 rescisión). 4 aerolíneas renombradas a operadores OVD reales con iataCode (IB/VY/V7/U2). Save v9 backward compat v8/v7/v6. Opt-in `{lineMode:true}` en createGame preserva tests legacy. **940/940 tests verdes** (+67 net). Release: [`builds/v0.6-line-mro.html`](builds/v0.6-line-mro.html) (~1.4 MB). Doc cierre: [`docs/CIERRE_pivot_line.md`](docs/CIERRE_pivot_line.md). ⚠️ Parking: viabilidad económica auto-playtest 10×28d Δ-290k € + 4/10 bankruptcy (penalty SLA -408k € dominante — tunear baseFee/payment/penalty Iberia inicial en próxima sesión).
 

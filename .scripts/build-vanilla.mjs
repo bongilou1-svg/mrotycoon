@@ -313,7 +313,7 @@ const BODY = `<div class="app">
       <button data-tab="operations">🏭 Operaciones <span class="badge" id="badge-wo">0</span></button>
       <button data-tab="schedule">📅 Schedule <span class="badge" id="badge-schedule">0</span></button>
       <button data-tab="planning">📋 Production Planning <span class="badge" id="badge-planning">0</span></button>
-      <button data-tab="mechanics">⚙️ Mecánicos</button>
+      <button data-tab="office">🏢 Oficina <span class="badge" id="badge-office">0</span></button>
       <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
       <button data-tab="market">🤝 Mercado <span class="badge" id="badge-candidates">5</span></button>
       <button disabled title="🏗️ Construcción de hangares — próximamente (sistema de permisos + obra civil en futura fase)" style="opacity:0.4;cursor:not-allowed">🏗️ Hangares <span style="font-size:.7rem">próx.</span></button>
@@ -397,9 +397,18 @@ function syncMapRender(){
         invalidatePanelCache();
         render();
       },
-      // F5D P-ε: click sobre avión → abre modal detalle del avión por matrícula
-      onAirplaneClick: (reg) => {
-        detailFleetReg = reg;
+      // Pivot iteración 2026-05-24: click sobre avión del mapa con prioridad contextual
+      // para "jugar desde el mapa". Si el avión tiene tarea activa, el click va directo a
+      // ella. Si no, abre el modal de la matrícula (info general del avión).
+      //   1. check A/C/D InProgress → modal check
+      //   2. callout WO abierta → modal WO
+      //   3. daily check abierto → modal daily detallado por avión (instanceId)
+      //   4. nada activo → modal flota (registration)
+      onAirplaneClick: (reg, ctx) => {
+        if (ctx?.activeCheckInstanceId) detailCheckId = ctx.activeCheckInstanceId;
+        else if (ctx?.activeWoInstanceId) selectedWoId = ctx.activeWoInstanceId;
+        else if (ctx?.hasOpenDaily && ctx.instanceId) detailDailyAirplaneId = ctx.instanceId;
+        else detailFleetReg = reg;
         invalidateModalCache();
         render();
       },
@@ -964,10 +973,57 @@ function renderCoverageGantt(){
   return h;
 }
 
-function renderMechanics(){
-  let h = \`<h2>Mecánicos (\${game.mechanics.length})</h2>
-  <p class="muted" style="margin-bottom:.5rem">Turno: morning 06-14h · afternoon 14-22h · night 22-06h (+50% salario). Moral 0-100 ajusta eficiencia (0.5x–1.2x).</p>
-  \${renderCoverageGantt()}
+// ===========================================================================
+// Pivot iteración 2026-05-24 — Oficina (antes "Mecánicos")
+// ===========================================================================
+// La oficina del MRO es la sede física donde están los mecs entre WOs (van/vuelven
+// del avión vía Travel). En lineMode tiene cap MECHANIC_CAP_INITIAL (5) hasta que
+// se desbloqueen hangares en endgame. Esta vista agrupa: detalle de la oficina
+// (capacidad, salarios totales, cobertura, moral media) + lista de mecánicos.
+function renderOffice(){
+  const mechs = game.mechanics;
+  const cap = S.MECHANIC_CAP_INITIAL ?? 5;
+  const unlocked = typeof S.canUnlockHangars === "function" ? S.canUnlockHangars(game) : false;
+  const capLabel = unlocked ? \`\${mechs.length} mecs (cap ampliado en endgame)\` : \`\${mechs.length}/\${cap}\`;
+  const capPct = unlocked ? 100 : Math.min(100, (mechs.length / cap) * 100);
+  const capCls = mechs.length >= cap && !unlocked ? "warn" : "primary";
+  const totalSalary = mechs.reduce((s, m) => s + S.effectiveWeeklySalary(m), 0);
+  const byShift = { morning: 0, afternoon: 0, night: 0, off: 0 };
+  for (const m of mechs) {
+    const s = m.shift ?? "morning";
+    if (s in byShift) byShift[s]++;
+  }
+  const byBase = { B1: 0, B2: 0, Helper: 0, TMA: 0 };
+  for (const m of mechs) {
+    if (m.isLeadForeman) byBase.TMA++;
+    else if (m.base === "B1") byBase.B1++;
+    else if (m.base === "B2") byBase.B2++;
+    else byBase.Helper++;
+  }
+  const avgMoral = mechs.length === 0 ? 0 : Math.round(mechs.reduce((s, m) => s + (m.moral ?? 70), 0) / mechs.length);
+  const moralCls = avgMoral >= 70 ? "good" : avgMoral >= 40 ? "warn" : "bad";
+  const inTraining = mechs.filter(m => m.activeTrainingUntilMinute && m.activeTrainingUntilMinute > game.clock.minute).length;
+  const idleCount = mechs.filter(m => m.state === "Idle").length;
+  const workingCount = mechs.filter(m => m.state === "Working" || m.state === "ToPlane" || m.state === "Returning").length;
+  const offshiftCount = mechs.filter(m => m.state === "OffShift").length;
+
+  let h = '<h2>🏢 Oficina</h2>';
+  h += '<p class="muted" style="margin-bottom:.5rem">Sede física del MRO. Los mecánicos esperan aquí entre WOs y se desplazan al stand cuando se les asigna trabajo (Travel ~2min). Cap inicial limitado a 5 mecs hasta desbloquear hangares en endgame.</p>';
+  // ===== Bloque detalle de la oficina =====
+  h += '<div class="office-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.6rem;margin-bottom:1rem">';
+  h += \`<div class="card-mini"><div class="lbl">🏢 Capacidad</div><div class="big">\${capLabel}</div><div class="bar" style="height:5px;margin-top:.3rem"><div class="fill \${capCls}" style="width:\${capPct.toFixed(0)}%"></div></div></div>\`;
+  h += \`<div class="card-mini"><div class="lbl">💼 Salario total</div><div class="big">\${fmt(totalSalary)} €/sem</div><div class="muted" style="font-size:.7rem">~\${fmt(Math.round(totalSalary*52/12))} €/mes</div></div>\`;
+  h += \`<div class="card-mini"><div class="lbl">⚙️ Composición</div><div class="big" style="font-size:1rem">B1: <strong>\${byBase.B1}</strong> · B2: <strong>\${byBase.B2}</strong> · Helper: <strong>\${byBase.Helper}</strong>\${byBase.TMA>0?\` · TMA: <strong>\${byBase.TMA}</strong>\`:''}</div></div>\`;
+  h += \`<div class="card-mini"><div class="lbl">📅 Turnos</div><div class="big" style="font-size:1rem">☀️ <strong>\${byShift.morning}</strong> · 🌅 <strong>\${byShift.afternoon}</strong> · 🌙 <strong>\${byShift.night}</strong>\${byShift.off>0?\` · 💤 <strong>\${byShift.off}</strong>\`:''}</div></div>\`;
+  h += \`<div class="card-mini"><div class="lbl">😊 Moral media</div><div class="big \${moralCls==='good'?'pos':moralCls==='bad'?'neg':''}">\${avgMoral}/100</div></div>\`;
+  h += \`<div class="card-mini"><div class="lbl">📍 Estado actual</div><div class="big" style="font-size:.95rem">⚙️ <strong>\${workingCount}</strong> wkg · 😎 <strong>\${idleCount}</strong> idle\${offshiftCount>0?\` · 💤 <strong>\${offshiftCount}</strong> off\`:''}\${inTraining>0?\` · 🎓 <strong>\${inTraining}</strong> train\`:''}</div></div>\`;
+  h += '</div>';
+  // ===== Cobertura por hora (gantt existente) =====
+  h += '<h3>Cobertura horaria</h3>';
+  h += renderCoverageGantt();
+  // ===== Tabla de mecánicos =====
+  h += \`<h3 style="margin-top:1rem">Mecánicos (\${mechs.length})</h3>
+  <p class="muted" style="margin-bottom:.5rem">Click en una fila para detalle. Turno: morning 06-14h · afternoon 14-22h · night 22-06h (+50% salario). Moral 0-100 ajusta eficiencia (0.5x–1.2x).</p>
   <table><thead><tr><th>ID</th><th>Nombre</th><th>Base</th><th>Eff</th><th>Moral</th><th>Turno</th><th>Estado</th><th>Asignado</th><th>Salario</th><th>Train</th><th></th></tr></thead><tbody>\`;
   for (const m of game.mechanics) {
     const ratings = m.typeRatings.map(r => \`\${r.model}/\${r.engineVariant}/\${r.category}\`).join(", ") || "—";
@@ -1176,10 +1232,70 @@ function renderDashboard(){
     }
   }
 
+  // Pivot iteración 2026-05-25 — Brand reputation del MRO (lo que las aerolíneas
+  // SIN contrato observan). Score 0-100; ≥70 desbloquea ofertas de nuevas aerolíneas.
+  const contractedRepsForBrand = game.contracts
+    .filter(c => c.status === "active")
+    .map(c => game.reputation.perAirline[c.airlineId] ?? 50);
+  const brand = (typeof S.brandReputation === "function") ? S.brandReputation({
+    totalDepartures: kpi.totalDepartures,
+    totalOnTime: kpi.totalOnTime,
+    totalAog: kpi.totalAog,
+    contractedReps: contractedRepsForBrand,
+  }) : 0;
+  const brandThreshold = 70;
+  const brandColor = brand >= brandThreshold ? "var(--success)" : brand >= 40 ? "var(--warning)" : "var(--muted)";
+  const brandHint = brand >= brandThreshold
+    ? "✅ Aerolíneas sin contrato YA pueden ofrecerte trabajo."
+    : brand >= 40
+      ? \`Faltan \${brandThreshold - brand} pts de brand para desbloquear ofertas externas.\`
+      : kpi.totalDepartures < 10
+        ? \`Necesitas ≥10 departures gestionados para tener fama (\${kpi.totalDepartures}/10).\`
+        : "Mejora rep media + on-time + reduce AOG para subir el brand.";
+
   return \`<h2>📊 Dashboard KPI</h2>
   <p class="muted" style="margin-bottom:.75rem">Series semanales (último año ingame, max 52 semanas). Cada punto = cierre de semana.</p>
 
-  <h3 style="margin-top:1rem">📈 TDR — Total Delay Ratio</h3>
+  <h3 style="margin-top:1rem">🌟 Brand Reputation del MRO</h3>
+  <p class="muted" style="margin-bottom:.5rem">Score objetivo que las aerolíneas SIN contrato observan. Deriva de tus KPIs (50% rep media de contratadas · 30% on-time · 20% (1-AOG)). Cada aerolínea tiene su propio umbral según presencia en OVD — Volotea (local) te quiere antes, easyJet (esporádica) más tarde.</p>
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="dash-title">🌟 Brand del MRO</div>
+      <div class="dash-big" style="color:\${brandColor}">\${brand}<span style="font-size:.85rem;color:var(--muted)"> /100</span></div>
+      <div class="bar" style="height:6px;margin-top:.4rem"><div class="fill" style="width:\${brand}%;background:\${brandColor}"></div><div style="position:relative;width:\${brandThreshold}%;border-right:2px dashed var(--text);height:6px;margin-top:-6px"></div></div>
+      <div class="muted" style="font-size:.72rem;margin-top:.3rem">\${brandHint}</div>
+    </div>
+  </div>
+
+  <h4 style="margin-top:1rem">Aerolíneas que pueden ofertarte</h4>
+  <p class="muted" style="margin-bottom:.5rem;font-size:.78rem">Cuando tu brand cruza el umbral de una aerolínea, en el siguiente tick de competencia (cada 30 días) puede aparecerte su oferta. Las condiciones (fee/payment/penalty) escalan con cuánto excedas su umbral.</p>
+  <table style="font-size:.85rem">
+    <thead><tr><th>Aerolínea</th><th>Umbral brand</th><th>Estado</th><th>Distancia</th></tr></thead>
+    <tbody>
+      \${(() => {
+        const rows = [];
+        const sorted = game.airlines.filter(a => a.iataCode).slice().sort((a,b) => (a.brandThreshold ?? 70) - (b.brandThreshold ?? 70));
+        for (const a of sorted) {
+          const t = a.brandThreshold ?? 70;
+          const hasContract = game.contracts.some(c => c.airlineId === a.id && (c.status === "active" || c.status === "offered"));
+          const meets = brand >= t;
+          const status = hasContract ? '<span style="color:var(--success)">✓ ya contratada/oferta</span>' :
+                         meets ? '<span style="color:var(--success)">✅ puede ofertar</span>' :
+                         '<span style="color:var(--muted)">⏳ pendiente</span>';
+          const dist = hasContract ? '—' : meets ? \`+\${brand - t} sobre umbral\` : \`faltan \${t - brand} pts\`;
+          rows.push(\`<tr>
+            <td><span style="display:inline-block;width:8px;height:8px;background:\${a.color};border-radius:50%;margin-right:.4rem"></span>\${esc(a.name)}</td>
+            <td class="mono"><strong>\${t}</strong></td>
+            <td>\${status}</td>
+            <td class="muted">\${dist}</td>
+          </tr>\`);
+        }
+        return rows.join("");
+      })()}
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:1.5rem">📈 TDR — Total Delay Ratio</h3>
   <p class="muted" style="margin-bottom:.5rem">Minutos medios de retraso por departure. Si una WO bloquea al avión más allá de su hora prevista, acumula delay. Departure con delay ≥ 3h escala a AOG (penalty extra + rep delta).</p>
   <div class="dash-grid">
     <div class="dash-card">
@@ -2300,13 +2416,22 @@ function renderModal(){
 
 // Fase 5B-γ: anima un elemento mostrando un número entre origen y destino en N ms.
 // Ease-out cubic. Si la diferencia es menos de 2 unidades, asigna directo (evita jitter).
+//
+// Pivot iteración 2026-05-24 fix: BUG de parpadeo + valores irreales en HUD de balance.
+// Causa: String(target) con target flotante (ej. 259181.32) almacenaba "259181.32" en
+// dataset.tweenVal. Al re-parsear con replace(/[^0-9-]/g, "") se borraba el punto
+// decimal → "25918132" → parseInt = 25918132. El siguiente tick veía from=25M, target=259k
+// → tweeneaba hacia abajo cada 100ms, mostrando cifras absurdas en pleno tween.
+// Fix: redondear target a entero ANTES de almacenar/comparar. El balance se redondea
+// al euro entero (más legible y consistente con UI tycoon).
 const _activeTweens = new WeakMap();
 function tweenNumber(el, target, duration = 400, formatter = (v) => v.toLocaleString("es-ES")) {
+  const intTarget = Math.round(target);
   const current = parseInt((el.dataset.tweenVal ?? "").replace(/[^0-9-]/g, ""), 10);
-  const from = Number.isFinite(current) ? current : target;
-  if (Math.abs(target - from) < 2) {
-    el.textContent = formatter(target);
-    el.dataset.tweenVal = String(target);
+  const from = Number.isFinite(current) ? current : intTarget;
+  if (Math.abs(intTarget - from) < 2) {
+    el.textContent = formatter(intTarget);
+    el.dataset.tweenVal = String(intTarget);
     return;
   }
   // Cancelar tween previo si hubo
@@ -2316,14 +2441,14 @@ function tweenNumber(el, target, duration = 400, formatter = (v) => v.toLocaleSt
   function step(now) {
     const t = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - t, 3);
-    const v = Math.round(from + (target - from) * eased);
+    const v = Math.round(from + (intTarget - from) * eased);
     el.textContent = formatter(v);
     if (t < 1) {
       const id = requestAnimationFrame(step);
       _activeTweens.set(el, id);
     } else {
-      el.textContent = formatter(target);
-      el.dataset.tweenVal = String(target);
+      el.textContent = formatter(intTarget);
+      el.dataset.tweenVal = String(intTarget);
       _activeTweens.delete(el);
     }
   }
@@ -2375,6 +2500,16 @@ function render(){
   }
   document.getElementById("badge-offers").textContent = liveOffers().length;
   document.getElementById("badge-candidates").textContent = (game.candidates ?? []).length;
+  // Pivot iteración 2026-05-24: badge Oficina = mecs idle ahora (disponibles para asignar).
+  // 0 idle → alerta (todos ocupados o off-shift), señal de bottleneck de personal.
+  {
+    const badgeOffice = document.getElementById("badge-office");
+    if (badgeOffice) {
+      const idle = game.mechanics.filter(m => m.state === "Idle").length;
+      badgeOffice.textContent = idle;
+      badgeOffice.classList.toggle("alert", idle === 0);
+    }
+  }
   // Pivot línea pura · Production Planning: badge = nº de pernoctas pendientes
   {
     const badgePlan = document.getElementById("badge-planning");
@@ -2430,7 +2565,7 @@ function render(){
     else if (activeTab === "operations")  html = renderOperations();
     else if (activeTab === "schedule")    html = renderSchedule();
     else if (activeTab === "planning")    html = renderProductionPlanning();
-    else if (activeTab === "mechanics")  html = renderMechanics();
+    else if (activeTab === "office")  html = renderOffice();
     else if (activeTab === "contracts")  html = renderContracts();
     else if (activeTab === "market")     html = renderMarket();
     else if (activeTab === "construction") html = renderConstruction();

@@ -57,7 +57,10 @@ expect(instance.airplaneRegistration === "EC-TEST", "registration linked");
 expect(instance.airplaneInstanceId === "ALI-000001", "airplaneInstanceId linked al landing");
 expect(instance.phase === "ToPlane", "starts en ToPlane");
 expect(instance.assignedMechanicIds.length === 0, "sin mecánicos asignados al inicio");
-expect(instance.slaMinute === 600 + Math.round(templates[0].durationMinutes * balance.slaMultiplier), `SLA = arrival + duration × slaMultiplier (${balance.slaMultiplier})`);
+// Pivot iteración 2026-05-25: SLA semánticamente correcto = scheduledDepartureMinute del avión.
+// Una WO solo es "late" si causa delay real al departure. El cálculo viejo (arrival + dur*mult)
+// generaba slaMinute abstracto que marcaba late WOs que terminaban antes del vuelo siguiente.
+expect(instance.slaMinute === airplane.scheduledDepartureMinute, `SLA = scheduledDeparture del avión (${airplane.scheduledDepartureMinute})`);
 
 // Helpers
 const ws = [

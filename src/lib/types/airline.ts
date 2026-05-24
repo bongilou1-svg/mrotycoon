@@ -18,4 +18,12 @@ export interface Airline {
    *  OVD (callsigns IB/VY/V7/U2). Permite filtrar arrivals del schedule por contratos
    *  vivos. Si missing, la aerolínea no aparece en el schedule real. */
   iataCode?: string;
+  /** Pivot iteración 2026-05-25: umbral de brand del MRO que esta aerolínea exige
+   *  para ofrecerte un contrato. Aerolíneas con base/volumen en OVD (Volotea local)
+   *  tienen umbral bajo (te quieren antes); operadores internacionales esporádicos
+   *  (easyJet) exigen brand alto antes de delegar maintenance. Si undefined →
+   *  fallback a `LINE_OFFER_REP_THRESHOLD` (70). Las condiciones del contrato
+   *  ofertado escalan con cuánto supere el brand este threshold (más brand sobre
+   *  umbral = mejor fee, payment, penalty). */
+  brandThreshold?: number;
 }
