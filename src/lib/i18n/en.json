@@ -1,0 +1,160 @@
+{
+  "app": {
+    "title": "MRO Tycoon",
+    "version": "v{version} · Day {day}"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading…",
+    "error": "Error",
+    "confirm": "Confirm",
+    "accept": "Accept",
+    "reject": "Reject",
+    "close": "Close",
+    "minutes": "min",
+    "hours": "h",
+    "days": "days",
+    "weeks": "wk",
+    "money": "€{amount}",
+    "percent": "{value}%"
+  },
+  "hud": {
+    "balance": "Balance",
+    "reputation": "Reputation",
+    "clock": "Clock",
+    "speed": {
+      "pause": "Pause",
+      "x1": "1x",
+      "x2": "2x",
+      "x5": "5x"
+    },
+    "notifications": "Notifications"
+  },
+  "nav": {
+    "hangar": "🏭 Hangar",
+    "mechanics": "⚙️ Mechanics",
+    "contracts": "📋 Contracts",
+    "economy": "💰 Economy",
+    "settings": "⚙️ Settings"
+  },
+  "wo": {
+    "title": "Work orders",
+    "single": "Work order",
+    "id": "ID",
+    "description": "Description",
+    "ata": "ATA chapter",
+    "duration": "Duration",
+    "sla": "SLA",
+    "slaRemaining": "SLA remaining",
+    "phase": {
+      "ToPlane": "✈️ Travelling",
+      "Inspection": "🔍 Inspection",
+      "MainTask": "🔧 Main task",
+      "Test": "🧪 Test",
+      "Rework": "🔁 Rework",
+      "Completed": "✅ Completed",
+      "Failed": "❌ Failed"
+    },
+    "severity": {
+      "Minor": "Minor",
+      "Major": "⚠️ Major",
+      "Critical": "🚨 Critical"
+    },
+    "aogBadge": "🛑 AOG",
+    "deferrable": "Deferrable",
+    "notDeferrable": "Not deferrable",
+    "assignMechanics": "Assign mechanics",
+    "selectCertifier": "Select certifier (with type rating)",
+    "addHelper": "Add helper",
+    "noEligibleMechanics": "No eligible mechanics available right now",
+    "partsRequired": "Parts",
+    "toolsRequired": "Tools",
+    "noPartsNeeded": "No specific parts",
+    "noToolsNeeded": "No special tools"
+  },
+  "mechanic": {
+    "title": "Mechanics",
+    "single": "Mechanic",
+    "base": "Base",
+    "category": {
+      "B1": "B1 (Mechanical)",
+      "B2": "B2 (Avionics)",
+      "Helper": "Helper"
+    },
+    "efficiency": "Efficiency",
+    "salary": "Weekly salary",
+    "state": {
+      "Idle": "🟢 Available",
+      "ToPlane": "✈️ Travelling",
+      "Working": "🔧 Working",
+      "Returning": "🚶 Returning",
+      "OffShift": "💤 Off shift"
+    },
+    "typeRatings": "Type ratings",
+    "noRatings": "No type ratings (helper only)",
+    "assignedTo": "Assigned to"
+  },
+  "contract": {
+    "title": "Contracts",
+    "single": "Contract",
+    "status": {
+      "offered": "📨 Offered",
+      "active": "✅ Active",
+      "expired": "⌛ Expired",
+      "cancelled": "❌ Cancelled"
+    },
+    "baseFee": "Weekly base fee",
+    "paymentPerMinute": "€/min of WO",
+    "penaltyPerMinute": "€/min SLA penalty",
+    "minReputation": "Minimum reputation",
+    "expectedLandings": "Expected landings/day",
+    "fleet": "Fleet",
+    "accept": "Accept contract",
+    "reject": "Reject offer",
+    "expiresIn": "Expires in {time}"
+  },
+  "airline": {
+    "title": "Airlines"
+  },
+  "economy": {
+    "title": "Economy",
+    "weeklyClose": "Weekly closing",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net",
+    "transaction": {
+      "salary": "Mechanic salary",
+      "contractBaseFee": "Contract base fee",
+      "workOrderPayment": "WO payment",
+      "penalty": "SLA penalty",
+      "weeklyFixedCost": "Weekly fixed cost",
+      "purchase": "Purchase"
+    },
+    "noTransactions": "No transactions yet"
+  },
+  "notification": {
+    "newWO": "🔔 New WO at stand {stand}: {desc}",
+    "woCompleted": "✅ WO completed: {desc}",
+    "woFailed": "❌ WO failed: {desc}",
+    "woAog": "🚨 AOG on {registration} — penalty x5",
+    "newAirplane": "✈️ {registration} arriving ({model})",
+    "contractOffered": "📨 Contract offer: {airline}",
+    "contractExpired": "⌛ Offer expired: {airline}",
+    "weeklyClose": "📊 Weekly close complete. Net: €{net}",
+    "lowBalance": "⚠️ Low balance: €{amount}",
+    "lowReputation": "⚠️ Low reputation: {value}"
+  },
+  "gameOver": {
+    "bankruptcy": "🛑 Bankruptcy. Balance below zero for two consecutive weeks.",
+    "reputation": "🛑 Reputation at zero and no active contracts."
+  },
+  "newGame": {
+    "title": "New game",
+    "start": "Start",
+    "continue": "Continue game"
+  }
+}

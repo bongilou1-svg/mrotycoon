@@ -1,0 +1,160 @@
+{
+  "app": {
+    "title": "MRO Tycoon",
+    "version": "v{version} · Día {day}"
+  },
+  "common": {
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "loading": "Cargando…",
+    "error": "Error",
+    "confirm": "Confirmar",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "close": "Cerrar",
+    "minutes": "min",
+    "hours": "h",
+    "days": "días",
+    "weeks": "sem",
+    "money": "{amount} €",
+    "percent": "{value}%"
+  },
+  "hud": {
+    "balance": "Balance",
+    "reputation": "Reputación",
+    "clock": "Reloj",
+    "speed": {
+      "pause": "Pausa",
+      "x1": "1x",
+      "x2": "2x",
+      "x5": "5x"
+    },
+    "notifications": "Notificaciones"
+  },
+  "nav": {
+    "hangar": "🏭 Hangar",
+    "mechanics": "⚙️ Mecánicos",
+    "contracts": "📋 Contratos",
+    "economy": "💰 Economía",
+    "settings": "⚙️ Ajustes"
+  },
+  "wo": {
+    "title": "Órdenes de trabajo",
+    "single": "Orden de trabajo",
+    "id": "ID",
+    "description": "Descripción",
+    "ata": "Capítulo ATA",
+    "duration": "Duración",
+    "sla": "SLA",
+    "slaRemaining": "SLA restante",
+    "phase": {
+      "ToPlane": "✈️ Viajando",
+      "Inspection": "🔍 Inspección",
+      "MainTask": "🔧 Trabajo principal",
+      "Test": "🧪 Prueba",
+      "Rework": "🔁 Re-trabajo",
+      "Completed": "✅ Completada",
+      "Failed": "❌ Fallada"
+    },
+    "severity": {
+      "Minor": "Menor",
+      "Major": "⚠️ Mayor",
+      "Critical": "🚨 Crítica"
+    },
+    "aogBadge": "🛑 AOG",
+    "deferrable": "Diferible",
+    "notDeferrable": "No diferible",
+    "assignMechanics": "Asignar mecánicos",
+    "selectCertifier": "Seleccionar certifier (con type rating)",
+    "addHelper": "Añadir helper",
+    "noEligibleMechanics": "Sin mecánicos elegibles ahora mismo",
+    "partsRequired": "Piezas",
+    "toolsRequired": "Herramientas",
+    "noPartsNeeded": "Sin piezas específicas",
+    "noToolsNeeded": "Sin herramientas especiales"
+  },
+  "mechanic": {
+    "title": "Mecánicos",
+    "single": "Mecánico",
+    "base": "Base",
+    "category": {
+      "B1": "B1 (Mecánica)",
+      "B2": "B2 (Avionics)",
+      "Helper": "Helper"
+    },
+    "efficiency": "Eficiencia",
+    "salary": "Salario semanal",
+    "state": {
+      "Idle": "🟢 Disponible",
+      "ToPlane": "✈️ Viajando",
+      "Working": "🔧 Trabajando",
+      "Returning": "🚶 Volviendo",
+      "OffShift": "💤 Fuera de turno"
+    },
+    "typeRatings": "Type ratings",
+    "noRatings": "Sin type ratings (solo helper)",
+    "assignedTo": "Asignado a"
+  },
+  "contract": {
+    "title": "Contratos",
+    "single": "Contrato",
+    "status": {
+      "offered": "📨 Ofertado",
+      "active": "✅ Activo",
+      "expired": "⌛ Expirado",
+      "cancelled": "❌ Cancelado"
+    },
+    "baseFee": "Cuota semanal",
+    "paymentPerMinute": "€/min de WO",
+    "penaltyPerMinute": "Penalización €/min SLA",
+    "minReputation": "Reputación mínima",
+    "expectedLandings": "Llegadas esperadas/día",
+    "fleet": "Flota",
+    "accept": "Aceptar contrato",
+    "reject": "Rechazar oferta",
+    "expiresIn": "Expira en {time}"
+  },
+  "airline": {
+    "title": "Aerolíneas"
+  },
+  "economy": {
+    "title": "Economía",
+    "weeklyClose": "Cierre semanal",
+    "income": "Ingresos",
+    "expenses": "Gastos",
+    "net": "Neto",
+    "transaction": {
+      "salary": "Salario mecánico",
+      "contractBaseFee": "Cuota contrato",
+      "workOrderPayment": "Pago WO",
+      "penalty": "Penalización SLA",
+      "weeklyFixedCost": "Coste fijo semanal",
+      "purchase": "Compra"
+    },
+    "noTransactions": "Sin movimientos aún"
+  },
+  "notification": {
+    "newWO": "🔔 Nueva WO en stand {stand}: {desc}",
+    "woCompleted": "✅ WO completada: {desc}",
+    "woFailed": "❌ WO fallada: {desc}",
+    "woAog": "🚨 AOG en {registration} — penalty x5",
+    "newAirplane": "✈️ Llega {registration} ({model})",
+    "contractOffered": "📨 Oferta de contrato: {airline}",
+    "contractExpired": "⌛ Oferta expirada: {airline}",
+    "weeklyClose": "📊 Cierre semanal completo. Neto: {net} €",
+    "lowBalance": "⚠️ Balance bajo: {amount} €",
+    "lowReputation": "⚠️ Reputación baja: {value}"
+  },
+  "gameOver": {
+    "bankruptcy": "🛑 Bancarrota. Balance bajo cero dos semanas seguidas.",
+    "reputation": "🛑 Reputación cero y sin contratos activos."
+  },
+  "newGame": {
+    "title": "Nueva partida",
+    "start": "Empezar",
+    "continue": "Continuar partida"
+  }
+}

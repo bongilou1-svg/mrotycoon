@@ -1,0 +1,59 @@
+[
+  {
+    "$comment_A": "A-check real: 50-150 man-hours = ~6-19 person-days(24h). Subido manDays 2→8 para coherencia con real. ParkingDays 1 ✓ (overnight).",
+    "type": "A",
+    "model": "A320",
+    "triggerFH": 600,
+    "triggerCycles": 200,
+    "manDays": 8,
+    "parkingDays": 2,
+    "baseFee": 12000
+  },
+  {
+    "type": "A",
+    "model": "A321",
+    "triggerFH": 600,
+    "triggerCycles": 200,
+    "manDays": 9,
+    "parkingDays": 2,
+    "baseFee": 13000
+  },
+  {
+    "$comment_C": "C-check real: 3000-6000 man-hours = ~125-250 person-days(24h). Subido manDays 60→150. ParkingDays 14 ✓ (1-2 sem stand).",
+    "type": "C",
+    "model": "A320",
+    "triggerFH": 7500,
+    "triggerCycles": 5000,
+    "manDays": 150,
+    "parkingDays": 14,
+    "baseFee": 110000
+  },
+  {
+    "type": "C",
+    "model": "A321",
+    "triggerFH": 7500,
+    "triggerCycles": 5000,
+    "manDays": 170,
+    "parkingDays": 16,
+    "baseFee": 130000
+  },
+  {
+    "$comment_D": "D-check real: 30000-50000 man-hours = ~1250-2000 person-days(24h). Subido manDays 300→1000 como compromiso jugable (con 1000 manDays y team de 17 mecs en 60 días se cierra; equipos menores fuerzan overrun penalty). ParkingDays 60 ✓.",
+    "type": "D",
+    "model": "A320",
+    "triggerFH": 25000,
+    "triggerCycles": 16000,
+    "manDays": 1000,
+    "parkingDays": 60,
+    "baseFee": 550000
+  },
+  {
+    "type": "D",
+    "model": "A321",
+    "triggerFH": 25000,
+    "triggerCycles": 16000,
+    "manDays": 1150,
+    "parkingDays": 65,
+    "baseFee": 620000
+  }
+]

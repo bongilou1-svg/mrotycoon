@@ -1,0 +1,158 @@
+{
+  "_meta": {
+    "source": "Derived from FAA MMEL Boeing B-737 Rev 62 (2022-11-28) covering -100/-200/-300/-400/-500/-600/-700/-800/-900/-900ER, plus FAA MMEL B-737 MAX Rev 6 (Draft 2024-04-23). Item IDs follow ATA 4-digit + sub-item convention. Both MMELs share the same ATA taxonomy as A32x — only the system implementation, terminology, and certain item counts differ.",
+    "references": [
+      "https://www.faa.gov/sites/faa.gov/files/2022-07/MMEL_B-737_Rev_62_Draft.pdf",
+      "https://www.faa.gov/aircraft/draft_docs/mmel/mmel-b-737-rev-62-draft",
+      "https://www.faa.gov/aircraft/draft_docs/mmel/MMEL_B-737_MAX_Rev_6_Draft",
+      "https://wwwapps2.tc.gc.ca/saf-sec-sur/2/MEL-LEM/tcbbs/mmels/B_737.pdf",
+      "https://fsims.faa.gov/wdocs/mmel/b-737%20r55a.htm",
+      "http://www.b737.org.uk/mmel.htm",
+      "https://drs.faa.gov/browse/MMEL/doctypeDetails",
+      "https://www.aviationhunt.com/boeing-737-mel-items/"
+    ],
+    "categories": {
+      "A": "No standard repair interval. Operator must specify (often 1-3 days or by flight cycles).",
+      "B": "3 consecutive calendar days, excluding day of discovery.",
+      "C": "10 consecutive calendar days, excluding day of discovery.",
+      "D": "120 consecutive calendar days, excluding day of discovery."
+    },
+    "totalItemsInRealMmel": "FAA MMEL B-737 Rev 62 contains approx. 1300-1500 individual items across 30+ ATA chapters (full doc ~750 pages, larger than A320 due to multi-variant coverage from -100 through -900ER). MAX MMEL Rev 6 adds ~200 MAX-specific items.",
+    "categoryDistributionApprox": {
+      "A": "7%",
+      "B": "22%",
+      "C": "53%",
+      "D": "18%"
+    },
+    "differencesVsA32x": {
+      "hydraulics": "B737 uses System A / System B / Standby (engine-driven pumps + electric motor pumps + air-driven pump on B). A32x uses Green/Yellow/Blue with PTU. Different MEL items entirely under ATA 29.",
+      "flightControls": "B737 uses cable-and-hydraulic conventional flight controls (no fly-by-wire on NG; MAX adds fly-by-wire spoilers only). No ELAC/SEC/FAC; instead FCC (Flight Control Computer) for autopilot only. MEL items under 27 are simpler in number but each item has wider operational impact.",
+      "engineControl": "B737 uses FADEC (CFM56-7B EEC and LEAP-1B EEC) — same dual-channel concept as A320 CFM56-5B / LEAP-1A.",
+      "pneumatic": "B737 has high/low stage bleed valves per engine + PRSOV + crossbleed; uses 8th and 5th stage tap on CFM56-7B. A32x uses HP/IP valves and precoolers similarly but bleed scheduling differs.",
+      "apu": "B737 NG uses APS 2000 / GTCP85 (older) or APS3200-similar variants per fleet; B737 MAX uses APS 5000-class. A32x uses Honeywell 131-9A.",
+      "fuel": "B737 has 2 wing tanks + 1 center tank, no NGS on early NG (FRM mandated post-SFAR 88), no integrated ATA 47 chapter for older airframes.",
+      "avionics": "No IMA/AFDX. Uses ARINC 429 federated avionics with CDS (Common Display System). No ATA 42/45/46 inventory comparable to A320 NEO IMA cabinets.",
+      "fbwLaws": "No alternate/direct law transitions (NG only). MEL-relevant for SMYD (Stall Management Yaw Damper) instead of FAC.",
+      "mcas": "MAX-only: MCAS-related dispatch impacts under updated AOA disagree alerting.",
+      "doorPlug": "MAX 9 mid-exit door plug — post-2024 inspection regime under AD 2024-02-51."
+    },
+    "note": "Sample below curates 87 representative items used to seed the WO template generator. Real MMEL has finer granularity (per-channel, per-side variants, per-fleet variant table)."
+  },
+  "items": [
+    { "id": "21-21-01", "ata": 21, "system": "Air Conditioning", "item": "Pack (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One pack inoperative provided altitude limited to FL250 and remaining pack operates normally; APU bleed available on ground.", "source": "FAA MMEL B-737 Rev 62 - 21-51" },
+    { "id": "21-26-01", "ata": 21, "system": "Air Conditioning", "item": "Pack Valve (PRSOV)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One pack valve inoperative in closed position; affected pack OFF for dispatch, FL250 limit.", "source": "FAA MMEL B-737 Rev 62 - 21-26" },
+    { "id": "21-31-01", "ata": 21, "system": "Pressurization", "item": "Outflow Valve Manual Mode", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided automatic AUTO/ALTN modes serviceable; both cabin pressure controllers (CPC) operate.", "source": "FAA MMEL B-737 Rev 62 - 21-31" },
+    { "id": "21-43-01", "ata": 21, "system": "Air Conditioning", "item": "Trim Air Modulating Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One zone trim air valve inoperative; affected zone temperature varies with pack outlet.", "source": "FAA MMEL B-737 Rev 62 - 21-43" },
+    { "id": "21-58-01", "ata": 21, "system": "Air Conditioning", "item": "Recirculation Fan", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One of two recirc fans inoperative; both packs must operate.", "source": "FAA MMEL B-737 Rev 62 - 21-58" },
+
+    { "id": "22-11-01", "ata": 22, "system": "Auto Flight", "item": "Autopilot Channel A or B", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Single AP channel inoperative; CAT II/III autoland NOT authorized depending on configuration.", "source": "FAA MMEL B-737 Rev 62 - 22-11" },
+    { "id": "22-31-01", "ata": 22, "system": "Auto Flight", "item": "Autothrottle", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided manual thrust procedures briefed; performance penalty per OM-B.", "source": "FAA MMEL B-737 Rev 62 - 22-31" },
+    { "id": "22-21-01", "ata": 22, "system": "Auto Flight", "item": "Mach Trim System", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inoperative; speed restriction may apply.", "source": "FAA MMEL B-737 Rev 62 - 22-21" },
+
+    { "id": "23-12-01", "ata": 23, "system": "Communications", "item": "VHF Communication Transceiver (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One VHF inoperative provided remaining VHF radios serviceable; B737 NG typically equipped with VHF L/C/R.", "source": "FAA MMEL B-737 Rev 62 - 23-12" },
+    { "id": "23-22-01", "ata": 23, "system": "Communications", "item": "HF Transceiver", "category": "D", "intervalDays": 120, "rectificationInterval": "D - 120 days", "remarks": "Inoperative provided not required by route (oceanic/remote operations).", "source": "FAA MMEL B-737 Rev 62 - 23-22" },
+    { "id": "23-27-01", "ata": 23, "system": "Communications", "item": "ACARS / Datalink", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided VHF voice comms operate; CPDLC requirements per route.", "source": "FAA MMEL B-737 Rev 62 - 23-27" },
+    { "id": "23-71-01", "ata": 23, "system": "Communications", "item": "Cockpit Voice Recorder", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided FDR operates normally.", "source": "FAA MMEL B-737 Rev 62 - 23-71" },
+
+    { "id": "24-11-01", "ata": 24, "system": "Electrical Power", "item": "Engine Driven Generator (IDG)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One IDG inoperative; APU GEN required for dispatch on most routes; ETOPS impact per OM.", "source": "FAA MMEL B-737 Rev 62 - 24-11" },
+    { "id": "24-22-01", "ata": 24, "system": "Electrical Power", "item": "APU Generator", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided both engine generators serviceable; ETOPS may be impacted.", "source": "FAA MMEL B-737 Rev 62 - 24-22" },
+    { "id": "24-31-01", "ata": 24, "system": "Electrical Power", "item": "Battery (Main)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Main battery inoperative; ETOPS prohibited; standby instruments backup time degraded.", "source": "FAA MMEL B-737 Rev 62 - 24-31" },
+    { "id": "24-58-01", "ata": 24, "system": "Electrical Power", "item": "Static Inverter", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided AC standby bus available from normal sources.", "source": "FAA MMEL B-737 Rev 62 - 24-58" },
+
+    { "id": "25-22-01", "ata": 25, "system": "Equipment / Furnishings", "item": "Passenger Seat (cabin)", "category": "D", "intervalDays": 120, "rectificationInterval": "D - 120 days", "remarks": "Up to a number of seats may be inoperative provided blocked off and placarded; row capacity adjusted.", "source": "FAA MMEL B-737 Rev 62 - 25-22" },
+    { "id": "25-25-01", "ata": 25, "system": "Equipment / Furnishings", "item": "Cabin Attendant Seat", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided number of operative attendant seats meets crew complement.", "source": "FAA MMEL B-737 Rev 62 - 25-25" },
+    { "id": "25-60-01", "ata": 25, "system": "Equipment / Furnishings", "item": "Life Vest (Pax)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One PAX life vest may be missing provided affected seat blocked.", "source": "FAA MMEL B-737 Rev 62 - 25-60" },
+    { "id": "25-65-01", "ata": 25, "system": "Equipment / Furnishings", "item": "ELT (Fixed)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided portable ELT installed in cabin.", "source": "FAA MMEL B-737 Rev 62 - 25-65" },
+
+    { "id": "26-11-01", "ata": 26, "system": "Fire Protection", "item": "Engine Fire Detection Loop A", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One loop inoperative provided remaining loop tests serviceable.", "source": "FAA MMEL B-737 Rev 62 - 26-11" },
+    { "id": "26-15-01", "ata": 26, "system": "Fire Protection", "item": "APU Fire Detection Loop", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One loop inoperative; APU may be operated.", "source": "FAA MMEL B-737 Rev 62 - 26-15" },
+    { "id": "26-22-01", "ata": 26, "system": "Fire Protection", "item": "Lavatory Smoke Detector", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided affected lavatory locked out of service.", "source": "FAA MMEL B-737 Rev 62 - 26-22" },
+    { "id": "26-23-01", "ata": 26, "system": "Fire Protection", "item": "Cargo Compartment Smoke Detector", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One detector inoperative provided remaining detectors operative in same compartment.", "source": "FAA MMEL B-737 Rev 62 - 26-23" },
+
+    { "id": "27-31-01", "ata": 27, "system": "Flight Controls", "item": "Elevator Feel Computer", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inoperative; remaining channel must operate.", "source": "FAA MMEL B-737 Rev 62 - 27-31" },
+    { "id": "27-41-01", "ata": 27, "system": "Flight Controls", "item": "Stabilizer Trim Cutout Switch", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One cutout switch inoperative provided alternate cutout circuit functional.", "source": "FAA MMEL B-737 Rev 62 - 27-41" },
+    { "id": "27-51-01", "ata": 27, "system": "Flight Controls", "item": "Trailing Edge Flap Asymmetry Detection", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Asymmetry sensor inoperative; flap operation manually monitored.", "source": "FAA MMEL B-737 Rev 62 - 27-51" },
+    { "id": "27-61-01", "ata": 27, "system": "Flight Controls", "item": "Spoiler / Speedbrake Pair", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One ground spoiler pair locked retracted; landing distance penalty per OM-B.", "source": "FAA MMEL B-737 Rev 62 - 27-61" },
+    { "id": "27-81-01", "ata": 27, "system": "Flight Controls", "item": "Leading Edge Slat Asymmetry", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Asymmetry sensor inop; takeoff config penalty.", "source": "FAA MMEL B-737 Rev 62 - 27-81" },
+
+    { "id": "28-21-01", "ata": 28, "system": "Fuel", "item": "Center Tank Boost Pump", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One of two center pumps inoperative; center tank fuel may become unusable.", "source": "FAA MMEL B-737 Rev 62 - 28-21" },
+    { "id": "28-22-01", "ata": 28, "system": "Fuel", "item": "Wing Tank Boost Pump", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One of two wing tank pumps inoperative; gravity feed available per AFM limitations.", "source": "FAA MMEL B-737 Rev 62 - 28-22" },
+    { "id": "28-31-01", "ata": 28, "system": "Fuel", "item": "Crossfeed Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative in closed position provided fuel balance procedure applied.", "source": "FAA MMEL B-737 Rev 62 - 28-31" },
+    { "id": "28-41-01", "ata": 28, "system": "Fuel", "item": "Fuel Quantity Indicator (one channel)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One FQI channel inoperative; manual fuel measurement (drip stick) required at affected tank.", "source": "FAA MMEL B-737 Rev 62 - 28-41" },
+    { "id": "28-46-01", "ata": 28, "system": "Fuel", "item": "Pressure Refuel Coupling", "category": "D", "intervalDays": 120, "rectificationInterval": "D - 120 days", "remarks": "Manual refueling via overwing port permitted with operational procedures.", "source": "FAA MMEL B-737 Rev 62 - 28-46" },
+
+    { "id": "29-11-01", "ata": 29, "system": "Hydraulic Power", "item": "System A Engine-Driven Pump (EDP)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "System A EDP inoperative; System A electric motor pump must be operative; PTU not fitted on B737 (single-PTU only on rudder feel).", "source": "FAA MMEL B-737 Rev 62 - 29-11" },
+    { "id": "29-12-01", "ata": 29, "system": "Hydraulic Power", "item": "System B Electric Motor Pump", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided System B EDP operates normally.", "source": "FAA MMEL B-737 Rev 62 - 29-12" },
+    { "id": "29-21-01", "ata": 29, "system": "Hydraulic Power", "item": "Standby Hydraulic System", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Standby system inoperative; flight in icing conditions and CAT II/III prohibited.", "source": "FAA MMEL B-737 Rev 62 - 29-21" },
+    { "id": "29-31-01", "ata": 29, "system": "Hydraulic Power", "item": "PTU (Power Transfer Unit) — rudder", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided both A and B systems pressurized normally.", "source": "FAA MMEL B-737 Rev 62 - 29-31" },
+
+    { "id": "30-11-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Wing Anti-Ice Valve", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One side anti-ice inop; flight in icing prohibited on affected side.", "source": "FAA MMEL B-737 Rev 62 - 30-11" },
+    { "id": "30-21-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Engine TAI (Thermal Anti-Ice) Valve", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Affected engine TAI inop; icing dispatch restrictions apply.", "source": "FAA MMEL B-737 Rev 62 - 30-21" },
+    { "id": "30-31-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Pitot Probe Heater (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One pitot heat inoperative; icing conditions prohibited.", "source": "FAA MMEL B-737 Rev 62 - 30-31" },
+    { "id": "30-42-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Windshield Wiper", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One wiper inoperative; rain conditions briefed.", "source": "FAA MMEL B-737 Rev 62 - 30-42" },
+
+    { "id": "31-31-01", "ata": 31, "system": "Indicating", "item": "Flight Data Recorder (DFDR)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided CVR operates normally.", "source": "FAA MMEL B-737 Rev 62 - 31-31" },
+    { "id": "31-50-01", "ata": 31, "system": "Indicating", "item": "Display Unit (CDS DU)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One CDS Display Unit inoperative; reconfiguration via display switching panel allowed.", "source": "FAA MMEL B-737 Rev 62 - 31-50" },
+    { "id": "31-65-01", "ata": 31, "system": "Indicating", "item": "EFIS Comparator (CDU)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inoperative; manual comparison by crew required.", "source": "FAA MMEL B-737 Rev 62 - 31-65" },
+
+    { "id": "32-30-01", "ata": 32, "system": "Landing Gear", "item": "Alternate (Gravity) Gear Extension System", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Manual gear extension system functional test required prior to dispatch; primary extension operates normally.", "source": "FAA MMEL B-737 Rev 62 - 32-30" },
+    { "id": "32-31-01", "ata": 32, "system": "Landing Gear", "item": "Brake Temperature Monitoring", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Indication inoperative; brake cooling time per AFM tables.", "source": "FAA MMEL B-737 Rev 62 - 32-31" },
+    { "id": "32-42-01", "ata": 32, "system": "Landing Gear", "item": "Anti-Skid System (one wheel)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Anti-skid on one wheel inop; landing distance penalty.", "source": "FAA MMEL B-737 Rev 62 - 32-42" },
+    { "id": "32-44-01", "ata": 32, "system": "Landing Gear", "item": "Autobrake System", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative; manual braking required; landing performance per AFM.", "source": "FAA MMEL B-737 Rev 62 - 32-44" },
+    { "id": "32-51-01", "ata": 32, "system": "Landing Gear", "item": "Nose Wheel Steering", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided towing required for taxi; differential braking permitted.", "source": "FAA MMEL B-737 Rev 62 - 32-51" },
+    { "id": "32-71-01", "ata": 32, "system": "Landing Gear", "item": "Gear Position Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inoperative; mechanical confirmation via gear-down lights and viewer.", "source": "FAA MMEL B-737 Rev 62 - 32-71" },
+
+    { "id": "33-21-01", "ata": 33, "system": "Lights", "item": "Landing Light (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One landing light inoperative; night ops permitted.", "source": "FAA MMEL B-737 Rev 62 - 33-21" },
+    { "id": "33-44-01", "ata": 33, "system": "Lights", "item": "Anti-Collision (Strobe) Light", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One strobe inoperative; remaining strobes serviceable.", "source": "FAA MMEL B-737 Rev 62 - 33-44" },
+    { "id": "33-51-01", "ata": 33, "system": "Lights", "item": "Cabin Emergency Light Battery Pack", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One battery pack inoperative; verify others functional.", "source": "FAA MMEL B-737 Rev 62 - 33-51" },
+
+    { "id": "34-12-01", "ata": 34, "system": "Navigation", "item": "ADIRU / IRS (one of two)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One IRS inoperative; specific OEB applies for ETOPS dispatch.", "source": "FAA MMEL B-737 Rev 62 - 34-12" },
+    { "id": "34-43-01", "ata": 34, "system": "Navigation", "item": "Weather Radar", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided dispatch in non-convective conditions per OM.", "source": "FAA MMEL B-737 Rev 62 - 34-43" },
+    { "id": "34-45-01", "ata": 34, "system": "Navigation", "item": "TCAS II", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided not required by airspace.", "source": "FAA MMEL B-737 Rev 62 - 34-45" },
+    { "id": "34-46-01", "ata": 34, "system": "Navigation", "item": "EGPWS / TAWS", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided dispatch in VMC and not over hazardous terrain.", "source": "FAA MMEL B-737 Rev 62 - 34-46" },
+    { "id": "34-51-01", "ata": 34, "system": "Navigation", "item": "VOR/MMR Receiver (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One VOR inoperative; alternate navaid available.", "source": "FAA MMEL B-737 Rev 62 - 34-51" },
+    { "id": "34-55-01", "ata": 34, "system": "Navigation", "item": "DME (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One DME inoperative.", "source": "FAA MMEL B-737 Rev 62 - 34-55" },
+    { "id": "34-57-01", "ata": 34, "system": "Navigation", "item": "ATC Transponder (one)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One transponder inoperative; second must be operational for RVSM.", "source": "FAA MMEL B-737 Rev 62 - 34-57" },
+    { "id": "34-61-01", "ata": 34, "system": "Navigation", "item": "FMC (one of two)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One FMC inoperative; single-FMC operations briefed; some RNP procedures restricted.", "source": "FAA MMEL B-737 Rev 62 - 34-61" },
+    { "id": "34-23-01", "ata": 34, "system": "Navigation", "item": "AOA Sensor Heat Channel", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "AOA heat channel inop; icing operations prohibited; relevant to MCAS on MAX.", "source": "FAA MMEL B-737 MAX Rev 6 - 34-23" },
+
+    { "id": "35-11-01", "ata": 35, "system": "Oxygen", "item": "Crew O2 Cylinder Pressure Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Indication inop; manual pressure check pre-flight.", "source": "FAA MMEL B-737 Rev 62 - 35-11" },
+    { "id": "35-21-01", "ata": 35, "system": "Oxygen", "item": "Pax O2 Generator (one row)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One row of generators inop provided affected row blocked.", "source": "FAA MMEL B-737 Rev 62 - 35-21" },
+
+    { "id": "36-11-01", "ata": 36, "system": "Pneumatic", "item": "Engine Bleed Air Valve (BAV)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One engine bleed inop; APU bleed required for dispatch in many configurations.", "source": "FAA MMEL B-737 Rev 62 - 36-11" },
+    { "id": "36-12-01", "ata": 36, "system": "Pneumatic", "item": "Crossbleed (Isolation) Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative in open position; engine start procedures alternate.", "source": "FAA MMEL B-737 Rev 62 - 36-12" },
+    { "id": "36-21-01", "ata": 36, "system": "Pneumatic", "item": "Bleed Air Leak Detection Loop", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One loop inoperative; remaining loop must test serviceable.", "source": "FAA MMEL B-737 Rev 62 - 36-21" },
+
+    { "id": "38-11-01", "ata": 38, "system": "Water / Waste", "item": "Potable Water System", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided service catering and lavatories adapted; bottled water provisioned.", "source": "FAA MMEL B-737 Rev 62 - 38-11" },
+    { "id": "38-30-01", "ata": 38, "system": "Water / Waste", "item": "Lavatory (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One lavatory locked OOS; remaining lav count meets pax ratio.", "source": "FAA MMEL B-737 Rev 62 - 38-30" },
+
+    { "id": "44-21-01", "ata": 44, "system": "Cabin Systems", "item": "Cabin PA System", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided crew has megaphones operational.", "source": "FAA MMEL B-737 Rev 62 - 44-21" },
+    { "id": "44-31-01", "ata": 44, "system": "Cabin Systems", "item": "Cabin Interphone Station", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One station inoperative.", "source": "FAA MMEL B-737 Rev 62 - 44-31" },
+
+    { "id": "46-21-01", "ata": 46, "system": "Information Systems", "item": "EFB / Class 2 Display", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One EFB inoperative; paper backup charts provisioned.", "source": "FAA MMEL B-737 Rev 62 - 46-21" },
+
+    { "id": "49-11-01", "ata": 49, "system": "APU", "item": "APU", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "APU inoperative; ground air/power required at all stations; ETOPS prohibited.", "source": "FAA MMEL B-737 Rev 62 - 49-11" },
+    { "id": "49-22-01", "ata": 49, "system": "APU", "item": "APU Bleed Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided engine bleed available for cross-start.", "source": "FAA MMEL B-737 Rev 62 - 49-22" },
+    { "id": "49-61-01", "ata": 49, "system": "APU", "item": "APU Fire Bottle", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided APU OFF for the flight.", "source": "FAA MMEL B-737 Rev 62 - 49-61" },
+
+    { "id": "52-71-01", "ata": 52, "system": "Doors", "item": "Cargo Door Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One indication inoperative; visual confirmation by ground crew required.", "source": "FAA MMEL B-737 Rev 62 - 52-71" },
+    { "id": "52-30-01", "ata": 52, "system": "Doors", "item": "Mid-Exit Door Plug Indication (MAX 9)", "category": "A", "intervalDays": 1, "rectificationInterval": "A - operator-defined", "remarks": "MAX 9 only: door plug indication inoperative; visual inspection per AD 2024-02-51 mandatory before each flight.", "source": "FAA MMEL B-737 MAX Rev 6 - 52-30 / AD 2024-02-51" },
+
+    { "id": "56-11-01", "ata": 56, "system": "Windows", "item": "Cockpit Window Heat (one pane)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One window heat inop; speed restrictions in icing.", "source": "FAA MMEL B-737 Rev 62 - 56-11" },
+
+    { "id": "73-22-01", "ata": 73, "system": "Engine Fuel & Control", "item": "EEC (FADEC) Channel A or B", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One EEC channel inoperative; alternate channel governs engine. Applies to CFM56-7B and LEAP-1B.", "source": "FAA MMEL B-737 Rev 62 - 73-22" },
+    { "id": "73-31-01", "ata": 73, "system": "Engine Fuel & Control", "item": "Fuel Filter Bypass Indicator", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Indicator inop; visual filter inspection at next A-check.", "source": "FAA MMEL B-737 Rev 62 - 73-31" },
+
+    { "id": "74-21-01", "ata": 74, "system": "Ignition", "item": "Ignition Channel A or B", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One ignition channel inop; remaining channel must be tested.", "source": "FAA MMEL B-737 Rev 62 - 74-21" },
+
+    { "id": "75-31-01", "ata": 75, "system": "Bleed Air (Engine)", "item": "8th Stage Bleed Valve (CFM56-7B)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "8th stage bleed inop; high-stage bleed automatically used; bleed scheduling impact.", "source": "FAA MMEL B-737 Rev 62 - 75-31" },
+
+    { "id": "77-11-01", "ata": 77, "system": "Engine Indicating", "item": "N1 Vibration Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inop; trend monitoring continues.", "source": "FAA MMEL B-737 Rev 62 - 77-11" },
+
+    { "id": "78-31-01", "ata": 78, "system": "Exhaust / Reversers", "item": "Thrust Reverser (one)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One T/R locked out and deactivated; landing distance penalty.", "source": "FAA MMEL B-737 Rev 62 - 78-31" },
+
+    { "id": "79-32-01", "ata": 79, "system": "Engine Oil", "item": "Oil Quantity Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Indication inop; manual sight gauge check at each stop.", "source": "FAA MMEL B-737 Rev 62 - 79-32" },
+
+    { "id": "80-11-01", "ata": 80, "system": "Engine Starting", "item": "Starter Air Valve Manual Override", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided automatic start sequence functions normally.", "source": "FAA MMEL B-737 Rev 62 - 80-11" }
+  ]
+}

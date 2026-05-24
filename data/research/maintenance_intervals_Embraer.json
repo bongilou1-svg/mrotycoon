@@ -1,0 +1,372 @@
+{
+  "_meta": {
+    "generated": "2026-05-15",
+    "purpose": "Validar/recalibrar placeholders de mantenimiento del juego MRO Tycoon contra realidad pública E-Jet (E1) y E-Jet E2.",
+    "currency_note": "Costes en EUR. Conversión USD->EUR aprox 0.92 aplicada cuando la fuente original era USD.",
+    "warning": "Rangos públicos. Costes reales fluctúan +-50% entre MROs. PW1900G data limitada (engine relativamente joven).",
+    "sources_doc": "docs/research/Embraer_maintenance.md",
+    "vsBaseline": "data/research/maintenance_intervals.json (A32x baseline para comparativa)"
+  },
+  "checks": [
+    {
+      "type": "A",
+      "variant": "E170",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 35, "typical": 60, "max": 110 },
+      "costEUR": { "min": 5500, "typical": 11000, "max": 22000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Post-2013 escalation a 750 FH desde 600. Subdividido A1..An. Overnight visit. ~25-30% menos MH que A320 por tamano fuselaje.",
+      "source": "Embraer MRBR via flyjetaccess.com 'Maintenance Program Changes' (2013 escalation); Aircraft Commerce Issue 72; industry consensus"
+    },
+    {
+      "type": "A",
+      "variant": "E175",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 40, "typical": 65, "max": 120 },
+      "costEUR": { "min": 6000, "typical": 12000, "max": 23000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Mismo programa que E170 con minor delta. Variante mas operada del mundo (SkyWest 262 unidades 2024).",
+      "source": "Embraer MRBR via flyjetaccess.com; Skylink 2021 EMB Forecast; SkyWest 10-K 2024"
+    },
+    {
+      "type": "A",
+      "variant": "E190",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 45, "typical": 70, "max": 130 },
+      "costEUR": { "min": 6500, "typical": 13000, "max": 25000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Fuselaje mayor que E170/175 -> ~10% mas MH. Operado por KLM Cityhopper, Air France HOP, Helvetic.",
+      "source": "Embraer MRBR; Aircraft Commerce Issue 72; Theseus thesis Fernandez 'Base Maintenance Capability E190'"
+    },
+    {
+      "type": "A",
+      "variant": "E195",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 48, "typical": 75, "max": 135 },
+      "costEUR": { "min": 7000, "typical": 13500, "max": 26000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Variante stretch del E190; +1m fuselaje. Azul Brasil principal operador.",
+      "source": "Embraer MRBR; industry consensus"
+    },
+    {
+      "type": "A",
+      "variant": "E190-E2",
+      "intervalFH": 1000,
+      "intervalCycles": 1000,
+      "intervalMonths": 6,
+      "manHours": { "min": 40, "typical": 60, "max": 110 },
+      "costEUR": { "min": 5500, "typical": 11000, "max": 22000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Basic check 1000 FH (vs 850 FH en E1). E2 disenado con menos out-of-phase tasks. CPCP 8 anos / 82 tareas (vs 240 en E1).",
+      "source": "Wikipedia E-Jet E2 family; AirInsight 'E-Jets E2 Program Review' 2016"
+    },
+    {
+      "type": "A",
+      "variant": "E195-E2",
+      "intervalFH": 1000,
+      "intervalCycles": 1000,
+      "intervalMonths": 6,
+      "manHours": { "min": 45, "typical": 65, "max": 120 },
+      "costEUR": { "min": 6000, "typical": 12000, "max": 23000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Operadores: Helvetic, Porter Airlines, Azorra (lessor).",
+      "source": "Wikipedia E-Jet E2 family; AirInsight 2016"
+    },
+    {
+      "type": "C",
+      "variant": "E170",
+      "intervalFH": 7500,
+      "intervalCycles": null,
+      "intervalMonths": 24,
+      "manHours": { "min": 2200, "typical": 3000, "max": 4500 },
+      "costEUR": { "min": 110000, "typical": 280000, "max": 550000 },
+      "downtimeDays": { "min": 7, "typical": 12, "max": 18 },
+      "notes": "Embraer llama 'Basic check'. Escalation post-2013 de 6000 a 7500 FH. ~25-30% menos MH y coste que A320 C-check.",
+      "source": "flyjetaccess.com 'Maintenance Program Changes'; Aircraft Commerce Issue 72; Skylink 2021 EMB Forecast"
+    },
+    {
+      "type": "C",
+      "variant": "E175",
+      "intervalFH": 7500,
+      "intervalCycles": null,
+      "intervalMonths": 24,
+      "manHours": { "min": 2300, "typical": 3100, "max": 4600 },
+      "costEUR": { "min": 115000, "typical": 290000, "max": 560000 },
+      "downtimeDays": { "min": 7, "typical": 12, "max": 18 },
+      "notes": "Idem E170. Heavy shops tipicos: AAR, GA Telesis, Embraer Services.",
+      "source": "Embraer MRBR; AAR/GA Telesis press releases"
+    },
+    {
+      "type": "C",
+      "variant": "E190",
+      "intervalFH": 7500,
+      "intervalCycles": null,
+      "intervalMonths": 24,
+      "manHours": { "min": 2600, "typical": 3500, "max": 5000 },
+      "costEUR": { "min": 130000, "typical": 320000, "max": 620000 },
+      "downtimeDays": { "min": 8, "typical": 13, "max": 20 },
+      "notes": "~10-15% mas MH que E170/175. Fernandez thesis (2017) cifra C-check E190 en ~3000-3500 MH base.",
+      "source": "Theseus thesis Fernandez 2017; Aircraft Commerce Issue 72"
+    },
+    {
+      "type": "C",
+      "variant": "E195",
+      "intervalFH": 7500,
+      "intervalCycles": null,
+      "intervalMonths": 24,
+      "manHours": { "min": 2700, "typical": 3600, "max": 5100 },
+      "costEUR": { "min": 135000, "typical": 330000, "max": 640000 },
+      "downtimeDays": { "min": 8, "typical": 13, "max": 20 },
+      "notes": "Stretch E190; delta minimo en MH.",
+      "source": "industry consensus"
+    },
+    {
+      "type": "C",
+      "variant": "E190-E2",
+      "intervalFH": 10000,
+      "intervalCycles": null,
+      "intervalMonths": 36,
+      "manHours": { "min": 2200, "typical": 3000, "max": 4500 },
+      "costEUR": { "min": 110000, "typical": 280000, "max": 550000 },
+      "downtimeDays": { "min": 6, "typical": 11, "max": 17 },
+      "notes": "Intermediate check 10000 FH (vs 8500 en E1). Heavy-check downtime -15% vs E1. Sin out-of-phase tasks. La separacion mas amplia del segmento single-aisle.",
+      "source": "Wikipedia E-Jet E2 family; AirInsight 2016 'E2 Program Review'"
+    },
+    {
+      "type": "C8_heavy",
+      "variant": "E170/E175",
+      "intervalFH": null,
+      "intervalCycles": null,
+      "intervalMonths": 72,
+      "manHours": { "min": 3500, "typical": 4500, "max": 6500 },
+      "costEUR": { "min": 450000, "typical": 850000, "max": 1500000 },
+      "downtimeDays": { "min": 14, "typical": 21, "max": 30 },
+      "notes": "C-check multiplo 6 anos. Incluye structural inspection 1. Equivale al concepto 'medium heavy' Airbus.",
+      "source": "Skylink 2021 EMB Forecast; industry consensus"
+    },
+    {
+      "type": "C12_heavy",
+      "variant": "E170/E175",
+      "intervalFH": 25000,
+      "intervalCycles": 16000,
+      "intervalMonths": 144,
+      "manHours": { "min": 5000, "typical": 7500, "max": 10000 },
+      "costEUR": { "min": 1000000, "typical": 2200000, "max": 3800000 },
+      "downtimeDays": { "min": 21, "typical": 35, "max": 50 },
+      "notes": "Equivalente moderno del antiguo D check. Embraer (igual que Airbus) ya no usa nomenclatura D. Pintura completa, full strip, structural deep. Coste ~25-30% menor que A320 D-equivalent.",
+      "source": "Skylink 2021 EMB Forecast; Aircraft Commerce Issue 72; industry consensus"
+    },
+    {
+      "type": "C12_heavy",
+      "variant": "E190/E195",
+      "intervalFH": 25000,
+      "intervalCycles": 16000,
+      "intervalMonths": 144,
+      "manHours": { "min": 6000, "typical": 8500, "max": 11000 },
+      "costEUR": { "min": 1200000, "typical": 2600000, "max": 4200000 },
+      "downtimeDays": { "min": 21, "typical": 35, "max": 55 },
+      "notes": "Mismo concepto que E170/175 con +15% MH y coste por fuselaje mayor.",
+      "source": "Skylink 2021 EMB Forecast; industry consensus"
+    }
+  ],
+  "engineMaintenance": {
+    "CF34-8E": {
+      "applicableTo": ["E170", "E175"],
+      "thrustLbf": "14200-14500",
+      "llpLife_cycles": 22400,
+      "llpLife_cycles_alt": 25000,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "On-condition; tratado en performance restoration shop visit (no HSI on-wing programado). Restauracion EGT margin + reemplazo HPC blades, combustor liners, HPT blades/nozzles, LP Stage 1 nozzles.",
+      "shopVisitFirstRunFH": { "min": 12000, "typical": 14000, "max": 16000 },
+      "shopVisitMatureRunFH": { "min": 8000, "typical": 10000, "max": 12000 },
+      "shopVisitCostEUR_hospital": { "min": 200000, "typical": 350000, "max": 500000 },
+      "shopVisitCostEUR_performance": { "min": 900000, "typical": 1380000, "max": 1800000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 2500000, "typical": 3300000, "max": 4000000 },
+      "llpStackPriceEUR": { "min": 1700000, "typical": 1930000, "max": 2200000 },
+      "shopVisitDurationDays": { "min": 50, "typical": 65, "max": 90 },
+      "notes": "GE CF34-8E. Engine de referencia para E170/175. SVR mas alto que CFM56 (regional jets ciclan mas). Engine lessors esperan 'maintenance wave' 2025-2027 segun AvWeek. LLP refurb cycles: 22400-25000.",
+      "source": "Aviation Week 'Engine Lessors Brace For CF34 Maintenance Wave'; Aircraft Commerce Issue 72; Wikipedia GE CF34"
+    },
+    "CF34-10E": {
+      "applicableTo": ["E190", "E195"],
+      "thrustLbf": "18500-20000",
+      "llpLife_cycles": 25000,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "Idem CF34-8E. SMO de GE Aerospace incluye nuevo HPC blades + combustor dome/liners + HPT blades/nozzles + Stage 1 LPT nozzles + LLP stack nuevo.",
+      "shopVisitFirstRunFH": { "min": 13000, "typical": 15000, "max": 18000 },
+      "shopVisitMatureRunFH": { "min": 9000, "typical": 11000, "max": 13000 },
+      "shopVisitCostEUR_hospital": { "min": 230000, "typical": 400000, "max": 580000 },
+      "shopVisitCostEUR_performance": { "min": 1000000, "typical": 1500000, "max": 1900000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 2900000, "typical": 3700000, "max": 4500000 },
+      "llpStackPriceEUR": { "min": 1750000, "typical": 1930000, "max": 2200000 },
+      "shopVisitDurationDays": { "min": 55, "typical": 70, "max": 95 },
+      "notes": "Overhaul ~$1.5M+ y LLP set $2.1M (25k cycle life) segun GE/IBA. Azorra firmo SMO con GE en 2024 que reduce LLP shop visit cost -30% para sus -10E. Mas potencia que -8E -> mas stress termico pero LLP life algo mejor.",
+      "source": "GE Aerospace 'Azorra SMO Agreement CF34-10E' 2024; Aviation Business News 'CF34 Cornerstone'; IBA 'What to Look for When Valuing an Engine' 2018"
+    },
+    "PW1900G": {
+      "applicableTo": ["E190-E2", "E195-E2"],
+      "thrustLbf": "15000-22000",
+      "llpLife_cycles_designTarget": 22000,
+      "llpLife_cycles_HPT_currentRestriction": 5000,
+      "llpLife_cycles_HPC_currentRestriction": 7000,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "GTF (Geared Turbofan). Misma familia powder-metal disk issue que PW1100G/PW1500G aunque menor severidad reportada.",
+      "shopVisitFirstRunFH_target": { "min": 16000, "typical": 20000, "max": 24000 },
+      "shopVisitMatureRunFH_target": { "min": 12000, "typical": 16000, "max": 20000 },
+      "shopVisitFirstRunFC_currentForced": { "min": 2800, "typical": 3300, "max": 3800 },
+      "shopVisitCostEUR_hospital": { "min": 350000, "typical": 600000, "max": 850000 },
+      "shopVisitCostEUR_performance": { "min": 1500000, "typical": 2300000, "max": 3000000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 3000000, "typical": 4200000, "max": 5500000 },
+      "llpStackPriceEUR": { "min": 2500000, "typical": 3000000, "max": 3500000 },
+      "shopVisitDurationDays": { "min": 100, "typical": 180, "max": 280 },
+      "knownIssues": [
+        "Powder-metal contamination AD: inspection cada 2800-3800 FC",
+        "Part life limits restringidas 5000-7000 cycles (HPT/HPC disks)",
+        "Backlog shop MRO heredado del PW1100G",
+        "MTU + EME Aero (Rzeszow) anaden capacity"
+      ],
+      "notes": "Engine joven (EIS 2018). Data publica limitada. Heredado parcialmente de issues PW1100G por shared design. Mejor SFC y emisiones que CF34. RTX investor updates cuantifican impact total flota GTF en $6-7B compensation.",
+      "source": "FAA AD GTF 2024; Aviation Business News 'MTU PW1900G'; AirInsight 'A220/E2 New FAA Inspections'; RTX investor update; Wikipedia PW1000G"
+    }
+  },
+  "landingGear": {
+    "applicableTo": ["E170", "E175", "E190", "E195"],
+    "overhaulInterval_cycles": 20000,
+    "overhaulInterval_cycles_alt": 25000,
+    "overhaulInterval_months": 144,
+    "maxLifeCycles_CSN": 60000,
+    "overhaulCostEUR": { "min": 250000, "typical": 320000, "max": 400000 },
+    "downtimeDays_offWing": { "min": 60, "typical": 80, "max": 100 },
+    "downtimeDays_aircraftAOG_withPool": { "min": 2, "typical": 4, "max": 7 },
+    "percentOfTotalMaintenanceCost": 2.5,
+    "notes": "ERJ family (incluye E-Jets) overhaul cada 12 anos / 20000 CSO whichever first; max 60000 CSN. E190 spec especifica 25000 FC / 144 meses. Coste ~25% menor que A320 LG por ser mas pequeno. Operadores grandes (SkyWest, Republic, Envoy) usan pool de gears con Liebherr o GA Telesis para minimizar AOG.",
+    "source": "C&L Aero 'ERJ Landing Gear Overhaul'; Liebherr-Envoy contract 2024; GA Telesis press 'E175 LG Capability'; Embraer Services landing-gear-overhaul page"
+  },
+  "cpfhBenchmarks": {
+    "E170": {
+      "totalCPFH_USD": 800,
+      "totalCPFH_EUR": 735,
+      "engineShare_pct": 40,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 12,
+      "heavyMxShare_pct": 13,
+      "otherShare_pct": 13,
+      "source": "industry consensus / IATA MCTF regional segment baseline"
+    },
+    "E175": {
+      "totalCPFH_USD": 850,
+      "totalCPFH_EUR": 780,
+      "engineShare_pct": 40,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 12,
+      "heavyMxShare_pct": 13,
+      "otherShare_pct": 13,
+      "source": "industry consensus; SkyWest 10-K 2024; myaircraftcost.com '$500/h benchmark direct mx'"
+    },
+    "E190": {
+      "totalCPFH_USD": 950,
+      "totalCPFH_EUR": 875,
+      "engineShare_pct": 42,
+      "componentShare_pct": 21,
+      "lineMxShare_pct": 11,
+      "heavyMxShare_pct": 14,
+      "otherShare_pct": 12,
+      "source": "industry consensus / IATA MCTF regional segment; Aircraft Commerce Issue 72"
+    },
+    "E195": {
+      "totalCPFH_USD": 980,
+      "totalCPFH_EUR": 900,
+      "engineShare_pct": 42,
+      "componentShare_pct": 21,
+      "lineMxShare_pct": 11,
+      "heavyMxShare_pct": 14,
+      "otherShare_pct": 12,
+      "source": "industry consensus"
+    },
+    "E190-E2_PW1900G_target": {
+      "totalCPFH_USD": 850,
+      "totalCPFH_EUR": 780,
+      "engineShare_pct": 38,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 12,
+      "heavyMxShare_pct": 13,
+      "otherShare_pct": 15,
+      "source": "Embraer commercial brochures (target); AirInsight projections"
+    },
+    "E190-E2_PW1900G_currentlyImpacted": {
+      "totalCPFH_USD": 1150,
+      "totalCPFH_EUR": 1060,
+      "engineShare_pct": 50,
+      "componentShare_pct": 19,
+      "lineMxShare_pct": 10,
+      "heavyMxShare_pct": 12,
+      "otherShare_pct": 9,
+      "source": "industry consensus 2024-2026; inflado por GTF AD heredado del PW1100G"
+    }
+  },
+  "operationalProfile": {
+    "typicalSectorHours": { "min": 0.8, "typical": 1.5, "max": 3.0 },
+    "typicalDailyFlights": { "min": 4, "typical": 5, "max": 7 },
+    "typicalDailyBlockHours": { "min": 8, "typical": 10, "max": 12 },
+    "fhPerCycleRatio": 1.5,
+    "comparisonNarrowbody_fhPerCycleRatio": 2.5,
+    "notes": "Regional jets ciclan ~67% mas que narrowbodies a misma FH (sectors mas cortos). Cada A-check viene mas pronto en calendario aunque FH sean similares.",
+    "source": "readyfortakeoffbook.com 'E175 explained'; SkyWest fact sheet; TrueNoord Regional Jet Market Report 2022"
+  },
+  "vsNarrowbodyDelta": {
+    "A_check_costPct": -25,
+    "C_check_costPct": -30,
+    "D_equivalent_costPct": -25,
+    "engineShopVisit_costPct": -35,
+    "landingGear_costPct": -25,
+    "totalCPFH_pct": -30,
+    "cyclesPerFH_pct": 67,
+    "rationale": "E-Jet absoluto mas barato por tamano menor, pero por la ratio FC/FH mas alta los gating en cycles (LG, LLP engine) golpean antes en calendario. Para misma utilizacion calendario un E175 hace ~1.7x mas cycles que un A320."
+  },
+  "gameBalanceValidation": {
+    "currentPlaceholders_assumedSame_asA32x": {
+      "A_check": { "FH": 600, "FC": 200, "downtimeDays": 1, "costEUR": 12000 },
+      "C_check": { "FH": 7500, "FC": 5000, "downtimeDays": 14, "costEUR": 110000 },
+      "D_check": { "FH": 25000, "FC": 16000, "downtimeDays": 60, "costEUR": 550000 }
+    },
+    "recommendedAdjustments_Embraer": {
+      "A_check": {
+        "FH": { "from": 600, "to": 750, "rationale": "Match Embraer post-2013 escalation. Para E2 usar 1000 FH." },
+        "FC": { "from": 200, "to": 750, "rationale": "CRITICO: 200 FC esta fuera de la realidad. Regla real FH y FC con valores similares." },
+        "calendarMonths": { "from": null, "to": 4, "rationale": "Anadir gating calendario; 6 meses para E2." },
+        "costEUR": { "from": 12000, "to_typical": 12000, "to_range": [6000, 23000], "rationale": "12k OK como base (E-Jet ~25% mas barato que A320; anular delta porque la tabla ya esta a 12k para A320 typical 15k)." }
+      },
+      "C_check": {
+        "FH": { "from": 7500, "to": 7500, "rationale": "Match Embraer escalated. Para E2 usar 10000 FH." },
+        "calendarMonths": { "from": null, "to": 24, "rationale": "Anadir gating 24 meses (36 para E2)." },
+        "costEUR": { "from": 110000, "to_typical": 290000, "to_range": [110000, 620000], "rationale": "110k subestima ~3x. Realidad 250-330k typical. E190/195 algo mayor." },
+        "downtimeDays": { "from": 14, "to_range": [7, 20], "rationale": "OK typical, ampliar rango." }
+      },
+      "D_check": {
+        "rename_suggestion": "Renombrar a 'Heavy Structural / C12'. Embraer ya no usa D check.",
+        "FH": { "from": 25000, "to": 25000, "rationale": "OK." },
+        "FC": { "from": 16000, "to": 16000, "rationale": "OK." },
+        "calendarMonths": { "from": null, "to": 144, "rationale": "12 anos." },
+        "costEUR": { "from": 550000, "to_typical": 2200000, "to_range": [1000000, 4200000], "rationale": "Subestima 4-5x. E170/175 ~2.2M; E190/195 ~2.6M typical." },
+        "downtimeDays": { "from": 60, "to_range": [21, 55], "rationale": "Embraer C12 mas rapido que A320 D-equivalente por tamano." }
+      },
+      "additions_recommended_Embraer": [
+        "CF34-8E shop visit como evento separado (1.0-1.8M EUR performance, 50-90 dias).",
+        "CF34-10E shop visit (1.0-1.9M EUR performance, 55-95 dias).",
+        "PW1900G shop visit con risk modifier GTF (180-280 dias actualmente, normalizar post-2027).",
+        "Landing gear overhaul cada 20-25k FC / 144 meses (~320k EUR, pool option).",
+        "Engine type decision: CF34 reliable y barato vs PW1900G mejor SFC pero risk modifier alto.",
+        "Modificador ciclos-vs-FH: regional jets golpeados antes por gating en cycles (LG, LLP). El juego deberia trackear ambos counters.",
+        "Aircraft type modifier: E-Jet vs Narrowbody slot diferente en hangar (smaller footprint, mas slots por hangar)."
+      ]
+    }
+  }
+}

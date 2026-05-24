@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MRO Tycoon",
+  "version": "0.1.0-alpha",
+  "identifier": "com.dani.mrotycoon",
+  "build": {
+    "beforeBuildCommand": "node .scripts/build-vanilla.mjs dist/index.html",
+    "beforeDevCommand": "node .scripts/build-vanilla.mjs dist/index.html",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "MRO Tycoon",
+        "width": 1366,
+        "height": 768,
+        "minWidth": 1280,
+        "minHeight": 720,
+        "resizable": true,
+        "fullscreen": false,
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {}
+}

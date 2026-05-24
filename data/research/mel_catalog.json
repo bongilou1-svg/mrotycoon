@@ -1,0 +1,137 @@
+{
+  "_meta": {
+    "source": "Derived from FAA Master MEL Airbus A320 Rev 32 (public draft, 2025) structure and EASA MMEL practice. Item IDs follow ATA 4-digit + sub-item convention.",
+    "references": [
+      "https://www.faa.gov/aircraft/draft_docs/mmel/MMEL_A-320_Rev_32_Draft.pdf",
+      "https://www.faa.gov/aircraft/draft_docs/mmel/MMEL_A-320_Rev_31_Draft.pdf",
+      "https://drs.faa.gov/browse/MMEL/doctypeDetails",
+      "https://www.theairlinepilots.com/forumarchive/concepts-procedures/mmel-mel.pdf",
+      "https://aviationthrust.com/handling-of-mel-airbus-a320/",
+      "https://www.aviationhunt.com/airbus-a320-mel-items/"
+    ],
+    "categories": {
+      "A": "No standard repair interval. Operator must specify (often 1-3 days or by flight cycles).",
+      "B": "3 consecutive calendar days, excluding day of discovery.",
+      "C": "10 consecutive calendar days, excluding day of discovery.",
+      "D": "120 consecutive calendar days, excluding day of discovery."
+    },
+    "totalItemsInRealMmel": "Approx. 1100-1300 individual items across 30+ ATA chapters in FAA MMEL A320 Rev 32 (full doc ~700 pages).",
+    "categoryDistributionApprox": {
+      "A": "8%",
+      "B": "20%",
+      "C": "55%",
+      "D": "17%"
+    },
+    "note": "Sample below curates 80 representative items used to seed the WO template generator. Real MMEL has finer granularity (e.g. per-channel, per-side variants of the same component)."
+  },
+  "items": [
+    { "id": "21-26-01", "ata": 21, "system": "Air Conditioning", "item": "Pack Flow Control Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One may be inoperative provided affected pack is selected OFF and altitude restricted per OM-B.", "source": "FAA MMEL A320 Rev 32 - 21-26" },
+    { "id": "21-26-02", "ata": 21, "system": "Air Conditioning", "item": "Pack (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One pack may be inoperative provided altitude limited to FL250 and APU bleed available.", "source": "FAA MMEL A320 Rev 32 - 21-51" },
+    { "id": "21-31-01", "ata": 21, "system": "Pressurization", "item": "Outflow Valve Manual Control", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided automatic control operates normally on both channels.", "source": "FAA MMEL A320 Rev 32 - 21-31" },
+    { "id": "21-43-01", "ata": 21, "system": "Air Conditioning", "item": "Trim Air Valve (one zone)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Affected zone temperature may not be controllable; pax/crew briefed on temperature variation.", "source": "FAA MMEL A320 Rev 32 - 21-43" },
+    { "id": "21-52-01", "ata": 21, "system": "Air Conditioning", "item": "Recirculation Fan", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One of two may be inoperative.", "source": "FAA MMEL A320 Rev 32 - 21-52" },
+
+    { "id": "22-10-01", "ata": 22, "system": "Auto Flight", "item": "Autopilot (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One AP may be inoperative; CAT II/III approaches not authorized depending on configuration.", "source": "FAA MMEL A320 Rev 32 - 22-10" },
+    { "id": "22-30-01", "ata": 22, "system": "Auto Flight", "item": "Autothrust", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "May be inoperative provided manual thrust procedures briefed.", "source": "FAA MMEL A320 Rev 32 - 22-30" },
+
+    { "id": "23-12-01", "ata": 23, "system": "Communications", "item": "VHF 3 Transceiver", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided VHF1 and VHF2 operate normally.", "source": "FAA MMEL A320 Rev 32 - 23-12" },
+    { "id": "23-22-01", "ata": 23, "system": "Communications", "item": "HF Transceiver", "category": "D", "intervalDays": 120, "rectificationInterval": "D - 120 days", "remarks": "Inoperative provided not required for route (oceanic/remote)." , "source": "FAA MMEL A320 Rev 32 - 23-22" },
+    { "id": "23-71-01", "ata": 23, "system": "Communications", "item": "Cockpit Voice Recorder", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided FDR operates normally.", "source": "FAA MMEL A320 Rev 32 - 23-71" },
+
+    { "id": "24-21-01", "ata": 24, "system": "Electrical Power", "item": "IDG (one)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One IDG inoperative; APU GEN required for dispatch on most routes.", "source": "FAA MMEL A320 Rev 32 - 24-21" },
+    { "id": "24-22-01", "ata": 24, "system": "Electrical Power", "item": "APU Generator", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided both engine generators serviceable; ETOPS may be impacted.", "source": "FAA MMEL A320 Rev 32 - 24-22" },
+    { "id": "24-32-01", "ata": 24, "system": "Electrical Power", "item": "Battery (one)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One battery inoperative; ETOPS prohibited.", "source": "FAA MMEL A320 Rev 32 - 24-32" },
+    { "id": "24-58-01", "ata": 24, "system": "Electrical Power", "item": "Static Inverter", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided AC ESS BUS available from normal sources.", "source": "FAA MMEL A320 Rev 32 - 24-58" },
+
+    { "id": "25-22-01", "ata": 25, "system": "Equipment / Furnishings", "item": "Passenger Seat (cabin)", "category": "D", "intervalDays": 120, "rectificationInterval": "D - 120 days", "remarks": "Up to a number of seats may be inoperative provided blocked off and placarded; row capacity adjusted.", "source": "FAA MMEL A320 Rev 32 - 25-22" },
+    { "id": "25-25-01", "ata": 25, "system": "Equipment / Furnishings", "item": "Cabin Attendant Seat", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided number of operative attendant seats meets crew complement.", "source": "FAA MMEL A320 Rev 32 - 25-25" },
+    { "id": "25-60-01", "ata": 25, "system": "Equipment / Furnishings", "item": "Life Vest", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One PAX life vest may be missing provided affected seat blocked.", "source": "FAA MMEL A320 Rev 32 - 25-60" },
+    { "id": "25-65-01", "ata": 25, "system": "Equipment / Furnishings", "item": "ELT (Fixed)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided portable ELT installed in cabin.", "source": "FAA MMEL A320 Rev 32 - 25-65" },
+
+    { "id": "26-11-01", "ata": 26, "system": "Fire Protection", "item": "Engine Fire Detection Loop A", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One loop inoperative provided remaining loop tests serviceable.", "source": "FAA MMEL A320 Rev 32 - 26-11" },
+    { "id": "26-15-01", "ata": 26, "system": "Fire Protection", "item": "APU Fire Detection Loop", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One loop inoperative; APU may be operated.", "source": "FAA MMEL A320 Rev 32 - 26-15" },
+    { "id": "26-22-01", "ata": 26, "system": "Fire Protection", "item": "Lavatory Smoke Detector", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided affected lav locked out of service.", "source": "FAA MMEL A320 Rev 32 - 26-22" },
+
+    { "id": "27-22-01", "ata": 27, "system": "Flight Controls", "item": "ELAC (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One ELAC inoperative; certain alternate law transitions impacted.", "source": "FAA MMEL A320 Rev 32 - 27-22" },
+    { "id": "27-23-01", "ata": 27, "system": "Flight Controls", "item": "SEC (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One SEC inoperative provided affected spoiler pair retracted and locked.", "source": "FAA MMEL A320 Rev 32 - 27-23" },
+    { "id": "27-24-01", "ata": 27, "system": "Flight Controls", "item": "FAC (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One FAC inoperative; rudder trim/yaw damper functions degraded.", "source": "FAA MMEL A320 Rev 32 - 27-24" },
+    { "id": "27-50-01", "ata": 27, "system": "Flight Controls", "item": "Slat Channel (one of two)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Slow operation accepted; takeoff config penalty applies.", "source": "FAA MMEL A320 Rev 32 - 27-50" },
+    { "id": "27-60-01", "ata": 27, "system": "Flight Controls", "item": "Spoiler (one pair)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One pair of ground spoilers locked retracted; landing distance penalty.", "source": "FAA MMEL A320 Rev 32 - 27-60" },
+
+    { "id": "28-21-01", "ata": 28, "system": "Fuel", "item": "Center Tank Pump", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One pump inoperative; center tank fuel may be unusable.", "source": "FAA MMEL A320 Rev 32 - 28-21" },
+    { "id": "28-22-01", "ata": 28, "system": "Fuel", "item": "Wing Tank Pump (one of two)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One of two wing pumps inoperative; gravity feed available.", "source": "FAA MMEL A320 Rev 32 - 28-22" },
+    { "id": "28-31-01", "ata": 28, "system": "Fuel", "item": "Crossfeed Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative in closed position provided fuel balance procedure applied.", "source": "FAA MMEL A320 Rev 32 - 28-31" },
+    { "id": "28-41-01", "ata": 28, "system": "Fuel", "item": "FQI Channel", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One FQI channel inoperative; manual fuel measurement (drip stick) required.", "source": "FAA MMEL A320 Rev 32 - 28-41" },
+    { "id": "28-46-01", "ata": 28, "system": "Fuel", "item": "Refuel/Defuel Coupling", "category": "D", "intervalDays": 120, "rectificationInterval": "D - 120 days", "remarks": "Manual refueling via overwing port permitted with operational procedures.", "source": "FAA MMEL A320 Rev 32 - 28-46" },
+
+    { "id": "29-11-01", "ata": 29, "system": "Hydraulic Power", "item": "Green System EDP", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Green EDP inoperative; PTU available for emergency.", "source": "FAA MMEL A320 Rev 32 - 29-11" },
+    { "id": "29-12-01", "ata": 29, "system": "Hydraulic Power", "item": "Yellow System Electric Pump", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided EDP operates normally.", "source": "FAA MMEL A320 Rev 32 - 29-12" },
+    { "id": "29-13-01", "ata": 29, "system": "Hydraulic Power", "item": "Blue System Electric Pump", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Blue pump inoperative; RAT remains backup.", "source": "FAA MMEL A320 Rev 32 - 29-13" },
+    { "id": "29-21-01", "ata": 29, "system": "Hydraulic Power", "item": "PTU", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided both EDPs operate normally.", "source": "FAA MMEL A320 Rev 32 - 29-21" },
+
+    { "id": "30-11-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Wing Anti-Ice Valve", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Affected side anti-ice inoperative; flight in icing conditions prohibited on affected side.", "source": "FAA MMEL A320 Rev 32 - 30-11" },
+    { "id": "30-21-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Engine Anti-Ice Valve", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Affected engine anti-ice inop; icing dispatch restrictions apply.", "source": "FAA MMEL A320 Rev 32 - 30-21" },
+    { "id": "30-31-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Pitot Probe Heat (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One pitot heat inoperative; icing conditions prohibited.", "source": "FAA MMEL A320 Rev 32 - 30-31" },
+    { "id": "30-42-01", "ata": 30, "system": "Ice & Rain Protection", "item": "Windshield Wiper", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One wiper inoperative; rain conditions briefed.", "source": "FAA MMEL A320 Rev 32 - 30-42" },
+
+    { "id": "31-31-01", "ata": 31, "system": "Indicating", "item": "Flight Data Recorder (DFDR)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided CVR operates normally.", "source": "FAA MMEL A320 Rev 32 - 31-31" },
+    { "id": "31-50-01", "ata": 31, "system": "Indicating", "item": "ECAM Display Unit (DU)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One ECAM DU inoperative; reconfiguration to PFD/ND swap allowed.", "source": "FAA MMEL A320 Rev 32 - 31-50" },
+
+    { "id": "32-31-01", "ata": 32, "system": "Landing Gear", "item": "Brake Temperature Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inoperative; cooling time computed via tables.", "source": "FAA MMEL A320 Rev 32 - 32-31" },
+    { "id": "32-42-03", "ata": 32, "system": "Landing Gear", "item": "Anti-Skid (one wheel)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Anti-skid on one wheel inoperative; landing distance penalty.", "source": "FAA MMEL A320 Rev 32 - 32-42" },
+    { "id": "32-44-01", "ata": 32, "system": "Landing Gear", "item": "BSCU Channel", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One BSCU channel inoperative; alternate brake mode dispatched.", "source": "FAA MMEL A320 Rev 32 - 32-44" },
+    { "id": "32-51-01", "ata": 32, "system": "Landing Gear", "item": "Nose Wheel Steering", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided towing required for taxi; differential braking permitted.", "source": "FAA MMEL A320 Rev 32 - 32-51" },
+    { "id": "32-71-01", "ata": 32, "system": "Landing Gear", "item": "Gear Position Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inoperative; mechanical confirmation via gravity extension.", "source": "FAA MMEL A320 Rev 32 - 32-71" },
+
+    { "id": "33-21-01", "ata": 33, "system": "Lights", "item": "Landing Light (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One landing light inoperative; night ops permitted.", "source": "FAA MMEL A320 Rev 32 - 33-21" },
+    { "id": "33-44-01", "ata": 33, "system": "Lights", "item": "Strobe Light (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Provided remaining strobes operate normally.", "source": "FAA MMEL A320 Rev 32 - 33-44" },
+    { "id": "33-51-01", "ata": 33, "system": "Lights", "item": "Cabin Emergency Lighting Battery", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One battery pack inoperative; verify others functional.", "source": "FAA MMEL A320 Rev 32 - 33-51" },
+
+    { "id": "34-11-01", "ata": 34, "system": "Navigation", "item": "ADIRU (one of three)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One ADIRU inoperative; specific OEB applies for ETOPS.", "source": "FAA MMEL A320 Rev 32 - 34-11" },
+    { "id": "34-43-01", "ata": 34, "system": "Navigation", "item": "Weather Radar", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided dispatch in non-convective conditions per OM.", "source": "FAA MMEL A320 Rev 32 - 34-43" },
+    { "id": "34-45-01", "ata": 34, "system": "Navigation", "item": "TCAS", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided not required by airspace.", "source": "FAA MMEL A320 Rev 32 - 34-45" },
+    { "id": "34-46-01", "ata": 34, "system": "Navigation", "item": "GPWS / EGPWS", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided dispatch in VMC and not over hazardous terrain.", "source": "FAA MMEL A320 Rev 32 - 34-46" },
+    { "id": "34-51-01", "ata": 34, "system": "Navigation", "item": "VOR Receiver (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One VOR inoperative; alternate navaid available.", "source": "FAA MMEL A320 Rev 32 - 34-51" },
+    { "id": "34-55-01", "ata": 34, "system": "Navigation", "item": "DME (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One DME inoperative.", "source": "FAA MMEL A320 Rev 32 - 34-55" },
+    { "id": "34-57-01", "ata": 34, "system": "Navigation", "item": "ATC Transponder (one)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One transponder inoperative; second must be operational for RVSM.", "source": "FAA MMEL A320 Rev 32 - 34-57" },
+    { "id": "34-61-01", "ata": 34, "system": "Navigation", "item": "FMGC (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One FMGC inoperative; single-FMGC operations briefed.", "source": "FAA MMEL A320 Rev 32 - 34-61" },
+
+    { "id": "35-11-01", "ata": 35, "system": "Oxygen", "item": "Crew O2 Cylinder Pressure Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Indication inoperative; manual pressure check pre-flight.", "source": "FAA MMEL A320 Rev 32 - 35-11" },
+    { "id": "35-21-01", "ata": 35, "system": "Oxygen", "item": "Pax O2 Generator (one row)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One row of generators inoperative provided affected row blocked.", "source": "FAA MMEL A320 Rev 32 - 35-21" },
+
+    { "id": "36-11-01", "ata": 36, "system": "Pneumatic", "item": "Engine Bleed Valve", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One engine bleed inoperative; APU bleed required for dispatch.", "source": "FAA MMEL A320 Rev 32 - 36-11" },
+    { "id": "36-12-01", "ata": 36, "system": "Pneumatic", "item": "Crossbleed Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative in open position; engine start requires alternate procedure.", "source": "FAA MMEL A320 Rev 32 - 36-12" },
+    { "id": "36-21-01", "ata": 36, "system": "Pneumatic", "item": "Pneumatic Leak Detection Loop", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One loop inoperative; remaining loop must test serviceable.", "source": "FAA MMEL A320 Rev 32 - 36-21" },
+
+    { "id": "38-11-01", "ata": 38, "system": "Water / Waste", "item": "Potable Water System", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided service catering and lavatories adapted; bottled water provisioned.", "source": "FAA MMEL A320 Rev 32 - 38-11" },
+    { "id": "38-30-01", "ata": 38, "system": "Water / Waste", "item": "Lavatory (one)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One lav locked OOS; remaining lav count meets pax ratio.", "source": "FAA MMEL A320 Rev 32 - 38-30" },
+
+    { "id": "44-21-01", "ata": 44, "system": "Cabin Systems", "item": "Cabin PA System", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided crew has megaphones operational.", "source": "FAA MMEL A320 Rev 32 - 44-21" },
+    { "id": "44-31-01", "ata": 44, "system": "Cabin Systems", "item": "Cabin Interphone Station", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One station inoperative.", "source": "FAA MMEL A320 Rev 32 - 44-31" },
+
+    { "id": "46-21-01", "ata": 46, "system": "Information Systems", "item": "ACARS / ATSU", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided alternate VHF/HF comms available.", "source": "FAA MMEL A320 Rev 32 - 46-21" },
+
+    { "id": "47-21-01", "ata": 47, "system": "Inert Gas Generation", "item": "NGS Air Separation Module (ASM)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided fuel quantity restrictions applied per OM.", "source": "FAA MMEL A320 Rev 32 - 47-21" },
+
+    { "id": "49-11-01", "ata": 49, "system": "APU", "item": "APU", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "APU inoperative; ground air/power required at all stations; ETOPS prohibited.", "source": "FAA MMEL A320 Rev 32 - 49-11" },
+    { "id": "49-22-01", "ata": 49, "system": "APU", "item": "APU Bleed Valve", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided engine bleed available for cross-start.", "source": "FAA MMEL A320 Rev 32 - 49-22" },
+    { "id": "49-61-01", "ata": 49, "system": "APU", "item": "APU Fire Bottle", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "Inoperative provided APU OFF for the flight.", "source": "FAA MMEL A320 Rev 32 - 49-61" },
+
+    { "id": "52-71-01", "ata": 52, "system": "Doors", "item": "Cargo Door Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One indication inoperative; visual confirmation by ground crew.", "source": "FAA MMEL A320 Rev 32 - 52-71" },
+
+    { "id": "56-11-01", "ata": 56, "system": "Windows", "item": "Cockpit Window Heat (one pane)", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One window heat inoperative; speed restrictions in icing.", "source": "FAA MMEL A320 Rev 32 - 56-11" },
+
+    { "id": "73-22-01", "ata": 73, "system": "Engine Fuel & Control", "item": "EEC (FADEC) Channel A or B", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One EEC channel inoperative; alternate channel governs engine.", "source": "FAA MMEL A320 Rev 32 - 73-22" },
+    { "id": "73-31-01", "ata": 73, "system": "Engine Fuel & Control", "item": "Fuel Filter Bypass Indicator", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Indicator inoperative; visual filter inspection at next A-check.", "source": "FAA MMEL A320 Rev 32 - 73-31" },
+
+    { "id": "74-21-01", "ata": 74, "system": "Ignition", "item": "Ignition Channel A or B", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One ignition channel inoperative; remaining channel must be tested.", "source": "FAA MMEL A320 Rev 32 - 74-21" },
+
+    { "id": "77-11-01", "ata": 77, "system": "Engine Indicating", "item": "N1 Vibration Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "One channel inoperative; trend monitoring continues.", "source": "FAA MMEL A320 Rev 32 - 77-11" },
+
+    { "id": "78-31-01", "ata": 78, "system": "Exhaust / Reversers", "item": "Thrust Reverser (one)", "category": "B", "intervalDays": 3, "rectificationInterval": "B - 3 days", "remarks": "One T/R locked out and deactivated; landing distance penalty.", "source": "FAA MMEL A320 Rev 32 - 78-31" },
+
+    { "id": "79-32-01", "ata": 79, "system": "Engine Oil", "item": "Oil Quantity Indication", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Indication inoperative; manual sight gauge check at each stop.", "source": "FAA MMEL A320 Rev 32 - 79-32" },
+
+    { "id": "80-11-01", "ata": 80, "system": "Engine Starting", "item": "Starter Air Valve Manual Override", "category": "C", "intervalDays": 10, "rectificationInterval": "C - 10 days", "remarks": "Inoperative provided automatic start sequence functions normally.", "source": "FAA MMEL A320 Rev 32 - 80-11" }
+  ]
+}

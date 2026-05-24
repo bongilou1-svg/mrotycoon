@@ -1,0 +1,177 @@
+// Máquina de estados de Work Orders en runtime. Avanza con tick.
+//
+// Fases y duración (sobre template.durationMinutes):
+//   ToPlane → (no consume tiempo aquí, lo lleva assignment)
+//   Inspection (15% × duration)
+//   MainTask (100% × duration)   ← 40% lo saltan (direct dispatch)
+//   Test (10% × duration)
+//   [Rework (100% × duration)]  ← 10% prob tras Test
+//   Completed
+//
+// La velocidad de progreso = teamEffectiveEfficiency × minutes_real_tick.
+// SLA: si nowMinute > wo.slaMinute y phase ≠ Completed, se acumula latePenaltyMinutes.
+
+import type { Mechanic, WorkOrderInstance, WorkOrderTemplate, Balance, WorkOrderPhase } from "$lib/types";
+import { teamEffectiveEfficiency } from "./assignment.ts";
+import { randBool, type Rng } from "./rng.ts";
+
+/** Eventos que emite la máquina por tick — para que economía/reputación los consuma. */
+export type WoEvent =
+  | { type: "wo_started"; woInstanceId: string }
+  | { type: "wo_completed"; woInstanceId: string; templateId: string; onTime: boolean; isAOG: boolean }
+  | { type: "wo_failed"; woInstanceId: string; templateId: string; reason: "deadline" | "departed"; isAOG: boolean }
+  | { type: "phase_change"; woInstanceId: string; from: WorkOrderPhase; to: WorkOrderPhase };
+
+export interface TickWoResult {
+  workOrders: WorkOrderInstance[];
+  mechanics: Mechanic[];
+  events: WoEvent[];
+}
+
+function phaseDuration(template: WorkOrderTemplate, phase: WorkOrderPhase, balance: Balance): number {
+  switch (phase) {
+    case "Inspection": return Math.round(template.durationMinutes * balance.phaseDurationRatios.inspection);
+    case "MainTask":   return Math.round(template.durationMinutes * balance.phaseDurationRatios.mainTask);
+    case "Test":       return Math.round(template.durationMinutes * balance.phaseDurationRatios.test);
+    case "Rework":     return Math.round(template.durationMinutes * balance.phaseDurationRatios.rework);
+    default:           return 0;
+  }
+}
+
+function getTemplate(templates: readonly WorkOrderTemplate[], id: string): WorkOrderTemplate | undefined {
+  return templates.find((t) => t.id === id);
+}
+
+/**
+ * Avanza UN tick (minutesElapsed minutos ingame) sobre todas las WOs activas.
+ * Promociona fases, libera mecánicos al completarse, emite eventos.
+ */
+export function tickWorkOrders(
+  workOrders: readonly WorkOrderInstance[],
+  mechanics: readonly Mechanic[],
+  templates: readonly WorkOrderTemplate[],
+  balance: Balance,
+  minutesElapsed: number,
+  rng: Rng,
+  nowMinute = -1,
+): TickWoResult {
+  const events: WoEvent[] = [];
+  let newMechanics = [...mechanics];
+  const newWos: WorkOrderInstance[] = [];
+
+  for (const wo of workOrders) {
+    // Deferred es "pasivo": no progresa por trabajo, solo por reloj (lo maneja tickMel).
+    if (wo.phase === "Completed" || wo.phase === "Failed" || wo.phase === "ToPlane" || wo.phase === "Deferred") {
+      newWos.push(wo);
+      continue;
+    }
+
+    const template = getTemplate(templates, wo.templateId);
+    if (!template) {
+      newWos.push(wo);
+      continue;
+    }
+
+    const teamEff = teamEffectiveEfficiency(wo, newMechanics, nowMinute >= 0 ? nowMinute : undefined);
+    if (teamEff === 0) {
+      // sin mecánicos efectivos, no avanza
+      newWos.push(wo);
+      continue;
+    }
+
+    const progress = minutesElapsed * teamEff;
+    let elapsed = wo.phaseElapsedMinutes + progress;
+    let phase: WorkOrderPhase = wo.phase;
+    let phaseChanged = false;
+
+    // Loop por si el progreso cruza varias fases en un solo tick (con speed alto)
+    let safety = 0;
+    while (phase !== "Completed" && phase !== "Failed" && elapsed >= phaseDuration(template, phase, balance)) {
+      const dur = phaseDuration(template, phase, balance);
+      const carryover = elapsed - dur;
+      const nextPhase = transitionPhase(phase, rng, balance);
+      events.push({ type: "phase_change", woInstanceId: wo.instanceId, from: phase, to: nextPhase });
+      phase = nextPhase;
+      elapsed = carryover;
+      phaseChanged = true;
+      if (++safety > 6) break; // protección
+    }
+
+    if (phase === "Completed") {
+      // onTime si el clock actual aún no superó el SLA. Si nowMinute no se pasa, fallback a estimación.
+      const wasOnTime = nowMinute >= 0 ? nowMinute <= wo.slaMinute : (wo.emissionMinute + accumulatedPhasesDuration(template, balance) <= wo.slaMinute);
+
+      events.push({
+        type: "wo_completed",
+        woInstanceId: wo.instanceId,
+        templateId: wo.templateId,
+        onTime: wasOnTime,
+        isAOG: template.isAOG,
+      });
+
+      // Liberar mecánicos → Returning (timer = 2 min)
+      newMechanics = newMechanics.map((m) => {
+        if (m.assignedWoInstanceId === wo.instanceId) {
+          return { ...m, state: "Returning" as const, stateRemainingMinutes: balance.officeToStandMinutes };
+        }
+        return m;
+      });
+    }
+
+    newWos.push({ ...wo, phase, phaseElapsedMinutes: elapsed });
+
+    if (phaseChanged && phase === "Inspection") {
+      // Primera entrada a Inspection desde ToPlane, emit started
+      // (en realidad esta transición ya la hizo assignment.tickMechanicTravel; este branch puede no llegar)
+    }
+  }
+
+  return { workOrders: newWos, mechanics: newMechanics, events };
+}
+
+/** Decide la siguiente fase tras completar la actual. */
+function transitionPhase(current: WorkOrderPhase, rng: Rng, balance: Balance): WorkOrderPhase {
+  switch (current) {
+    case "Inspection":
+      // 40% direct dispatch (salta a Test sin MainTask)
+      return randBool(rng, balance.probabilities.directDispatch) ? "Test" : "MainTask";
+    case "MainTask":
+      return "Test";
+    case "Test":
+      // 10% rework
+      return randBool(rng, balance.probabilities.reworkAfterTest) ? "Rework" : "Completed";
+    case "Rework":
+      return "Completed";
+    default:
+      return current;
+  }
+}
+
+/** Suma cuantitativa aproximada de duración total para checks SLA. */
+function accumulatedPhasesDuration(
+  template: WorkOrderTemplate,
+  balance: Balance,
+): number {
+  // Simplificado: cuenta Inspection + (MainTask) + Test + (Rework). Asumimos camino "completo" pero
+  // sin saber si hubo direct dispatch o rework. Esto se calcula en realidad sumando fases ejecutadas
+  // que registra cada wo. MVP: aproximación con duración nominal.
+  return Math.round(
+    template.durationMinutes *
+    (balance.phaseDurationRatios.inspection + balance.phaseDurationRatios.mainTask + balance.phaseDurationRatios.test),
+  );
+}
+
+/**
+ * Verifica si una WO ha excedido su SLA y debe marcarse como Failed (en MVP solo si el avión ya salió).
+ * Más sutil: solo Failed si nowMinute > scheduledDepartureMinute del avión, no solo del SLA.
+ * Por ahora marcamos Failed si pasa SLA y todavía no completed cuando el caller decide.
+ */
+export function checkSlaExpired(
+  workOrders: readonly WorkOrderInstance[],
+  nowMinute: number,
+  marginMinutes = 0,
+): WorkOrderInstance[] {
+  return workOrders.filter(
+    (w) => w.phase !== "Completed" && w.phase !== "Failed" && nowMinute > w.slaMinute + marginMinutes,
+  );
+}

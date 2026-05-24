@@ -1,0 +1,47 @@
+{
+  "$comment": "Constantes de tuneo. Editar valores aquí cambia balance sin recompilar. Probabilidades legacy conservadas (validar en Fase 4 playtest).",
+
+  "startingBalance": 250000,
+  "startingReputation": 50,
+  "weeklyFixedCost": 12000,
+
+  "salaries": {
+    "$comment": "Salarios semanales en EUR. B1/B2 senior cobra ~40% más que junior. Helpers son sin licencia, baratos.",
+    "helper": 600,
+    "b1Junior": 1100,
+    "b1Senior": 1600,
+    "b2Junior": 1200,
+    "b2Senior": 1750
+  },
+
+  "probabilities": {
+    "$comment": "Conservadas del legacy. Fase 4 audit (2026-05-15): workOrderAtStand bajado 0.70 → 0.50. Heredado del legacy era irreal: line check rutinario tiene 10-20% hallazgos. 0.50 reduce volumen sin trivializar.",
+    "workOrderAtStand": 0.5,
+    "directDispatch": 0.4,
+    "reworkAfterTest": 0.1
+  },
+
+  "$comment_slaMultiplier": "Fase 4 Q6 (2026-05-15): subido 1.50 → 2.50. Con shift gating activo, WOs nocturnas esperan ~8h hasta que entra el morning shift. El SLA debe absorber esa espera estructural. NO trivializa: una WO de 60min sigue late si tarda >150min.",
+  "slaMultiplier": 2.50,
+  "aogPenaltyMultiplier": 5,
+  "officeToStandMinutes": 2,
+
+  "reputation": {
+    "$comment": "Deltas en puntos sobre escala 0-100.",
+    "woCompletedOnTime": 1,
+    "woCompletedLate": -1,
+    "woFailed": -5,
+    "aogFailed": -10,
+    "weeklyTickIfNoContracts": -1
+  },
+
+  "phaseDurationRatios": {
+    "$comment": "Ratios sobre la duración del template. Inspection es el 15% inicial; MainTask es el bloque grande; Test 10%; Rework otra vez como MainTask.",
+    "inspection": 0.15,
+    "mainTask": 1.0,
+    "test": 0.1,
+    "rework": 1.0
+  },
+
+  "landingsVariance": 0.2
+}

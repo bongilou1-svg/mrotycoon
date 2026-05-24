@@ -1,0 +1,3318 @@
+{
+  "_meta": {
+    "purpose": "Realistic WO templates seeded from public ATA / MMEL / AD / line-maintenance sources for A32x narrow-body MRO operations.",
+    "generationMethod": "Per-chapter quotas weighted by real line/base maintenance frequency. Severity calibrated to ~70% Minor / 25% Major / 5% Critical. Deferrable rate calibrated to ~35% (matches MMEL practice; replaces synthetic dataset's 92%). Engine-specific WOs (CFM56-5B / V2500-A5 / LEAP-1A / PW1100G) tagged in chapters 71-80 where applicable.",
+    "sources": [
+      "FAA MMEL Airbus A320 Rev 32 (public draft 2025) — https://www.faa.gov/aircraft/draft_docs/mmel/MMEL_A-320_Rev_32_Draft.pdf",
+      "EASA AD 2023-0099 (fuel pump P/N 568-1-27202-005 inspection / replacement)",
+      "FAA AD on Kathon FP 1.5 biocide (NEO engine performance)",
+      "Aircraft Commerce: A320 family maintenance (issue 111 MTCE A, 1999 ISSUE 07 MTCE B)",
+      "SKYbrary technical articles by ATA chapter",
+      "FAST magazine (Airbus) Special A320",
+      "AviationHunt ATA series (21, 27, 28, 31, 49)",
+      "Aeronergic / aircraftborescope.eu engine borescope capability lists (CFM56, V2500, LEAP, PW1100G)",
+      "Leeham News on EGT margins (CFM56-5B, LEAP-1A)",
+      "Honeywell 131-9A APU troubleshooting (airlinetechs)"
+    ],
+    "schemaNotes": "engineSpecific: null when applicable to all engine variants; otherwise one of CFM56-5B (A320ceo CFM), V2500-A5 (A320ceo IAE), LEAP-1A (A320neo CFM), PW1100G (A320neo PW). melCategory: null for non-deferrable items. Part numbers use placeholders (P/N CFM-XXX-XXXX) — never real OEM P/Ns.",
+    "distributionAchieved": {
+      "totalTemplates": 208,
+      "byATA": {
+        "5": 4,
+        "9": 2,
+        "10": 2,
+        "11": 3,
+        "12": 12,
+        "21": 12,
+        "22": 4,
+        "23": 5,
+        "24": 9,
+        "25": 9,
+        "26": 6,
+        "27": 11,
+        "28": 10,
+        "29": 9,
+        "30": 6,
+        "31": 5,
+        "32": 12,
+        "33": 7,
+        "34": 9,
+        "35": 4,
+        "36": 5,
+        "38": 3,
+        "44": 3,
+        "46": 2,
+        "47": 2,
+        "49": 7,
+        "51": 1,
+        "52": 4,
+        "53": 2,
+        "54": 2,
+        "56": 2,
+        "57": 1,
+        "71": 2,
+        "72": 6,
+        "73": 5,
+        "74": 3,
+        "75": 2,
+        "77": 4,
+        "78": 4,
+        "79": 5,
+        "80": 2
+      },
+      "bySeverity": {
+        "Minor": 149,
+        "Major": 51,
+        "Critical": 8
+      },
+      "severityPct": "71.6% Minor / 24.5% Major / 3.8% Critical",
+      "deferrableCount": 77,
+      "deferrablePct": "37.0%",
+      "byMelCategory": {
+        "A": 5,
+        "B": 18,
+        "C": 47,
+        "D": 7,
+        "null": 131
+      },
+      "byTypeRating": {
+        "B1": 142,
+        "B2": 66
+      },
+      "engineSpecificCount": 8,
+      "aogCount": 3,
+      "chaptersCovered": 41
+    }
+  },
+  "templates": [
+    {
+      "id": "WO-05-001",
+      "ata": 5,
+      "title": "A-Check task card 200 — flight control surface visual inspection",
+      "description": "Per AMM 05-20 A-Check package: visual inspection of all primary flight control surfaces for cracks, dents, paint damage, hinge wear, and trailing edge condition. Document findings in tech log.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-05-002",
+      "ata": 5,
+      "title": "A-Check task card 305 — landing gear walk-around inspection",
+      "description": "Detailed visual of MLG/NLG: tire wear and pressure, brake wear pin extension, oleo extension, no leaks at retract actuator and door uplock. Sign off task card.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 75,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-05-003",
+      "ata": 5,
+      "title": "Daily Check — log book review and deferred item status check",
+      "description": "Review aircraft tech log, status messages from CMS, MEL deferred items list and confirm rectification interval not exceeded. Clear non-impacting CMS messages per AMM 31-32.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 25,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-05-004",
+      "ata": 5,
+      "title": "Weekly Check — operational test of cockpit/cabin emergency equipment",
+      "description": "Function test cockpit emergency lights, exit signs, slide arming positions, fire bottle pressure indications, oxygen mask drops simulated test per AMM 05-50.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-09-001",
+      "ata": 9,
+      "title": "Towing event — gear pin install/remove and brake pressurization check",
+      "description": "Install MLG/NLG ground locks for tow, confirm hyd Yellow accumulator pressure for parking brake, walk-around clearance check.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-09-002",
+      "ata": 9,
+      "title": "Tug coupling damage — inspect NLG towbar fitting",
+      "description": "Following towing incident report: inspect NLG towbar attach point for cracks, deformation. Dye penetrant if any indication. Per AMM 09-10.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-10-001",
+      "ata": 10,
+      "title": "Storage preparation — engine and APU preservation 7-day",
+      "description": "Apply preservation procedure to engines and APU per AMM 10-13 for short-term storage: oil system fogging, intake/exhaust covers, pitot covers, gear pin install.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Preservation oil 5L",
+        "Engine inlet/exhaust cover set"
+      ]
+    },
+    {
+      "id": "WO-10-002",
+      "ata": 10,
+      "title": "Return to service — post-storage system tests",
+      "description": "Remove preservation, run engine motoring, full hydraulic and pneumatic checks, refuel and water service. Confirm CMS clean.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-11-001",
+      "ata": 11,
+      "title": "Replace fuselage exit door placard (faded)",
+      "description": "Replace ARM/DISARM and OPEN sequence placard adjacent to door 2L per IPC. Check adhesive cure time.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "D",
+      "estimatedMinutes": 20,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Door placard kit"
+      ]
+    },
+    {
+      "id": "WO-11-002",
+      "ata": 11,
+      "title": "Repaint walkway markings on horizontal stab",
+      "description": "Touch up red walkway markings per livery std. Surface prep, mask, apply two coats of polyurethane paint.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "D",
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Polyurethane red paint 1L",
+        "Masking tape",
+        "Solvent"
+      ]
+    },
+    {
+      "id": "WO-11-003",
+      "ata": 11,
+      "title": "Replace cargo compartment loading limit placard",
+      "description": "Cargo compartment max load placard illegible — replace per AMM 11-30.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "D",
+      "estimatedMinutes": 25,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Cargo placard"
+      ]
+    },
+    {
+      "id": "WO-12-001",
+      "ata": 12,
+      "title": "Top up engine #1 oil reservoir",
+      "description": "Engine #1 oil quantity below MIN — service oil tank to FULL mark per AMM 12-13. Use only approved engine oil grade.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 20,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine oil 5L (P/N spec MIL-PRF-23699)"
+      ]
+    },
+    {
+      "id": "WO-12-002",
+      "ata": 12,
+      "title": "Top up engine #2 oil reservoir",
+      "description": "Engine #2 oil low. Service per AMM 12-13.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 20,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine oil 5L"
+      ]
+    },
+    {
+      "id": "WO-12-003",
+      "ata": 12,
+      "title": "Replenish APU oil tank",
+      "description": "APU oil quantity low — service to FULL per AMM 12-13-49. Honeywell 131-9A.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 15,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Turbine oil 1L"
+      ]
+    },
+    {
+      "id": "WO-12-004",
+      "ata": 12,
+      "title": "Replenish hydraulic Green reservoir",
+      "description": "Green reservoir below MIN line. Replenish with Skydrol LD-4 per AMM 12-12.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 25,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Skydrol LD-4 fluid 10L"
+      ]
+    },
+    {
+      "id": "WO-12-005",
+      "ata": 12,
+      "title": "Replenish hydraulic Yellow reservoir",
+      "description": "Yellow reservoir replenish per AMM 12-12.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 25,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Skydrol LD-4 fluid 10L"
+      ]
+    },
+    {
+      "id": "WO-12-006",
+      "ata": 12,
+      "title": "Replenish hydraulic Blue reservoir",
+      "description": "Blue reservoir replenish. Smaller capacity than Green/Yellow.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 20,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Skydrol LD-4 fluid 5L"
+      ]
+    },
+    {
+      "id": "WO-12-007",
+      "ata": 12,
+      "title": "Servicing potable water tank",
+      "description": "Refill potable water tank, sanitization check, drain low-point. Per AMM 12-14-38.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-12-008",
+      "ata": 12,
+      "title": "Lavatory waste tank service and rinse",
+      "description": "Drain blue water, rinse, and pre-charge with disinfectant per OM lav servicing.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 25,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Lav disinfectant fluid"
+      ]
+    },
+    {
+      "id": "WO-12-009",
+      "ata": 12,
+      "title": "Tire pressure check all gear",
+      "description": "Check and adjust nitrogen pressure on 4 MLG and 2 NLG tires. Document per AMM 12-15.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Nitrogen bottle"
+      ]
+    },
+    {
+      "id": "WO-12-010",
+      "ata": 12,
+      "title": "Engine oil sample for SOAP analysis",
+      "description": "Take routine oil sample from engine #1 for spectrometric oil analysis program. Bottle, label, ship to lab.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 20,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "SOAP sample bottle"
+      ]
+    },
+    {
+      "id": "WO-12-011",
+      "ata": 12,
+      "title": "Lubrication of NLG steering bearings",
+      "description": "Apply grease per AMM 12-21 to NLG steering bearings. Routine 600 FH lube.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 35,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Aerospace grease (P/N spec MIL-PRF-23827)"
+      ]
+    },
+    {
+      "id": "WO-12-012",
+      "ata": 12,
+      "title": "Refuel coordination — fuel quality and grounding check",
+      "description": "Pre-fueling: confirm fuel grade, check water sediment in sample, bonding wire connected, monitor uplift to flight plan figure.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-21-001",
+      "ata": 21,
+      "title": "Replace pack flow control valve (FCV) #1",
+      "description": "Pack 1 FCV reported intermittent regulation, ECAM 'PACK 1 OFF' on previous flight. R/R FCV per AMM 21-26 task 400-001. Operational test after install.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "P/N CFM-XXX-XXXX FCV"
+      ]
+    },
+    {
+      "id": "WO-21-002",
+      "ata": 21,
+      "title": "Pack 2 inoperative — troubleshoot per ECAM",
+      "description": "Pack 2 ECAM fault on cruise. Run BITE on ACSC 2, check overheat sensor continuity, swap ACSC channels if no fault on bench. Cat C dispatch with FL250 limit.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-21-003",
+      "ata": 21,
+      "title": "Replace trim air valve cabin zone FWD",
+      "description": "Forward zone temperature uncontrollable, trim air valve seized at mid-position. R/R per AMM 21-43.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 150,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "P/N TAV-XXX"
+      ]
+    },
+    {
+      "id": "WO-21-004",
+      "ata": 21,
+      "title": "Outflow valve overhaul return — install and test",
+      "description": "Install overhauled OFV per AMM 21-31. Pressurization functional test on stand or run.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "OFV (overhauled)"
+      ]
+    },
+    {
+      "id": "WO-21-005",
+      "ata": 21,
+      "title": "Replace recirc fan (one of two) — bearing noise",
+      "description": "Cabin recirc fan reported abnormal noise by cabin crew. Inspect, R/R fan assembly per AMM 21-52.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Recirc fan assy"
+      ]
+    },
+    {
+      "id": "WO-21-006",
+      "ata": 21,
+      "title": "ACSC 1 BITE check — intermittent pack temp control",
+      "description": "Run BITE 21-61 on ACSC 1, capture fault history, swap with #2 if symptom follows ACSC.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-21-007",
+      "ata": 21,
+      "title": "Avionics ventilation — replace blower fan",
+      "description": "Avionics smoke warning false alarm: investigate blower duct, R/R blower per AMM 21-26.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Blower assy"
+      ]
+    },
+    {
+      "id": "WO-21-008",
+      "ata": 21,
+      "title": "Cabin pressure leak suspected — door seal inspection",
+      "description": "Slow climb in cabin altitude reported. Inspect door 1L/1R/2L/2R/3L/3R seals for damage; replace damaged sections.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 150,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Door seal section"
+      ]
+    },
+    {
+      "id": "WO-21-009",
+      "ata": 21,
+      "title": "Pack temperature sensor replacement",
+      "description": "Pack outlet temp sensor erratic per CMS. R/R sensor.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Temp sensor"
+      ]
+    },
+    {
+      "id": "WO-21-010",
+      "ata": 21,
+      "title": "HEPA filter replacement (recirc system)",
+      "description": "Scheduled HEPA filter replacement per maintenance program. Two filters in series, dispose old.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "HEPA filter x2"
+      ]
+    },
+    {
+      "id": "WO-21-011",
+      "ata": 21,
+      "title": "Pressurization controller channel swap troubleshooting",
+      "description": "Cabin pressurization controller (CPC) channel 1 fault on ECAM. Swap channel selector, run system test, defer if confirmed CPC1 unit fault.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-21-012",
+      "ata": 21,
+      "title": "Bleed leak on duct downstream of pack 1 — repair clamp",
+      "description": "Visible insulation discoloration in pylon area on pack 1 supply duct. Replace V-band clamp and inspect duct.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "V-band clamp",
+        "Duct insulation"
+      ]
+    },
+    {
+      "id": "WO-22-001",
+      "ata": 22,
+      "title": "Autopilot 1 disconnect — FCU panel troubleshooting",
+      "description": "AP1 reported intermittent disconnect on cruise. Run FCU BITE, check pitch trim wheel rotation, reseat FCU connector.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "A",
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-22-002",
+      "ata": 22,
+      "title": "Autothrust intermittent — replace ATHR computer (FMGC)",
+      "description": "ATHR drops out at idle. Swap FMGC 1/2 to confirm side, R/R FMGC if persistent.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 150,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "FMGC LRU"
+      ]
+    },
+    {
+      "id": "WO-22-003",
+      "ata": 22,
+      "title": "Autoland CAT III certification check",
+      "description": "Functional check after recent landing gear work — CAT IIIA dual approach simulation on stand. Sign off CAT III status.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-22-004",
+      "ata": 22,
+      "title": "FCU display segment fault — replace FCU panel",
+      "description": "Selected speed display has missing segment. R/R FCU per AMM 22-30.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "FCU panel"
+      ]
+    },
+    {
+      "id": "WO-23-001",
+      "ata": 23,
+      "title": "VHF 2 transceiver replacement — squelch fault",
+      "description": "VHF 2 transmits with carrier noise. R/R transceiver, post-install ATC tower handshake check.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "VHF transceiver LRU"
+      ]
+    },
+    {
+      "id": "WO-23-002",
+      "ata": 23,
+      "title": "CVR functional test — yearly",
+      "description": "Per AMM 23-71 yearly check: 30s recording sample retrieval, signal-to-noise verification on all channels, time stamp validation.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "A",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-23-003",
+      "ata": 23,
+      "title": "ACARS / ATSU printer paper jam",
+      "description": "Cockpit printer reported jammed by crew. Open, clear paper, reload roll, function test print weather report.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 25,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Printer paper roll"
+      ]
+    },
+    {
+      "id": "WO-23-004",
+      "ata": 23,
+      "title": "SATCOM antenna LRU swap — degraded signal",
+      "description": "SATCOM signal strength below threshold per CMS. Swap HGA LRU, perform handshake with ground station.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "D",
+      "estimatedMinutes": 180,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "SATCOM HGA LRU"
+      ]
+    },
+    {
+      "id": "WO-23-005",
+      "ata": 23,
+      "title": "Cabin interphone handset replace at door 4L",
+      "description": "Crew reported broken handset cradle at 4L. R/R handset, clip and cable.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 30,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Cabin handset"
+      ]
+    },
+    {
+      "id": "WO-24-001",
+      "ata": 24,
+      "title": "IDG 1 disconnect on overheat — replace IDG",
+      "description": "IDG 1 disconnected automatically on takeoff roll. Verify oil sample, replace IDG per AMM 24-21. Confirm engine speed dependency at next run.",
+      "severity": "Critical",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 360,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": true,
+      "partsRequired": [
+        "IDG (P/N XXX)"
+      ]
+    },
+    {
+      "id": "WO-24-002",
+      "ata": 24,
+      "title": "APU generator overhaul return — install",
+      "description": "Install overhauled APU GEN. Run-up test on APU, voltage and frequency checks.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "APU GEN (overhauled)"
+      ]
+    },
+    {
+      "id": "WO-24-003",
+      "ata": 24,
+      "title": "Battery 1 capacity test — yearly",
+      "description": "Yearly battery 1 capacity check per AMM 24-32. Disconnect, capacity discharge bench test, recharge cycle, reinstall.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-24-004",
+      "ata": 24,
+      "title": "Battery 2 replacement — failed capacity test",
+      "description": "Battery 2 below 80% rated capacity. R/R battery per AMM 24-32.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Aircraft battery"
+      ]
+    },
+    {
+      "id": "WO-24-005",
+      "ata": 24,
+      "title": "TR1 unit replacement — fault",
+      "description": "TR1 (transformer rectifier 1) reported fault. R/R per AMM 24-31. Confirm DC bus voltage healthy after.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 150,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "TR LRU"
+      ]
+    },
+    {
+      "id": "WO-24-006",
+      "ata": 24,
+      "title": "RAT manual deploy & retract test",
+      "description": "Per scheduled maintenance: manual deploy RAT on jacks, hyd pressure test, electrical generation test, retract verify.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-24-007",
+      "ata": 24,
+      "title": "External power receptacle damage — repair",
+      "description": "Ground crew reported damaged ext power receptacle pins. Inspect, R/R receptacle if pins bent.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Ext power receptacle"
+      ]
+    },
+    {
+      "id": "WO-24-008",
+      "ata": 24,
+      "title": "Static inverter replacement",
+      "description": "Static inverter inoperative per CMS. R/R LRU, function test on emergency bus.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Static inverter"
+      ]
+    },
+    {
+      "id": "WO-24-009",
+      "ata": 24,
+      "title": "Galley power outlet tripped — reset and inspect",
+      "description": "FWD galley G1 outlet tripped repeatedly. Inspect appliance load, replace breaker if necessary.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-25-001",
+      "ata": 25,
+      "title": "Replace passenger seat cushion (one) — torn upholstery",
+      "description": "Seat 14C bottom cushion ripped. R/R seat cushion only, no armrest work.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "D",
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Seat cushion (livery)"
+      ]
+    },
+    {
+      "id": "WO-25-002",
+      "ata": 25,
+      "title": "Cabin attendant seat shoulder strap retractor jammed",
+      "description": "L1 attendant seat strap won't retract. R/R retractor mechanism per AMM 25-25.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 75,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Strap retractor"
+      ]
+    },
+    {
+      "id": "WO-25-003",
+      "ata": 25,
+      "title": "Replace life vest under seat 22A (missing)",
+      "description": "Pre-flight check found life vest missing under seat 22A. Install spare from stock, log serial.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 15,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Life vest"
+      ]
+    },
+    {
+      "id": "WO-25-004",
+      "ata": 25,
+      "title": "ELT (fixed) battery expiry — replace battery pack",
+      "description": "ELT battery scheduled replacement before expiry. Document new expiration in tech log.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "ELT battery pack"
+      ]
+    },
+    {
+      "id": "WO-25-005",
+      "ata": 25,
+      "title": "Galley G2 oven door latch broken",
+      "description": "Aft galley oven door latch broken, door swings during taxi. R/R latch per IPC.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Oven latch"
+      ]
+    },
+    {
+      "id": "WO-25-006",
+      "ata": 25,
+      "title": "IFE seatback monitor blank — row 18",
+      "description": "Three IFE monitors row 18 blank. Reset IFE distribution box, R/R individual monitor if isolated.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "IFE monitor"
+      ]
+    },
+    {
+      "id": "WO-25-007",
+      "ata": 25,
+      "title": "Cargo net replacement — FWD compartment",
+      "description": "FWD cargo bulkhead net frayed and unsafe per cargo handler report. R/R per AMM 25-50.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Cargo net assy"
+      ]
+    },
+    {
+      "id": "WO-25-008",
+      "ata": 25,
+      "title": "Cabin sidewall panel replacement — visible crack at row 12L",
+      "description": "Sidewall panel cracked, replacing per cosmetic and safety. Disconnect O2 mask housing if integrated.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "D",
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Sidewall panel"
+      ]
+    },
+    {
+      "id": "WO-25-009",
+      "ata": 25,
+      "title": "Replace tray table latch row 8B (broken)",
+      "description": "Pax reported tray won't stay up. R/R latch per IPC.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "D",
+      "estimatedMinutes": 20,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Tray table latch"
+      ]
+    },
+    {
+      "id": "WO-26-001",
+      "ata": 26,
+      "title": "Engine 1 fire detection loop A — continuity check after fault",
+      "description": "Loop A reported continuity fault on previous flight. Run BITE, inspect loop routing, replace section if open.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-26-002",
+      "ata": 26,
+      "title": "Engine 2 fire bottle pressure low — replace squib bottle",
+      "description": "Pressure indication below limit. R/R fire bottle, install new squib cartridge per AMM 26-22.",
+      "severity": "Critical",
+      "deferrable": true,
+      "melCategory": "A",
+      "estimatedMinutes": 150,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine fire bottle"
+      ]
+    },
+    {
+      "id": "WO-26-003",
+      "ata": 26,
+      "title": "APU fire detection loop replacement",
+      "description": "APU fire loop continuity intermittent. R/R loop section per AMM 26-15.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Fire loop section"
+      ]
+    },
+    {
+      "id": "WO-26-004",
+      "ata": 26,
+      "title": "Cargo compartment smoke detector replacement",
+      "description": "FWD cargo smoke detector failed self-test. R/R per AMM 26-16.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Smoke detector"
+      ]
+    },
+    {
+      "id": "WO-26-005",
+      "ata": 26,
+      "title": "Lavatory smoke detector battery replacement",
+      "description": "Lav 1 smoke detector battery low warning. R/R battery per AMM 26-22.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Smoke detector battery"
+      ]
+    },
+    {
+      "id": "WO-26-006",
+      "ata": 26,
+      "title": "Portable extinguisher pressure check — annual",
+      "description": "Annual pressure check of all portable extinguishers (cockpit, cabin). Re-charge any below limit.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-27-001",
+      "ata": 27,
+      "title": "ELAC 1 fault — swap channels",
+      "description": "ELAC 1 reported intermittent fault on ECAM. Swap with ELAC 2 to isolate, R/R if symptom follows unit.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 150,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "ELAC LRU"
+      ]
+    },
+    {
+      "id": "WO-27-002",
+      "ata": 27,
+      "title": "SEC 2 inoperative — fault reset and BITE",
+      "description": "SEC 2 fault. Reset C/B, run BITE, R/R if persistent. Spoiler 4 dispatch implications.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-27-003",
+      "ata": 27,
+      "title": "FAC 1 yaw damper fault — replace FAC",
+      "description": "FAC 1 yaw damper authority reduced. R/R FAC LRU, post-install rudder calibration check.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "FAC LRU"
+      ]
+    },
+    {
+      "id": "WO-27-004",
+      "ata": 27,
+      "title": "Slat WTB (Wing Tip Brake) reset",
+      "description": "WTB activated on previous flight (slat asymmetry detected). Inspect SFCC, run BITE, reset WTB per AMM 27-80.",
+      "severity": "Critical",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": true,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-27-005",
+      "ata": 27,
+      "title": "Flap track lubrication — base check item",
+      "description": "Lube of flap tracks per AMM 27-50. Apply approved grease to track rollers and carriages.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Aerospace grease"
+      ]
+    },
+    {
+      "id": "WO-27-006",
+      "ata": 27,
+      "title": "Spoiler 3 actuator leak — replace",
+      "description": "Servo leak observed on spoiler 3 actuator during walk-around. R/R hyd actuator per AMM 27-64.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Spoiler actuator"
+      ]
+    },
+    {
+      "id": "WO-27-007",
+      "ata": 27,
+      "title": "Aileron servo control unit replacement",
+      "description": "Aileron 2 reported sluggish on autopilot inputs. R/R servo per AMM 27-11.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "A",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Aileron servo"
+      ]
+    },
+    {
+      "id": "WO-27-008",
+      "ata": 27,
+      "title": "Rudder pedal feel unit lubrication",
+      "description": "Lube rudder pedal artificial feel mechanism per AMM 27-21.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Aerospace grease"
+      ]
+    },
+    {
+      "id": "WO-27-009",
+      "ata": 27,
+      "title": "Pitch trim wheel intermittent rotation indication",
+      "description": "Pitch trim wheel doesn't always indicate position. Check encoder, R/R if isolated.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-27-010",
+      "ata": 27,
+      "title": "Sidestick force transducer fault",
+      "description": "Captain's sidestick reports fault on roll axis transducer. R/R sidestick assy per AMM 27-92.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 180,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Sidestick assy"
+      ]
+    },
+    {
+      "id": "WO-27-011",
+      "ata": 27,
+      "title": "Flap position pickoff calibration",
+      "description": "After flap track work: position pickoff units calibration per AMM 27-50.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-28-001",
+      "ata": 28,
+      "title": "Center tank pump 1 replacement — low pressure",
+      "description": "Center tank pump 1 reported low pressure on FCMC. R/R pump per AMM 28-21.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Center tank pump"
+      ]
+    },
+    {
+      "id": "WO-28-002",
+      "ata": 28,
+      "title": "Wing tank fuel pump replacement (LH inner)",
+      "description": "Wing pump fault, reduced fuel feed. Defuel affected wing area, R/R pump.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 300,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Wing fuel pump"
+      ]
+    },
+    {
+      "id": "WO-28-003",
+      "ata": 28,
+      "title": "Fuel pump P/N 568-1-27202-005 — EASA AD inspection",
+      "description": "Per EASA AD 2023-0099 (fuel pump P/N 568-1-27202-005): inspect motor housing connector screws, torque-stripe verify, replace pump if any indication.",
+      "severity": "Critical",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 360,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Fuel pump replacement"
+      ]
+    },
+    {
+      "id": "WO-28-004",
+      "ata": 28,
+      "title": "Crossfeed valve stuck closed — actuator R/R",
+      "description": "Crossfeed valve fails to open on command. Inspect actuator, R/R per AMM 28-31.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Crossfeed valve actuator"
+      ]
+    },
+    {
+      "id": "WO-28-005",
+      "ata": 28,
+      "title": "FQI channel calibration — wing tank",
+      "description": "FQI reading discrepancy with refuel uplift. Run drip stick check, calibrate FQI channel per AMM 28-41.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-28-006",
+      "ata": 28,
+      "title": "Refuel/defuel coupling seal replacement",
+      "description": "Refuel coupling seal dripping during refuel. R/R seal per AMM 28-46.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Coupling seal kit"
+      ]
+    },
+    {
+      "id": "WO-28-007",
+      "ata": 28,
+      "title": "Vent surge tank inspection — water ingress check",
+      "description": "After heavy rain: inspect vent surge tank for water, drain low point, check NACA inlet condition.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-28-008",
+      "ata": 28,
+      "title": "Fuel temperature sensor replacement",
+      "description": "Fuel temp reading erratic. R/R sensor per AMM 28-44.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 75,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Fuel temp sensor"
+      ]
+    },
+    {
+      "id": "WO-28-009",
+      "ata": 28,
+      "title": "Kathon biocide flush — per FAA AD",
+      "description": "Per FAA AD on Kathon FP 1.5 biocide use: flush fuel system per Airbus SB, document last biocide treatment.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 480,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Approved fuel system flush kit"
+      ]
+    },
+    {
+      "id": "WO-28-010",
+      "ata": 28,
+      "title": "FCMC fault — channel reset and BITE",
+      "description": "FCMC fault on ECAM. Reset C/B, run BITE per AMM 28-42, R/R if persistent.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 150,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-29-001",
+      "ata": 29,
+      "title": "Green system EDP 1 replacement — low pressure on ECAM",
+      "description": "Green hyd EDP 1 reported low pressure on takeoff. R/R EDP per AMM 29-11. Drain Skydrol per local procedures.",
+      "severity": "Critical",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 360,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": true,
+      "partsRequired": [
+        "Green EDP"
+      ]
+    },
+    {
+      "id": "WO-29-002",
+      "ata": 29,
+      "title": "Yellow electric pump replacement",
+      "description": "Yellow electric pump fault. R/R per AMM 29-12. Hyd fluid top-up after.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Yellow elec pump"
+      ]
+    },
+    {
+      "id": "WO-29-003",
+      "ata": 29,
+      "title": "Blue electric pump intermittent — investigate",
+      "description": "Blue pump cycling unexpectedly. Check pressure switch, R/R if pump confirmed faulty.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 150,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-29-004",
+      "ata": 29,
+      "title": "PTU functional test — no auto activation",
+      "description": "PTU fails to auto-activate during single engine taxi. Run test per AMM 29-21, R/R PTU if inoperative.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "PTU"
+      ]
+    },
+    {
+      "id": "WO-29-005",
+      "ata": 29,
+      "title": "Hydraulic accumulator nitrogen pre-charge check",
+      "description": "Routine N2 pre-charge check on Green/Yellow/Blue accumulators. Top up to spec.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "N2 bottle"
+      ]
+    },
+    {
+      "id": "WO-29-006",
+      "ata": 29,
+      "title": "Hydraulic line leak — replace section in MLG bay",
+      "description": "Visible Skydrol drip in MLG wheel well. Trace, R/R hyd line section, fluid replenish.",
+      "severity": "Critical",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Hyd line section",
+        "Skydrol fluid"
+      ]
+    },
+    {
+      "id": "WO-29-007",
+      "ata": 29,
+      "title": "Reservoir level transmitter replacement",
+      "description": "Yellow reservoir level transmitter reading erratic. R/R per AMM 29-15.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Level transmitter"
+      ]
+    },
+    {
+      "id": "WO-29-008",
+      "ata": 29,
+      "title": "Hyd filter replacement (case drain)",
+      "description": "Scheduled hyd filter R/R per AMM 29-15. Three filter housings to attend.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Hyd filter element x3"
+      ]
+    },
+    {
+      "id": "WO-29-009",
+      "ata": 29,
+      "title": "EDP suction line clamp loose — torque check",
+      "description": "After previous EDP work: confirm suction line clamps torqued per spec.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-30-001",
+      "ata": 30,
+      "title": "Wing anti-ice valve replacement (LH)",
+      "description": "LH wing anti-ice valve stuck closed per CMS. R/R per AMM 30-11.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Wing anti-ice valve"
+      ]
+    },
+    {
+      "id": "WO-30-002",
+      "ata": 30,
+      "title": "Engine 1 anti-ice valve fault",
+      "description": "Engine 1 anti-ice valve fails to open on test. R/R valve per AMM 30-21.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine anti-ice valve"
+      ]
+    },
+    {
+      "id": "WO-30-003",
+      "ata": 30,
+      "title": "Pitot probe heat element failed — R/R probe",
+      "description": "Captain pitot probe heat reads inoperative. R/R probe per AMM 30-31. Confirm electrical heat current draw.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Pitot probe"
+      ]
+    },
+    {
+      "id": "WO-30-004",
+      "ata": 30,
+      "title": "AOA probe heat fault — R/R probe",
+      "description": "AOA probe 1 heat fault. R/R probe per AMM 30-31.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "AOA probe"
+      ]
+    },
+    {
+      "id": "WO-30-005",
+      "ata": 30,
+      "title": "Windshield wiper motor replacement",
+      "description": "Captain wiper motor seized. R/R motor and arm assy per AMM 30-42.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Wiper motor",
+        "Wiper blade"
+      ]
+    },
+    {
+      "id": "WO-30-006",
+      "ata": 30,
+      "title": "Drain mast heat — fault on probe heat panel",
+      "description": "Drain mast heat fault. R/R drain mast heating element.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Drain mast heater"
+      ]
+    },
+    {
+      "id": "WO-31-001",
+      "ata": 31,
+      "title": "ECAM DU dimmed — R/R display unit",
+      "description": "Lower ECAM DU dimmed and unresponsive to brightness control. R/R DU per AMM 31-50.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 75,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Display unit (DU)"
+      ]
+    },
+    {
+      "id": "WO-31-002",
+      "ata": 31,
+      "title": "Clock 1 — R/R clock unit",
+      "description": "Captain clock display erratic. R/R clock unit.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Cockpit clock"
+      ]
+    },
+    {
+      "id": "WO-31-003",
+      "ata": 31,
+      "title": "DFDR download — quarterly readout for trend monitoring",
+      "description": "Routine quarterly DFDR data download for FOQA program. Verify data integrity, reset.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-31-004",
+      "ata": 31,
+      "title": "DFDR replacement — exceeded service life",
+      "description": "DFDR life-expired per maintenance program. R/R per AMM 31-31.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "DFDR LRU"
+      ]
+    },
+    {
+      "id": "WO-31-005",
+      "ata": 31,
+      "title": "CMS post-flight report extraction & action",
+      "description": "Routine post-flight report from CMS. Action listed messages, defer those acceptable per MEL.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-32-001",
+      "ata": 32,
+      "title": "Brake assy R/R — pin extension below minimum",
+      "description": "MLG brake #2 wear pin below limit. Defuel non-required, R/R brake assy per AMM 32-42. Confirm hyd connections torque.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Brake assy"
+      ]
+    },
+    {
+      "id": "WO-32-002",
+      "ata": 32,
+      "title": "Tire R/R — tread depth below limit",
+      "description": "MLG #1 tire tread below 0.5mm in two grooves. R/R tire per AMM 32-45.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "MLG tire"
+      ]
+    },
+    {
+      "id": "WO-32-003",
+      "ata": 32,
+      "title": "Tire pressure low — single tire reservice",
+      "description": "MLG #3 tire pressure 10 psi below spec. Reservice with N2.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 25,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "N2 bottle"
+      ]
+    },
+    {
+      "id": "WO-32-004",
+      "ata": 32,
+      "title": "BSCU channel fault — R/R BSCU",
+      "description": "BSCU channel 1 fault. R/R BSCU LRU per AMM 32-44.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "BSCU LRU"
+      ]
+    },
+    {
+      "id": "WO-32-005",
+      "ata": 32,
+      "title": "NWS (nose wheel steering) — towing required dispatch",
+      "description": "NWS reported inoperative on taxi. Investigate steering selector valve, R/R if confirmed.",
+      "severity": "Critical",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-32-006",
+      "ata": 32,
+      "title": "MLG door retraction actuator leak",
+      "description": "Hyd leak observed on MLG door actuator. Defuel pressure, R/R actuator per AMM 32-32.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "MLG door actuator"
+      ]
+    },
+    {
+      "id": "WO-32-007",
+      "ata": 32,
+      "title": "Anti-skid one wheel inoperative — defer per MEL",
+      "description": "Anti-skid valve on MLG #4 inoperative. R/R valve, function test on test stand.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 150,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Anti-skid valve"
+      ]
+    },
+    {
+      "id": "WO-32-008",
+      "ata": 32,
+      "title": "Brake temperature sensor R/R",
+      "description": "Brake temp sensor channel inop. R/R sensor per AMM 32-31.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Brake temp sensor"
+      ]
+    },
+    {
+      "id": "WO-32-009",
+      "ata": 32,
+      "title": "MLG oleo pressure check and reservice",
+      "description": "Oleo strut extension below spec. Recharge nitrogen and hyd fluid per AMM 32-11.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "N2 bottle",
+        "Skydrol fluid"
+      ]
+    },
+    {
+      "id": "WO-32-010",
+      "ata": 32,
+      "title": "Gear position sensor (proximity) replacement",
+      "description": "MLG uplock proximity sensor signal intermittent. R/R sensor per AMM 32-71.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Proximity sensor"
+      ]
+    },
+    {
+      "id": "WO-32-011",
+      "ata": 32,
+      "title": "MLG tire FOD damage — visual inspect and R/R if cuts > limit",
+      "description": "FOD report from line. Inspect tire surface, measure cut depth, R/R if over allowable.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-32-012",
+      "ata": 32,
+      "title": "Brake fan R/R (carbon brake cooling)",
+      "description": "MLG brake fan inoperative. R/R fan motor per AMM 32-43.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Brake fan motor"
+      ]
+    },
+    {
+      "id": "WO-33-001",
+      "ata": 33,
+      "title": "Landing light bulb R/R (LH)",
+      "description": "LH landing light reported inoperative on previous flight. R/R bulb per AMM 33-21.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Landing light bulb"
+      ]
+    },
+    {
+      "id": "WO-33-002",
+      "ata": 33,
+      "title": "Strobe light upper R/R",
+      "description": "Upper strobe inoperative. R/R per AMM 33-44.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Strobe light assy"
+      ]
+    },
+    {
+      "id": "WO-33-003",
+      "ata": 33,
+      "title": "Cabin emergency floor path light segment R/R",
+      "description": "Emergency egress floor path lights — one segment dark. R/R bulb/segment per AMM 33-51.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 45,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Floor path light segment"
+      ]
+    },
+    {
+      "id": "WO-33-004",
+      "ata": 33,
+      "title": "Logo light bulb R/R (vertical stab)",
+      "description": "Logo light inoperative. R/R bulb on vertical stab per AMM 33-46.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Logo light bulb"
+      ]
+    },
+    {
+      "id": "WO-33-005",
+      "ata": 33,
+      "title": "Cockpit dome light fault — R/R",
+      "description": "Cockpit overhead dome light dimmer fault. R/R fixture per AMM 33-11.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Dome light fixture"
+      ]
+    },
+    {
+      "id": "WO-33-006",
+      "ata": 33,
+      "title": "Navigation light wing tip R/R",
+      "description": "RH wingtip nav light inoperative. R/R bulb assy.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Nav light bulb"
+      ]
+    },
+    {
+      "id": "WO-33-007",
+      "ata": 33,
+      "title": "Cabin emergency lighting battery pack capacity test",
+      "description": "Emergency battery pack annual capacity test. Discharge test, recharge.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-34-001",
+      "ata": 34,
+      "title": "ADIRU 2 R/R — drift on ground",
+      "description": "ADIRU 2 reported excessive drift on ground alignment. R/R LRU per AMM 34-11.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 180,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "ADIRU LRU"
+      ]
+    },
+    {
+      "id": "WO-34-002",
+      "ata": 34,
+      "title": "Weather radar R/T R/R — no return on display",
+      "description": "WX radar reported no return. R/R R/T per AMM 34-43, calibrate antenna position.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "WX radar R/T"
+      ]
+    },
+    {
+      "id": "WO-34-003",
+      "ata": 34,
+      "title": "TCAS computer reset and BITE",
+      "description": "TCAS reported intermittent fault. Run BITE, reset, R/R computer if persistent.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-34-004",
+      "ata": 34,
+      "title": "GPWS / EGPWS terrain database update",
+      "description": "Scheduled EGPWS terrain DB update. Load via card per AMM 34-46.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "EGPWS database card"
+      ]
+    },
+    {
+      "id": "WO-34-005",
+      "ata": 34,
+      "title": "Transponder 2 fault — R/R",
+      "description": "ATC TX2 reported intermittent. Swap antennas, R/R LRU if isolated.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Transponder LRU"
+      ]
+    },
+    {
+      "id": "WO-34-006",
+      "ata": 34,
+      "title": "FMGC nav DB cycle update (28-day cycle)",
+      "description": "Standard 28-day Nav DB update. Verify cycle, load per procedure, ramp test for routing.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Nav DB media"
+      ]
+    },
+    {
+      "id": "WO-34-007",
+      "ata": 34,
+      "title": "VOR receiver 1 R/R — calibration discrepancy",
+      "description": "VOR 1 ramp check showed bearing error. R/R receiver, recalibrate.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "VOR receiver"
+      ]
+    },
+    {
+      "id": "WO-34-008",
+      "ata": 34,
+      "title": "DME 2 antenna replacement — corrosion",
+      "description": "DME 2 antenna shows corrosion. R/R antenna and inspect coax.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "DME antenna"
+      ]
+    },
+    {
+      "id": "WO-34-009",
+      "ata": 34,
+      "title": "Radio altimeter calibration after wheel work",
+      "description": "After MLG work: radio altimeter ramp calibration per AMM 34-44.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-35-001",
+      "ata": 35,
+      "title": "Crew O2 cylinder replacement — pressure low",
+      "description": "Crew O2 cylinder pressure below limit. R/R bottle per AMM 35-11. Recheck system pressure.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "O2 cylinder (charged)"
+      ]
+    },
+    {
+      "id": "WO-35-002",
+      "ata": 35,
+      "title": "Pax O2 generator (chemical) replacement — expired",
+      "description": "Two pax O2 generators reached expiry. R/R per AMM 35-21.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Pax O2 generator x2"
+      ]
+    },
+    {
+      "id": "WO-35-003",
+      "ata": 35,
+      "title": "Portable O2 bottle inspection & re-charge",
+      "description": "Portable O2 bottle inspection per maintenance program. Re-charge if below limit.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-35-004",
+      "ata": 35,
+      "title": "Crew O2 mask hose leak check & R/R",
+      "description": "Crew O2 quick-don mask leak check failed. R/R hose assy.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 75,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "O2 mask hose"
+      ]
+    },
+    {
+      "id": "WO-36-001",
+      "ata": 36,
+      "title": "Engine 1 bleed valve fault — R/R",
+      "description": "Engine 1 bleed valve fails to open per ECAM. R/R valve per AMM 36-11.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine bleed valve"
+      ]
+    },
+    {
+      "id": "WO-36-002",
+      "ata": 36,
+      "title": "Crossbleed valve actuator R/R",
+      "description": "Crossbleed valve fails to actuate. R/R actuator per AMM 36-12.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Crossbleed actuator"
+      ]
+    },
+    {
+      "id": "WO-36-003",
+      "ata": 36,
+      "title": "Pneumatic leak detection loop fault — pylon area",
+      "description": "Pneumatic leak loop fault on RH pylon. Inspect loop continuity, R/R section if open.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Leak loop section"
+      ]
+    },
+    {
+      "id": "WO-36-004",
+      "ata": 36,
+      "title": "HP bleed valve replacement — engine 2",
+      "description": "Engine 2 HP bleed valve fault on idle thrust. R/R valve.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "HP bleed valve"
+      ]
+    },
+    {
+      "id": "WO-36-005",
+      "ata": 36,
+      "title": "Precooler control valve R/R",
+      "description": "Precooler temp out of band. R/R PCCV per AMM 36-11.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "PCCV"
+      ]
+    },
+    {
+      "id": "WO-38-001",
+      "ata": 38,
+      "title": "Potable water tank leak — replace plumbing section",
+      "description": "Cabin crew reported water dripping in galley G1. Trace, R/R plumbing per AMM 38-11.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Plumbing fitting kit"
+      ]
+    },
+    {
+      "id": "WO-38-002",
+      "ata": 38,
+      "title": "Lavatory waste system flush valve fault",
+      "description": "Lav 2 flush valve weak. R/R valve per AMM 38-30.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Flush valve"
+      ]
+    },
+    {
+      "id": "WO-38-003",
+      "ata": 38,
+      "title": "Vacuum waste system motor R/R",
+      "description": "Vacuum waste motor noisy and weak suction. R/R motor per AMM 38-32.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Vacuum motor"
+      ]
+    },
+    {
+      "id": "WO-44-001",
+      "ata": 44,
+      "title": "PA system intermittent — investigate amplifier",
+      "description": "Cabin PA cuts out intermittently. Check amplifier, replace if confirmed faulty.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "PA amplifier"
+      ]
+    },
+    {
+      "id": "WO-44-002",
+      "ata": 44,
+      "title": "CIDS director 1 fault — R/R",
+      "description": "CIDS director 1 fault. R/R LRU per AMM 44-22.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "CIDS director"
+      ]
+    },
+    {
+      "id": "WO-44-003",
+      "ata": 44,
+      "title": "Pax info sign bulb R/R (NO SMOKING)",
+      "description": "NO SMOKING sign segment dark. R/R bulb per AMM 44-31.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Sign bulb"
+      ]
+    },
+    {
+      "id": "WO-46-001",
+      "ata": 46,
+      "title": "ATSU/ACARS unit reset and BITE",
+      "description": "ATSU reported fault. Run BITE, reset, R/R if persistent.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-46-002",
+      "ata": 46,
+      "title": "EFB connection point inspection — wear",
+      "description": "Inspect EFB power/data connector for wear, R/R if pins damaged.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "EFB connector"
+      ]
+    },
+    {
+      "id": "WO-47-001",
+      "ata": 47,
+      "title": "NGS air separation module R/R — degraded performance",
+      "description": "NGS ASM efficiency below threshold. R/R ASM per AMM 47-21.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "ASM (NGS)"
+      ]
+    },
+    {
+      "id": "WO-47-002",
+      "ata": 47,
+      "title": "NGS controller fault — R/R",
+      "description": "NGS controller fault per CMS. R/R LRU.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "NGS controller"
+      ]
+    },
+    {
+      "id": "WO-49-001",
+      "ata": 49,
+      "title": "APU starter motor R/R — slow start trend",
+      "description": "APU showing slow start trend per Honeywell 131-9A T/S guide. R/R starter motor per AMM 49-41.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "APU starter motor"
+      ]
+    },
+    {
+      "id": "WO-49-002",
+      "ata": 49,
+      "title": "APU FCU R/R — repeated auto shutdown after starter",
+      "description": "Auto shutdown continues after starter R/R per Honeywell T/S. R/R Fuel Control Unit per AMM 49-31.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "A",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "APU FCU"
+      ]
+    },
+    {
+      "id": "WO-49-003",
+      "ata": 49,
+      "title": "APU bleed valve replacement",
+      "description": "APU bleed valve fails to open per CMS. R/R valve per AMM 49-22.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "APU bleed valve"
+      ]
+    },
+    {
+      "id": "WO-49-004",
+      "ata": 49,
+      "title": "APU oil filter R/R — differential pressure switch active",
+      "description": "APU oil filter delta-P switch indicating clog. R/R filter element per AMM 49-91, inspect mag plug for metal.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "APU oil filter element"
+      ]
+    },
+    {
+      "id": "WO-49-005",
+      "ata": 49,
+      "title": "APU ECU R/R — controller fault",
+      "description": "APU ECU reports internal fault per BITE. R/R per AMM 49-61.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 150,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "APU ECU"
+      ]
+    },
+    {
+      "id": "WO-49-006",
+      "ata": 49,
+      "title": "APU exhaust shroud delamination — visual inspection",
+      "description": "Per Honeywell T/S overtemp shutdown root cause: inspect cooling shroud for delamination. R/R if damaged (heavy task — APU change candidate).",
+      "severity": "Critical",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 360,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "APU exhaust shroud"
+      ]
+    },
+    {
+      "id": "WO-49-007",
+      "ata": 49,
+      "title": "APU fire bottle pressure check",
+      "description": "Routine APU fire bottle pressure verification.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-51-001",
+      "ata": 51,
+      "title": "Corrosion control inspection — base check item",
+      "description": "Per CPCP: visual corrosion inspection of designated areas, treat per AMM 51-25.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 360,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Corrosion inhibitor"
+      ]
+    },
+    {
+      "id": "WO-52-001",
+      "ata": 52,
+      "title": "Pax door 2L emergency slide pressure check",
+      "description": "Slide bottle pressure check per AMM 52-71. Recharge if below limit.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "N2 bottle"
+      ]
+    },
+    {
+      "id": "WO-52-002",
+      "ata": 52,
+      "title": "Cargo door uplock proximity sensor R/R",
+      "description": "FWD cargo uplock sensor intermittent. R/R sensor per AMM 52-71.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Proximity sensor"
+      ]
+    },
+    {
+      "id": "WO-52-003",
+      "ata": 52,
+      "title": "Avionics bay door latch repair",
+      "description": "Avionics bay door latch loose. Inspect, R/R latch hardware per AMM 52-43.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Latch hardware kit"
+      ]
+    },
+    {
+      "id": "WO-52-004",
+      "ata": 52,
+      "title": "Pax door 1L hinge lubrication",
+      "description": "Routine door hinge lubrication. Apply per AMM 52-11.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 30,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Aerospace grease"
+      ]
+    },
+    {
+      "id": "WO-53-001",
+      "ata": 53,
+      "title": "Lightning strike inspection — fuselage skin",
+      "description": "Lightning report per crew. Inspect skin entry/exit points, NDT if any visible damage. Per AMM 53-30.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-53-002",
+      "ata": 53,
+      "title": "Belly fairing scrape repair — minor abrasion",
+      "description": "Belly fairing minor abrasion from tail strike near miss. Smooth, prime, paint per AMM 53-50.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Primer",
+        "Paint kit"
+      ]
+    },
+    {
+      "id": "WO-54-001",
+      "ata": 54,
+      "title": "Engine 1 fan cowl latch worn — R/R latch hardware",
+      "description": "Pre-flight visual: fan cowl latch worn. R/R latch per AMM 54-52.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Cowl latch kit"
+      ]
+    },
+    {
+      "id": "WO-54-002",
+      "ata": 54,
+      "title": "Pylon attach bolt torque check — base check item",
+      "description": "Per maintenance program: pylon attach bolt torque verification per AMM 54-51.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-56-001",
+      "ata": 56,
+      "title": "Cockpit windshield delamination inspection",
+      "description": "Captain windshield delamination reported. Measure extent, defer per MEL or R/R if exceeding limits.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-56-002",
+      "ata": 56,
+      "title": "Cabin window inner pane R/R — crazing",
+      "description": "Cabin window 14L inner pane crazing. R/R inner pane per AMM 56-21.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Cabin window pane"
+      ]
+    },
+    {
+      "id": "WO-57-001",
+      "ata": 57,
+      "title": "Sharklet inspection after bird strike near LE",
+      "description": "Bird strike report near LH wingtip. Inspect sharklet attach hardware, leading edge condition.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-71-001",
+      "ata": 71,
+      "title": "Engine drain mast R/R — corrosion",
+      "description": "Engine drain mast corroded. R/R mast per AMM 71-71.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Drain mast"
+      ]
+    },
+    {
+      "id": "WO-71-002",
+      "ata": 71,
+      "title": "Engine quick access cowl seal R/R",
+      "description": "Cowl seal aged, allowing rain ingress. R/R seal per AMM 71-12.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Cowl seal"
+      ]
+    },
+    {
+      "id": "WO-72-001",
+      "ata": 72,
+      "title": "Borescope inspection HPC — CFM56-5B routine",
+      "description": "Per CFM TASK 72-31-00-290-002: HPC borescope inspection on CFM56-5B. Document blade condition. Engine on-wing inspection.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": "CFM56-5B",
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-72-002",
+      "ata": 72,
+      "title": "Borescope inspection — V2500-A5 HPT stage 1",
+      "description": "V2500-A5 HPT stage 1 borescope per IAE EM. Check for blade tip rub, coating loss.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": "V2500-A5",
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-72-003",
+      "ata": 72,
+      "title": "Borescope inspection — LEAP-1A HPT shroud EBC check",
+      "description": "Per CFM observation of premature EBC loss on LEAP-1A HPT shroud: borescope inspection focusing on shroud condition. EGTM trend compare.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 300,
+      "typeRating": "B1",
+      "engineSpecific": "LEAP-1A",
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-72-004",
+      "ata": 72,
+      "title": "Engine fan blade inspection after bird strike — PW1100G",
+      "description": "Bird strike on engine 1. PW1100G fan blade inspection per PW manual.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": "PW1100G",
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-72-005",
+      "ata": 72,
+      "title": "Engine vibration trend exceedance — bowed rotor procedure",
+      "description": "Vibration trend exceeded threshold. Apply OEM bowed rotor procedure on next start.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-72-006",
+      "ata": 72,
+      "title": "Engine fan blade lubrication of midspan — CFM56-5B",
+      "description": "Routine lubrication of fan blade midspan dampers per CFM TASK. CFM56 specific.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": "CFM56-5B",
+      "isAOG": false,
+      "partsRequired": [
+        "Aerospace grease"
+      ]
+    },
+    {
+      "id": "WO-73-001",
+      "ata": 73,
+      "title": "EEC channel A R/R — fault FADEC ECAM",
+      "description": "EEC channel A fault. R/R EEC per AMM 73-22, FADEC self-test post-install.",
+      "severity": "Minor",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 240,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "EEC LRU"
+      ]
+    },
+    {
+      "id": "WO-73-002",
+      "ata": 73,
+      "title": "Fuel filter R/R — engine 1",
+      "description": "Scheduled fuel filter R/R per AMM 73-31. Capture old element for inspection.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine fuel filter element"
+      ]
+    },
+    {
+      "id": "WO-73-003",
+      "ata": 73,
+      "title": "HMU R/R — fuel metering fault",
+      "description": "Hydromechanical Unit fault — fuel flow oscillation observed. R/R HMU.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 360,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "HMU"
+      ]
+    },
+    {
+      "id": "WO-73-004",
+      "ata": 73,
+      "title": "Fuel manifold leak — fitting torque check",
+      "description": "Visible fuel weep at fuel manifold. Torque-stripe verify, R/R O-ring if persistent.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "O-ring kit"
+      ]
+    },
+    {
+      "id": "WO-73-005",
+      "ata": 73,
+      "title": "Fuel-oil heat exchanger inspection — CFM56-5B",
+      "description": "Inspect FOHE per CFM TASK for clog/contamination signs.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": "CFM56-5B",
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-74-001",
+      "ata": 74,
+      "title": "Igniter plug R/R — engine 1 (IGN A)",
+      "description": "Igniter plug worn beyond limits. R/R per AMM 74-21.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Igniter plug"
+      ]
+    },
+    {
+      "id": "WO-74-002",
+      "ata": 74,
+      "title": "Ignition exciter R/R — engine 2",
+      "description": "Ignition exciter no spark on test. R/R LRU per AMM 74-22.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Ignition exciter"
+      ]
+    },
+    {
+      "id": "WO-74-003",
+      "ata": 74,
+      "title": "Igniter lead inspection — high voltage check",
+      "description": "HV continuity check on igniter leads per AMM 74-23.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-75-001",
+      "ata": 75,
+      "title": "VBV (Variable Bleed Valve) lockout R/R — CFM56-5B",
+      "description": "VBV stuck issue per CFM bulletin: actuator R/R per CFM TASK.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": "CFM56-5B",
+      "isAOG": false,
+      "partsRequired": [
+        "VBV actuator"
+      ]
+    },
+    {
+      "id": "WO-75-002",
+      "ata": 75,
+      "title": "VSV (Variable Stator Vane) actuator inspection — V2500-A5",
+      "description": "VSV actuator inspection per IAE EM. Confirm rigging.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": "V2500-A5",
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-77-001",
+      "ata": 77,
+      "title": "EGT margin trend monitoring — review and report",
+      "description": "Per Bjorn's Corner / aircraft commerce trend monitoring practice: review EGT margin trend over last 200 cycles, flag if degradation > threshold.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 45,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-77-002",
+      "ata": 77,
+      "title": "N1 vibration sensor R/R",
+      "description": "N1 vibration channel reads erratic. R/R sensor per AMM 77-11.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Vibration sensor"
+      ]
+    },
+    {
+      "id": "WO-77-003",
+      "ata": 77,
+      "title": "EGT thermocouple harness R/R — engine 2",
+      "description": "EGT reading offset. R/R thermocouple harness per AMM 77-21.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "EGT harness"
+      ]
+    },
+    {
+      "id": "WO-77-004",
+      "ata": 77,
+      "title": "Oil pressure transducer R/R",
+      "description": "Oil pressure reads outside band. R/R xducer.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Oil pressure xducer"
+      ]
+    },
+    {
+      "id": "WO-78-001",
+      "ata": 78,
+      "title": "Thrust reverser HCU R/R — fault on deploy test",
+      "description": "T/R HCU (hydraulic control unit) fault. R/R HCU per AMM 78-31.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 360,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "T/R HCU"
+      ]
+    },
+    {
+      "id": "WO-78-002",
+      "ata": 78,
+      "title": "T/R blocker door rigging check",
+      "description": "Post-T/R work: blocker door rigging per AMM 78-32.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-78-003",
+      "ata": 78,
+      "title": "T/R deactivation per MEL — pin install",
+      "description": "Following T/R fault: install deactivation pin and apply MEL placard. Cat B repair pending.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "B",
+      "estimatedMinutes": 60,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Deactivation pin",
+        "MEL placard"
+      ]
+    },
+    {
+      "id": "WO-78-004",
+      "ata": 78,
+      "title": "Exhaust nozzle inspection for cracking",
+      "description": "Routine exhaust nozzle/cone visual + dye penetrant on suspect areas.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Dye penetrant kit"
+      ]
+    },
+    {
+      "id": "WO-79-001",
+      "ata": 79,
+      "title": "Engine oil filter R/R + chip detector inspection",
+      "description": "Scheduled oil filter R/R, MCD (magnetic chip detector) visual for ferrous debris. Lab analysis if any.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine oil filter element"
+      ]
+    },
+    {
+      "id": "WO-79-002",
+      "ata": 79,
+      "title": "Oil tank drain & refill — engine 1",
+      "description": "Routine oil change. Drain, refill per AMM 79-21.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 90,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine oil 25L"
+      ]
+    },
+    {
+      "id": "WO-79-003",
+      "ata": 79,
+      "title": "Oil cooler fault — engine 2 oil temp high",
+      "description": "Oil temp high in cruise. Inspect oil cooler / fan-air port for blockage. R/R cooler if fault confirmed.",
+      "severity": "Major",
+      "deferrable": true,
+      "melCategory": "C",
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Oil cooler"
+      ]
+    },
+    {
+      "id": "WO-79-004",
+      "ata": 79,
+      "title": "Oil quantity transducer R/R — erratic indication",
+      "description": "Oil qty xducer erratic. R/R per AMM 79-32.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 60,
+      "typeRating": "B2",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Oil qty xducer"
+      ]
+    },
+    {
+      "id": "WO-79-005",
+      "ata": 79,
+      "title": "Scavenge pump inspection — high oil consumption trend",
+      "description": "Engine 1 oil consumption above trend. Inspect scavenge pump output, consider R/R.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 180,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": []
+    },
+    {
+      "id": "WO-80-001",
+      "ata": 80,
+      "title": "Starter air valve manual override fault — R/R",
+      "description": "Starter air valve manual override stuck. R/R valve per AMM 80-11.",
+      "severity": "Minor",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 120,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "SAV"
+      ]
+    },
+    {
+      "id": "WO-80-002",
+      "ata": 80,
+      "title": "Engine starter R/R — slow start trend",
+      "description": "Engine starter weak per trend. R/R starter per AMM 80-11.",
+      "severity": "Major",
+      "deferrable": false,
+      "melCategory": null,
+      "estimatedMinutes": 240,
+      "typeRating": "B1",
+      "engineSpecific": null,
+      "isAOG": false,
+      "partsRequired": [
+        "Engine starter"
+      ]
+    }
+  ]
+}

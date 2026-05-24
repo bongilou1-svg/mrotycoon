@@ -1,0 +1,3997 @@
+<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>MRO Tycoon - Bloque D vanilla</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--panel-h:#1f2733;--border:#2a3142;--border-s:#3a4256;--text:#e6e9ef;--muted:#8b95a8;--subtle:#5d6677;--accent:#4da3ff;--accent-d:#2a5a8f;--success:#3fb950;--warning:#d29922;--danger:#f85149;--aog:#ff3b3b;--modal:#1a2030;--mono:"JetBrains Mono","Fira Code",Consolas,monospace;--sans:"Inter","Segoe UI",system-ui,sans-serif;--rad:6px;}
+*{box-sizing:border-box}html,body{margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;background:var(--bg);color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+.app{display:flex;flex-direction:column;height:100vh}
+.hud{display:flex;justify-content:space-between;align-items:center;padding:.4rem 1rem;background:var(--panel);border-bottom:1px solid var(--border);height:48px;flex-shrink:0}
+.hud-l,.hud-r{display:flex;gap:.5rem;align-items:center}.hud-c{display:flex;gap:1rem;align-items:center}
+.brand{font-weight:600;color:var(--accent)}.ver{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.clock{font-family:var(--mono);font-size:1.05rem}.wk{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.kpi{font-size:.85rem;color:var(--muted)}.kpi strong{color:var(--text);font-family:var(--mono)}.kpi strong.neg{color:var(--danger)}
+.speeds{display:flex;gap:.2rem;margin-left:.5rem}
+button{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:.4rem .75rem;cursor:pointer}
+button:hover{background:var(--panel-h)}button.active{background:var(--accent-d);border-color:var(--accent)}
+button.primary{background:var(--accent-d);border-color:var(--accent)}.speeds button{padding:.2rem .5rem;font-size:.8rem}
+.body{display:grid;grid-template-columns:180px 1fr 280px;flex:1;min-height:0}
+.side{background:var(--panel);border-right:1px solid var(--border);padding:.5rem;display:flex;flex-direction:column;gap:.25rem}
+.side button{text-align:left;background:transparent;border:1px solid transparent}.side button.active{background:var(--accent-d);border-color:var(--accent)}
+.badge{float:right;background:var(--accent);color:#fff;padding:0 6px;border-radius:10px;font-size:.7rem}
+.panel{overflow-y:auto;padding:1rem 1.5rem}h2{font-size:1rem;margin:0 0 1rem;font-weight:600}h3{font-size:.85rem;margin:1rem 0 .5rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.wo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:.75rem}
+.wo-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--rad);padding:.75rem 1rem;cursor:pointer}
+.wo-card:hover{border-color:var(--accent)}.wo-card.aog{border-color:var(--aog);background:linear-gradient(to bottom,rgba(255,59,59,.08),var(--panel))}
+.wo-head{display:flex;gap:.5rem;align-items:center;margin-bottom:.3rem}
+.wo-id{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.wo-phase{font-size:.7rem;padding:1px 6px;border-radius:3px;background:var(--bg);border:1px solid var(--border)}
+.phase-Inspection,.phase-Test{color:var(--accent);border-color:var(--accent-d)}.phase-MainTask,.phase-Rework{color:var(--warning);border-color:var(--warning)}.phase-ToPlane{color:var(--muted)}
+.aog-badge{font-size:.7rem;padding:1px 6px;background:var(--aog);color:#fff;border-radius:3px;font-weight:700}
+.wo-desc{font-size:.88rem;margin-bottom:.4rem}.wo-meta{display:flex;gap:.6rem;font-size:.72rem;color:var(--muted);margin-bottom:.5rem;font-family:var(--mono)}
+.bar-wrap{display:flex;align-items:center;gap:.5rem;margin:.2rem 0}
+.bar-lbl{font-size:.72rem;color:var(--muted);width:5.5rem;flex-shrink:0}.bar-lbl.bad{color:var(--danger)}
+.bar{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden}.fill{height:100%;transition:width .4s}
+.fill.primary{background:var(--accent)}.fill.good{background:var(--success)}.fill.warn{background:var(--warning)}.fill.bad{background:var(--danger)}
+.wo-team{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.4rem}
+.chip{font-size:.7rem;padding:1px 6px;background:var(--bg);border:1px solid var(--border);border-radius:999px}
+.muted{color:var(--muted);font-size:.85rem}
+table{width:100%;border-collapse:collapse;font-size:.82rem}th{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--border);color:var(--muted);font-size:.7rem;text-transform:uppercase;font-weight:500;letter-spacing:.05em}
+td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{background:rgba(255,255,255,.02)}
+.mono{font-family:var(--mono);color:var(--muted)}.mono.pos{color:var(--success)}.mono.neg{color:var(--danger)}
+.state{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.7rem}
+.state-Idle{background:rgba(63,185,80,.15);color:var(--success)}.state-Working{background:rgba(77,163,255,.15);color:var(--accent)}.state-ToPlane,.state-Returning{background:rgba(210,153,34,.15);color:var(--warning)}
+.contract-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--rad);padding:.75rem 1rem;margin-bottom:.5rem}.contract-card.offer{border-color:var(--accent-d)}
+.contract-card header{font-size:.9rem;margin-bottom:.5rem;color:var(--muted)}.contract-card header strong{color:var(--text)}
+.kvs{display:flex;flex-wrap:wrap;gap:1rem;font-size:.85rem;color:var(--muted)}.kvs strong{color:var(--text);font-family:var(--mono)}
+.actions{display:flex;gap:.5rem;margin-top:.5rem}
+.econ-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.5rem;margin-bottom:1rem}
+.card-mini{background:var(--panel);border:1px solid var(--border);border-radius:var(--rad);padding:.75rem 1rem}
+.card-mini .lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.card-mini .big{font-family:var(--mono);font-size:1.4rem;color:var(--accent)}.card-mini .big.neg{color:var(--danger)}
+.notifs{background:var(--panel);border-left:1px solid var(--border);padding:.75rem 1rem;overflow-y:auto}
+.notif{display:grid;grid-template-columns:5.5rem 1fr;gap:.5rem;padding:.3rem 0;font-size:.78rem;border-bottom:1px solid var(--border)}
+.notif .t{font-family:var(--mono);color:var(--subtle);font-size:.7rem}
+.notif.info{color:var(--muted)}.notif.success{color:var(--success)}.notif.warning{color:var(--warning)}.notif.danger{color:var(--danger)}
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-back.open{display:flex}.modal{background:var(--modal);border:1px solid var(--border-s);border-radius:10px;max-width:600px;width:90%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid var(--border)}
+.modal-head h3{margin:0;font-size:.95rem;color:var(--text)}
+.close{background:transparent;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;padding:0 .5rem}.close:hover{color:var(--text)}
+.modal-body{padding:1rem;overflow-y:auto}.modal-body h4{font-size:.85rem;margin:1rem 0 .5rem}
+.modal-body label{display:block;font-size:.8rem;color:var(--muted);margin:.5rem 0 .25rem}
+.modal-body select,.modal-body input[type=text]{width:100%;padding:.4rem;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px}
+.helper-list{display:flex;flex-direction:column;gap:.25rem;margin-top:.25rem}.helper-item{display:flex;align-items:center;gap:.5rem;font-size:.85rem;cursor:pointer}
+.alert{padding:.5rem .75rem;border-radius:3px;margin:.5rem 0;font-size:.85rem}.aog-alert{background:rgba(255,59,59,.15);border:1px solid var(--aog);color:var(--aog)}
+.game-over{text-align:center;padding:4rem 2rem}.game-over h1{font-size:3rem;color:var(--danger);margin-bottom:1rem}
+.empty{color:var(--muted);font-size:.9rem;padding:2rem 1rem;text-align:center}
+</style></head><body>
+<div class="app">
+  <header class="hud">
+    <div class="hud-l"><span class="brand">MRO Tycoon</span><span class="ver">v0.1.0-alpha · Bloque D (vanilla)</span></div>
+    <div class="hud-c"><span class="clock" id="clock">Día 1 · 00:00</span><span class="wk" id="week">Semana 1</span></div>
+    <div class="hud-r">
+      <div class="kpi">💰 <strong id="bal">250.000 €</strong></div>
+      <div class="kpi">⭐ <strong id="rep">50</strong>/100</div>
+      <div style="display:flex;gap:.25rem;margin-right:.5rem">
+        <button id="btn-save" title="Guardar partida" style="padding:.25rem .55rem;font-size:.85rem">💾</button>
+        <button id="btn-load" title="Cargar partida" style="padding:.25rem .55rem;font-size:.85rem">📂</button>
+        <button id="btn-new" title="Nueva partida" style="padding:.25rem .55rem;font-size:.85rem">🆕</button>
+        <span id="save-indicator" style="font-size:.7rem;color:var(--success);align-self:center;margin-left:.25rem"></span>
+      </div>
+      <div class="speeds">
+        <button data-speed="0" class="active" title="Pausa">⏸</button>
+        <button data-speed="1">1×</button>
+        <button data-speed="2">2×</button>
+        <button data-speed="5">5×</button>
+      </div>
+    </div>
+  </header>
+  <div class="body">
+    <aside class="side">
+      <button data-tab="hangar" class="active">🏭 Hangar <span class="badge" id="badge-wo">0</span></button>
+      <button data-tab="mechanics">⚙️ Mecánicos</button>
+      <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
+      <button data-tab="economy">💼 Economía</button>
+    </aside>
+    <main class="panel" id="panel-content"></main>
+    <aside class="notifs"><h3>Notificaciones</h3><div id="notif-list"></div></aside>
+  </div>
+  <div class="modal-back" id="modal-back"><div class="modal" id="modal-content"></div></div>
+</div>
+<script>
+"use strict";
+var Sim = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+  var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+
+  // src/lib/sim-all.ts
+  var sim_all_exports = {};
+  __export(sim_all_exports, {
+    DATA: () => DATA,
+    DAY_MINUTES: () => DAY_MINUTES,
+    INITIAL_STANDS: () => INITIAL_STANDS,
+    InMemoryBackend: () => InMemoryBackend,
+    LocalStorageBackend: () => LocalStorageBackend,
+    MINUTES_PER_TICK_AT_1X: () => MINUTES_PER_TICK_AT_1X,
+    OFFER_EXPIRY_MINUTES: () => OFFER_EXPIRY_MINUTES,
+    SAVE_VERSION: () => SAVE_VERSION,
+    START_MINUTE: () => START_MINUTE,
+    WEEK_MINUTES: () => WEEK_MINUTES,
+    _resetInstanceCounter: () => _resetInstanceCounter,
+    _resetTxCounter: () => _resetTxCounter,
+    acceptContractOffer: () => acceptContractOffer,
+    acceptOffer: () => acceptOffer,
+    activeContracts: () => activeContracts,
+    activeWorkOrders: () => activeWorkOrders,
+    addTransaction: () => addTransaction,
+    advance: () => advance,
+    advanceGame: () => advanceGame,
+    airplanesOnStand: () => airplanesOnStand,
+    airplanesPending: () => airplanesPending,
+    applyDelta: () => applyDelta,
+    applyWeeklyClose: () => applyWeeklyClose,
+    assignMechanicsManually: () => assignMechanicsManually,
+    assignMechanicsToWo: () => assignMechanicsToWo,
+    assignStand: () => assignStand,
+    availableMechanics: () => availableMechanics,
+    checkSlaExpired: () => checkSlaExpired,
+    compatibleTemplates: () => compatibleTemplates,
+    countByPhase: () => countByPhase,
+    countByState: () => countByState,
+    createClock: () => createClock,
+    createEconomy: () => createEconomy,
+    createGame: () => createGame,
+    createReputation: () => createReputation,
+    createRng: () => createRng,
+    createTransaction: () => createTransaction,
+    deserializeGame: () => deserializeGame,
+    eligibleCertifiers: () => eligibleCertifiers,
+    eligibleHelpers: () => eligibleHelpers,
+    expireOffers: () => expireOffers,
+    formatClock: () => formatClock,
+    formatClockShort: () => formatClockShort,
+    generateDailyArrivals: () => generateDailyArrivals,
+    generateInitialContracts: () => generateInitialContracts,
+    generateInitialMechanics: () => generateInitialMechanics,
+    generateRegistration: () => generateRegistration,
+    getDay: () => getDay,
+    getHour: () => getHour,
+    getMinuteOfDay: () => getMinuteOfDay,
+    getMinuteOfHour: () => getMinuteOfHour,
+    getStorage: () => getStorage2,
+    getWeek: () => getWeek,
+    instantiateWorkOrder: () => instantiateWorkOrder,
+    isBankrupt: () => isBankrupt,
+    isWeekStart: () => isWeekStart,
+    liveOffers: () => liveOffers,
+    payForCompletedWo: () => payForCompletedWo,
+    pickWeightedTemplate: () => pickWeightedTemplate,
+    randBool: () => randBool,
+    randFloat: () => randFloat,
+    randInt: () => randInt,
+    randPick: () => randPick,
+    randSample: () => randSample,
+    recentExpenses: () => recentExpenses,
+    recentIncome: () => recentIncome,
+    rejectContractOffer: () => rejectContractOffer,
+    rejectOffer: () => rejectOffer,
+    reputationDeltaForWo: () => reputationDeltaForWo,
+    reputationIsZero: () => reputationIsZero,
+    restoreRng: () => restoreRng,
+    rollContractTerms: () => rollContractTerms,
+    rollDailyLandings: () => rollDailyLandings,
+    rollWoOnLanding: () => rollWoOnLanding,
+    serializeGame: () => serializeGame2,
+    setGameSpeed: () => setGameSpeed,
+    setSpeed: () => setSpeed,
+    setStorage: () => setStorage,
+    standsOccupiedNow: () => standsOccupiedNow,
+    teamEffectiveEfficiency: () => teamEffectiveEfficiency,
+    tick: () => tick,
+    tickMechanicTravel: () => tickMechanicTravel,
+    tickWorkOrders: () => tickWorkOrders,
+    unassignWo: () => unassignWo,
+    unassignedWorkOrders: () => unassignedWorkOrders,
+    updateAirplaneStatuses: () => updateAirplaneStatuses
+  });
+
+  // src/lib/sim/rng.ts
+  function createRng(seed) {
+    const rng = {
+      state: seed >>> 0,
+      next() {
+        this.state = this.state + 1831565813 >>> 0;
+        let t = this.state;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      }
+    };
+    return rng;
+  }
+  function restoreRng(state) {
+    return createRng(state >>> 0);
+  }
+  function randInt(rng, min, max) {
+    return Math.floor(rng.next() * (max - min + 1)) + min;
+  }
+  function randFloat(rng, min, max) {
+    return min + rng.next() * (max - min);
+  }
+  function randBool(rng, p) {
+    return rng.next() < p;
+  }
+  function randPick(rng, arr) {
+    return arr[Math.floor(rng.next() * arr.length)];
+  }
+  function randSample(rng, arr, k) {
+    const copy = [...arr];
+    const out = [];
+    for (let i = 0; i < k && copy.length > 0; i++) {
+      const idx = Math.floor(rng.next() * copy.length);
+      out.push(copy[idx]);
+      copy.splice(idx, 1);
+    }
+    return out;
+  }
+
+  // src/lib/sim/time.ts
+  var START_MINUTE = 0;
+  var MINUTES_PER_TICK_AT_1X = 1;
+  var DAY_MINUTES = 24 * 60;
+  var WEEK_MINUTES = 7 * DAY_MINUTES;
+  function createClock(initialMinute = START_MINUTE, initialSpeed = 1) {
+    return { minute: initialMinute, speed: initialSpeed };
+  }
+  function tick(state) {
+    if (state.speed === 0) return state;
+    return { ...state, minute: state.minute + state.speed * MINUTES_PER_TICK_AT_1X };
+  }
+  function setSpeed(state, speed) {
+    return { ...state, speed };
+  }
+  function advance(state, minutes) {
+    return { ...state, minute: state.minute + minutes };
+  }
+  function getDay(minute) {
+    return Math.floor(minute / DAY_MINUTES) + 1;
+  }
+  function getWeek(minute) {
+    return Math.floor(minute / WEEK_MINUTES) + 1;
+  }
+  function getMinuteOfDay(minute) {
+    return minute % DAY_MINUTES;
+  }
+  function getHour(minute) {
+    return Math.floor(getMinuteOfDay(minute) / 60);
+  }
+  function getMinuteOfHour(minute) {
+    return getMinuteOfDay(minute) % 60;
+  }
+  function isWeekStart(prevMinute, newMinute) {
+    return getWeek(prevMinute) !== getWeek(newMinute);
+  }
+  function formatClock(minute) {
+    const day = getDay(minute);
+    const h = getHour(minute);
+    const m = getMinuteOfHour(minute);
+    return `D\xEDa ${day} \xB7 ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  }
+  function formatClockShort(minute) {
+    const day = getDay(minute);
+    const h = getHour(minute);
+    const m = getMinuteOfHour(minute);
+    return `D${day} ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  }
+
+  // src/lib/sim/contracts.ts
+  var OFFER_EXPIRY_MINUTES = 3 * 24 * 60;
+  function rollContractTerms(rng, params) {
+    const repFactor = Math.max(0.6, Math.min(1.4, params.reputation / 50));
+    const baseFeePerWeek = Math.round(randInt(rng, 1e4, 18e3) * repFactor);
+    const paymentPerWOMinute = Math.round(randFloat(rng, 28, 42) * repFactor);
+    const penaltyPerLateMinute = Math.round(randFloat(rng, 80, 140) * repFactor);
+    const minReputation = Math.max(0, Math.min(80, Math.round(randInt(rng, 35, 55) + (repFactor - 1) * 15)));
+    const expectedLandingsPerDay = randInt(rng, 3, 9);
+    return { baseFeePerWeek, paymentPerWOMinute, penaltyPerLateMinute, minReputation, expectedLandingsPerDay };
+  }
+  function generateInitialContracts(rng, airlines) {
+    if (airlines.length < 3) {
+      throw new Error("Need at least 3 airlines for initial contracts");
+    }
+    const out = [];
+    const activeTerms = rollContractTerms(rng, { reputation: 50, nowMinute: 0 });
+    out.push({
+      id: "C-001",
+      airlineId: airlines[0].id,
+      status: "active",
+      offeredAtMinute: 0,
+      ...activeTerms
+    });
+    for (let i = 0; i < 2; i++) {
+      const terms = rollContractTerms(rng, { reputation: 50, nowMinute: 0 });
+      out.push({
+        id: `C-${(i + 2).toString().padStart(3, "0")}`,
+        airlineId: airlines[i + 1].id,
+        status: "offered",
+        offeredAtMinute: 0,
+        expiresAtMinute: OFFER_EXPIRY_MINUTES,
+        ...terms
+      });
+    }
+    return out;
+  }
+  function acceptOffer(contracts, contractId, nowMinute) {
+    return contracts.map((c) => {
+      if (c.id !== contractId) return c;
+      if (c.status !== "offered") return c;
+      return { ...c, status: "active", offeredAtMinute: nowMinute, expiresAtMinute: void 0 };
+    });
+  }
+  function rejectOffer(contracts, contractId) {
+    return contracts.map((c) => {
+      if (c.id !== contractId) return c;
+      if (c.status !== "offered") return c;
+      return { ...c, status: "cancelled" };
+    });
+  }
+  function expireOffers(contracts, nowMinute) {
+    return contracts.map((c) => {
+      if (c.status !== "offered") return c;
+      if (c.expiresAtMinute !== void 0 && nowMinute >= c.expiresAtMinute) {
+        return { ...c, status: "expired" };
+      }
+      return c;
+    });
+  }
+  function activeContracts(contracts) {
+    return contracts.filter((c) => c.status === "active");
+  }
+  function liveOffers(contracts, nowMinute) {
+    return contracts.filter(
+      (c) => c.status === "offered" && (c.expiresAtMinute === void 0 || nowMinute < c.expiresAtMinute)
+    );
+  }
+
+  // src/lib/sim/airplanes.ts
+  var INITIAL_STANDS = ["H1-S1", "H1-S2", "H1-S3"];
+  var TURNAROUND_MIN = 45;
+  var TURNAROUND_MAX = 90;
+  function generateRegistration(rng) {
+    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    let out = "EC-";
+    for (let i = 0; i < 3; i++) out += letters[Math.floor(rng.next() * letters.length)];
+    return out;
+  }
+  function rollDailyLandings(rng, contract, balance) {
+    const expected = contract.expectedLandingsPerDay;
+    const variance = balance.landingsVariance;
+    const min = Math.max(0, Math.floor(expected * (1 - variance)));
+    const max = Math.ceil(expected * (1 + variance));
+    return randInt(rng, min, max);
+  }
+  function pickModel(rng, airline) {
+    return randPick(rng, airline.fleet);
+  }
+  function generateDailyArrivals(rng, contract, airline, balance, dayNumber) {
+    const count = rollDailyLandings(rng, contract, balance);
+    const arrivals = [];
+    const dayStart = (dayNumber - 1) * DAY_MINUTES + 6 * 60;
+    const dayEnd = dayStart + 16 * 60;
+    for (let i = 0; i < count; i++) {
+      const arrivalMinute = Math.floor(randFloat(rng, dayStart, dayEnd));
+      const turnaroundMinutes = randInt(rng, TURNAROUND_MIN, TURNAROUND_MAX);
+      const { model, engineVariant } = pickModel(rng, airline);
+      arrivals.push({
+        registration: generateRegistration(rng),
+        model,
+        engineVariant,
+        contractId: contract.id,
+        standId: "",
+        // se asigna en assignStands
+        arrivalMinute,
+        scheduledDepartureMinute: arrivalMinute + turnaroundMinutes,
+        status: "Idle"
+      });
+    }
+    arrivals.sort((a, b) => a.arrivalMinute - b.arrivalMinute);
+    return arrivals;
+  }
+  function assignStand(newArrival, existing, stands = INITIAL_STANDS) {
+    for (const stand of stands) {
+      const conflicts = existing.some(
+        (p) => p.standId === stand && p.status !== "Departed" && !(p.scheduledDepartureMinute <= newArrival.arrivalMinute || p.arrivalMinute >= newArrival.scheduledDepartureMinute)
+      );
+      if (!conflicts) return stand;
+    }
+    return "";
+  }
+  function updateAirplaneStatuses(airplanes, nowMinute) {
+    return airplanes.map((p) => {
+      if (p.status === "Departed") return p;
+      if (nowMinute >= p.scheduledDepartureMinute) {
+        return { ...p, status: "Departed" };
+      }
+      if (nowMinute >= p.arrivalMinute && p.status === "Idle") {
+        return p;
+      }
+      return p;
+    });
+  }
+  function airplanesOnStand(airplanes, nowMinute) {
+    return airplanes.filter(
+      (p) => p.status !== "Departed" && p.arrivalMinute <= nowMinute && nowMinute < p.scheduledDepartureMinute
+    );
+  }
+  function airplanesPending(airplanes, nowMinute) {
+    return airplanes.filter((p) => p.arrivalMinute > nowMinute);
+  }
+  function standsOccupiedNow(airplanes, nowMinute) {
+    return airplanesOnStand(airplanes, nowMinute).filter((p) => p.standId !== "").length;
+  }
+
+  // src/lib/sim/workorders.ts
+  var _instanceCounter = 0;
+  function _resetInstanceCounter() {
+    _instanceCounter = 0;
+  }
+  function compatibleTemplates(templates, model, engineVariant) {
+    return templates.filter((t) => {
+      const okModel = t.aircraftModelsCompatibles.length === 0 || t.aircraftModelsCompatibles.includes(model);
+      const okEngine = t.engineVariantsCompatibles.length === 0 || t.engineVariantsCompatibles.includes(engineVariant);
+      return okModel && okEngine;
+    });
+  }
+  function pickWeightedTemplate(rng, templates) {
+    return randPick(rng, templates);
+  }
+  function rollWoOnLanding(rng, airplane, templates, balance) {
+    if (!randBool(rng, balance.probabilities.workOrderAtStand)) return null;
+    const compat = compatibleTemplates(templates, airplane.model, airplane.engineVariant);
+    if (compat.length === 0) return null;
+    const template = pickWeightedTemplate(rng, compat);
+    return instantiateWorkOrder(template, airplane, balance);
+  }
+  function instantiateWorkOrder(template, airplane, balance) {
+    _instanceCounter += 1;
+    return {
+      instanceId: `WI-${_instanceCounter.toString().padStart(5, "0")}`,
+      templateId: template.id,
+      airplaneRegistration: airplane.registration,
+      emissionMinute: airplane.arrivalMinute,
+      assignedMechanicIds: [],
+      phase: "ToPlane",
+      // empieza en ToPlane porque aún no hay mecánicos asignados; pasará a Inspection al asignar
+      phaseElapsedMinutes: 0,
+      slaMinute: airplane.arrivalMinute + Math.round(template.durationMinutes * balance.slaMultiplier)
+    };
+  }
+  function activeWorkOrders(wos) {
+    return wos.filter((w) => w.phase !== "Completed" && w.phase !== "Failed");
+  }
+  function unassignedWorkOrders(wos) {
+    return wos.filter((w) => w.assignedMechanicIds.length === 0 && w.phase === "ToPlane");
+  }
+  function countByPhase(wos) {
+    const out = {};
+    for (const w of wos) {
+      out[w.phase] = (out[w.phase] ?? 0) + 1;
+    }
+    return out;
+  }
+
+  // src/lib/sim/mechanics.ts
+  var FIRST_NAMES = [
+    "Pedro",
+    "Luc\xEDa",
+    "Javi",
+    "Miguel",
+    "Carla",
+    "Andr\xE9s",
+    "Mar\xEDa",
+    "Diego",
+    "Sof\xEDa",
+    "Rub\xE9n",
+    "Marta",
+    "Iv\xE1n",
+    "Elena",
+    "Carlos",
+    "Nuria",
+    "David",
+    "Sara",
+    "Adri\xE1n",
+    "Paula",
+    "Sergio"
+  ];
+  var LAST_NAMES = [
+    "Garc\xEDa",
+    "Mart\xEDnez",
+    "L\xF3pez",
+    "S\xE1nchez",
+    "P\xE9rez",
+    "Gonz\xE1lez",
+    "Romero",
+    "Ruiz",
+    "Fern\xE1ndez",
+    "D\xEDaz",
+    "Jim\xE9nez",
+    "Moreno",
+    "Hern\xE1ndez",
+    "Torres",
+    "Vargas",
+    "Castro",
+    "Ortiz",
+    "Reyes"
+  ];
+  function generateName(rng) {
+    return `${randPick(rng, FIRST_NAMES)} ${randPick(rng, LAST_NAMES)}`;
+  }
+  function generateMechanicId(idx) {
+    return `M-${idx.toString().padStart(3, "0")}`;
+  }
+  function generateInitialMechanics(rng, balance) {
+    const mechanics = [];
+    let idx = 1;
+    function addCertifier(base, ratings, isSenior) {
+      const salaryKey = isSenior ? base === "B1" ? "b1Senior" : "b2Senior" : base === "B1" ? "b1Junior" : "b2Junior";
+      mechanics.push({
+        id: generateMechanicId(idx++),
+        name: generateName(rng),
+        base,
+        typeRatings: ratings,
+        efficiency: Number(randFloat(rng, isSenior ? 0.95 : 0.85, isSenior ? 1.15 : 1).toFixed(2)),
+        weeklySalary: balance.salaries[salaryKey],
+        state: "Idle",
+        assignedWoInstanceId: null,
+        stateRemainingMinutes: 0
+      });
+    }
+    function addHelper() {
+      mechanics.push({
+        id: generateMechanicId(idx++),
+        name: generateName(rng),
+        base: null,
+        typeRatings: [],
+        efficiency: Number(randFloat(rng, 0.6, 0.85).toFixed(2)),
+        weeklySalary: balance.salaries.helper,
+        state: "Idle",
+        assignedWoInstanceId: null,
+        stateRemainingMinutes: 0
+      });
+    }
+    addCertifier("B1", [
+      { model: "A320", engineVariant: "CFM56", category: "B1" },
+      { model: "A321", engineVariant: "CFM56", category: "B1" }
+    ], true);
+    addCertifier("B1", [
+      { model: "A320", engineVariant: "V2500", category: "B1" },
+      { model: "A321", engineVariant: "V2500", category: "B1" }
+    ], true);
+    addCertifier("B1", [
+      { model: "A320", engineVariant: "CFM56", category: "B1" }
+    ], false);
+    addCertifier("B2", [
+      { model: "A320", engineVariant: "CFM56", category: "B2" },
+      { model: "A321", engineVariant: "CFM56", category: "B2" }
+    ], true);
+    addCertifier("B2", [
+      { model: "A320", engineVariant: "V2500", category: "B2" },
+      { model: "A321", engineVariant: "V2500", category: "B2" }
+    ], false);
+    addHelper();
+    addHelper();
+    return mechanics;
+  }
+  function availableMechanics(mechanics) {
+    return mechanics.filter((m) => m.state === "Idle");
+  }
+  function eligibleCertifiers(mechanics, template, airplaneModel, airplaneEngine) {
+    return mechanics.filter((m) => {
+      if (m.state !== "Idle") return false;
+      if (m.base !== template.requiredCategory) return false;
+      return m.typeRatings.some(
+        (r) => r.model === airplaneModel && r.engineVariant === airplaneEngine && r.category === template.requiredCategory
+      );
+    });
+  }
+  function eligibleHelpers(mechanics) {
+    return mechanics.filter((m) => m.state === "Idle");
+  }
+  function countByState(mechanics) {
+    const out = {};
+    for (const m of mechanics) {
+      out[m.state] = (out[m.state] ?? 0) + 1;
+    }
+    return out;
+  }
+
+  // src/lib/sim/assignment.ts
+  function assignMechanicsToWo(mechanics, workOrders, woInstanceId, certifierId, helperIds, balance) {
+    const wo = workOrders.find((w) => w.instanceId === woInstanceId);
+    if (!wo) return { mechanics: [...mechanics], workOrders: [...workOrders], error: "WO not found" };
+    if (wo.assignedMechanicIds.length > 0)
+      return { mechanics: [...mechanics], workOrders: [...workOrders], error: "WO already assigned" };
+    const certifier = mechanics.find((m) => m.id === certifierId);
+    if (!certifier) return { mechanics: [...mechanics], workOrders: [...workOrders], error: "Certifier not found" };
+    if (certifier.state !== "Idle")
+      return { mechanics: [...mechanics], workOrders: [...workOrders], error: "Certifier not Idle" };
+    const helpers = [];
+    for (const hid of helperIds) {
+      const h = mechanics.find((m) => m.id === hid);
+      if (!h) return { mechanics: [...mechanics], workOrders: [...workOrders], error: `Helper ${hid} not found` };
+      if (h.state !== "Idle")
+        return { mechanics: [...mechanics], workOrders: [...workOrders], error: `Helper ${hid} not Idle` };
+      helpers.push(h);
+    }
+    if (helpers.length > 2)
+      return { mechanics: [...mechanics], workOrders: [...workOrders], error: "Max 2 helpers" };
+    const allAssignedIds = [certifierId, ...helperIds];
+    const newMechanics = mechanics.map((m) => {
+      if (!allAssignedIds.includes(m.id)) return m;
+      return {
+        ...m,
+        state: "ToPlane",
+        assignedWoInstanceId: woInstanceId,
+        stateRemainingMinutes: balance.officeToStandMinutes
+      };
+    });
+    const newWos = workOrders.map(
+      (w) => w.instanceId === woInstanceId ? { ...w, assignedMechanicIds: [...allAssignedIds] } : w
+    );
+    return { mechanics: newMechanics, workOrders: newWos };
+  }
+  function unassignWo(mechanics, workOrders, woInstanceId) {
+    const wo = workOrders.find((w) => w.instanceId === woInstanceId);
+    if (!wo) return { mechanics: [...mechanics], workOrders: [...workOrders], error: "WO not found" };
+    const ids = new Set(wo.assignedMechanicIds);
+    const newMechanics = mechanics.map(
+      (m) => ids.has(m.id) ? { ...m, state: "Idle", assignedWoInstanceId: null, stateRemainingMinutes: 0 } : m
+    );
+    const newWos = workOrders.map(
+      (w) => w.instanceId === woInstanceId ? { ...w, assignedMechanicIds: [], phase: "ToPlane", phaseElapsedMinutes: 0 } : w
+    );
+    return { mechanics: newMechanics, workOrders: newWos };
+  }
+  function tickMechanicTravel(mechanics, workOrders, minutesElapsed) {
+    const newMechanics = mechanics.map((m) => {
+      if (m.state !== "ToPlane" && m.state !== "Returning") return m;
+      const remaining = Math.max(0, m.stateRemainingMinutes - minutesElapsed);
+      if (remaining > 0) return { ...m, stateRemainingMinutes: remaining };
+      if (m.state === "ToPlane") {
+        return { ...m, state: "Working", stateRemainingMinutes: 0 };
+      }
+      return { ...m, state: "Idle", assignedWoInstanceId: null, stateRemainingMinutes: 0 };
+    });
+    const newWos = workOrders.map((w) => {
+      if (w.phase !== "ToPlane") return w;
+      if (w.assignedMechanicIds.length === 0) return w;
+      const allArrived = w.assignedMechanicIds.every((id) => {
+        const m = newMechanics.find((mm) => mm.id === id);
+        return m?.state === "Working";
+      });
+      if (allArrived) {
+        return { ...w, phase: "Inspection", phaseElapsedMinutes: 0 };
+      }
+      return w;
+    });
+    return { mechanics: newMechanics, workOrders: newWos };
+  }
+  function teamEffectiveEfficiency(workOrder, mechanics) {
+    if (workOrder.assignedMechanicIds.length === 0) return 0;
+    const team = workOrder.assignedMechanicIds.map((id) => mechanics.find((m) => m.id === id)).filter((m) => m !== void 0);
+    const certifier = team[0];
+    if (!certifier) return 0;
+    const helpers = team.slice(1);
+    const helperCap = certifier.efficiency * 0.5;
+    let total = certifier.efficiency;
+    for (const h of helpers) {
+      total += Math.min(h.efficiency * 0.5, helperCap);
+    }
+    return total;
+  }
+
+  // src/lib/sim/wo_state_machine.ts
+  function phaseDuration(template, phase, balance) {
+    switch (phase) {
+      case "Inspection":
+        return Math.round(template.durationMinutes * balance.phaseDurationRatios.inspection);
+      case "MainTask":
+        return Math.round(template.durationMinutes * balance.phaseDurationRatios.mainTask);
+      case "Test":
+        return Math.round(template.durationMinutes * balance.phaseDurationRatios.test);
+      case "Rework":
+        return Math.round(template.durationMinutes * balance.phaseDurationRatios.rework);
+      default:
+        return 0;
+    }
+  }
+  function getTemplate(templates, id) {
+    return templates.find((t) => t.id === id);
+  }
+  function tickWorkOrders(workOrders, mechanics, templates, balance, minutesElapsed, rng, nowMinute = -1) {
+    const events = [];
+    let newMechanics = [...mechanics];
+    const newWos = [];
+    for (const wo of workOrders) {
+      if (wo.phase === "Completed" || wo.phase === "Failed" || wo.phase === "ToPlane") {
+        newWos.push(wo);
+        continue;
+      }
+      const template = getTemplate(templates, wo.templateId);
+      if (!template) {
+        newWos.push(wo);
+        continue;
+      }
+      const teamEff = teamEffectiveEfficiency(wo, newMechanics);
+      if (teamEff === 0) {
+        newWos.push(wo);
+        continue;
+      }
+      const progress = minutesElapsed * teamEff;
+      let elapsed = wo.phaseElapsedMinutes + progress;
+      let phase = wo.phase;
+      let phaseChanged = false;
+      let safety = 0;
+      while (phase !== "Completed" && phase !== "Failed" && elapsed >= phaseDuration(template, phase, balance)) {
+        const dur = phaseDuration(template, phase, balance);
+        const carryover = elapsed - dur;
+        const nextPhase = transitionPhase(phase, rng, balance);
+        events.push({ type: "phase_change", woInstanceId: wo.instanceId, from: phase, to: nextPhase });
+        phase = nextPhase;
+        elapsed = carryover;
+        phaseChanged = true;
+        if (++safety > 6) break;
+      }
+      if (phase === "Completed") {
+        const wasOnTime = nowMinute >= 0 ? nowMinute <= wo.slaMinute : wo.emissionMinute + accumulatedPhasesDuration(template, balance) <= wo.slaMinute;
+        events.push({
+          type: "wo_completed",
+          woInstanceId: wo.instanceId,
+          templateId: wo.templateId,
+          onTime: wasOnTime,
+          isAOG: template.isAOG
+        });
+        newMechanics = newMechanics.map((m) => {
+          if (m.assignedWoInstanceId === wo.instanceId) {
+            return { ...m, state: "Returning", stateRemainingMinutes: balance.officeToStandMinutes };
+          }
+          return m;
+        });
+      }
+      newWos.push({ ...wo, phase, phaseElapsedMinutes: elapsed });
+      if (phaseChanged && phase === "Inspection") {
+      }
+    }
+    return { workOrders: newWos, mechanics: newMechanics, events };
+  }
+  function transitionPhase(current, rng, balance) {
+    switch (current) {
+      case "Inspection":
+        return randBool(rng, balance.probabilities.directDispatch) ? "Test" : "MainTask";
+      case "MainTask":
+        return "Test";
+      case "Test":
+        return randBool(rng, balance.probabilities.reworkAfterTest) ? "Rework" : "Completed";
+      case "Rework":
+        return "Completed";
+      default:
+        return current;
+    }
+  }
+  function accumulatedPhasesDuration(template, balance) {
+    return Math.round(
+      template.durationMinutes * (balance.phaseDurationRatios.inspection + balance.phaseDurationRatios.mainTask + balance.phaseDurationRatios.test)
+    );
+  }
+  function checkSlaExpired(workOrders, nowMinute, marginMinutes = 0) {
+    return workOrders.filter(
+      (w) => w.phase !== "Completed" && w.phase !== "Failed" && nowMinute > w.slaMinute + marginMinutes
+    );
+  }
+
+  // src/lib/sim/economy.ts
+  var _txCounter = 0;
+  function _resetTxCounter() {
+    _txCounter = 0;
+  }
+  function nextTxId() {
+    _txCounter += 1;
+    return `T-${_txCounter.toString().padStart(6, "0")}`;
+  }
+  function createTransaction(type, amount, minute, description) {
+    return { id: nextTxId(), type, amount, minute, description };
+  }
+  function createEconomy(startingBalance) {
+    return { balance: startingBalance, ledger: [], negativeStreakWeeks: 0 };
+  }
+  function addTransaction(eco, tx) {
+    return {
+      ...eco,
+      balance: eco.balance + tx.amount,
+      ledger: [...eco.ledger, tx]
+    };
+  }
+  function payForCompletedWo(template, wo, contract, balance, onTime, completionMinute) {
+    const txs = [];
+    const payment = Math.round(template.durationMinutes * contract.paymentPerWOMinute);
+    txs.push(createTransaction(
+      "workOrderPayment",
+      payment,
+      completionMinute,
+      `WO ${wo.instanceId} (${template.id})`
+    ));
+    if (!onTime) {
+      const lateMinutes = Math.max(0, completionMinute - wo.slaMinute);
+      const baseMult = template.isAOG ? balance.aogPenaltyMultiplier : 1;
+      const penalty = -Math.round(lateMinutes * contract.penaltyPerLateMinute * baseMult);
+      if (penalty !== 0) {
+        txs.push(createTransaction(
+          "penalty",
+          penalty,
+          completionMinute,
+          `Penalty SLA ${wo.instanceId} (${lateMinutes}min late${template.isAOG ? ", AOG \xD75" : ""})`
+        ));
+      }
+    }
+    return txs;
+  }
+  function applyWeeklyClose(eco, contracts, mechanics, balance, nowMinute) {
+    const txs = [];
+    for (const c of contracts) {
+      if (c.status !== "active") continue;
+      txs.push(createTransaction(
+        "contractBaseFee",
+        c.baseFeePerWeek,
+        nowMinute,
+        `Base fee ${c.id}`
+      ));
+    }
+    for (const m of mechanics) {
+      txs.push(createTransaction(
+        "salary",
+        -m.weeklySalary,
+        nowMinute,
+        `Salario ${m.id} ${m.name}`
+      ));
+    }
+    txs.push(createTransaction(
+      "weeklyFixedCost",
+      -balance.weeklyFixedCost,
+      nowMinute,
+      "Coste fijo semanal"
+    ));
+    let newEco = eco;
+    for (const tx of txs) newEco = addTransaction(newEco, tx);
+    if (newEco.balance < 0) {
+      newEco = { ...newEco, negativeStreakWeeks: eco.negativeStreakWeeks + 1 };
+    } else {
+      newEco = { ...newEco, negativeStreakWeeks: 0 };
+    }
+    return { eco: newEco, transactions: txs };
+  }
+  function recentIncome(eco, sinceMinute) {
+    return eco.ledger.filter((t) => t.minute >= sinceMinute && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+  }
+  function recentExpenses(eco, sinceMinute) {
+    return eco.ledger.filter((t) => t.minute >= sinceMinute && t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+  }
+  function isBankrupt(eco) {
+    return eco.negativeStreakWeeks >= 2;
+  }
+
+  // src/lib/sim/reputation.ts
+  function createReputation(initial) {
+    return { value: Math.max(0, Math.min(100, initial)) };
+  }
+  function applyDelta(state, delta) {
+    return { value: Math.max(0, Math.min(100, state.value + delta)) };
+  }
+  function reputationDeltaForWo(balance, outcome) {
+    switch (outcome) {
+      case "completedOnTime":
+        return balance.reputation.woCompletedOnTime;
+      case "completedLate":
+        return balance.reputation.woCompletedLate;
+      case "failed":
+        return balance.reputation.woFailed;
+      case "aogFailed":
+        return balance.reputation.aogFailed;
+    }
+  }
+  function reputationIsZero(state) {
+    return state.value <= 0;
+  }
+
+  // src/lib/sim/save.ts
+  var SAVE_VERSION = 1;
+  function serializeGame2(g) {
+    return {
+      version: SAVE_VERSION,
+      savedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      clock: g.clock,
+      contracts: g.contracts,
+      mechanics: g.mechanics,
+      airplanes: g.airplanes,
+      workOrders: g.workOrders,
+      economy: g.economy,
+      reputation: g.reputation,
+      notifications: g.notifications,
+      rngStates: { rng: g.rng.state, woRng: g.woRng.state, machineRng: g.machineRng.state },
+      arrivalsGeneratedUpToDay: g.arrivalsGeneratedUpToDay,
+      gameOver: g.gameOver,
+      notifCounter: g.notifCounter
+    };
+  }
+  function deserializeGame(payload, balance, airlines, templates) {
+    if (payload.version !== SAVE_VERSION) {
+      throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION})`);
+    }
+    return {
+      clock: payload.clock,
+      contracts: payload.contracts,
+      mechanics: payload.mechanics,
+      airplanes: payload.airplanes,
+      workOrders: payload.workOrders,
+      economy: payload.economy,
+      reputation: payload.reputation,
+      notifications: payload.notifications,
+      rng: restoreRng(payload.rngStates.rng),
+      woRng: restoreRng(payload.rngStates.woRng),
+      machineRng: restoreRng(payload.rngStates.machineRng),
+      airlines,
+      templates,
+      balance,
+      arrivalsGeneratedUpToDay: payload.arrivalsGeneratedUpToDay,
+      gameOver: payload.gameOver,
+      notifCounter: payload.notifCounter
+    };
+  }
+
+  // src/lib/sim/storage.ts
+  var SLOT_KEY = "mro-tycoon-save-v1";
+  var LocalStorageBackend = class {
+    async save(payload) {
+      try {
+        localStorage.setItem(SLOT_KEY, JSON.stringify(payload));
+      } catch (e) {
+        throw new Error(`No se pudo guardar (localStorage): ${e.message}`);
+      }
+    }
+    async load() {
+      try {
+        const raw = localStorage.getItem(SLOT_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (e) {
+        throw new Error(`No se pudo cargar (localStorage corrupto): ${e.message}`);
+      }
+    }
+    async hasSave() {
+      try {
+        return localStorage.getItem(SLOT_KEY) !== null;
+      } catch {
+        return false;
+      }
+    }
+    async clear() {
+      try {
+        localStorage.removeItem(SLOT_KEY);
+      } catch {
+      }
+    }
+  };
+  var InMemoryBackend = class {
+    constructor() {
+      __publicField(this, "slot", null);
+    }
+    async save(p) {
+      this.slot = JSON.parse(JSON.stringify(p));
+    }
+    async load() {
+      return this.slot ? JSON.parse(JSON.stringify(this.slot)) : null;
+    }
+    async hasSave() {
+      return this.slot !== null;
+    }
+    async clear() {
+      this.slot = null;
+    }
+  };
+  var _backend;
+  if (typeof localStorage !== "undefined") {
+    _backend = new LocalStorageBackend();
+  } else {
+    _backend = new InMemoryBackend();
+  }
+  function getStorage2() {
+    return _backend;
+  }
+  function setStorage(b) {
+    _backend = b;
+  }
+
+  // src/lib/game.ts
+  function createGame(balance, airlines, templates, seed = 42) {
+    const rng = createRng(seed);
+    return {
+      clock: createClock(0, 0),
+      // arranca pausado
+      airlines,
+      templates,
+      balance,
+      contracts: generateInitialContracts(rng, airlines),
+      mechanics: generateInitialMechanics(rng, balance),
+      airplanes: [],
+      workOrders: [],
+      economy: createEconomy(balance.startingBalance),
+      reputation: createReputation(balance.startingReputation),
+      notifications: [],
+      rng,
+      woRng: createRng(seed + 1),
+      machineRng: createRng(seed + 2),
+      arrivalsGeneratedUpToDay: 0,
+      gameOver: { isOver: false },
+      notifCounter: 0
+    };
+  }
+  function ensureArrivals(g, daysAhead = 3) {
+    const today = Math.floor(g.clock.minute / DAY_MINUTES) + 1;
+    const targetDay = today + daysAhead;
+    for (let d = g.arrivalsGeneratedUpToDay + 1; d <= targetDay; d++) {
+      for (const c of activeContracts(g.contracts)) {
+        const al = g.airlines.find((a) => a.id === c.airlineId);
+        if (!al) continue;
+        const arrivals = generateDailyArrivals(g.rng, c, al, g.balance, d);
+        for (const arr of arrivals) {
+          const stand = assignStand(arr, g.airplanes);
+          g.airplanes.push({ ...arr, standId: stand });
+        }
+      }
+      g.arrivalsGeneratedUpToDay = d;
+    }
+  }
+  function pushNotification(g, text, type = "info") {
+    g.notifCounter += 1;
+    g.notifications.push({ id: g.notifCounter, minute: g.clock.minute, text, type });
+    if (g.notifications.length > 12) g.notifications = g.notifications.slice(-12);
+  }
+  function advanceGame(g, stepMinutes) {
+    if (g.gameOver.isOver) return g;
+    if (g.clock.speed === 0) return g;
+    ensureArrivals(g, 3);
+    const now = g.clock.minute;
+    const next = now + stepMinutes;
+    for (const p of g.airplanes) {
+      if (p.arrivalMinute > now && p.arrivalMinute <= next) {
+        const wo = rollWoOnLanding(g.woRng, p, g.templates, g.balance);
+        if (wo) {
+          g.workOrders.push(wo);
+          const tpl = g.templates.find((t) => t.id === wo.templateId);
+          pushNotification(
+            g,
+            `${p.registration}: ${tpl?.description.slice(0, 60) ?? "WO"}${tpl?.isAOG ? " (AOG)" : ""}`,
+            tpl?.isAOG ? "danger" : "info"
+          );
+        }
+      }
+    }
+    for (const wo of g.workOrders) {
+      if (wo.assignedMechanicIds.length > 0 || wo.phase !== "ToPlane") continue;
+      const tpl = g.templates.find((t) => t.id === wo.templateId);
+      const ap = g.airplanes.find((a) => a.registration === wo.airplaneRegistration);
+      if (!tpl || !ap) continue;
+      const certs = eligibleCertifiers(g.mechanics, tpl, ap.model, ap.engineVariant);
+      if (certs.length === 0) continue;
+      const res = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, certs[0].id, [], g.balance);
+      if (!res.error) {
+        g.mechanics = res.mechanics;
+        g.workOrders = res.workOrders;
+      }
+    }
+    const travelRes = tickMechanicTravel(g.mechanics, g.workOrders, stepMinutes);
+    g.mechanics = travelRes.mechanics;
+    g.workOrders = travelRes.workOrders;
+    const machineRes = tickWorkOrders(g.workOrders, g.mechanics, g.templates, g.balance, stepMinutes, g.machineRng, next);
+    g.mechanics = machineRes.mechanics;
+    g.workOrders = machineRes.workOrders;
+    for (const ev of machineRes.events) {
+      if (ev.type === "wo_completed") {
+        const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
+        const tpl = g.templates.find((t) => t.id === ev.templateId);
+        const ap = wo ? g.airplanes.find((a) => a.registration === wo.airplaneRegistration) : void 0;
+        const c = ap ? g.contracts.find((cc) => cc.id === ap.contractId) : void 0;
+        if (wo && tpl && c) {
+          const txs = payForCompletedWo(tpl, wo, c, g.balance, ev.onTime, next);
+          for (const tx of txs) g.economy = addTransaction(g.economy, tx);
+        }
+        const repDelta = reputationDeltaForWo(g.balance, ev.onTime ? "completedOnTime" : "completedLate");
+        g.reputation = applyDelta(g.reputation, repDelta);
+        pushNotification(
+          g,
+          `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " \xB7 AOG" : ""}`,
+          ev.onTime ? "success" : "warning"
+        );
+      }
+    }
+    g.clock = advance(g.clock, stepMinutes);
+    if (Math.floor(next / WEEK_MINUTES) > Math.floor(now / WEEK_MINUTES)) {
+      const closeRes = applyWeeklyClose(g.economy, g.contracts, g.mechanics, g.balance, next);
+      g.economy = closeRes.eco;
+      pushNotification(g, `\u{1F4CA} Cierre semanal. Balance: ${g.economy.balance.toLocaleString()} \u20AC`, "info");
+      getStorage().save(serializeGame(g)).then(() => pushNotification(g, "\u{1F4BE} Guardado autom\xE1tico", "success")).catch((e) => pushNotification(g, `\u26A0\uFE0F Autosave fall\xF3: ${e.message}`, "warning"));
+    }
+    g.contracts = expireOffers(g.contracts, g.clock.minute);
+    if (g.economy.negativeStreakWeeks >= 2) {
+      g.gameOver = { isOver: true, reason: "bankruptcy" };
+      pushNotification(g, "\u{1F6D1} BANCARROTA. Balance bajo cero dos semanas consecutivas.", "danger");
+    }
+    if (g.reputation.value <= 0 && activeContracts(g.contracts).length === 0) {
+      g.gameOver = { isOver: true, reason: "reputation" };
+      pushNotification(g, "\u{1F6D1} REPUTACI\xD3N CERO sin contratos activos. Fin de partida.", "danger");
+    }
+    return g;
+  }
+  function acceptContractOffer(g, contractId) {
+    g.contracts = acceptOffer(g.contracts, contractId, g.clock.minute);
+    const c = g.contracts.find((cc) => cc.id === contractId);
+    const al = c ? g.airlines.find((a) => a.id === c.airlineId) : void 0;
+    if (al) pushNotification(g, `Contrato aceptado: ${al.name}`, "success");
+  }
+  function rejectContractOffer(g, contractId) {
+    g.contracts = rejectOffer(g.contracts, contractId);
+  }
+  function setGameSpeed(g, speed) {
+    g.clock = { ...g.clock, speed };
+  }
+  function assignMechanicsManually(g, woInstanceId, certifierId, helperIds) {
+    const res = assignMechanicsToWo(g.mechanics, g.workOrders, woInstanceId, certifierId, helperIds, g.balance);
+    if (res.error) return { ok: false, error: res.error };
+    g.mechanics = res.mechanics;
+    g.workOrders = res.workOrders;
+    return { ok: true };
+  }
+
+  // src/lib/data/workorders.json
+  var workorders_default = [
+    {
+      id: "WO-001",
+      description: "Top up engine oil reservoir #1 (CFM56)",
+      ata: 12,
+      requiredCategory: "B1",
+      durationMinutes: 20,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Engine oil 5L NATO O-156"
+      ],
+      toolsRequired: [
+        "Oil servicing trolley"
+      ]
+    },
+    {
+      id: "WO-002",
+      description: "Top up engine oil reservoir #2 (V2500)",
+      ata: 12,
+      requiredCategory: "B1",
+      durationMinutes: 23,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Engine oil 5L NATO O-156"
+      ],
+      toolsRequired: [
+        "Oil servicing trolley"
+      ]
+    },
+    {
+      id: "WO-003",
+      description: "Replenish hydraulic system Green reservoir",
+      ata: 12,
+      requiredCategory: "B1",
+      durationMinutes: 26,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Skydrol LD-4 fluid 10L"
+      ],
+      toolsRequired: [
+        "Hyd servicing rig"
+      ]
+    },
+    {
+      id: "WO-004",
+      description: "Replenish hydraulic system Yellow reservoir",
+      ata: 12,
+      requiredCategory: "B1",
+      durationMinutes: 33,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Skydrol LD-4 fluid 10L"
+      ],
+      toolsRequired: [
+        "Hyd servicing rig"
+      ]
+    },
+    {
+      id: "WO-005",
+      description: "Daily check \u2014 visual MLI walkaround",
+      ata: 12,
+      requiredCategory: "B1",
+      durationMinutes: 28,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: false,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Inspection mirror"
+      ]
+    },
+    {
+      id: "WO-006",
+      description: "Replace cabin temperature sensor \u2014 Zone 1",
+      ata: 21,
+      requiredCategory: "B2",
+      durationMinutes: 36,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Temp sensor LRU 12-345"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-007",
+      description: "Check pack 1 outlet temperature",
+      ata: 21,
+      requiredCategory: "B2",
+      durationMinutes: 33,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Multimeter",
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-008",
+      description: "Replace cabin recirculation fan",
+      ata: 21,
+      requiredCategory: "B1",
+      durationMinutes: 58,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Recirc fan P/N 7384-100"
+      ],
+      toolsRequired: [
+        "Standard toolkit",
+        "Lifting strap"
+      ]
+    },
+    {
+      id: "WO-009",
+      description: "Replace flow control valve pack 2",
+      ata: 21,
+      requiredCategory: "B1",
+      durationMinutes: 55,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "FCV P/N 89241-1"
+      ],
+      toolsRequired: [
+        "Standard toolkit",
+        "Torque wrench"
+      ]
+    },
+    {
+      id: "WO-010",
+      description: "Inspect ram air inlet for FOD",
+      ata: 21,
+      requiredCategory: "B1",
+      durationMinutes: 26,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Inspection light",
+        "Borescope"
+      ]
+    },
+    {
+      id: "WO-011",
+      description: "Replace forward avionics ventilation fan",
+      ata: 21,
+      requiredCategory: "B2",
+      durationMinutes: 49,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Avionics fan P/N AV-3024"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-012",
+      description: "Test cabin pressurization controller",
+      ata: 21,
+      requiredCategory: "B2",
+      durationMinutes: 35,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "CPC test set"
+      ]
+    },
+    {
+      id: "WO-013",
+      description: "Replace cargo heating element",
+      ata: 21,
+      requiredCategory: "B1",
+      durationMinutes: 42,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Heater element P/N 5512-A"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-014",
+      description: "Replace FMGC #1 hard drive",
+      ata: 22,
+      requiredCategory: "B2",
+      durationMinutes: 55,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "FMGC HDD P/N 2200-7"
+      ],
+      toolsRequired: [
+        "Avionics toolkit",
+        "ESD wristband"
+      ]
+    },
+    {
+      id: "WO-015",
+      description: "FMGC database update \u2014 AIRAC cycle",
+      ata: 22,
+      requiredCategory: "B2",
+      durationMinutes: 38,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: false,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "AIRAC cycle disk"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-016",
+      description: "Test autopilot disengage warning",
+      ata: 22,
+      requiredCategory: "B2",
+      durationMinutes: 30,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Multimeter"
+      ]
+    },
+    {
+      id: "WO-017",
+      description: "Replace MCDU #1 display screen",
+      ata: 22,
+      requiredCategory: "B2",
+      durationMinutes: 51,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "MCDU display LRU"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-018",
+      description: "Calibrate autothrust gain",
+      ata: 22,
+      requiredCategory: "B2",
+      durationMinutes: 45,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "ATS test rig"
+      ]
+    },
+    {
+      id: "WO-019",
+      description: "Replace VHF1 transceiver",
+      ata: 23,
+      requiredCategory: "B2",
+      durationMinutes: 35,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "VHF transceiver LRU"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-020",
+      description: "Replace HF antenna coupler",
+      ata: 23,
+      requiredCategory: "B2",
+      durationMinutes: 58,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "HF coupler P/N 877-12"
+      ],
+      toolsRequired: [
+        "Avionics toolkit",
+        "Ladder"
+      ]
+    },
+    {
+      id: "WO-021",
+      description: "Replace CVR control panel",
+      ata: 23,
+      requiredCategory: "B2",
+      durationMinutes: 46,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "CVR panel LRU"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-022",
+      description: "Test PA system \u2014 boarding announcement",
+      ata: 23,
+      requiredCategory: "B2",
+      durationMinutes: 24,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-023",
+      description: "Replace SATCOM data unit",
+      ata: 23,
+      requiredCategory: "B2",
+      durationMinutes: 54,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "SATCOM SDU LRU"
+      ],
+      toolsRequired: [
+        "Avionics toolkit",
+        "ESD wristband"
+      ]
+    },
+    {
+      id: "WO-024",
+      description: "Replace battery #1 (Ni-Cd)",
+      ata: 24,
+      requiredCategory: "B1",
+      durationMinutes: 45,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "NiCd battery 24V P/N BAT-A320"
+      ],
+      toolsRequired: [
+        "Standard toolkit",
+        "Battery lift"
+      ]
+    },
+    {
+      id: "WO-025",
+      description: "Test main TR1 output",
+      ata: 24,
+      requiredCategory: "B1",
+      durationMinutes: 31,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Multimeter"
+      ]
+    },
+    {
+      id: "WO-026",
+      description: "Replace IDG #2 (Integrated Drive Generator)",
+      ata: 24,
+      requiredCategory: "B1",
+      durationMinutes: 56,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "IDG P/N IDG-V2500"
+      ],
+      toolsRequired: [
+        "Heavy lift",
+        "Torque wrench"
+      ]
+    },
+    {
+      id: "WO-027",
+      description: "Replace 28V DC bus contactor",
+      ata: 24,
+      requiredCategory: "B1",
+      durationMinutes: 36,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Contactor P/N CTR-28V"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-028",
+      description: "Inspect ground service network",
+      ata: 24,
+      requiredCategory: "B1",
+      durationMinutes: 26,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Multimeter"
+      ]
+    },
+    {
+      id: "WO-029",
+      description: "Replace static inverter",
+      ata: 24,
+      requiredCategory: "B1",
+      durationMinutes: 52,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Static inverter LRU"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-030",
+      description: "Replace cabin sunvisor RH row 12",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 22,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Sunvisor assy P/N D5247-25"
+      ],
+      toolsRequired: [
+        "Phillips screwdriver"
+      ]
+    },
+    {
+      id: "WO-031",
+      description: "Replace passenger seat 18C cushion",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 30,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Seat cushion P/N 4-18C"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-032",
+      description: "Repair tray table \u2014 seat 7A",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 27,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Tray hinge P/N TH-21"
+      ],
+      toolsRequired: [
+        "Phillips screwdriver"
+      ]
+    },
+    {
+      id: "WO-033",
+      description: "Replace galley G1 coffee maker",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 40,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Coffee maker P/N GAL-CM-2"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-034",
+      description: "Replace lavatory door latch \u2014 LAV-A",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 29,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Door latch P/N LV-LCH-3"
+      ],
+      toolsRequired: [
+        "Phillips screwdriver"
+      ]
+    },
+    {
+      id: "WO-035",
+      description: "Replace overhead bin handle (4 units)",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 38,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Bin handle P/N OVH-HND-A x4"
+      ],
+      toolsRequired: [
+        "Phillips screwdriver"
+      ]
+    },
+    {
+      id: "WO-036",
+      description: "Replace reading light bulb \u2014 row 22",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 21,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "LED reading light P/N LED-RL-1 x4"
+      ],
+      toolsRequired: [
+        "Step ladder"
+      ]
+    },
+    {
+      id: "WO-037",
+      description: "Replace cabin attendant seat belt",
+      ata: 25,
+      requiredCategory: "B1",
+      durationMinutes: 29,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "FA seat belt assy"
+      ],
+      toolsRequired: [
+        "Phillips screwdriver"
+      ]
+    },
+    {
+      id: "WO-038",
+      description: "Repair PSU (Passenger Service Unit) row 14",
+      ata: 25,
+      requiredCategory: "B2",
+      durationMinutes: 40,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "PSU panel P/N PSU-14"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-039",
+      description: "Test smoke detector in lavatory LAV-C",
+      ata: 25,
+      requiredCategory: "B2",
+      durationMinutes: 28,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Smoke detector tester"
+      ]
+    },
+    {
+      id: "WO-040",
+      description: "Test cargo fire detection loop",
+      ata: 26,
+      requiredCategory: "B2",
+      durationMinutes: 30,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-041",
+      description: "Replace engine fire extinguisher squib #1",
+      ata: 26,
+      requiredCategory: "B2",
+      durationMinutes: 40,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: false,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Fire ext squib P/N FE-SQB"
+      ],
+      toolsRequired: [
+        "Special toolkit",
+        "Safety harness"
+      ]
+    },
+    {
+      id: "WO-042",
+      description: "Inspect APU fire detector loops",
+      ata: 26,
+      requiredCategory: "B2",
+      durationMinutes: 36,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-043",
+      description: "Replace slat 1 actuator motor",
+      ata: 27,
+      requiredCategory: "B1",
+      durationMinutes: 53,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Slat actuator P/N SL-ACT-V"
+      ],
+      toolsRequired: [
+        "Heavy toolkit",
+        "Torque wrench"
+      ]
+    },
+    {
+      id: "WO-044",
+      description: "Test rudder travel limit unit",
+      ata: 27,
+      requiredCategory: "B1",
+      durationMinutes: 44,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "RTLU test rig"
+      ]
+    },
+    {
+      id: "WO-045",
+      description: "Lubricate flap track carriage",
+      ata: 27,
+      requiredCategory: "B1",
+      durationMinutes: 35,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Aeroshell 22 grease"
+      ],
+      toolsRequired: [
+        "Grease gun"
+      ]
+    },
+    {
+      id: "WO-046",
+      description: "Replace spoiler 4 servo control",
+      ata: 27,
+      requiredCategory: "B1",
+      durationMinutes: 52,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Spoiler servo P/N SP4-SRV"
+      ],
+      toolsRequired: [
+        "Hydraulic toolkit"
+      ]
+    },
+    {
+      id: "WO-047",
+      description: "Inspect elevator hinge bearings",
+      ata: 27,
+      requiredCategory: "B1",
+      durationMinutes: 40,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Inspection light",
+        "Borescope"
+      ]
+    },
+    {
+      id: "WO-048",
+      description: "Replace aileron position transmitter",
+      ata: 27,
+      requiredCategory: "B1",
+      durationMinutes: 44,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Position xmtr P/N AIL-PX"
+      ],
+      toolsRequired: [
+        "Standard toolkit",
+        "Multimeter"
+      ]
+    },
+    {
+      id: "WO-049",
+      description: "Replace fuel transfer pump \u2014 wing tank",
+      ata: 28,
+      requiredCategory: "B1",
+      durationMinutes: 58,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Fuel xfer pump P/N FXP-1"
+      ],
+      toolsRequired: [
+        "Heavy toolkit",
+        "Fuel safety kit"
+      ]
+    },
+    {
+      id: "WO-050",
+      description: "Test fuel quantity indication system",
+      ata: 28,
+      requiredCategory: "B1",
+      durationMinutes: 39,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "FQIS test rig"
+      ]
+    },
+    {
+      id: "WO-051",
+      description: "Replace center tank scavenge pump",
+      ata: 28,
+      requiredCategory: "B1",
+      durationMinutes: 54,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Scavenge pump P/N SCV-2"
+      ],
+      toolsRequired: [
+        "Heavy toolkit"
+      ]
+    },
+    {
+      id: "WO-052",
+      description: "Service fuel jettison valve",
+      ata: 28,
+      requiredCategory: "B1",
+      durationMinutes: 38,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Hydraulic toolkit"
+      ]
+    },
+    {
+      id: "WO-053",
+      description: "Replace Green system pressure transducer",
+      ata: 29,
+      requiredCategory: "B1",
+      durationMinutes: 42,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Pressure xducer P/N PT-GRN"
+      ],
+      toolsRequired: [
+        "Hydraulic toolkit"
+      ]
+    },
+    {
+      id: "WO-054",
+      description: "Inspect RAT (Ram Air Turbine) deployment",
+      ata: 29,
+      requiredCategory: "B1",
+      durationMinutes: 36,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: false,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "RAT inspection rig"
+      ]
+    },
+    {
+      id: "WO-055",
+      description: "Replace yellow accumulator nitrogen charge",
+      ata: 29,
+      requiredCategory: "B1",
+      durationMinutes: 41,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Nitrogen N2 cylinder"
+      ],
+      toolsRequired: [
+        "Nitrogen charging rig"
+      ]
+    },
+    {
+      id: "WO-056",
+      description: "Replace hydraulic reservoir level sensor",
+      ata: 29,
+      requiredCategory: "B1",
+      durationMinutes: 37,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Level sensor P/N HLV-S"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-057",
+      description: "Service PTU (Power Transfer Unit)",
+      ata: 29,
+      requiredCategory: "B1",
+      durationMinutes: 56,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Critical",
+      isAOG: true,
+      probability: 1,
+      partsRequired: [
+        "PTU service kit"
+      ],
+      toolsRequired: [
+        "Heavy toolkit"
+      ]
+    },
+    {
+      id: "WO-058",
+      description: "Replace pitot heat element \u2014 captain side",
+      ata: 30,
+      requiredCategory: "B1",
+      durationMinutes: 41,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Pitot heater P/N PHT-1"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-059",
+      description: "Test wing anti-ice valve operation",
+      ata: 30,
+      requiredCategory: "B1",
+      durationMinutes: 37,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Pneumatic test set"
+      ]
+    },
+    {
+      id: "WO-060",
+      description: "Replace engine inlet TAI valve",
+      ata: 30,
+      requiredCategory: "B1",
+      durationMinutes: 58,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "TAI valve P/N TAI-V"
+      ],
+      toolsRequired: [
+        "Engine toolkit"
+      ]
+    },
+    {
+      id: "WO-061",
+      description: "Replace MLG #1 wheel + tire assembly",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 50,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "MLG wheel+tire P/N MLG-W1"
+      ],
+      toolsRequired: [
+        "Wheel jack",
+        "Torque wrench"
+      ]
+    },
+    {
+      id: "WO-062",
+      description: "Replace MLG #2 brake unit",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 55,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Critical",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "MLG brake unit P/N MLG-BRK"
+      ],
+      toolsRequired: [
+        "Heavy lift",
+        "Hydraulic toolkit"
+      ]
+    },
+    {
+      id: "WO-063",
+      description: "Service NLG steering actuator",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 48,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Steering actr seals"
+      ],
+      toolsRequired: [
+        "Hydraulic toolkit"
+      ]
+    },
+    {
+      id: "WO-064",
+      description: "Inspect MLG shock strut servicing",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 40,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "LG inspection kit"
+      ]
+    },
+    {
+      id: "WO-065",
+      description: "Replace gear position proximity sensor",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 44,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Prox sensor P/N LG-PRX"
+      ],
+      toolsRequired: [
+        "Standard toolkit",
+        "Multimeter"
+      ]
+    },
+    {
+      id: "WO-066",
+      description: "Service brake fans (cooling)",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 37,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-067",
+      description: "Replace tire pressure indicator (4 units)",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 39,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "TPI assy x4"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-068",
+      description: "Inspect NLG torque link bushings",
+      ata: 32,
+      requiredCategory: "B1",
+      durationMinutes: 27,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Inspection mirror"
+      ]
+    },
+    {
+      id: "WO-069",
+      description: "Replace landing light bulb \u2014 LH",
+      ata: 33,
+      requiredCategory: "B2",
+      durationMinutes: 26,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Landing light P/N LL-1"
+      ],
+      toolsRequired: [
+        "Step ladder"
+      ]
+    },
+    {
+      id: "WO-070",
+      description: "Replace navigation light RH wing",
+      ata: 33,
+      requiredCategory: "B2",
+      durationMinutes: 29,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "NAV light P/N NL-R"
+      ],
+      toolsRequired: [
+        "Step ladder"
+      ]
+    },
+    {
+      id: "WO-071",
+      description: "Replace taxi light LH gear",
+      ata: 33,
+      requiredCategory: "B2",
+      durationMinutes: 33,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Taxi light P/N TX-L"
+      ],
+      toolsRequired: [
+        "Step ladder"
+      ]
+    },
+    {
+      id: "WO-072",
+      description: "Replace anti-collision beacon \u2014 top",
+      ata: 33,
+      requiredCategory: "B2",
+      durationMinutes: 32,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Beacon LED P/N BCN-T"
+      ],
+      toolsRequired: [
+        "Lift"
+      ]
+    },
+    {
+      id: "WO-073",
+      description: "Replace logo light \u2014 vertical stab",
+      ata: 33,
+      requiredCategory: "B2",
+      durationMinutes: 32,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Logo light P/N LG-LT"
+      ],
+      toolsRequired: [
+        "Lift"
+      ]
+    },
+    {
+      id: "WO-074",
+      description: "Replace radio altimeter transceiver",
+      ata: 34,
+      requiredCategory: "B2",
+      durationMinutes: 48,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "RAD ALT LRU"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-075",
+      description: "Test EGPWS terrain database",
+      ata: 34,
+      requiredCategory: "B2",
+      durationMinutes: 39,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-076",
+      description: "Replace MMR (Multi-Mode Receiver)",
+      ata: 34,
+      requiredCategory: "B2",
+      durationMinutes: 45,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "MMR LRU"
+      ],
+      toolsRequired: [
+        "Avionics toolkit",
+        "ESD wristband"
+      ]
+    },
+    {
+      id: "WO-077",
+      description: "Calibrate TCAS interrogator",
+      ata: 34,
+      requiredCategory: "B2",
+      durationMinutes: 45,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "TCAS test set"
+      ]
+    },
+    {
+      id: "WO-078",
+      description: "Replace pitot heat probe controller",
+      ata: 34,
+      requiredCategory: "B2",
+      durationMinutes: 44,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Heater ctrl P/N HCU-3"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-079",
+      description: "Replace crew oxygen bottle",
+      ata: 35,
+      requiredCategory: "B1",
+      durationMinutes: 33,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "O2 bottle 1850 PSI"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-080",
+      description: "Test passenger oxygen generators",
+      ata: 35,
+      requiredCategory: "B2",
+      durationMinutes: 31,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "O2 test rig"
+      ]
+    },
+    {
+      id: "WO-081",
+      description: "Replace portable O2 bottle FWD lavatory",
+      ata: 35,
+      requiredCategory: "B1",
+      durationMinutes: 27,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Portable O2 P/N P-O2-1"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-082",
+      description: "Replace bleed monitoring controller (BMC)",
+      ata: 36,
+      requiredCategory: "B1",
+      durationMinutes: 58,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "BMC LRU P/N BMC-2"
+      ],
+      toolsRequired: [
+        "Avionics toolkit"
+      ]
+    },
+    {
+      id: "WO-083",
+      description: "Test high pressure bleed valve",
+      ata: 36,
+      requiredCategory: "B1",
+      durationMinutes: 37,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Pneumatic test set"
+      ]
+    },
+    {
+      id: "WO-084",
+      description: "Replace crossbleed valve",
+      ata: 36,
+      requiredCategory: "B1",
+      durationMinutes: 53,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "XBV P/N XBV-A"
+      ],
+      toolsRequired: [
+        "Pneumatic toolkit"
+      ]
+    },
+    {
+      id: "WO-085",
+      description: "Service potable water tank",
+      ata: 38,
+      requiredCategory: "B1",
+      durationMinutes: 33,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Water servicing rig"
+      ]
+    },
+    {
+      id: "WO-086",
+      description: "Replace lavatory flush motor LAV-A",
+      ata: 38,
+      requiredCategory: "B1",
+      durationMinutes: 36,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Flush motor P/N LV-FL-1"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-087",
+      description: "Inspect grey water drain \u2014 galley G1",
+      ata: 38,
+      requiredCategory: "B1",
+      durationMinutes: 28,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Inspection light"
+      ]
+    },
+    {
+      id: "WO-088",
+      description: "Replace APU oil pressure switch",
+      ata: 49,
+      requiredCategory: "B1",
+      durationMinutes: 43,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Major",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "APU oil P/S P/N APU-PS"
+      ],
+      toolsRequired: [
+        "Engine toolkit"
+      ]
+    },
+    {
+      id: "WO-089",
+      description: "APU air inlet door actuator test",
+      ata: 49,
+      requiredCategory: "B1",
+      durationMinutes: 36,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-090",
+      description: "Replace APU fuel control unit",
+      ata: 49,
+      requiredCategory: "B1",
+      durationMinutes: 60,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Critical",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "APU FCU P/N APU-FCU"
+      ],
+      toolsRequired: [
+        "Engine toolkit",
+        "Torque wrench"
+      ]
+    },
+    {
+      id: "WO-091",
+      description: "Replace pax door 1L slide raft",
+      ata: 52,
+      requiredCategory: "B1",
+      durationMinutes: 58,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Slide raft assy"
+      ],
+      toolsRequired: [
+        "Heavy lift",
+        "Special toolkit"
+      ]
+    },
+    {
+      id: "WO-092",
+      description: "Replace door 2R seal",
+      ata: 52,
+      requiredCategory: "B1",
+      durationMinutes: 38,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Door seal P/N DR-SL-2R"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-093",
+      description: "Service cargo door 1 hydraulic damper",
+      ata: 52,
+      requiredCategory: "B1",
+      durationMinutes: 40,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Damper hydraulic fluid"
+      ],
+      toolsRequired: [
+        "Hydraulic toolkit"
+      ]
+    },
+    {
+      id: "WO-094",
+      description: "Replace door rubbing strip \u2014 door 3L",
+      ata: 52,
+      requiredCategory: "B1",
+      durationMinutes: 38,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Rubbing strip P/N RS-3L"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-095",
+      description: "Inspect emergency exit door handle 2L",
+      ata: 52,
+      requiredCategory: "B1",
+      durationMinutes: 28,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Inspection mirror"
+      ]
+    },
+    {
+      id: "WO-096",
+      description: "Replace cockpit windshield wiper motor #1",
+      ata: 56,
+      requiredCategory: "B1",
+      durationMinutes: 50,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "Wiper motor P/N WPM-1"
+      ],
+      toolsRequired: [
+        "Standard toolkit"
+      ]
+    },
+    {
+      id: "WO-097",
+      description: "Inspect windshield heating element resistance",
+      ata: 56,
+      requiredCategory: "B2",
+      durationMinutes: 31,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Multimeter"
+      ]
+    },
+    {
+      id: "WO-098",
+      description: "Replace engine #1 oil filter (CFM56)",
+      ata: 71,
+      requiredCategory: "B1",
+      durationMinutes: 40,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "CFM56 oil filter P/N CFM-OF-1"
+      ],
+      toolsRequired: [
+        "Engine toolkit"
+      ]
+    },
+    {
+      id: "WO-099",
+      description: "Replace engine #2 oil filter (V2500)",
+      ata: 71,
+      requiredCategory: "B1",
+      durationMinutes: 38,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: true,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [
+        "V2500 oil filter P/N V25-OF-2"
+      ],
+      toolsRequired: [
+        "Engine toolkit"
+      ]
+    },
+    {
+      id: "WO-100",
+      description: "Borescope inspection engine #1 HP turbine",
+      ata: 71,
+      requiredCategory: "B1",
+      durationMinutes: 57,
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      deferrable: false,
+      severity: "Minor",
+      isAOG: false,
+      probability: 1,
+      partsRequired: [],
+      toolsRequired: [
+        "Borescope kit",
+        "Engine stand"
+      ]
+    }
+  ];
+
+  // src/lib/data/airlines.json
+  var airlines_default = [
+    {
+      id: "AL-001",
+      name: "SkyAirlines",
+      logo: "airlines/skyairlines.png",
+      color: "#4DA3FF",
+      fleet: [
+        { model: "A320", engineVariant: "CFM56" },
+        { model: "A320", engineVariant: "V2500" },
+        { model: "A321", engineVariant: "CFM56" }
+      ]
+    },
+    {
+      id: "AL-002",
+      name: "SunAirlines",
+      logo: "airlines/sunairlines.png",
+      color: "#FFB84D",
+      fleet: [
+        { model: "A320", engineVariant: "CFM56" },
+        { model: "A321", engineVariant: "V2500" }
+      ]
+    },
+    {
+      id: "AL-003",
+      name: "TreeAirlines",
+      logo: "airlines/treeairlines.png",
+      color: "#5BC97D",
+      fleet: [
+        { model: "A320", engineVariant: "V2500" },
+        { model: "A321", engineVariant: "V2500" }
+      ]
+    },
+    {
+      id: "AL-004",
+      name: "Starairlines",
+      logo: "airlines/starairlines.png",
+      color: "#C97DDC",
+      fleet: [
+        { model: "A320", engineVariant: "CFM56" },
+        { model: "A321", engineVariant: "CFM56" },
+        { model: "A321", engineVariant: "V2500" }
+      ]
+    }
+  ];
+
+  // src/lib/data/balance.json
+  var balance_default = {
+    $comment: "Constantes de tuneo. Editar valores aqu\xED cambia balance sin recompilar. Probabilidades legacy conservadas (validar en Fase 4 playtest).",
+    startingBalance: 25e4,
+    startingReputation: 50,
+    weeklyFixedCost: 12e3,
+    salaries: {
+      $comment: "Salarios semanales en EUR. B1/B2 senior cobra ~40% m\xE1s que junior. Helpers son sin licencia, baratos.",
+      helper: 600,
+      b1Junior: 1100,
+      b1Senior: 1600,
+      b2Junior: 1200,
+      b2Senior: 1750
+    },
+    probabilities: {
+      $comment: "Conservadas del legacy. 70% WO al landing, 40% direct dispatch post-Inspection, 10% rework tras Test.",
+      workOrderAtStand: 0.7,
+      directDispatch: 0.4,
+      reworkAfterTest: 0.1
+    },
+    slaMultiplier: 1.05,
+    aogPenaltyMultiplier: 5,
+    officeToStandMinutes: 2,
+    reputation: {
+      $comment: "Deltas en puntos sobre escala 0-100.",
+      woCompletedOnTime: 1,
+      woCompletedLate: -2,
+      woFailed: -5,
+      aogFailed: -10,
+      weeklyTickIfNoContracts: -1
+    },
+    phaseDurationRatios: {
+      $comment: "Ratios sobre la duraci\xF3n del template. Inspection es el 15% inicial; MainTask es el bloque grande; Test 10%; Rework otra vez como MainTask.",
+      inspection: 0.15,
+      mainTask: 1,
+      test: 0.1,
+      rework: 1
+    },
+    landingsVariance: 0.2
+  };
+
+  // src/lib/sim-all.ts
+  var DATA = {
+    workOrders: workorders_default,
+    airlines: airlines_default,
+    balance: balance_default
+  };
+  return __toCommonJS(sim_all_exports);
+})();
+
+</script>
+<script>
+// === MRO Tycoon vanilla UI driver ===
+// Sim global está cargado en window.Sim por esbuild IIFE.
+const S = window.Sim;
+let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42);
+let activeTab = "hangar";
+let selectedWoId = null;
+let manualCertId = "";
+let manualHelperIds = [];
+let hasSavedSlot = false;
+let saveIndicator = ""; // "saved" / "loaded" / "" — visible 2s tras acción
+
+// --- Helpers ---
+function fmtClock(min){ return S.formatClock(min); }
+function fmt(n){ return Number(n).toLocaleString("es-ES"); }
+function airlineName(id){ const a = game.airlines.find(x => x.id === id); return a ? a.name : id; }
+function airplaneByReg(reg){ return game.airplanes.find(a => a.registration === reg); }
+function activeWos(){ return game.workOrders.filter(w => w.phase !== "Completed" && w.phase !== "Failed"); }
+function liveOffers(){ return game.contracts.filter(c => c.status === "offered"); }
+function activeContracts(){ return game.contracts.filter(c => c.status === "active"); }
+function slaPct(wo){ const m = wo.slaMinute - game.clock.minute; const w = wo.slaMinute - wo.emissionMinute; return Math.max(0, Math.min(100, (m/Math.max(1,w))*100)); }
+function phasePct(wo){ const tpl = game.templates.find(t => t.id === wo.templateId); if (!tpl) return 0; const r = game.balance.phaseDurationRatios; const d = {ToPlane:0,Inspection:tpl.durationMinutes*r.inspection,MainTask:tpl.durationMinutes*r.mainTask,Test:tpl.durationMinutes*r.test,Rework:tpl.durationMinutes*r.rework,Completed:0,Failed:0}[wo.phase]||1; return Math.min(100, (wo.phaseElapsedMinutes/d)*100); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// --- Renderers per tab ---
+function renderHangar(){
+  const wos = activeWos();
+  if (wos.length === 0) return '<h2>Hangar — Stands & WOs activas</h2><div class="empty">No hay WOs activas todavía. Pulsa 1× / 2× / 5× arriba para que el reloj avance y empiecen a llegar aviones.</div>';
+  let h = '<h2>Hangar — Stands & WOs activas</h2><div class="wo-grid">';
+  for (const wo of wos) {
+    const tpl = game.templates.find(t => t.id === wo.templateId);
+    const ap = airplaneByReg(wo.airplaneRegistration);
+    const margin = wo.slaMinute - game.clock.minute;
+    const fillCls = margin > 10 ? "good" : margin > 0 ? "warn" : "bad";
+    const team = wo.assignedMechanicIds.length === 0
+      ? '<span class="muted">⚠️ sin asignar (click)</span>'
+      : wo.assignedMechanicIds.map((mid, i) => {
+          const m = game.mechanics.find(mm => mm.id === mid);
+          return `<span class="chip">${i===0?"🪪":"🤝"} ${esc(m?.name ?? mid)}</span>`;
+        }).join("");
+    h += `<article class="wo-card${tpl?.isAOG ? ' aog':''}" data-wo="${wo.instanceId}">
+      <header class="wo-head"><span class="wo-id">${wo.instanceId}</span>${tpl?.isAOG?'<span class="aog-badge">🛑 AOG</span>':''}<span class="wo-phase phase-${wo.phase}">${wo.phase}</span></header>
+      <div class="wo-desc">${esc(tpl?.description ?? "?")}</div>
+      <div class="wo-meta"><span>✈️ ${esc(ap?.registration ?? "?")} (${ap?.model??"?"})</span><span>ATA ${tpl?.ata??"?"}</span><span>${tpl?.requiredCategory??"?"}</span><span>${tpl?.durationMinutes??"?"}min</span></div>
+      <div class="bar-wrap"><span class="bar-lbl">Progreso fase</span><div class="bar"><div class="fill primary" style="width:${phasePct(wo)}%"></div></div></div>
+      <div class="bar-wrap"><span class="bar-lbl${margin<0?' bad':''}">SLA ${margin >= 0 ? '+'+margin+'m' : margin+'m ¡tarde!'}</span><div class="bar"><div class="fill ${fillCls}" style="width:${slaPct(wo)}%"></div></div></div>
+      <div class="wo-team">${team}</div>
+    </article>`;
+  }
+  return h + '</div>';
+}
+
+function renderMechanics(){
+  let h = `<h2>Mecánicos (${game.mechanics.length})</h2><table><thead><tr><th>ID</th><th>Nombre</th><th>Base</th><th>Ratings</th><th>Eff</th><th>Estado</th><th>Asignado</th><th>Salario</th></tr></thead><tbody>`;
+  for (const m of game.mechanics) {
+    const ratings = m.typeRatings.map(r => `${r.model}/${r.engineVariant}/${r.category}`).join(", ") || "—";
+    h += `<tr><td class="mono">${m.id}</td><td>${esc(m.name)}</td><td>${m.base ?? "Helper"}</td><td class="mono">${ratings}</td><td class="mono">${m.efficiency}</td><td><span class="state state-${m.state}">${m.state}</span></td><td class="mono">${m.assignedWoInstanceId ?? "—"}</td><td class="mono">${fmt(m.weeklySalary)} €/sem</td></tr>`;
+  }
+  return h + '</tbody></table>';
+}
+
+function renderContracts(){
+  let h = '<h2>Contratos</h2><h3>Activos</h3>';
+  const actives = activeContracts();
+  if (actives.length === 0) h += '<p class="muted">Sin contratos activos.</p>';
+  for (const c of actives) {
+    h += `<article class="contract-card"><header><strong>${esc(airlineName(c.airlineId))}</strong> · ${c.id}</header><div class="kvs"><span>Cuota semanal: <strong>${fmt(c.baseFeePerWeek)} €</strong></span><span>€/min WO: <strong>${c.paymentPerWOMinute}</strong></span><span>Penalty: <strong>${c.penaltyPerLateMinute} €/min</strong></span><span>Rep. min.: <strong>${c.minReputation}</strong></span><span>Aviones/día: <strong>${c.expectedLandingsPerDay}</strong></span></div></article>`;
+  }
+  h += '<h3>Ofertas</h3>';
+  const offers = liveOffers();
+  if (offers.length === 0) h += '<p class="muted">No hay ofertas pendientes.</p>';
+  for (const c of offers) {
+    const expIn = c.expiresAtMinute ? Math.max(0, c.expiresAtMinute - game.clock.minute) : 0;
+    h += `<article class="contract-card offer"><header><strong>${esc(airlineName(c.airlineId))}</strong> · ${c.id} · expira en ${expIn}m</header><div class="kvs"><span>Cuota semanal: <strong>${fmt(c.baseFeePerWeek)} €</strong></span><span>€/min WO: <strong>${c.paymentPerWOMinute}</strong></span><span>Penalty: <strong>${c.penaltyPerLateMinute} €/min</strong></span><span>Rep. min.: <strong>${c.minReputation}</strong></span></div><div class="actions"><button class="primary" data-accept="${c.id}">Aceptar</button><button data-reject="${c.id}">Rechazar</button></div></article>`;
+  }
+  return h;
+}
+
+function renderEconomy(){
+  const startBal = game.balance.startingBalance;
+  const delta = game.economy.balance - startBal;
+  const recent = game.economy.ledger.slice(-25).reverse();
+  let h = `<h2>Economía</h2><div class="econ-grid">
+    <div class="card-mini"><div class="lbl">Balance</div><div class="big${game.economy.balance<0?' neg':''}">${fmt(game.economy.balance)} €</div></div>
+    <div class="card-mini"><div class="lbl">Δ desde inicio</div><div class="big${delta<0?' neg':''}">${fmt(delta)} €</div></div>
+    <div class="card-mini"><div class="lbl">Transacciones</div><div class="big">${game.economy.ledger.length}</div></div>
+    <div class="card-mini"><div class="lbl">Semanas neg.</div><div class="big${game.economy.negativeStreakWeeks>0?' neg':''}">${game.economy.negativeStreakWeeks}/2</div></div></div>
+    <h3>Últimas 25 transacciones</h3><table><thead><tr><th>Tiempo</th><th>Tipo</th><th>Descripción</th><th>Cantidad</th></tr></thead><tbody>`;
+  for (const t of recent) {
+    h += `<tr><td class="mono">${fmtClock(t.minute)}</td><td>${esc(t.type)}</td><td>${esc(t.description)}</td><td class="mono ${t.amount>0?'pos':'neg'}">${t.amount>0?'+':''}${fmt(t.amount)} €</td></tr>`;
+  }
+  return h + '</tbody></table>';
+}
+
+function renderModal(){
+  const back = document.getElementById("modal-back");
+  if (!selectedWoId) { back.classList.remove("open"); return; }
+  const wo = game.workOrders.find(w => w.instanceId === selectedWoId);
+  if (!wo) { back.classList.remove("open"); return; }
+  const tpl = game.templates.find(t => t.id === wo.templateId);
+  const ap = airplaneByReg(wo.airplaneRegistration);
+  if (!tpl || !ap) { back.classList.remove("open"); return; }
+
+  const certs = (wo.assignedMechanicIds.length === 0) ? game.mechanics.filter(m => m.state === "Idle" && m.base === tpl.requiredCategory && m.typeRatings.some(r => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === tpl.requiredCategory)) : [];
+  const helps = (wo.assignedMechanicIds.length === 0) ? game.mechanics.filter(m => m.state === "Idle" && m.id !== manualCertId) : [];
+
+  let inner = `<header class="modal-head"><h3>${wo.instanceId} — ${esc(tpl.description)}</h3><button class="close" id="modal-close">×</button></header><div class="modal-body">
+    <div class="kvs"><span>ATA: <strong>${tpl.ata}</strong></span><span>Categoría requerida: <strong>${tpl.requiredCategory}</strong></span><span>Duración: <strong>${tpl.durationMinutes} min</strong></span><span>Severidad: <strong>${tpl.severity}</strong></span><span>SLA: <strong>${wo.slaMinute - game.clock.minute}m restantes</strong></span><span>Avión: <strong>${esc(ap.registration)} (${ap.model}/${ap.engineVariant})</strong></span></div>`;
+  if (tpl.isAOG) inner += '<div class="alert aog-alert">🛑 AOG · penalty ×5 · no diferible</div>';
+
+  if (wo.assignedMechanicIds.length > 0) {
+    inner += '<h4>Ya asignados:</h4><ul>';
+    wo.assignedMechanicIds.forEach((id, i) => {
+      const m = game.mechanics.find(mm => mm.id === id);
+      inner += `<li>${i===0?"🪪 Certifier":"🤝 Helper"}: ${esc(m?.name??id)}</li>`;
+    });
+    inner += '</ul>';
+  } else {
+    inner += '<h4>Asignar mecánicos</h4><label>Certifier (con type rating válido):</label><select id="sel-cert"><option value="">— elegir —</option>';
+    for (const m of certs) inner += `<option value="${m.id}"${manualCertId===m.id?' selected':''}>${esc(m.name)} · ${m.base} · eff ${m.efficiency}</option>`;
+    inner += '</select>';
+    if (certs.length === 0) inner += '<p class="muted">Ningún certifier disponible.</p>';
+    inner += '<label>Helpers (máx 2):</label><div class="helper-list">';
+    for (const h of helps) {
+      const checked = manualHelperIds.includes(h.id);
+      const disabled = !checked && manualHelperIds.length >= 2;
+      inner += `<label class="helper-item"><input type="checkbox" data-helper="${h.id}"${checked?' checked':''}${disabled?' disabled':''}> ${esc(h.name)} · ${h.base ?? "Helper"} · eff ${h.efficiency}</label>`;
+    }
+    inner += `</div><div style="margin-top:1rem"><button class="primary" id="btn-assign"${!manualCertId?' disabled':''}>Asignar</button></div>`;
+  }
+  inner += '</div>';
+  document.getElementById("modal-content").innerHTML = inner;
+  back.classList.add("open");
+}
+
+function render(){
+  // HUD
+  document.getElementById("clock").textContent = fmtClock(game.clock.minute);
+  document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
+  const balEl = document.getElementById("bal");
+  balEl.textContent = fmt(game.economy.balance) + " €";
+  balEl.className = game.economy.balance < 0 ? "neg" : "";
+  document.getElementById("rep").textContent = game.reputation.value;
+
+  // Speed buttons
+  document.querySelectorAll(".speeds button").forEach(b => {
+    b.classList.toggle("active", parseInt(b.dataset.speed) === game.clock.speed);
+  });
+
+  // Badges
+  document.getElementById("badge-wo").textContent = activeWos().length;
+  document.getElementById("badge-offers").textContent = liveOffers().length;
+
+  // Side tabs active
+  document.querySelectorAll(".side button").forEach(b => {
+    b.classList.toggle("active", b.dataset.tab === activeTab);
+  });
+
+  // Panel content
+  let html;
+  if (game.gameOver.isOver) {
+    html = `<div class="game-over"><h1>🛑 GAME OVER</h1><p>${game.gameOver.reason === "bankruptcy" ? "Bancarrota" : "Reputación cero"}</p></div>`;
+  } else if (activeTab === "hangar")   html = renderHangar();
+  else if (activeTab === "mechanics")  html = renderMechanics();
+  else if (activeTab === "contracts")  html = renderContracts();
+  else                                 html = renderEconomy();
+  document.getElementById("panel-content").innerHTML = html;
+
+  // Notifications
+  const notifs = game.notifications.slice(-12).reverse();
+  document.getElementById("notif-list").innerHTML = notifs.length === 0
+    ? '<p class="muted">—</p>'
+    : notifs.map(n => `<div class="notif ${n.type}"><span class="t">${fmtClock(n.minute)}</span><span>${esc(n.text)}</span></div>`).join("");
+
+  // Modal
+  renderModal();
+
+  // Save indicator
+  const si = document.getElementById("save-indicator");
+  if (si) {
+    if (saveIndicator === "saved")      si.textContent = "✓ Guardado";
+    else if (saveIndicator === "loaded") si.textContent = "✓ Cargado";
+    else                                 si.textContent = "";
+  }
+  const btnLoad = document.getElementById("btn-load");
+  if (btnLoad) btnLoad.disabled = !hasSavedSlot;
+}
+
+// --- Event delegation ---
+document.body.addEventListener("click", (e) => {
+    if (e.target.id === "btn-save") { doSave(); return; }
+  if (e.target.id === "btn-load") { doLoad(); return; }
+  if (e.target.id === "btn-new")  { doNewGame(); return; }
+  const speedBtn = e.target.closest(".speeds button");
+  if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
+  const tabBtn = e.target.closest(".side button");
+  if (tabBtn) { activeTab = tabBtn.dataset.tab; render(); return; }
+  const woCard = e.target.closest(".wo-card");
+  if (woCard) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; render(); return; }
+  if (e.target.id === "modal-close" || (e.target.classList && e.target.classList.contains("modal-back"))) { selectedWoId = null; render(); return; }
+  if (e.target.id === "btn-assign" && selectedWoId && manualCertId) {
+    const r = S.assignMechanicsManually(game, selectedWoId, manualCertId, manualHelperIds);
+    if (r.ok) { selectedWoId = null; render(); }
+    return;
+  }
+  if (e.target.dataset.accept) { S.acceptContractOffer(game, e.target.dataset.accept); render(); return; }
+  if (e.target.dataset.reject) { S.rejectContractOffer(game, e.target.dataset.reject); render(); return; }
+});
+
+document.body.addEventListener("change", (e) => {
+  if (e.target.id === "sel-cert") { manualCertId = e.target.value; render(); }
+  if (e.target.dataset.helper) {
+    const id = e.target.dataset.helper;
+    if (e.target.checked) {
+      if (!manualHelperIds.includes(id) && manualHelperIds.length < 2) manualHelperIds.push(id);
+    } else manualHelperIds = manualHelperIds.filter(h => h !== id);
+    render();
+  }
+});
+
+
+
+// Save / Load / New game
+async function doSave() {
+  try {
+    await S.getStorage().save(S.serializeGame(game));
+    hasSavedSlot = true;
+    saveIndicator = "saved";
+    render();
+    setTimeout(() => { saveIndicator = ""; render(); }, 2000);
+  } catch (e) {
+    alert("Error al guardar: " + e.message);
+  }
+}
+async function doLoad() {
+  try {
+    const payload = await S.getStorage().load();
+    if (!payload) { alert("No hay partida guardada."); return; }
+    const loaded = S.deserializeGame(payload, S.DATA.balance, S.DATA.airlines, S.DATA.workOrders);
+    Object.assign(game, loaded);
+    saveIndicator = "loaded";
+    render();
+    setTimeout(() => { saveIndicator = ""; render(); }, 2000);
+  } catch (e) {
+    alert("Error al cargar: " + e.message);
+  }
+}
+async function doNewGame() {
+  if (!confirm("¿Empezar nueva partida? Se perderá el progreso actual.")) return;
+  await S.getStorage().clear();
+  const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, Math.floor(Math.random() * 1e9));
+  Object.assign(game, fresh);
+  hasSavedSlot = false;
+  selectedWoId = null;
+  render();
+}
+
+// --- Game loop ---
+// boot-check save
+(async () => { hasSavedSlot = await S.getStorage().hasSave(); render(); })();
+
+setInterval(() => {
+  if (game.clock.speed === 0) return;
+  S.advanceGame(game, game.clock.speed);
+  render();
+}, 100);
+
+</script>
+</body></html>

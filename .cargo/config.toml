@@ -1,0 +1,13 @@
+# Cargo config — fuerza uso de lld como linker para target gnu en Windows.
+# Motivo: ld.exe de GNU binutils se rompe con "export ordinal too large" cuando hay
+# demasiados símbolos exportados (Tauri + sqlx + windows-rs generan miles).
+# lld (LLVM linker) maneja exports masivos sin problema y ya viene con Rust.
+#
+# Para que `-fuse-ld=lld` funcione, copiamos `ld.lld.exe` del toolchain rust a
+# C:\Users\bongi\mingw64\bin\ — gcc lo encuentra por nombre.
+
+[target.x86_64-pc-windows-gnu]
+linker = "x86_64-w64-mingw32-gcc"
+rustflags = [
+    "-C", "link-arg=-fuse-ld=lld",
+]

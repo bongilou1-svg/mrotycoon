@@ -1,0 +1,274 @@
+{
+  "_meta": {
+    "generated": "2026-05-15",
+    "purpose": "Validar/recalibrar placeholders de mantenimiento del juego MRO Tycoon contra realidad pública A32x.",
+    "currency_note": "Costes en EUR. Conversión USD->EUR aprox 0.92 aplicada cuando la fuente original era USD.",
+    "warning": "Rangos públicos. Costes reales fluctúan ±50% entre MROs. NEO data inestable 2024-2026.",
+    "sources_doc": "docs/research/A32x_maintenance.md"
+  },
+  "checks": [
+    {
+      "type": "A",
+      "variant": "A320ceo",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 50, "typical": 80, "max": 150 },
+      "costEUR": { "min": 8000, "typical": 15000, "max": 30000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Subdividido en A1..A8. Post-2009 escalation a 750 FH desde 600. Programa optimizado puede llegar a 1000 FH/6 meses. Overnight visit típico.",
+      "source": "Aircraft Commerce Issue 111 (2017); MRO Management Mar 2017; AviationWeek"
+    },
+    {
+      "type": "A",
+      "variant": "A319",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 45, "typical": 75, "max": 140 },
+      "costEUR": { "min": 7500, "typical": 14000, "max": 28000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "~5-10% menor MH que A320 por menor fuselaje.",
+      "source": "industry consensus / Aircraft Commerce"
+    },
+    {
+      "type": "A",
+      "variant": "A321",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 55, "typical": 90, "max": 170 },
+      "costEUR": { "min": 9000, "typical": 17000, "max": 33000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "~10-15% mayor MH que A320 por más cabina y fuselaje.",
+      "source": "industry consensus / Aircraft Commerce"
+    },
+    {
+      "type": "A",
+      "variant": "A320neo",
+      "intervalFH": 750,
+      "intervalCycles": 750,
+      "intervalMonths": 4,
+      "manHours": { "min": 50, "typical": 80, "max": 150 },
+      "costEUR": { "min": 8000, "typical": 15000, "max": 30000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Mismo programa airframe que ceo. Diferencia está en motor.",
+      "source": "Airbus MRBR / Aircraft Commerce"
+    },
+    {
+      "type": "C",
+      "variant": "A320ceo",
+      "intervalFH": 6000,
+      "intervalCycles": null,
+      "intervalMonths": 24,
+      "manHours": { "min": 3000, "typical": 4000, "max": 6000 },
+      "costEUR": { "min": 150000, "typical": 400000, "max": 800000 },
+      "downtimeDays": { "min": 7, "typical": 14, "max": 21 },
+      "notes": "Estándar. Subdividido C1..C12. Algunos operadores 7500 FH / 20 meses. Coste varía mucho con MRO (asiáticos low-cost vs premium europeo).",
+      "source": "Aircraft Commerce Issue 111 (2017), Issue 44, Wikipedia, AviationWeek benchmarks"
+    },
+    {
+      "type": "C",
+      "variant": "A321",
+      "intervalFH": 6000,
+      "intervalCycles": null,
+      "intervalMonths": 24,
+      "manHours": { "min": 3500, "typical": 4500, "max": 6500 },
+      "costEUR": { "min": 170000, "typical": 460000, "max": 900000 },
+      "downtimeDays": { "min": 8, "typical": 15, "max": 22 },
+      "notes": "~10-15% mayor que A320.",
+      "source": "industry consensus"
+    },
+    {
+      "type": "C8",
+      "variant": "A320ceo",
+      "intervalFH": null,
+      "intervalCycles": null,
+      "intervalMonths": 72,
+      "manHours": { "min": 4000, "typical": 5500, "max": 8000 },
+      "costEUR": { "min": 600000, "typical": 1200000, "max": 2000000 },
+      "downtimeDays": { "min": 14, "typical": 21, "max": 30 },
+      "notes": "C-check múltiplo 8 (~6 años). Incluye structural inspection 1. Lo que muchos llaman informalmente 'medium heavy'.",
+      "source": "Aircraft Commerce Issue 111, Issue 75"
+    },
+    {
+      "type": "C12_heavy",
+      "variant": "A320ceo",
+      "intervalFH": 25000,
+      "intervalCycles": 16000,
+      "intervalMonths": 144,
+      "manHours": { "min": 6000, "typical": 9000, "max": 12000 },
+      "costEUR": { "min": 1500000, "typical": 3000000, "max": 5000000 },
+      "downtimeDays": { "min": 21, "typical": 35, "max": 60 },
+      "notes": "Equivalente moderno del antiguo D check. Ya no se llama D en MRBR Airbus actual. Incluye structural inspection 2 (9-12 años). Pintura completa, full strip, inspección estructural profunda.",
+      "source": "Aircraft Commerce Issue 111 (2017), Wikipedia, industry consensus"
+    }
+  ],
+  "engineMaintenance": {
+    "CFM56-5B": {
+      "applicableTo": ["A319ceo", "A320ceo", "A321ceo"],
+      "llpLifeCycles_coldSection": 30000,
+      "llpLifeCycles_HPC": 25000,
+      "llpLifeCycles_HPT": 20000,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "Sin HSI on-wing programado. Hot section se trata en shop visits.",
+      "shopVisitFirstRunFH": { "min": 18000, "typical": 22000, "max": 28000 },
+      "shopVisitMatureRunFH": { "min": 12000, "typical": 16000, "max": 20000 },
+      "shopVisitCostEUR_hospital": { "min": 280000, "typical": 500000, "max": 750000 },
+      "shopVisitCostEUR_performance": { "min": 1400000, "typical": 2200000, "max": 2800000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 2800000, "typical": 3700000, "max": 4600000 },
+      "llpStackPriceEUR": { "min": 2750000, "typical": 3200000, "max": 3500000 },
+      "shopVisitDurationDays": { "min": 60, "typical": 75, "max": 100 },
+      "notes": "Engine de referencia industria narrowbody. Reliability altísima. Tras Tech Insertion (2007+) hot section limits subieron a 20k. SVR (shop visit rate) muy bajo vs competencia.",
+      "source": "Aircraft Commerce Issue 28; Leeham News; IBA"
+    },
+    "V2500-A5": {
+      "applicableTo": ["A319ceo", "A320ceo", "A321ceo"],
+      "llpLifeCycles_all": 20000,
+      "llpCount": 25,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "Tratado en shop visits programados.",
+      "shopVisitFirstRunFH": { "min": 15000, "typical": 18000, "max": 22000 },
+      "shopVisitMatureRunFH": { "min": 10000, "typical": 14000, "max": 18000 },
+      "shopVisitCostEUR_hospital": { "min": 300000, "typical": 550000, "max": 800000 },
+      "shopVisitCostEUR_performance": { "min": 1800000, "typical": 2500000, "max": 3200000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 3200000, "typical": 4200000, "max": 5500000 },
+      "llpStackPriceEUR": { "min": 3300000, "typical": 3550000, "max": 3800000 },
+      "shopVisitDurationDays": { "min": 60, "typical": 80, "max": 110 },
+      "notes": "IAE (P&W + RR + JAEC + MTU). LLP stack más caro que CFM56 y vida más corta (20k todos). Compensa con buena performance retention.",
+      "source": "Aircraft Commerce Issue 56; IBA"
+    },
+    "LEAP-1A": {
+      "applicableTo": ["A319neo", "A320neo", "A321neo"],
+      "llpLifeCycles_target": 25000,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "On-condition; visitas accelerated por durability issues iniciales.",
+      "shopVisitFirstRunFH": { "min": 8000, "typical": 12000, "max": 18000 },
+      "shopVisitMatureRunFH_target": { "min": 15000, "typical": 18000, "max": 22000 },
+      "shopVisitCostEUR_hospital": { "min": 400000, "typical": 700000, "max": 1000000 },
+      "shopVisitCostEUR_performance": { "min": 1800000, "typical": 2700000, "max": 3500000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 3500000, "typical": 4500000, "max": 6000000 },
+      "llpStackPriceEUR": { "min": 3500000, "typical": 4000000, "max": 4500000 },
+      "shopVisitDurationDays": { "min": 70, "typical": 100, "max": 150 },
+      "knownIssues": [
+        "HPT blade durability — fix retrofit en curso",
+        "Fuel nozzle redesign — improved nozzles introduced",
+        "MRO capacity ramp-up tardío (StandardAero, LHT añadiendo capacity)"
+      ],
+      "notes": "CFM target era parity de tiempo on-wing con CFM56-5B; en práctica primera generación está debajo. Mejor que GTF pero peor que CFM56 maduro.",
+      "source": "FlightGlobal; CFM press; Aviation Week MRO 2024"
+    },
+    "PW1100G": {
+      "applicableTo": ["A319neo", "A320neo", "A321neo"],
+      "llpLifeCycles_HPT_currentRestriction": 7000,
+      "llpLifeCycles_HPC_currentRestriction": 6000,
+      "llpLifeCycles_designTarget": 25000,
+      "hotSectionInterval_cycles": null,
+      "shopVisitFirstRunFH_original": { "min": 18000, "typical": 22000, "max": 26000 },
+      "shopVisitFirstRunFC_currentForced": { "min": 5000, "typical": 6000, "max": 7000 },
+      "shopVisitCostEUR_hospital": { "min": 500000, "typical": 800000, "max": 1100000 },
+      "shopVisitCostEUR_performance": { "min": 2000000, "typical": 3000000, "max": 4000000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 4000000, "typical": 5500000, "max": 7000000 },
+      "shopVisitDurationDays": { "min": 250, "typical": 280, "max": 300 },
+      "knownIssues": [
+        "Powder-metal contamination AD 2024 — ~2100 disk SNs afectados",
+        "Forced removals 5000-7000 FC en lugar de 20000+ esperado",
+        "Repetitive HPT/HPC inspection cada 2800-3800 FC",
+        "Customer compensation ~80% del impact total 6-7B$",
+        "Backlog severo MRO; 350 AOG promedio 2024-2026, pico 650"
+      ],
+      "notes": "Geared Turbofan. Diseño avanzado con gearbox. Issue powder-metal disparó costes y groundings masivos 2023-2026. Esperar normalización post-2027.",
+      "source": "FAA AD 2024; Cranky Flier; FlightGlobal; RTX investor update; Aviation Week"
+    }
+  },
+  "landingGear": {
+    "applicableTo": ["A319", "A320", "A321"],
+    "overhaulInterval_cycles": 20000,
+    "overhaulInterval_months": 120,
+    "overhaulCostEUR": { "min": 390000, "typical": 415000, "max": 440000 },
+    "downtimeDays_offWing": { "min": 60, "typical": 75, "max": 90 },
+    "downtimeDays_aircraftAOG_withPool": { "min": 2, "typical": 4, "max": 7 },
+    "percentOfTotalMaintenanceCost": 2.5,
+    "notes": "NLG + 2 MLG. Operadores grandes mantienen pool de gears para minimizar AOG (gear se cambia, gear viejo va a overhaul off-aircraft).",
+    "source": "aerokool.com; Aircraft Commerce Issue 63"
+  },
+  "cpfhBenchmarks": {
+    "A320ceo": {
+      "totalCPFH_USD": 1200,
+      "totalCPFH_EUR": 1100,
+      "engineShare_pct": 38,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 10,
+      "heavyMxShare_pct": 12,
+      "otherShare_pct": 18,
+      "source": "IATA MCTF FY2013 baseline / AviationWeek benchmarks; rangos secundarios"
+    },
+    "A321ceo": {
+      "totalCPFH_USD": 1280,
+      "totalCPFH_EUR": 1180,
+      "engineShare_pct": 38,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 10,
+      "heavyMxShare_pct": 13,
+      "otherShare_pct": 17,
+      "source": "industry consensus"
+    },
+    "A320neo_LEAP1A_mature": {
+      "totalCPFH_USD": 1000,
+      "totalCPFH_EUR": 920,
+      "engineShare_pct": 35,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 11,
+      "heavyMxShare_pct": 12,
+      "otherShare_pct": 20,
+      "source": "industry consensus / projections"
+    },
+    "A320neo_GTF_currentlyImpacted": {
+      "totalCPFH_USD": 1600,
+      "totalCPFH_EUR": 1470,
+      "engineShare_pct": 55,
+      "componentShare_pct": 18,
+      "lineMxShare_pct": 8,
+      "heavyMxShare_pct": 10,
+      "otherShare_pct": 9,
+      "source": "industry consensus 2024-2026; inflado por GTF AD"
+    }
+  },
+  "gameBalanceValidation": {
+    "currentPlaceholders": {
+      "A_check": { "FH": 600, "FC": 200, "downtimeDays": 1, "costEUR": 12000 },
+      "C_check": { "FH": 7500, "FC": 5000, "downtimeDays": 14, "costEUR": 110000 },
+      "D_check": { "FH": 25000, "FC": 16000, "downtimeDays": 60, "costEUR": 550000 }
+    },
+    "recommendedAdjustments": {
+      "A_check": {
+        "FH": { "from": 600, "to": 750, "rationale": "Match Airbus post-2009 escalation; mantener 600 si quieres conservador." },
+        "FC": { "from": 200, "to": 750, "rationale": "CRÍTICO: 200 FC está fuera de la realidad por ~3.7×. La regla real es FH y FC con valores similares." },
+        "calendarMonths": { "from": null, "to": 4, "rationale": "Añadir gating calendario para low-utilization." },
+        "costEUR": { "from": 12000, "to_typical": 15000, "to_range": [8000, 30000], "rationale": "12k OK como base, pero permitir rango mayor." }
+      },
+      "C_check": {
+        "FH": { "from": 7500, "to": 6000, "rationale": "6000 FH es estándar Airbus moderno; 7500 es operadores que extienden." },
+        "calendarMonths": { "from": null, "to": 24, "rationale": "Añadir gating 20-24 meses." },
+        "costEUR": { "from": 110000, "to_typical": 400000, "to_range": [150000, 800000], "rationale": "MUY BAJO. Realidad 300-500k typical. 110k subestima 3-4×." },
+        "downtimeDays": { "from": 14, "to_range": [7, 21], "rationale": "OK típico, ampliar rango." },
+        "subdivision_suggestion": "Considerar separar C-light (C1..C7) y C-heavy (C8/C12) como decisiones distintas."
+      },
+      "D_check": {
+        "rename_suggestion": "Renombrar a 'Heavy Structural' o 'C12 Heavy'. La industria moderna ya no usa 'D check' en MRBR Airbus.",
+        "FH": { "from": 25000, "to": 25000, "rationale": "OK, equivale a 12 años." },
+        "FC": { "from": 16000, "to": 16000, "rationale": "OK." },
+        "calendarMonths": { "from": null, "to": 144, "rationale": "12 años explícito." },
+        "costEUR": { "from": 550000, "to_typical": 3000000, "to_range": [1500000, 5000000], "rationale": "MUY BAJO. Realidad 2-5M€. 550k subestima 5-8×." },
+        "downtimeDays": { "from": 60, "to_range": [21, 60], "rationale": "OK rango alto." }
+      },
+      "additions_recommended": [
+        "Engine shop visit como evento separado del C-check (1.5-3M€, 60-100 días, gran impact).",
+        "Landing gear overhaul cada 20k FC / 120 meses (~415k€, pool option).",
+        "Engine type decision: CFM56 reliable, V2500 LLP-stack-heavy, LEAP intermediate, GTF risk modifier.",
+        "Phase-check vs block-check elección estratégica del jugador.",
+        "MSG-3 inspired: failure-driven tasks (on-condition) en vez de hard-time todo."
+      ]
+    }
+  }
+}

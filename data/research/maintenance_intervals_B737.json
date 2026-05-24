@@ -1,0 +1,323 @@
+{
+  "_meta": {
+    "generated": "2026-05-15",
+    "purpose": "Validar/recalibrar placeholders de mantenimiento del juego MRO Tycoon contra realidad pública B737 NG y MAX. Espejo del mismo análisis A32x.",
+    "currency_note": "Costes en EUR. Conversión USD->EUR aprox 0.92 aplicada cuando la fuente original era USD.",
+    "warning": "Rangos públicos. Costes reales fluctúan ±50% entre MROs. MAX heavy mx data quasi-inexistente (flota joven post-grounding 2019-2020).",
+    "sources_doc": "docs/research/B737_maintenance.md"
+  },
+  "checks": [
+    {
+      "type": "A",
+      "variant": "B737-800",
+      "intervalFH": 500,
+      "intervalCycles": null,
+      "intervalMonths": 4,
+      "manHours": { "min": 50, "typical": 100, "max": 200 },
+      "costEUR": { "min": 7000, "typical": 14000, "max": 28000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Boeing label P1 check. Estandar 500 FH (vs 750 Airbus). Algunos operadores extienden a 600 FH. Subdividido en P1..P8 dentro del ciclo de 4000h hasta el primer C/P8.",
+      "source": "b737.org.uk heavymaint; SP's Aviation Boeing 737 Maintenance; Aircraft Commerce Issue 108 (2016)"
+    },
+    {
+      "type": "A",
+      "variant": "B737-700",
+      "intervalFH": 500,
+      "intervalCycles": null,
+      "intervalMonths": 4,
+      "manHours": { "min": 45, "typical": 90, "max": 180 },
+      "costEUR": { "min": 6500, "typical": 13000, "max": 26000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "~5-10% menor MH que -800 por menor fuselaje (33.6m vs 39.5m).",
+      "source": "industry consensus / Wikipedia B737 NG"
+    },
+    {
+      "type": "A",
+      "variant": "B737-900ER",
+      "intervalFH": 500,
+      "intervalCycles": null,
+      "intervalMonths": 4,
+      "manHours": { "min": 55, "typical": 110, "max": 220 },
+      "costEUR": { "min": 7500, "typical": 15500, "max": 30000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "~10-15% mayor MH que -800 por fuselaje stretched (~3m más). Boeing aplica el mismo MPD framework, intervalos idénticos, scope incremental.",
+      "source": "industry consensus / Wikipedia B737 NG"
+    },
+    {
+      "type": "A",
+      "variant": "B737 MAX 8",
+      "intervalFH": 500,
+      "intervalCycles": null,
+      "intervalMonths": 4,
+      "manHours": { "min": 50, "typical": 100, "max": 200 },
+      "costEUR": { "min": 7000, "typical": 14000, "max": 28000 },
+      "downtimeDays": { "min": 1, "typical": 1, "max": 2 },
+      "notes": "Mismo programa airframe/intervalos que NG. Diferencia clave: tarea adicional MSI-22-11 (MCAS signal check al stab trim motor cada 6000 FH) añadida tras grounding.",
+      "source": "AviationWeek 'Returning MAX To Service Requires Maintenance Changes'; Boeing MPD"
+    },
+    {
+      "type": "C",
+      "variant": "B737-800",
+      "intervalFH": 4000,
+      "intervalCycles": null,
+      "intervalMonths": 18,
+      "manHours": { "min": 2000, "typical": 4000, "max": 6000 },
+      "costEUR": { "min": 130000, "typical": 350000, "max": 700000 },
+      "downtimeDays": { "min": 7, "typical": 14, "max": 21 },
+      "notes": "Boeing P8 check (= 1er base check del ciclo). Intervalo P8 = 4000 FH / 18 meses. Algunos operadores 3600 FH / 15 meses. Difiere de Airbus (6000 FH / 24 meses). Boeing fragmenta más el ciclo (6 P-checks vs Airbus 12 C-checks).",
+      "source": "b737.org.uk heavymaint; SP's Aviation; Aircraft Commerce Issue 108"
+    },
+    {
+      "type": "C",
+      "variant": "B737-700",
+      "intervalFH": 4000,
+      "intervalCycles": null,
+      "intervalMonths": 18,
+      "manHours": { "min": 1800, "typical": 3700, "max": 5500 },
+      "costEUR": { "min": 120000, "typical": 320000, "max": 650000 },
+      "downtimeDays": { "min": 7, "typical": 13, "max": 20 },
+      "notes": "~5-10% menor que -800 por fuselaje.",
+      "source": "industry consensus"
+    },
+    {
+      "type": "C",
+      "variant": "B737-900ER",
+      "intervalFH": 4000,
+      "intervalCycles": null,
+      "intervalMonths": 18,
+      "manHours": { "min": 2200, "typical": 4400, "max": 6500 },
+      "costEUR": { "min": 145000, "typical": 380000, "max": 760000 },
+      "downtimeDays": { "min": 8, "typical": 15, "max": 22 },
+      "notes": "~10-15% mayor que -800.",
+      "source": "industry consensus"
+    },
+    {
+      "type": "C",
+      "variant": "B737 MAX 8",
+      "intervalFH": 4000,
+      "intervalCycles": null,
+      "intervalMonths": 18,
+      "manHours": { "min": 2000, "typical": 4000, "max": 6000 },
+      "costEUR": { "min": 130000, "typical": 350000, "max": 700000 },
+      "downtimeDays": { "min": 7, "typical": 14, "max": 21 },
+      "notes": "Mismo framework MPD que NG. La flota MAX entró en servicio 2017, pero grounding 2019-2020 retrasó acumulación de horas. Datos de C-check reales aún muy escasos en 2024-2026; mayoría sin alcanzar P24.",
+      "source": "industry consensus / Boeing MPD framework"
+    },
+    {
+      "type": "C_intermediate_P24",
+      "variant": "B737-800",
+      "intervalFH": 12000,
+      "intervalCycles": null,
+      "intervalMonths": 54,
+      "manHours": { "min": 4000, "typical": 7000, "max": 10000 },
+      "costEUR": { "min": 350000, "typical": 800000, "max": 1500000 },
+      "downtimeDays": { "min": 14, "typical": 21, "max": 30 },
+      "notes": "P24 (= C3, intermedio). Estructural intermedio. Boeing añade SSI tasks aquí. Equivalente al C8 Airbus.",
+      "source": "b737.org.uk heavymaint; Aircraft Commerce Issue 108"
+    },
+    {
+      "type": "D_heavy_P48",
+      "variant": "B737-800",
+      "intervalFH": 24000,
+      "intervalCycles": null,
+      "intervalMonths": 108,
+      "manHours": { "min": 20000, "typical": 25000, "max": 30000 },
+      "costEUR": { "min": 1800000, "typical": 3000000, "max": 5000000 },
+      "downtimeDays": { "min": 30, "typical": 45, "max": 60 },
+      "notes": "P48 check. Equivalente al D-check histórico. 24 000 FH / 9 años. Estructural completo, full strip, pintura. 20-30k MH (mucho más que Airbus C12 6-12k MH — Boeing concentra más en D que Airbus que distribuye en C8/C12).",
+      "source": "b737.org.uk heavymaint; SP's Aviation; aviationtitans.com 'Heavy Maintenance Cost 2026'"
+    },
+    {
+      "type": "D_heavy_P48",
+      "variant": "B737 MAX 8",
+      "intervalFH": 24000,
+      "intervalCycles": null,
+      "intervalMonths": 108,
+      "manHours": { "min": 20000, "typical": 25000, "max": 30000 },
+      "costEUR": { "min": 1800000, "typical": 3000000, "max": 5000000 },
+      "downtimeDays": { "min": 30, "typical": 45, "max": 60 },
+      "notes": "PROYECTADO. Mismo MPD framework. Primeros P48 reales no esperados hasta 2027-2030 por grounding 2019-2020 que retrasó acumulación. Industry asume coste similar NG hasta nueva data.",
+      "source": "extrapolated from NG; industry consensus"
+    }
+  ],
+  "engineMaintenance": {
+    "CFM56-7B": {
+      "applicableTo": ["B737-600", "B737-700", "B737-800", "B737-900", "B737-900ER", "B737 BBJ"],
+      "llpCount": 18,
+      "llpLifeCycles_coldSection": 30000,
+      "llpLifeCycles_HPC": 25000,
+      "llpLifeCycles_HPT": 20000,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "Sin HSI on-wing programado. Hot section se trata en shop visits.",
+      "shopVisitFirstRunFH": { "min": 25000, "typical": 30000, "max": 50000 },
+      "shopVisitMatureRunFH": { "min": 12000, "typical": 18000, "max": 22000 },
+      "shopVisitCostEUR_hospital": { "min": 280000, "typical": 500000, "max": 750000 },
+      "shopVisitCostEUR_performance": { "min": 1550000, "typical": 2200000, "max": 2800000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 3200000, "typical": 3700000, "max": 4500000 },
+      "llpStackPriceEUR": { "min": 1450000, "typical": 1700000, "max": 1900000 },
+      "shopVisitDurationDays": { "min": 60, "typical": 75, "max": 100 },
+      "notes": "Engine de referencia industria narrowbody. Reliability altísima, récord on-wing 50k FH sin shop visit. Removals típicamente driven por LLP expiry, no performance. Shop visits peaks 2026-2030 según mercado. -7B vs -5B: programa muy similar, costes y vida casi idénticos (familia hermana).",
+      "source": "Aircraft Commerce Issue 58 (CFM56-7B MTCE); Issue 28 (comparison -5B/-7B/V2500); Leeham News 2017; GE Aerospace; StandardAero 1000th SV; Wikipedia CFM56"
+    },
+    "LEAP-1B": {
+      "applicableTo": ["B737 MAX 7", "B737 MAX 8", "B737 MAX 9", "B737 MAX 10", "B737-8200"],
+      "llpLifeCycles_target": 25000,
+      "hotSectionInterval_cycles": null,
+      "hotSectionNote": "On-condition; visitas accelerated por durability issues iniciales (HPT blades).",
+      "shopVisitFirstRunFH": { "min": 8000, "typical": 12000, "max": 18000 },
+      "shopVisitMatureRunFH_target": { "min": 15000, "typical": 18000, "max": 22000 },
+      "shopVisitCostEUR_hospital": { "min": 400000, "typical": 700000, "max": 1000000 },
+      "shopVisitCostEUR_performance": { "min": 1800000, "typical": 2700000, "max": 3500000 },
+      "shopVisitCostEUR_fullOverhaulWithLLP": { "min": 3500000, "typical": 4500000, "max": 6000000 },
+      "llpStackPriceEUR": { "min": 3500000, "typical": 4000000, "max": 4500000 },
+      "shopVisitDurationDays": { "min": 70, "typical": 100, "max": 150 },
+      "knownIssues": [
+        "HPT blade durability — fix kit certificación H1 2026 (más tarde que -1A que ya certificó Dec 2024)",
+        "Hot/dusty operations (Middle East, India) aceleran wear",
+        "MRO capacity ramp-up tardío (StandardAero, LHT, MTU añadiendo capacity LEAP-1B)",
+        "Ascend Airways y otros operadores reportan reliability issues 2024-2025",
+        "Costes daily support ~3000 USD/día/engine vs ~1850 USD/día CFM56 prior gen"
+      ],
+      "notes": "CFM target era parity de tiempo on-wing con CFM56-7B; en práctica primera generación está debajo. Mejor que GTF (no AD masivo) pero peor que CFM56-7B maduro. Durability kit -1B aprobado 2026, retrofit gradual.",
+      "source": "FlightGlobal CFM Leap durability 2025; Safran/CFM press 2024; AirInsight TOW Gap 2025; Aviation Week MRO; Wikipedia LEAP"
+    }
+  },
+  "landingGear": {
+    "applicableTo": ["B737-700", "B737-800", "B737-900", "B737 MAX 8", "B737 MAX 9"],
+    "overhaulInterval_cycles": 20000,
+    "overhaulInterval_months": 120,
+    "overhaulCostEUR": { "min": 380000, "typical": 425000, "max": 500000 },
+    "downtimeDays_offWing": { "min": 60, "typical": 75, "max": 90 },
+    "downtimeDays_aircraftAOG_withPool": { "min": 2, "typical": 4, "max": 7 },
+    "percentOfTotalMaintenanceCost": 2.5,
+    "notes": "NLG + 2 MLG. Boeing tiene programa propio Landing Gear Exchange que minimiza downtime (gear refurbed se pone, gear viejo va a overhaul off-aircraft). 737 Classic TBO 25k cycles / 10 años; NG ligeramente mejor durabilidad MLG y simplificación brake change (-30% time). Coste rango similar A320 (425-475k$ documentado).",
+    "source": "Boeing Services 737NG LG Overhaul Case Study; aerospacerotables.com; aerokool.com; Aircraft Commerce Issue 63; b737.org.uk landinggear"
+  },
+  "cpfhBenchmarks": {
+    "B737-800": {
+      "totalCPFH_USD": 1150,
+      "totalCPFH_EUR": 1060,
+      "engineShare_pct": 38,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 10,
+      "heavyMxShare_pct": 12,
+      "otherShare_pct": 18,
+      "notes": "Direct mx Delta -800: airframe ~$220, engines ~$130, burden ~$150 = ~$500 base + maintenance reserves. Total all-in ~1000-1300$/FH típico industry. C-check específico ~32 USD/FH (Aviation Week 2018, conservador).",
+      "source": "IATA MCTF FY2019 baseline; Aviation Week benchmarks; SimpleFlying B737 op costs; Skylink"
+    },
+    "B737-700": {
+      "totalCPFH_USD": 1080,
+      "totalCPFH_EUR": 990,
+      "engineShare_pct": 40,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 10,
+      "heavyMxShare_pct": 11,
+      "otherShare_pct": 17,
+      "notes": "Menor que -800 por airframe más pequeño; engine share % algo mayor por ratio.",
+      "source": "industry consensus"
+    },
+    "B737-900ER": {
+      "totalCPFH_USD": 1230,
+      "totalCPFH_EUR": 1130,
+      "engineShare_pct": 37,
+      "componentShare_pct": 22,
+      "lineMxShare_pct": 10,
+      "heavyMxShare_pct": 13,
+      "otherShare_pct": 18,
+      "notes": "~7% mayor que -800 por airframe stretched.",
+      "source": "industry consensus"
+    },
+    "B737_MAX_8_currentImpacted": {
+      "totalCPFH_USD": 1100,
+      "totalCPFH_EUR": 1010,
+      "engineShare_pct": 42,
+      "componentShare_pct": 20,
+      "lineMxShare_pct": 10,
+      "heavyMxShare_pct": 8,
+      "otherShare_pct": 20,
+      "notes": "Heavy mx share BAJO porque flota aún joven, casi nadie ha llegado a P24/P48. Engine share INFLADO por LEAP-1B durability issues. Componente warranty Boeing/CFM cubre buena parte. CPFH se normalizará hacia ~950-1100 USD post-2027 con kit retrofit.",
+      "source": "industry consensus 2024-2026; CFM/RTX investor; AirInsight"
+    }
+  },
+  "comparisonWithA32x": {
+    "_note": "Diferencias clave de programa entre Boeing 737 family y Airbus A320 family.",
+    "A_check": {
+      "B737": "500 FH / 4 meses (Boeing P1)",
+      "A320": "750 FH / 4 meses (post-2009 escalation)",
+      "implication": "Boeing más conservador en A interval — más A-checks por año en B737. Si juego modela ambos, B737 hace ~50% más overnight events."
+    },
+    "C_check": {
+      "B737": "4000 FH / 18 meses (Boeing P8); 6 base checks en 24k FH cycle",
+      "A320": "6000 FH / 24 meses; 12 C-checks en cycle",
+      "implication": "Boeing fragmenta más el ciclo: P8/P16/P24/P32/P40/P48. Airbus más distribuido en C1..C12. En la práctica TBOs/scopes muy similares — Boeing concentra más trabajo en P48, Airbus distribuye en C8/C12. Esto SI ofrece dimensión de juego: filosofía diferente del operator."
+    },
+    "D_check_heavy": {
+      "B737": "P48 a 24 000 FH / 9 años. 20-30k man-hours, 30-60 días, 2-5 M€",
+      "A320": "C12 heavy a 25 000 FH / 12 años. 6-12k man-hours, 21-60 días, 1.5-5 M€",
+      "implication": "Boeing P48 es más 'block' (aún concepto D bien definido). Airbus eliminó D del MRBR moderno y lo fragmenta. Boeing P48 cuesta más en man-hours pico (bigger AOG event) — útil para differentiation en juego."
+    },
+    "engine": {
+      "CFM56-7B_vs_CFM56-5B": "Casi idénticos en programa, costes, vidas LLP. Diferencia mínima: -7B aplicación 737, -5B aplicación A320. Reliability comparable.",
+      "LEAP-1B_vs_LEAP-1A": "-1B con menor empuje, mismo core arquitectura. Durability kit certificado Dec 2024 para -1A pero retrasado a H1 2026 para -1B. -1B en peor situación reliability actual.",
+      "Boeing_vs_Airbus_engine_choice": "B737 NG/MAX: monopolio CFM (CFM56-7B → LEAP-1B). Sin opción Pratt o IAE. A320 ofrece elección CFM/IAE/PW/CFM. Decisión engine en juego solo aplica a A320; B737 no tiene esa palanca."
+    },
+    "landingGear": {
+      "B737": "20 000 FC / 120 meses, ~425k EUR",
+      "A320": "20 000 FC / 120 meses, ~415k EUR",
+      "implication": "Prácticamente idéntico, no diferenciador."
+    },
+    "CPFH": {
+      "B737-800_vs_A320ceo": "1100-1200 vs 1100-1200 USD/FH — empate técnico industry. Diferencias <10% no estadísticamente significantes.",
+      "B737_MAX_vs_A320neo_GTF": "MAX (~1100 USD/FH) significativamente mejor que A320neo PW (~1600 USD/FH) por desastre GTF. MAX vs A320neo LEAP-1A: empate (~1000-1100)."
+    }
+  },
+  "gameBalanceValidation": {
+    "currentPlaceholdersGame": {
+      "_note": "Mismos placeholders genéricos del juego (no tienen variant todavía, usan generic narrowbody).",
+      "A_check": { "FH": 600, "FC": 200, "downtimeDays": 1, "costEUR": 12000 },
+      "C_check": { "FH": 7500, "FC": 5000, "downtimeDays": 14, "costEUR": 110000 },
+      "D_check": { "FH": 25000, "FC": 16000, "downtimeDays": 60, "costEUR": 550000 }
+    },
+    "comparisonWithA32xRecommendations": {
+      "_note": "Análisis A32x ya recomendó subidas de coste C (3-4×) y D (5×). El B737 confirma esto y AÑADE:",
+      "differences_to_capture": [
+        "B737 A-check más frecuente (500 FH vs 750 Airbus)",
+        "B737 C-check más frecuente (4000 FH vs 6000 Airbus) PERO scope similar",
+        "B737 D-check (P48) man-hours MAYORES (20-30k vs Airbus 6-12k C12) — más AOG event",
+        "B737 sin elección engine (solo CFM) — menos palanca jugador vs A320",
+        "MAX heavy mx data quasi-inexistente — usar NG values con disclaimer 'estimated'"
+      ]
+    },
+    "recommendedAdjustmentsB737": {
+      "A_check": {
+        "FH": { "from": 600, "to": 500, "rationale": "Match Boeing P1 (500 FH). 600 acepta también si quieres conservador como pre-escalation." },
+        "FC": { "from": 200, "to": null, "rationale": "Boeing MPD raramente lista FC explícito para A. Eliminar gating FC o subir a 500-750 si insiste." },
+        "calendarMonths": { "from": null, "to": 4, "rationale": "Calendar gating 4 meses." },
+        "costEUR": { "from": 12000, "to_typical": 14000, "to_range": [7000, 28000], "rationale": "OK base, ampliar rango." }
+      },
+      "C_check": {
+        "FH": { "from": 7500, "to": 4000, "rationale": "Match Boeing P8 (4000 FH / 18 meses). 7500 es Airbus extendido." },
+        "calendarMonths": { "from": null, "to": 18, "rationale": "Boeing P8." },
+        "costEUR": { "from": 110000, "to_typical": 350000, "to_range": [130000, 700000], "rationale": "MUY BAJO 3-4×. Realidad 250-500k típico para light C." },
+        "downtimeDays": { "from": 14, "to_range": [7, 21], "rationale": "OK típico, ampliar rango." },
+        "subdivision_suggestion": "Considerar P8/P16/P24/P32/P40/P48 como progresión visible al jugador. P24 ya cuesta 0.8M€ (intermediate)."
+      },
+      "D_check_P48": {
+        "rename_suggestion": "Mantener 'D check' o renombrar a 'P48 heavy'. Boeing aún usa concepto D — más reconocible que Airbus que lo eliminó. Mantener D-check vende mejor para tycoon.",
+        "FH": { "from": 25000, "to": 24000, "rationale": "Match Boeing P48 (24 000 FH / 9 años)." },
+        "FC": { "from": 16000, "to": null, "rationale": "Boeing MPD usa FH primario, FC opcional." },
+        "calendarMonths": { "from": null, "to": 108, "rationale": "9 años explícito." },
+        "costEUR": { "from": 550000, "to_typical": 3000000, "to_range": [1800000, 5000000], "rationale": "MUY BAJO 5×. Realidad 2-5M€. P48 más caro en MH que Airbus C12." },
+        "manHours": { "from": null, "to": [20000, 25000, 30000], "rationale": "Add explicit MH tracking; P48 es 20-30k MH (3× más que Airbus C12 6-12k)." },
+        "downtimeDays": { "from": 60, "to_range": [30, 60], "rationale": "OK rango, ampliar." }
+      },
+      "additions_recommended": [
+        "Variant gating: B737-700 (light) / -800 (standard) / -900ER (heavy) — 5-15% modifiers en MH y coste.",
+        "Engine MAX restricción: solo CFM (CFM56-7B NG, LEAP-1B MAX). No hay choice como en A320.",
+        "MAX heavy mx 'estimated' flag: avisar al jugador que data real escasa hasta 2027.",
+        "P48 vs Airbus C12 differentiation: B737 P48 es block más concentrado, A320 C12 más distribuido — palanca de gameplay.",
+        "Engine LEAP-1B durability kit upgrade event (2026): jugador puede pagar retrofit para mejorar TBO."
+      ]
+    }
+  }
+}
