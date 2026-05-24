@@ -28,7 +28,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const balance = JSON.parse(readFileSync(join(root, "src/lib/data/balance.json")));
 const airlines = JSON.parse(readFileSync(join(root, "src/lib/data/airlines.json")));
-const templates = JSON.parse(readFileSync(join(root, "src/lib/data/workorders.json")));
+const { loadWorkOrdersWithKind } = await import("./helpers/loadTemplates.mjs");
+const templates = loadWorkOrdersWithKind(import.meta.url);
 
 let pass = 0, fail = 0;
 function expect(cond, msg, detail) {

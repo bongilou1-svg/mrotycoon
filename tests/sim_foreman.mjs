@@ -11,12 +11,13 @@ import { createGame, advanceGame, hireCandidate, fireMechanic } from "../src/lib
 import { createRng } from "../src/lib/sim/rng.ts";
 import { DAY_MINUTES } from "../src/lib/sim/time.ts";
 import { readFileSync } from "node:fs";
+import { loadWorkOrdersWithKind, loadDailyChecksWithKind } from "./helpers/loadTemplates.mjs";
 
 const balance = JSON.parse(readFileSync(new URL("../src/lib/data/balance.json", import.meta.url)));
 const airlines = JSON.parse(readFileSync(new URL("../src/lib/data/airlines.json", import.meta.url)));
-const templates = JSON.parse(readFileSync(new URL("../src/lib/data/workorders.json", import.meta.url)));
+const templates = loadWorkOrdersWithKind(import.meta.url);
 const defs = JSON.parse(readFileSync(new URL("../src/lib/data/maintenance_checks.json", import.meta.url)));
-const dailyChecks = JSON.parse(readFileSync(new URL("../src/lib/data/daily_checks.json", import.meta.url)));
+const dailyChecks = loadDailyChecksWithKind(import.meta.url);
 
 let pass = 0, fail = 0;
 function expect(cond, msg) {

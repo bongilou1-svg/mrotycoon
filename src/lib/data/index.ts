@@ -2,6 +2,7 @@
 // así que `import data from "./*.json"` es instantáneo en runtime.
 
 import workordersJson from "./workorders.json";
+import woClassificationJson from "./wo_classification.json";
 import airlinesJson from "./airlines.json";
 import balanceJson from "./balance.json";
 import maintenanceChecksJson from "./maintenance_checks.json";
@@ -12,6 +13,7 @@ import type {
   Airline,
   Balance,
   CheckDefinition,
+  WoKind,
 } from "$lib/types";
 import { isWorkOrderTemplate } from "$lib/types";
 
@@ -32,17 +34,24 @@ export interface GameData {
  * compilación moralmente — el juego no debería arrancar con datos rotos.
  */
 export function loadGameData(): GameData {
-  // 1. WorkOrders
+  // 1. WorkOrders + merge con wo_classification.json (inyecta `kind` por id).
   if (!Array.isArray(workordersJson)) {
     throw new Error("[data] workorders.json no es un array");
   }
+  const kindByWoId = buildKindMap(woClassificationJson);
   const workOrders: WorkOrderTemplate[] = [];
   for (let i = 0; i < workordersJson.length; i++) {
-    const wo = workordersJson[i];
-    if (!isWorkOrderTemplate(wo)) {
-      throw new Error(`[data] workorders.json[${i}] no cumple shape WorkOrderTemplate (id=${(wo as { id?: string })?.id})`);
+    const raw = workordersJson[i] as Record<string, unknown>;
+    const id = typeof raw?.id === "string" ? raw.id : undefined;
+    const kind = id ? kindByWoId.get(id) : undefined;
+    if (!kind) {
+      throw new Error(`[data] workorders.json[${i}] (id=${id ?? "?"}) sin entrada en wo_classification.json`);
     }
-    workOrders.push(wo);
+    const merged = { ...raw, kind } as unknown;
+    if (!isWorkOrderTemplate(merged)) {
+      throw new Error(`[data] workorders.json[${i}] no cumple shape WorkOrderTemplate (id=${id})`);
+    }
+    workOrders.push(merged);
   }
 
   // 2. Airlines
@@ -72,20 +81,39 @@ export function loadGameData(): GameData {
     }
   }
 
-  // 5. Daily check templates (Fase 5A V3)
+  // 5. Daily check templates (Fase 5A V3). Todos son MPD por definición → `kind:"mpd"` forzado.
   if (!Array.isArray(dailyChecksJson)) {
     throw new Error("[data] daily_checks.json no es un array");
   }
   const dailyChecks: WorkOrderTemplate[] = [];
   for (let i = 0; i < dailyChecksJson.length; i++) {
-    const dc = dailyChecksJson[i];
-    if (!isWorkOrderTemplate(dc)) {
-      throw new Error(`[data] daily_checks.json[${i}] no cumple shape (id=${(dc as { id?: string })?.id})`);
+    const raw = dailyChecksJson[i] as Record<string, unknown>;
+    const merged = { ...raw, kind: "mpd" as WoKind } as unknown;
+    if (!isWorkOrderTemplate(merged)) {
+      throw new Error(`[data] daily_checks.json[${i}] no cumple shape (id=${(raw as { id?: string })?.id})`);
     }
-    dailyChecks.push(dc);
+    dailyChecks.push(merged);
   }
 
   return { workOrders, airlines, balance, maintenanceChecks, dailyChecks };
+}
+
+/** Mapa id→kind a partir del archivo wo_classification.json. Exportado para tests. */
+export function buildKindMap(
+  classification: unknown,
+): Map<string, WoKind> {
+  const out = new Map<string, WoKind>();
+  if (!classification || typeof classification !== "object") return out;
+  const arr = (classification as { classifications?: unknown }).classifications;
+  if (!Array.isArray(arr)) return out;
+  for (const entry of arr) {
+    if (!entry || typeof entry !== "object") continue;
+    const e = entry as { id?: unknown; kind?: unknown };
+    if (typeof e.id !== "string") continue;
+    if (e.kind !== "callout" && e.kind !== "mpd") continue;
+    out.set(e.id, e.kind);
+  }
+  return out;
 }
 
 /**

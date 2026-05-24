@@ -48,6 +48,10 @@ export function pickWeightedTemplate(rng: Rng, templates: readonly WorkOrderTemp
 /**
  * Decide si aparece WO al landing y, si sí, genera la instance.
  *
+ * Es REACTIVO por definición: solo muestrea templates `kind: "callout"`. Las MPD
+ * (preventivas, programadas por plan de mantenimiento) no entran por aquí — esas
+ * disparan via `rollDailyChecksOnOvernight` (daily) o packages mayores en Tier 2+.
+ *
  * @returns WorkOrderInstance o null si no salió WO en este avión.
  */
 export function rollWoOnLanding(
@@ -57,7 +61,8 @@ export function rollWoOnLanding(
   balance: Balance,
 ): WorkOrderInstance | null {
   if (!randBool(rng, balance.probabilities.workOrderAtStand)) return null;
-  const compat = compatibleTemplates(templates, airplane.model, airplane.engineVariant);
+  const callouts = templates.filter((t) => t.kind === "callout");
+  const compat = compatibleTemplates(callouts, airplane.model, airplane.engineVariant);
   if (compat.length === 0) return null;
   const template = pickWeightedTemplate(rng, compat);
   return instantiateWorkOrder(template, airplane, balance);
@@ -119,9 +124,13 @@ export function rollDailyChecksOnOvernight(
   balance: Balance,
 ): WorkOrderInstance[] {
   if (dailyCheckTemplates.length === 0) return [];
+  // Filtro PREVENTIVO por kind=mpd. El loader fuerza `kind:"mpd"` en daily_checks.json,
+  // pero filtramos defensivamente por si algún caller pasa un pool mezclado.
+  const mpds = dailyCheckTemplates.filter((t) => t.kind === "mpd");
+  if (mpds.length === 0) return [];
   // Pickear 2-4 templates distintos. Si el dataset es pequeño, devolvemos los disponibles.
-  const count = Math.min(dailyCheckTemplates.length, 2 + Math.floor(rng.next() * 3)); // 2, 3, 4
-  const compat = compatibleTemplates(dailyCheckTemplates, airplane.model, airplane.engineVariant);
+  const count = Math.min(mpds.length, 2 + Math.floor(rng.next() * 3)); // 2, 3, 4
+  const compat = compatibleTemplates(mpds, airplane.model, airplane.engineVariant);
   if (compat.length === 0) return [];
   // Selección sin reemplazo
   const pool = [...compat];

@@ -11,6 +11,16 @@ export type MechanicCategory = "B1" | "B2";
 /** Severidad de la WO (afecta penalty, urgencia visual, probabilidad de aparición). */
 export type Severity = "Minor" | "Major" | "Critical";
 
+/** Origen de la WO según modelo HH + Tiers (2026-05-24).
+ *  - `callout`: reactivo. Defecto/fallo reportado por tripulación o detectado en walkaround.
+ *    Llega "al teléfono" del MRO de línea cuando un avión aterriza con problema.
+ *    Únicas que pueden disparar `rollWoOnLanding`.
+ *  - `mpd`: preventivo. Tarea programada por el Maintenance Planning Document del
+ *    fabricante (interval horas vuelo / ciclos / calendario). Daily check, A-check,
+ *    oil servicing, inspecciones recurrentes. Únicas que pueden disparar `rollDailyChecksOnOvernight`.
+ *  Tier 1 → solo callouts + daily check mpd. Tier 2+ → suma packages mpd más pesados. */
+export type WoKind = "callout" | "mpd";
+
 /** Capítulo ATA (Air Transport Association). Numeración estándar de sistemas del avión. */
 export type AtaChapter = number; // ej. 21 (ECS), 32 (Landing gear), 71 (Engine)
 
@@ -63,6 +73,11 @@ export interface WorkOrderTemplate {
   /** Si true, este template es un daily check (Fase 5A V3) — se genera al pernoctar el avión,
    *  no probabilísticamente al landing. Dataset separado en `data/daily_checks.json`. */
   isDailyCheck?: boolean;
+  /** Origen del trabajo (callout = reactivo, mpd = preventivo). Inyectado por el loader
+   *  a partir de `wo_classification.json` para workorders.json y forzado a `mpd` para
+   *  daily_checks.json (todos son MPD por definición). Filtra qué templates pueden disparar
+   *  cada generador (callout → `rollWoOnLanding`, mpd → `rollDailyChecksOnOvernight`). */
+  kind: WoKind;
 }
 
 /** Fases por las que pasa una WO en runtime. */
@@ -115,6 +130,7 @@ export interface WorkOrderInstance {
 
 const VALID_CATEGORIES = new Set<MechanicCategory>(["B1", "B2"]);
 const VALID_SEVERITIES = new Set<Severity>(["Minor", "Major", "Critical"]);
+const VALID_KINDS = new Set<WoKind>(["callout", "mpd"]);
 
 /** Valida que un objeto desconocido cumple la shape de WorkOrderTemplate. */
 export function isWorkOrderTemplate(x: unknown): x is WorkOrderTemplate {
@@ -136,6 +152,8 @@ export function isWorkOrderTemplate(x: unknown): x is WorkOrderTemplate {
     typeof o.isAOG === "boolean" &&
     typeof o.probability === "number" &&
     Array.isArray(o.partsRequired) &&
-    Array.isArray(o.toolsRequired)
+    Array.isArray(o.toolsRequired) &&
+    typeof o.kind === "string" &&
+    VALID_KINDS.has(o.kind as WoKind)
   );
 }

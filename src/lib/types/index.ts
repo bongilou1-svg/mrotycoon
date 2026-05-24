@@ -8,6 +8,7 @@ export type {
   Severity,
   AtaChapter,
   MelCategory,
+  WoKind,
 } from "./workorder";
 export { isWorkOrderTemplate } from "./workorder";
 

@@ -158,6 +158,11 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .phase-step.done .lbl{color:var(--success)}
 .phase-step.active .lbl{color:var(--accent);font-weight:600}
 .phase-step.failed .lbl{color:var(--danger)}
+/* Pivot iteración 2026-05-24: chips clickables dentro de daily-card (matrícula + tipo)
+   con hover claro para distinguirlos de la zona neutra que abre el modal daily. */
+.clickable-chip{cursor:pointer;padding:.05rem .35rem;border-radius:4px;border:1px solid transparent;transition:background .12s,border-color .12s;position:relative;z-index:2}
+.clickable-chip:hover{background:rgba(77,163,255,.18);border-color:rgba(77,163,255,.45)}
+.daily-card:hover{outline:1px dashed rgba(140,150,200,.4);outline-offset:2px}
 .fleet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;gap:.4rem}
 .fleet-reg{font-family:var(--mono);font-weight:600;color:var(--text);font-size:.85rem}
 .fleet-meta{display:flex;flex-wrap:wrap;gap:.4rem;color:var(--muted)}
@@ -9823,6 +9828,8 @@ let detailMechId = null;     // F5B-ε: id mecánico seleccionado para modal
 let detailCheckId = null;    // F5C extra: instanceId de check A/C/D para modal
 let detailContractId = null; // F5C extra: id de contrato para modal
 let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
+let detailDailyAirplaneId = null; // Pivot 2026-05-24: instanceId avión para modal daily check detallado
+let detailAirplaneType = null;    // Pivot 2026-05-24: "MODEL/ENGINE" para modal tipo avión
 let scheduleFilter = "all";  // Pivot línea pura · P3: filtro panel schedule "all"|"arrival"|"departure"
 let eventFilter = "open";    // Pivot línea pura · Event Tracking: "open" (activos) | "all"
 let manualCertId = "";
@@ -10125,7 +10132,9 @@ function buildEventFeed(){
       sortMinute: wo.emissionMinute,
       open: !isClosed,
       icon: tpl?.isAOG ? "🛑" : isFinding ? "🔍" : isDeferred ? "📋" : "🔧",
-      title: `${esc(wo.airplaneRegistration)} · ${esc(tpl?.description?.slice(0,55) ?? wo.templateId)}${isFinding ? ' (finding)' : ''}`,
+      // Pivot iteración 2026-05-24: title con chips clickables. La matrícula abre modal
+      // flota, el tipo abre modal tipo. La card en sí abre modal WO (data-wo).
+      title: `<span class="clickable-chip mono" data-fleet-reg="${esc(wo.airplaneRegistration)}" title="Detalle ${esc(wo.airplaneRegistration)}"><strong>${esc(wo.airplaneRegistration)}</strong></span>${ap ? ` <span class="clickable-chip muted" data-airplane-type="${ap.model}/${ap.engineVariant}" title="Detalle ${ap.model}/${ap.engineVariant}">${ap.model}/${ap.engineVariant}</span>` : ''} · ${esc(tpl?.description?.slice(0,55) ?? wo.templateId)}${isFinding ? ' (finding)' : ''}`,
       phase: wo.phase,
       meta: [
         `ATA ${tpl?.ata ?? "?"}`,
@@ -10178,14 +10187,17 @@ function buildEventFeed(){
       sortMinute: sortMin,
       open: !isClosed,
       icon: "🌙",
-      title: `${esc(ap.registration)} · Daily check · ${completed}/${total} subtareas`,
+      // Pivot iteración 2026-05-24: title con chips clickables (matrícula → modal flota,
+      // tipo → modal tipo). El title se interpola sin esc() en el render, permitiendo HTML.
+      // El click neutro sobre la card abre el modal daily detallado (vía clickDailyAirplaneId).
+      title: `<span class="clickable-chip mono" data-fleet-reg="${esc(ap.registration)}" title="Detalle ${esc(ap.registration)}"><strong>${esc(ap.registration)}</strong></span> <span class="clickable-chip muted" data-airplane-type="${ap.model}/${ap.engineVariant}" title="Detalle ${ap.model}/${ap.engineVariant}">${ap.model}/${ap.engineVariant}</span> · Daily check · ${completed}/${total} subtareas`,
       phase: aggPhase,
       meta: [
         `book ${bookHours.toFixed(1)}h`,
         assignedNames.length === 0 ? "⚠️ sin B1 idle" : `👤 ${esc(assignedNames.join(", "))}`,
         failed > 0 ? `${failed} subtarea${failed>1?'s':''} failed` : null,
       ].filter(Boolean),
-      clickFleetReg: ap.registration,  // click abre modal del avión
+      clickDailyAirplaneId: ap.instanceId, // click neutro → modal daily detallado
       // Pivot iteración 2026-05-24: stepper de subtareas (no de fases) — cada step
       // = una DC-* WO. Visual: done verde · active azul con % · pending gris · failed rojo.
       subtaskBar: wos,
@@ -10194,13 +10206,16 @@ function buildEventFeed(){
   // A/C/D checks
   for (const c of game.maintenanceChecks) {
     const isOpen = c.phase === "Scheduled" || c.phase === "InProgress";
+    // Modelo para el chip de tipo: lo derivamos del FleetAircraft (matrícula → model+engine)
+    const fa = game.fleet.find(f => f.registration === c.registration);
     events.push({
       kind: "check",
       id: c.instanceId,
       sortMinute: c.scheduledMinute,
       open: isOpen,
       icon: "🛠️",
-      title: `${esc(c.registration)} · ${c.type}-check${c.nightStarted ? " 🌙" : ""}${c.onPlatform ? " ⛅" : ""}`,
+      // Pivot iteración 2026-05-24: matrícula y tipo clickables. La card abre modal check.
+      title: `<span class="clickable-chip mono" data-fleet-reg="${esc(c.registration)}" title="Detalle ${esc(c.registration)}"><strong>${esc(c.registration)}</strong></span>${fa ? ` <span class="clickable-chip muted" data-airplane-type="${fa.model}/${fa.engineVariant}" title="Detalle ${fa.model}/${fa.engineVariant}">${fa.model}/${fa.engineVariant}</span>` : ''} · ${c.type}-check${c.nightStarted ? " 🌙" : ""}${c.onPlatform ? " ⛅" : ""}`,
       phase: c.phase,
       meta: [
         `Stand ${c.standId || "—"}`,
@@ -10365,6 +10380,7 @@ function renderHangarEventTracking(){
       : `<span class="wo-phase" style="background:rgba(139,150,180,.15);color:var(--muted);border-color:rgba(139,150,180,.3)">CLOSED · ${esc(e.phase)}</span>`;
     const dataAttr = e.clickWoId ? `data-wo="${e.clickWoId}"`
       : e.clickCheckId ? `data-check-id="${e.clickCheckId}"`
+      : e.clickDailyAirplaneId ? `data-daily-airplane="${esc(e.clickDailyAirplaneId)}"`
       : e.clickFleetReg ? `data-fleet-reg="${esc(e.clickFleetReg)}"` : "";
     const clickable = dataAttr ? 'style="cursor:pointer"' : '';
     // Para WO callouts (no daily, no check, no random event), renderizar stepper
@@ -10904,24 +10920,52 @@ function renderSchedule(){
 // ===========================================================================
 // Pivot línea pura · iteración 2026-05-24 — Production Planning nocturno
 // ===========================================================================
-// Paquete de trabajo que las aerolíneas contratadas envían al MRO ~12:00 del día.
-// Para cada avión que pernocta esta noche: daily checks ya emitidos al landing,
-// WO diferidas vivas (cierre opcional), callouts activos, y placeholder MPD.
+// Paquete de trabajo que las aerolíneas contratadas envían al MRO a las 12:00 del día N
+// para la pernocta DE ESA MISMA NOCHE N. Antes de las 12:00 no se sabe oficialmente qué
+// vuelve. EXCEPCIÓN día 1 (primer día de partida): paquete considerado ya recibido al iniciar
+// — el inicio de partida cae a las 06:00 del día 1 (turno mañana del MRO) y la suposición
+// in-game es que la aerolínea envió el paquete el día anterior, antes de que tú abrieras
+// la persiana del hangar.
 function pendingNightOvernighters(){
   const now = game.clock.minute;
-  return game.airplanes.filter(a =>
-    a.overnight === true &&
-    a.arrivalMinute <= now + S.DAY_MINUTES &&
-    (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now)
-  );
+  return game.airplanes.filter(a => {
+    if (a.overnight !== true) return false;
+    if (a.actualDepartureMinute !== undefined && a.actualDepartureMinute <= now) return false;
+    const arrivalDayIdx = Math.floor(a.arrivalMinute / S.DAY_MINUTES); // 0-indexed
+    if (arrivalDayIdx === 0) return true; // primer día: paquete ya recibido al iniciar
+    const publishMinute = arrivalDayIdx * S.DAY_MINUTES + 12 * 60; // 12:00 del día de arrival
+    return now >= publishMinute;
+  });
+}
+
+/** Próxima hora de publicación de paquete (para mostrar "Próximo: día X · 12:00"). */
+function nextPlanningPublishMinute(){
+  const now = game.clock.minute;
+  // Busca futuras pernoctas y devuelve el publishMinute mínimo > now.
+  const futurePublishes = game.airplanes
+    .filter(a => a.overnight === true && a.arrivalMinute > now &&
+      (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now))
+    .map(a => {
+      const idx = Math.floor(a.arrivalMinute / S.DAY_MINUTES);
+      return idx === 0 ? 0 : idx * S.DAY_MINUTES + 12 * 60;
+    })
+    .filter(m => m > now);
+  if (futurePublishes.length === 0) return null;
+  return Math.min(...futurePublishes);
 }
 
 function renderProductionPlanning(){
   const overnights = pendingNightOvernighters();
   let h = '<h2>📋 Production Planning · Noche</h2>';
-  h += '<p class="muted" style="margin-bottom:.5rem">Paquete de trabajo nocturno PLANIFICADO que las aerolíneas contratadas envían al MRO para los aviones que pernoctan. Llega ~12:00 del día. Incluye <strong>1 daily check</strong> por avión (con sus subtareas), cierre opcional de WO diferidas vivas y (futuro) ítems MPD facilitados. Los callouts NO planificados viven en Operaciones · Event Tracking.</p>';
+  h += '<p class="muted" style="margin-bottom:.5rem">Paquete de trabajo nocturno PLANIFICADO que las aerolíneas contratadas envían al MRO a las <strong>12:00 del día</strong>. Incluye <strong>1 daily check</strong> por avión (con sus subtareas), cierre opcional de WO diferidas vivas y (futuro) ítems MPD facilitados. Click en la tarjeta para detalle del daily, en la matrícula para detalle del avión, en el tipo para detalle del modelo. Los callouts NO planificados viven en Operaciones · Event Tracking.</p>';
   if (overnights.length === 0) {
-    h += '<div class="empty">Sin pernoctas confirmadas todavía. Los aviones que aterricen ≥19:00 y sean último arrival de su aerolínea pernoctarán — recibirás aquí su paquete de trabajo.</div>';
+    const next = nextPlanningPublishMinute();
+    if (next !== null) {
+      const dayN = Math.floor(next / S.DAY_MINUTES) + 1;
+      h += `<div class="empty">📬 Paquete de pernoctas no recibido todavía. La aerolínea lo enviará el <strong>día ${dayN} a las 12:00</strong>.</div>`;
+    } else {
+      h += '<div class="empty">Sin pernoctas planificadas en horizonte. Los aviones que aterricen ≥19:00 y sean último arrival de su aerolínea pernoctarán — recibirás aquí su paquete a las 12:00 del día.</div>';
+    }
     return h;
   }
   // Agrupar por aerolínea
@@ -10952,10 +10996,16 @@ function renderProductionPlanning(){
         const tpl = game.templates.find(t => t.id === d.templateId);
         return s + (tpl?.durationMinutes ?? 0) / 60;
       }, 0);
-      h += `<article class="wo-card" data-fleet-reg="${esc(ap.registration)}" style="cursor:pointer">
+      // Pivot iteración 2026-05-24: tarjeta con 3 zonas clickables distintas:
+      //  • article (zona neutra: header bg, meta general) → modal daily check.
+      //  • <span data-fleet-reg=...> (matrícula) → modal avión.
+      //  • <span data-airplane-type="MODEL/ENGINE"> (tipo) → modal tipo avión.
+      // El handler global comprueba el más específico primero (closest data-* gana).
+      // Para evitar superposición visual, cada zona clickable tiene hover propio y title.
+      h += `<article class="wo-card daily-card" data-daily-airplane="${ap.instanceId}" style="cursor:pointer" title="Click para detalle del daily check">
         <header class="wo-head">
-          <span class="mono"><strong style="font-size:1rem">${esc(ap.registration)}</strong></span>
-          <span class="muted">${ap.model}/${ap.engineVariant}</span>
+          <span class="mono clickable-chip" data-fleet-reg="${esc(ap.registration)}" title="Detalle del avión ${esc(ap.registration)}"><strong style="font-size:1rem">${esc(ap.registration)}</strong></span>
+          <span class="muted clickable-chip" data-airplane-type="${ap.model}/${ap.engineVariant}" title="Detalle tipo ${ap.model}/${ap.engineVariant}">${ap.model}/${ap.engineVariant}</span>
           <span class="wo-phase" style="background:rgba(80,80,140,.18);color:#cdf;border-color:rgba(140,150,200,.5)">🌙 Pernocta</span>
         </header>
         <div class="wo-meta">
@@ -10971,6 +11021,204 @@ function renderProductionPlanning(){
     }
   }
   return h;
+}
+
+// ===========================================================================
+// Pivot iteración 2026-05-24 — Modal detalle Daily Check (work package nocturno)
+// ===========================================================================
+// Lista TODAS las subtareas del daily check de un avión: descripción, ATA, categoría
+// requerida, duración book, herramientas, partes, fase actual, % progreso, mec
+// asignado. Click sobre la card de Production Planning lo abre. Cerrar con × o
+// fondo. La info viene de g.workOrders (DC-* sub-WOs) + g.dailyCheckTemplates.
+function renderDailyDetailModal(){
+  if (!detailDailyAirplaneId) return null;
+  const ap = game.airplanes.find(a => a.instanceId === detailDailyAirplaneId);
+  if (!ap) return null;
+  const c = game.contracts.find(cc => cc.id === ap.contractId);
+  const al = c ? game.airlines.find(a => a.id === c.airlineId) : null;
+  const allWos = game.workOrders.filter(w => w.airplaneInstanceId === ap.instanceId);
+  const dcs = allWos
+    .filter(w => w.templateId && w.templateId.startsWith("DC-"))
+    .sort((a, b) => (a.templateId || "").localeCompare(b.templateId || ""));
+  const deferred = allWos.filter(w => w.phase === "Deferred");
+  const callouts = allWos.filter(w => w.templateId && !w.templateId.startsWith("DC-") && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred");
+
+  const dcCompleted = dcs.filter(d => d.phase === "Completed").length;
+  const dcFailed = dcs.filter(d => d.phase === "Failed").length;
+  const dcBookHours = dcs.reduce((s, d) => {
+    const tpl = game.dailyCheckTemplates?.find?.(t => t.id === d.templateId) || game.templates.find(t => t.id === d.templateId);
+    return s + (tpl?.durationMinutes ?? 0) / 60;
+  }, 0);
+
+  let inner = `<header class="modal-head"><h3>🌙 Daily check · ${esc(ap.registration)} <span class="muted" style="font-weight:normal;font-size:.85rem">${ap.model}/${ap.engineVariant}</span></h3><button class="close" id="modal-close">×</button></header>
+  <div class="modal-body">
+    <div class="kvs">
+      <span>Aerolínea: <strong>${esc(al?.name ?? "—")}</strong></span>
+      <span>Llegada: <strong class="mono">${esc(ap.arrivalCallsign ?? "?")} @ ${fmtClock(ap.arrivalMinute)}</strong></span>
+      <span>Próx. salida: <strong class="mono">${esc(ap.nextDepartureCallsign ?? "—")} @ ${fmtClock(ap.scheduledDepartureMinute)}</strong></span>
+      <span>Stand: <strong>${esc(ap.standId || "ramp")}</strong></span>
+    </div>
+    <div class="kvs" style="margin-top:.3rem">
+      <span>Subtareas: <strong>${dcCompleted}/${dcs.length}</strong>${dcFailed > 0 ? ` · <strong style="color:var(--danger)">${dcFailed} failed</strong>` : ''}</span>
+      <span>Book HH total: <strong>${dcBookHours.toFixed(1)}h</strong></span>
+    </div>
+
+    <h4>Subtareas del daily check</h4>`;
+
+  if (dcs.length === 0) {
+    inner += '<p class="muted">Daily check aún no emitido (se emite al aterrizar). El paquete del avión está confirmado pero las sub-WOs se crean cuando llega a stand.</p>';
+  } else {
+    inner += '<div style="display:flex;flex-direction:column;gap:.4rem">';
+    for (const w of dcs) {
+      const tpl = game.dailyCheckTemplates?.find?.(t => t.id === w.templateId) || game.templates.find(t => t.id === w.templateId);
+      if (!tpl) continue;
+      let phaseBadge, phaseClr;
+      if (w.phase === "Completed") { phaseBadge = "✓ Completado"; phaseClr = "var(--success)"; }
+      else if (w.phase === "Failed") { phaseBadge = "✗ Failed"; phaseClr = "var(--danger)"; }
+      else if (w.phase === "Deferred") { phaseBadge = "📋 Diferido"; phaseClr = "var(--warning)"; }
+      else if (w.phase === "ToPlane") { phaseBadge = w.assignedMechanicIds.length > 0 ? "→ En camino" : "⏳ Sin asignar"; phaseClr = w.assignedMechanicIds.length > 0 ? "var(--accent)" : "var(--muted)"; }
+      else { phaseBadge = `⚙️ ${w.phase}`; phaseClr = "var(--accent)"; }
+      // Progreso global del WO en su fase actual
+      let pct = 0;
+      if (w.phase === "Completed" || w.phase === "Failed") pct = 100;
+      else if (tpl && (w.phase === "Inspection" || w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework")) {
+        const r = game.balance.phaseDurationRatios;
+        const d = tpl.durationMinutes;
+        const phaseDur = w.phase === "Inspection" ? d * r.inspection
+          : w.phase === "MainTask" ? d * r.mainTask
+          : w.phase === "Test" ? d * r.test
+          : w.phase === "Rework" ? d * r.rework
+          : d;
+        pct = phaseDur > 0 ? Math.min(100, (w.phaseElapsedMinutes / phaseDur) * 100) : 0;
+      }
+      const mechs = w.assignedMechanicIds
+        .map(id => game.mechanics.find(m => m.id === id))
+        .filter(Boolean);
+      const mechLabels = mechs.length === 0 ? '<span class="muted">— sin asignar</span>'
+        : mechs.map(m => `<span class="chip">👤 ${esc(m.name)} <span class="muted">(${m.typeRatings[0]?.category ?? "—"})</span></span>`).join(" ");
+      inner += `<div style="border:1px solid var(--border);border-radius:6px;padding:.55rem .7rem;background:rgba(255,255,255,.02)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.3rem">
+          <div><strong class="mono">${esc(tpl.id)}</strong> · ATA ${tpl.ata} · <span class="muted">${esc(tpl.requiredCategory)} req</span> · <span class="muted">${tpl.durationMinutes}min book</span>${tpl.deferrable?' · <span class="muted">deferrable</span>':''}</div>
+          <span class="wo-phase" style="background:rgba(0,0,0,.3);color:${phaseClr};border-color:${phaseClr}">${phaseBadge}</span>
+        </div>
+        <div style="margin-bottom:.4rem">${esc(tpl.description)}</div>
+        ${w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "ToPlane" && w.phase !== "Deferred" ? `<div class="bar" style="height:6px"><div class="fill primary" style="width:${pct.toFixed(0)}%"></div></div><div class="muted" style="font-size:.7rem;margin-top:.1rem">Fase ${w.phase}: ${pct.toFixed(0)}%</div>` : ''}
+        <div style="margin-top:.3rem;display:flex;flex-wrap:wrap;gap:.3rem;font-size:.78rem">${mechLabels}</div>
+        ${tpl.toolsRequired && tpl.toolsRequired.length > 0 ? `<div class="muted" style="font-size:.72rem;margin-top:.25rem">🔧 ${tpl.toolsRequired.map(t => esc(t)).join(" · ")}</div>` : ''}
+        ${tpl.partsRequired && tpl.partsRequired.length > 0 ? `<div class="muted" style="font-size:.72rem;margin-top:.1rem">📦 ${tpl.partsRequired.map(p => esc(p)).join(" · ")}</div>` : ''}
+      </div>`;
+    }
+    inner += '</div>';
+  }
+
+  if (deferred.length > 0) {
+    inner += '<h4>WO diferidas vivas en este avión (cierre opcional)</h4><ul style="margin:.3rem 0 .5rem 1.2rem;font-size:.85rem">';
+    for (const w of deferred) {
+      const tpl = game.templates.find(t => t.id === w.templateId);
+      inner += `<li><strong class="mono">${esc(w.instanceId)}</strong> · ${esc(tpl?.description ?? w.templateId)}</li>`;
+    }
+    inner += '</ul>';
+  }
+  if (callouts.length > 0) {
+    inner += '<h4>Callouts activos en este avión</h4><ul style="margin:.3rem 0 .5rem 1.2rem;font-size:.85rem">';
+    for (const w of callouts) {
+      const tpl = game.templates.find(t => t.id === w.templateId);
+      inner += `<li><strong class="mono">${esc(w.instanceId)}</strong> · ${esc(tpl?.description ?? w.templateId)} · fase ${w.phase}</li>`;
+    }
+    inner += '</ul>';
+  }
+  inner += '<p class="muted" style="font-size:.75rem;margin-top:.6rem">📄 MPD ítems facilitados por la aerolínea: — (próximamente)</p>';
+  inner += '</div>';
+  return inner;
+}
+
+// ===========================================================================
+// Pivot iteración 2026-05-24 — Modal detalle Tipo de Avión
+// ===========================================================================
+// Muestra info técnica del modelo+motor: ATAs típicos, type ratings requeridos,
+// mecs del MRO con rating para este tipo, aviones de la flota con este tipo,
+// contratos activos que lo operan. Click sobre el chip "A320/CFM56" lo abre.
+function renderAirplaneTypeModal(){
+  if (!detailAirplaneType) return null;
+  const [model, engineVariant] = detailAirplaneType.split("/");
+  if (!model || !engineVariant) return null;
+
+  // Mecs con rating para este tipo (cualquier categoría)
+  const ratedMechs = game.mechanics.filter(m =>
+    m.typeRatings.some(r => r.model === model && r.engineVariant === engineVariant)
+  );
+  const b1s = ratedMechs.filter(m => m.typeRatings.some(r => r.model === model && r.engineVariant === engineVariant && r.category === "B1"));
+  const b2s = ratedMechs.filter(m => m.typeRatings.some(r => r.model === model && r.engineVariant === engineVariant && r.category === "B2"));
+
+  // Aviones (landings) de este tipo en pista
+  const landingsHere = game.airplanes.filter(a => a.model === model && a.engineVariant === engineVariant && a.status !== "Departed");
+  // Flota con este tipo
+  const fleetHere = game.fleet.filter(f => f.model === model && f.engineVariant === engineVariant);
+  // Aerolíneas que lo operan (vía contratos activos)
+  const activeContractIds = new Set(game.contracts.filter(c => c.status === "active").map(c => c.id));
+  const operatingAirlineIds = new Set();
+  for (const ap of game.airplanes) {
+    if (ap.model === model && ap.engineVariant === engineVariant && activeContractIds.has(ap.contractId)) {
+      const c = game.contracts.find(cc => cc.id === ap.contractId);
+      if (c) operatingAirlineIds.add(c.airlineId);
+    }
+  }
+  const operatingAirlines = game.airlines.filter(a => operatingAirlineIds.has(a.id));
+
+  // Datos técnicos del A320 family (universo cerrado del juego)
+  const techData = {
+    A320: { mtow: "78 t", capacity: "150-180 pax", length: "37.6m", typicalFH: "8-12h/día" },
+    A321: { mtow: "93 t", capacity: "185-220 pax", length: "44.5m", typicalFH: "8-12h/día" },
+  };
+  const engineData = {
+    CFM56: { mfg: "CFM International (GE+Safran)", thrust: "27,000 lbf", inLineMaint: "Sí" },
+    V2500: { mfg: "IAE (Pratt+Whitney+RR+MTU)", thrust: "27,000 lbf", inLineMaint: "Sí" },
+  };
+  const td = techData[model] || {};
+  const ed = engineData[engineVariant] || {};
+
+  let inner = `<header class="modal-head"><h3>✈️ Tipo de avión · ${esc(model)} / ${esc(engineVariant)}</h3><button class="close" id="modal-close">×</button></header>
+  <div class="modal-body">
+    <h4>Especificaciones del modelo</h4>
+    <div class="kvs">
+      <span>MTOW: <strong>${td.mtow ?? "—"}</strong></span>
+      <span>Capacidad: <strong>${td.capacity ?? "—"}</strong></span>
+      <span>Longitud: <strong>${td.length ?? "—"}</strong></span>
+      <span>Utilización típica: <strong>${td.typicalFH ?? "—"}</strong></span>
+    </div>
+    <h4>Motor</h4>
+    <div class="kvs">
+      <span>Fabricante: <strong>${ed.mfg ?? "—"}</strong></span>
+      <span>Empuje: <strong>${ed.thrust ?? "—"}</strong></span>
+      <span>Línea (MRO support): <strong>${ed.inLineMaint ?? "—"}</strong></span>
+    </div>
+
+    <h4>Mecánicos del MRO con type rating</h4>
+    <div class="kvs">
+      <span>B1 rated: <strong>${b1s.length}</strong></span>
+      <span>B2 rated: <strong>${b2s.length}</strong></span>
+      <span>Total: <strong>${ratedMechs.length} / ${game.mechanics.length}</strong></span>
+    </div>
+    ${ratedMechs.length === 0 ? '<p class="muted">⚠️ Ningún mecánico tiene rating para este tipo. WO sobre este avión quedan sin asignar — considera enviar a alguien a curso.</p>' :
+      '<ul style="margin:.3rem 0 .5rem 1.2rem;font-size:.85rem">' + ratedMechs.map(m => {
+        const cats = m.typeRatings.filter(r => r.model === model && r.engineVariant === engineVariant).map(r => r.category).join("+");
+        return `<li>${esc(m.name)} · <strong>${cats}</strong> · turno ${m.shift ?? "—"} · ${esc(m.state)}</li>`;
+      }).join("") + '</ul>'}
+
+    <h4>Aerolíneas que lo operan (contratos activos)</h4>
+    ${operatingAirlines.length === 0 ? '<p class="muted">Ninguna aerolínea contratada opera este tipo actualmente.</p>' :
+      '<ul style="margin:.3rem 0 .5rem 1.2rem;font-size:.85rem">' + operatingAirlines.map(a =>
+        `<li><span style="display:inline-block;width:8px;height:8px;background:${a.color};border-radius:50%;margin-right:.3rem"></span>${esc(a.name)} (${esc(a.iataCode ?? "—")})</li>`
+      ).join("") + '</ul>'}
+
+    <h4>Presencia en pista</h4>
+    <div class="kvs">
+      <span>Aviones AHORA: <strong>${landingsHere.length}</strong></span>
+      <span>Matrículas únicas: <strong>${new Set(landingsHere.map(a=>a.registration)).size}</strong></span>
+      <span>Flota visible: <strong>${fleetHere.length}</strong></span>
+    </div>
+  </div>`;
+  return inner;
 }
 
 // ===========================================================================
@@ -11406,6 +11654,26 @@ function renderModal(){
     back.classList.add("open");
     return;
   }
+  // Pivot iteración 2026-05-24: modal daily check detallado (Production Planning click neutro)
+  if (detailDailyAirplaneId) {
+    const html = renderDailyDetailModal();
+    if (html !== null && html !== lastModalHtml) {
+      document.getElementById("modal-content").innerHTML = html;
+      lastModalHtml = html;
+    }
+    back.classList.add("open");
+    return;
+  }
+  // Pivot iteración 2026-05-24: modal tipo de avión (click en chip "A320/CFM56")
+  if (detailAirplaneType) {
+    const html = renderAirplaneTypeModal();
+    if (html !== null && html !== lastModalHtml) {
+      document.getElementById("modal-content").innerHTML = html;
+      lastModalHtml = html;
+    }
+    back.classList.add("open");
+    return;
+  }
   if (!selectedWoId) { back.classList.remove("open"); lastModalHtml = ""; return; }
   const wo = game.workOrders.find(w => w.instanceId === selectedWoId);
   if (!wo) { back.classList.remove("open"); return; }
@@ -11704,12 +11972,20 @@ document.body.addEventListener("click", (e) => {
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
   const tabBtn = e.target.closest(".side > button");
   if (tabBtn && tabBtn.dataset.tab) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
-  const woCard = e.target.closest(".wo-card:not(.base)");
-  if (woCard && woCard.dataset.wo) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; render(); return; }
-  // F5B-ε: click en fleet-card abre detalle avión
+  // === Pivot iteración 2026-05-24: chips clickables específicos ===
+  // Estos handlers se evalúan ANTES de los handlers de card genéricas (wo-card, check-card,
+  // daily-card) para que un click sobre un chip dentro de una card abra el modal del chip
+  // (más específico) en lugar del de la card. Aplica a Event Tracking, Production Planning,
+  // Schedule, Mecánicos — cualquier vista que use .clickable-chip data-*.
+  const typeChip = e.target.closest("[data-airplane-type]");
+  if (typeChip) { detailAirplaneType = typeChip.dataset.airplaneType; invalidateModalCache(); render(); return; }
   const fleetCard = e.target.closest("[data-fleet-reg]");
   if (fleetCard) { detailFleetReg = fleetCard.dataset.fleetReg; invalidateModalCache(); render(); return; }
-  // F5B-ε: click en row de mecánico (data-mech-row) abre detalle
+  const dailyCard = e.target.closest("[data-daily-airplane]");
+  if (dailyCard) { detailDailyAirplaneId = dailyCard.dataset.dailyAirplane; invalidateModalCache(); render(); return; }
+  // === Cards genéricas (WO, check, mech, contract) — se evalúan DESPUÉS ===
+  const woCard = e.target.closest(".wo-card:not(.base)");
+  if (woCard && woCard.dataset.wo) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; render(); return; }
   const mechRow = e.target.closest("[data-mech-id]");
   if (mechRow && !e.target.closest("button") && !e.target.closest("select")) {
     detailMechId = mechRow.dataset.mechId;
@@ -11717,7 +11993,6 @@ document.body.addEventListener("click", (e) => {
     render();
     return;
   }
-  // F5C: click en check card o row del histórico
   const checkEl = e.target.closest("[data-check-id]");
   if (checkEl && !e.target.closest("button")) {
     detailCheckId = checkEl.dataset.checkId;
@@ -11742,6 +12017,8 @@ document.body.addEventListener("click", (e) => {
     detailCheckId = null;
     detailContractId = null;
     overnightModalOpen = false;
+    detailDailyAirplaneId = null;
+    detailAirplaneType = null;
     invalidateModalCache();
     render();
     return;

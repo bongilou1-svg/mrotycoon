@@ -3,10 +3,11 @@
 import { deferWorkOrder, unDeferWorkOrder } from "../src/lib/sim/mel.ts";
 import { createGame, advanceGame, deferWoManually, unDeferWoManually } from "../src/lib/game.ts";
 import { readFileSync } from "node:fs";
+import { loadWorkOrdersWithKind } from "./helpers/loadTemplates.mjs";
 
 const balance = JSON.parse(readFileSync(new URL("../src/lib/data/balance.json", import.meta.url)));
 const airlines = JSON.parse(readFileSync(new URL("../src/lib/data/airlines.json", import.meta.url)));
-const templates = JSON.parse(readFileSync(new URL("../src/lib/data/workorders.json", import.meta.url)));
+const templates = loadWorkOrdersWithKind(import.meta.url);
 const defs = JSON.parse(readFileSync(new URL("../src/lib/data/maintenance_checks.json", import.meta.url)));
 
 let pass = 0, fail = 0;

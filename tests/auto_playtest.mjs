@@ -2,14 +2,15 @@
 // Fase 4 O1: desglose por TransactionType + evolución semanal para identificar fuga económica.
 
 import { readFileSync } from "node:fs";
+import { loadWorkOrdersWithKind, loadDailyChecksWithKind } from "./helpers/loadTemplates.mjs";
 import { createGame, advanceGame } from "../src/lib/game.ts";
 import { DAY_MINUTES } from "../src/lib/sim/time.ts";
 
 const balance = JSON.parse(readFileSync(new URL("../src/lib/data/balance.json", import.meta.url)));
 const airlines = JSON.parse(readFileSync(new URL("../src/lib/data/airlines.json", import.meta.url)));
-const templates = JSON.parse(readFileSync(new URL("../src/lib/data/workorders.json", import.meta.url)));
+const templates = loadWorkOrdersWithKind(import.meta.url);
 const defs = JSON.parse(readFileSync(new URL("../src/lib/data/maintenance_checks.json", import.meta.url)));
-const dailyChecks = JSON.parse(readFileSync(new URL("../src/lib/data/daily_checks.json", import.meta.url)));
+const dailyChecks = loadDailyChecksWithKind(import.meta.url);
 
 // CLI: node auto_playtest.mjs [seeds=5] [days=28] [line|legacy]
 const argSeeds = parseInt(process.argv[2] ?? "5", 10);

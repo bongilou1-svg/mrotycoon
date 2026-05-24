@@ -4,10 +4,11 @@ import { serializeGame, deserializeGame } from "../src/lib/sim/save.ts";
 import { createGame, advanceGame } from "../src/lib/game.ts";
 import { InMemoryBackend, setStorage } from "../src/lib/sim/storage.ts";
 import { readFileSync } from "node:fs";
+import { loadWorkOrdersWithKind } from "./helpers/loadTemplates.mjs";
 
 const balance = JSON.parse(readFileSync(new URL("../src/lib/data/balance.json", import.meta.url)));
 const airlines = JSON.parse(readFileSync(new URL("../src/lib/data/airlines.json", import.meta.url)));
-const templates = JSON.parse(readFileSync(new URL("../src/lib/data/workorders.json", import.meta.url)));
+const templates = loadWorkOrdersWithKind(import.meta.url);
 
 let pass = 0, fail = 0;
 function expect(cond, msg, detail) {

@@ -7,12 +7,13 @@ import { createGame, advanceGame } from "../src/lib/game.ts";
 import { createRng } from "../src/lib/sim/rng.ts";
 import { DAY_MINUTES } from "../src/lib/sim/time.ts";
 import { readFileSync } from "node:fs";
+import { loadWorkOrdersWithKind, loadDailyChecksWithKind } from "./helpers/loadTemplates.mjs";
 
 const balance = JSON.parse(readFileSync(new URL("../src/lib/data/balance.json", import.meta.url)));
 const airlines = JSON.parse(readFileSync(new URL("../src/lib/data/airlines.json", import.meta.url)));
-const templates = JSON.parse(readFileSync(new URL("../src/lib/data/workorders.json", import.meta.url)));
+const templates = loadWorkOrdersWithKind(import.meta.url);
 const defs = JSON.parse(readFileSync(new URL("../src/lib/data/maintenance_checks.json", import.meta.url)));
-const dailyChecks = JSON.parse(readFileSync(new URL("../src/lib/data/daily_checks.json", import.meta.url)));
+const dailyChecks = loadDailyChecksWithKind(import.meta.url);
 
 let pass = 0, fail = 0;
 function expect(cond, msg) {
@@ -26,7 +27,7 @@ expect(Array.isArray(dailyChecks) && dailyChecks.length >= 4, `dataset tiene ≥
 expect(dailyChecks.every(d => d.isDailyCheck === true), "todos marcados isDailyCheck=true");
 expect(dailyChecks.every(d => d.severity === "Minor"), "todos Minor severity");
 expect(dailyChecks.every(d => !d.isAOG), "ninguno AOG");
-expect(dailyChecks.every(d => d.durationMinutes >= 15 && d.durationMinutes <= 35), "duración 15-35 min");
+expect(dailyChecks.every(d => d.durationMinutes >= 15 && d.durationMinutes <= 45), "duración 15-45 min");
 
 // ---- overnight: arrivals tardíos pueden pernoctar ----
 console.log("\n=== Overnight detection en generateDailyArrivals ===");

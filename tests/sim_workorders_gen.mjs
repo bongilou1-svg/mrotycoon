@@ -10,8 +10,9 @@ import {
 } from "../src/lib/sim/workorders.ts";
 import { createRng } from "../src/lib/sim/rng.ts";
 import { readFileSync } from "node:fs";
+import { loadWorkOrdersWithKind } from "./helpers/loadTemplates.mjs";
 
-const templates = JSON.parse(readFileSync(new URL("../src/lib/data/workorders.json", import.meta.url)));
+const templates = loadWorkOrdersWithKind(import.meta.url);
 const balance = JSON.parse(readFileSync(new URL("../src/lib/data/balance.json", import.meta.url)));
 
 let pass = 0, fail = 0;
