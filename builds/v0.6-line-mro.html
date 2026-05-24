@@ -182,10 +182,11 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
       <button data-tab="map" class="active">🗺️ Mapa</button>
       <button data-tab="operations">🏭 Operaciones <span class="badge" id="badge-wo">0</span></button>
       <button data-tab="schedule">📅 Schedule <span class="badge" id="badge-schedule">0</span></button>
+      <button data-tab="planning">📋 Production Planning <span class="badge" id="badge-planning">0</span></button>
       <button data-tab="mechanics">⚙️ Mecánicos</button>
       <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
       <button data-tab="market">🤝 Mercado <span class="badge" id="badge-candidates">5</span></button>
-      <button data-tab="construction">🏗️ Construcción</button>
+      <button disabled title="🏗️ Construcción de hangares — próximamente (sistema de permisos + obra civil en futura fase)" style="opacity:0.4;cursor:not-allowed">🏗️ Hangares <span style="font-size:.7rem">próx.</span></button>
       <button data-tab="dashboard">📊 Dashboard</button>
       <button data-tab="economy">💼 Economía</button>
     </aside>
@@ -9393,9 +9394,13 @@ window.Render = Render;
 const S = window.Sim;
 // Pivot MRO línea pura (2026-05-24): UI activa lineMode=true por default. Modo legacy
 // solo lo usan los tests automáticos.
-let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, S.DATA.maintenanceChecks, S.DATA.dailyChecks, { lineMode: true });
+// Pivot · iteración 2026-05-24: A/C/D checks DESHABILITADOS — no se carga maintenance_checks.json
+// para que el sim no auto-dispare A-checks al cruzar trigger. Daily checks (pernoctas) siguen
+// activos vía dailyChecks. Re-habilitar cuando exista sistema de "trabajos planificados
+// avanzados" y permisos de hangar (ahora mismo el juego es solo callouts + pernoctas).
+let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, [], S.DATA.dailyChecks, { lineMode: true });
 let activeTab = "map"; // pivot línea pura: arrancamos en mapa (wow factor) y operaciones aparte
-let opsSubTab = "events"; // "events" | "base" | "fleet" | "deferrals"
+let lastProductionPackageDay = 0; // notif diaria del paquete de trabajo nocturno (12:00)
 let selectedWoId = null;
 let complianceModalOpen = false;
 let repModalOpen = false;
@@ -9798,25 +9803,19 @@ function renderHangarEventTracking(){
   return h;
 }
 
-// Pivot línea pura: tab Operaciones reune lo que antes eran subtabs del Hangar.
-// Subtab principal "Event Tracking" (unificada). Resto = vistas filtradas.
+// Pivot línea pura · iteración 2026-05-24: tab Operaciones = SOLO Event Tracking
+// (vista unificada de TODO lo que pasa en tiempo real). Las subtabs Flota / Deferrals
+// / Base Checks se eliminan:
+//  - Flota: un MRO no tiene flota propia. La info de avión (FH/FC, modelo,
+//    type rating, histórico checks) es accesible clicando una matrícula en el
+//    Event Tracking → abre modal con todos los datos técnicos.
+//  - Deferrals: las WO diferidas ya viven en Event Tracking marcadas como open.
+//  - Base Checks: los A/C/D están deshabilitados por ahora (callouts only).
+//    Cuando se reactiven, vivirán como eventos en Event Tracking.
 function renderOperations(){
-  const openEvents = buildEventFeed().filter(e => e.open).length;
-  const baseCheckCount = activeBaseChecks().length;
-  const warnCount = upcomingWarnings().length;
-  const defCount = deferredWos().length;
-  let h = '<h2>Operaciones</h2>';
-  h += `<div class="subtabs">
-    <button data-subtab="events" class="${opsSubTab==='events' || opsSubTab==='line' ?'active':''}">📡 Event Tracking <span class="count">${openEvents}</span></button>
-    <button data-subtab="base" class="base ${opsSubTab==='base'?'active':''}">Base Checks <span class="count">${baseCheckCount}</span></button>
-    <button data-subtab="deferrals" class="${opsSubTab==='deferrals'?'active':''}">Deferrals ${defCount>0?`<span class="count" style="background:var(--warning);color:#fff">${defCount}</span>`:`<span class="count">0</span>`}</button>
-    <button data-subtab="fleet" class="${opsSubTab==='fleet'?'active':''}">Flota ${warnCount>0?`<span class="count" style="background:var(--warning);color:#fff">⚠ ${warnCount}</span>`:''}</button>
-  </div>`;
-  // "line" legacy → "events" (backward compat con saves o estado en memoria viejo)
-  if (opsSubTab === "events" || opsSubTab === "line") h += renderHangarEventTracking();
-  else if (opsSubTab === "base") h += renderHangarBase();
-  else if (opsSubTab === "deferrals") h += renderHangarDeferrals();
-  else h += renderHangarFleet();
+  let h = '<h2>📡 Operaciones · Event Tracking</h2>';
+  h += '<p class="muted" style="margin-bottom:.5rem">Feed cronológico unificado: callouts/WO sobre aviones en tierra, daily checks nocturnos, deferrals MEL vivas, eventos (runway closure, SB) y auditorías Part-145. Click en una card para detalle y asignar mecánicos.</p>';
+  h += renderHangarEventTracking();
   return h;
 }
 
@@ -10259,6 +10258,70 @@ function renderSchedule(){
     h += `<tr style="${rowStyle}"><td class="mono">${time}</td><td class="mono">${esc(f.callsign)}</td><td>${typeBadge}</td><td class="mono">${f.type==='arrival'?'← ':'→ '}${esc(f.remote)}</td><td>${modelCell}</td><td>${operatorBadge}</td><td class="${st.cls}">${st.label}</td></tr>`;
   }
   h += '</tbody></table>';
+  return h;
+}
+
+// ===========================================================================
+// Pivot línea pura · iteración 2026-05-24 — Production Planning nocturno
+// ===========================================================================
+// Paquete de trabajo que las aerolíneas contratadas envían al MRO ~12:00 del día.
+// Para cada avión que pernocta esta noche: daily checks ya emitidos al landing,
+// WO diferidas vivas (cierre opcional), callouts activos, y placeholder MPD.
+function pendingNightOvernighters(){
+  const now = game.clock.minute;
+  return game.airplanes.filter(a =>
+    a.overnight === true &&
+    a.arrivalMinute <= now + S.DAY_MINUTES &&
+    (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now)
+  );
+}
+
+function renderProductionPlanning(){
+  const overnights = pendingNightOvernighters();
+  let h = '<h2>📋 Production Planning · Noche</h2>';
+  h += '<p class="muted" style="margin-bottom:.5rem">Paquete de trabajo nocturno enviado por las aerolíneas contratadas para los aviones que pernoctan. Llega ~12:00 del día. Incluye daily checks emitidos al landing, cierre opcional de WO diferidas y (futuro) ítems MPD facilitados.</p>';
+  if (overnights.length === 0) {
+    h += '<div class="empty">Sin pernoctas confirmadas todavía. Los aviones que aterricen ≥19:00 y sean último arrival de su aerolínea pernoctarán — recibirás aquí su paquete de trabajo.</div>';
+    return h;
+  }
+  // Agrupar por aerolínea
+  const byAirline = new Map();
+  for (const ap of overnights) {
+    const c = game.contracts.find(cc => cc.id === ap.contractId);
+    if (!c) continue;
+    const al = game.airlines.find(a => a.id === c.airlineId);
+    if (!al) continue;
+    if (!byAirline.has(al.id)) byAirline.set(al.id, { airline: al, planes: [] });
+    byAirline.get(al.id).planes.push(ap);
+  }
+  for (const { airline, planes } of byAirline.values()) {
+    h += `<h3 style="margin-top:1rem"><span style="display:inline-block;width:10px;height:10px;background:${airline.color};border-radius:50%;margin-right:.4rem;vertical-align:middle"></span>${esc(airline.name)} · ${planes.length} avión${planes.length>1?'es':''}</h3>`;
+    for (const ap of planes) {
+      const wos = game.workOrders.filter(w => w.airplaneInstanceId === ap.instanceId);
+      const dailyChecks = wos.filter(w => w.templateId && w.templateId.startsWith("DC-"));
+      const deferred = wos.filter(w => w.phase === "Deferred");
+      const callouts = wos.filter(w => (!w.templateId || !w.templateId.startsWith("DC-")) && w.phase !== "Deferred" && w.phase !== "Completed" && w.phase !== "Failed");
+      const completedDc = dailyChecks.filter(d => d.phase === "Completed").length;
+      const pendingDc = dailyChecks.length - completedDc;
+      h += `<article class="wo-card" data-fleet-reg="${esc(ap.registration)}" style="cursor:pointer">
+        <header class="wo-head">
+          <span class="wo-id mono"><strong>${esc(ap.registration)}</strong></span>
+          <span class="muted">${ap.model}/${ap.engineVariant}</span>
+          <span class="wo-phase" style="background:rgba(80,80,140,.18);color:#cdf;border-color:rgba(140,150,200,.5)">🌙 Pernocta</span>
+        </header>
+        <div class="wo-meta">
+          <span>Llega: <strong>${fmtClock(ap.arrivalMinute)}</strong></span>
+          <span>Salida prevista: <strong>${fmtClock(ap.scheduledDepartureMinute)}</strong></span>
+        </div>
+        <div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.2rem;font-size:.85rem">
+          <div>🌙 Daily checks: <strong>${dailyChecks.length}</strong> emitidos ${dailyChecks.length>0 ? `(<span style="color:var(--success)">${completedDc} ✓</span> · <span style="color:var(--warning)">${pendingDc} pendientes</span>)` : ''}</div>
+          <div>📋 WO diferidas (cierre opcional esta noche): <strong>${deferred.length}</strong></div>
+          <div>🔧 Callouts activos sobre la matrícula: <strong>${callouts.length}</strong></div>
+          <div class="muted">📄 MPD ítems facilitados por la aerolínea: <strong>—</strong> (próximamente)</div>
+        </div>
+      </article>`;
+    }
+  }
   return h;
 }
 
@@ -10860,6 +10923,11 @@ function render(){
   }
   document.getElementById("badge-offers").textContent = liveOffers().length;
   document.getElementById("badge-candidates").textContent = (game.candidates ?? []).length;
+  // Pivot línea pura · Production Planning: badge = nº de pernoctas pendientes
+  {
+    const badgePlan = document.getElementById("badge-planning");
+    if (badgePlan) badgePlan.textContent = pendingNightOvernighters().length;
+  }
   // Pivot línea pura · P3: badge schedule = movimientos restantes del día actual.
   {
     const minOfDay = currentMinOfDay();
@@ -10909,6 +10977,7 @@ function render(){
     } else if (activeTab === "map")       html = renderMap();
     else if (activeTab === "operations")  html = renderOperations();
     else if (activeTab === "schedule")    html = renderSchedule();
+    else if (activeTab === "planning")    html = renderProductionPlanning();
     else if (activeTab === "mechanics")  html = renderMechanics();
     else if (activeTab === "contracts")  html = renderContracts();
     else if (activeTab === "market")     html = renderMarket();
@@ -10966,10 +11035,8 @@ document.body.addEventListener("click", (e) => {
   if (evFilter) { eventFilter = evFilter.dataset.eventFilter; invalidatePanelCache(); render(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
-  const subBtn = e.target.closest(".subtabs button");
-  if (subBtn) { opsSubTab = subBtn.dataset.subtab; invalidatePanelCache(); render(); return; }
   const tabBtn = e.target.closest(".side > button");
-  if (tabBtn) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
+  if (tabBtn && tabBtn.dataset.tab) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
   const woCard = e.target.closest(".wo-card:not(.base)");
   if (woCard && woCard.dataset.wo) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; render(); return; }
   // F5B-ε: click en fleet-card abre detalle avión
@@ -11134,11 +11201,11 @@ async function doLoad() {
 async function doNewGame() {
   if (!confirm("¿Empezar nueva partida? Se perderá el progreso actual.")) return;
   await S.getStorage().clear();
-  const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, Math.floor(Math.random() * 1e9), S.DATA.maintenanceChecks, S.DATA.dailyChecks, { lineMode: true });
+  const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, Math.floor(Math.random() * 1e9), [], S.DATA.dailyChecks, { lineMode: true });
+  lastProductionPackageDay = 0;
   Object.assign(game, fresh);
   hasSavedSlot = false;
   selectedWoId = null;
-  opsSubTab = "events";
   render();
 }
 
@@ -11179,6 +11246,33 @@ function ageFleet() {
 setInterval(() => {
   if (game.clock.speed === 0) return;
   S.advanceGame(game, game.clock.speed);
+  // Pivot línea pura: notif diaria del paquete de trabajo nocturno (~12:00).
+  // Una vez por día, si hay overnighters confirmados en pernocta hoy.
+  const gd = Math.floor(game.clock.minute / S.DAY_MINUTES) + 1;
+  const minOfDay = game.clock.minute % S.DAY_MINUTES;
+  if (minOfDay >= 12 * 60 && gd !== lastProductionPackageDay) {
+    const overnights = pendingNightOvernighters();
+    if (overnights.length > 0) {
+      // Agrupar por aerolínea
+      const byAirline = {};
+      for (const ap of overnights) {
+        const c = game.contracts.find(cc => cc.id === ap.contractId);
+        const al = c ? game.airlines.find(a => a.id === c.airlineId) : null;
+        if (!al) continue;
+        if (!byAirline[al.id]) byAirline[al.id] = { name: al.name, regs: [] };
+        byAirline[al.id].regs.push(ap.registration);
+      }
+      for (const a of Object.values(byAirline)) {
+        game.notifCounter += 1;
+        game.notifications.push({
+          id: game.notifCounter, minute: game.clock.minute,
+          text: `📋 ${a.name}: paquete trabajo noche → ${a.regs.join(", ")}`,
+          type: "info",
+        });
+      }
+    }
+    lastProductionPackageDay = gd;
+  }
   render();
 }, 100);
 </script>
