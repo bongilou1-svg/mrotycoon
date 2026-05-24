@@ -3,7 +3,7 @@
 **Cerrada**: 2026-05-24
 **Tests**: 873 / 873 ✅ (+70 net F5D: 44 render_sync + 27 sim_schedule + 5 sim_save v7→v8 compat + ajustes)
 **Release**: [`builds/v0.5d-pixi-map.html`](../builds/v0.5d-pixi-map.html) (~1.4 MB JS total — Pixi v8 ~520 KB + Three.js core ~500 KB + sim + render + assets)
-**Branch**: `f5d-map-pixi-osm` (PENDIENTE — `C:\Users\bongi\mrotycoon` no tiene repo git inicializado. El brief pedía commits atómicos pero requiere `git init` previo. Decisión de usuario: inicializar VCS o seguir sin)
+**Branch**: `f5d-map-pixi-osm` (creado 2026-05-24 tras `git init -b main`). Limitación honesta: el repo no existía antes de F5D, por lo que el snapshot inicial agrupa pre-F5D + F5D en un solo commit `5204471 chore: initial repo snapshot · F5D incluida`. No fue posible commits atómicos por bloque P retroactivamente sin baseline previo. Branch `main` y `f5d-map-pixi-osm` apuntan al mismo commit — el branch existe para que iteraciones futuras del mapa (P-δ event-driven, A* furgo, BlurFilter real, etc.) lleven commits separados aquí.
 
 ---
 
