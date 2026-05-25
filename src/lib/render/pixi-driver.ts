@@ -30,6 +30,37 @@ export function setActiveAirportPaths(paths: AirportPathsData): void {
   activeAirportPaths = paths;
 }
 
+// ============================================================================
+// Pivot iteración 2026-05-25 — MEMORY LEAK FIX para Pixi v8
+// ============================================================================
+// Bug: feedback Dani 2026-05-25, BIO/ALC a 5x = heap browser 2.4GB tras día 2
+// + Pixi mapSync 3.2s ocasional (catastrófico).
+//
+// Causa: el driver hace `container.removeChildren()` en 24+ sitios cada tick
+// (worldDynamic, layerSprites, layerMoving, worldHUD, worldMinimap...). Cada
+// tick: ~200 Graphics nuevos (`new Graphics()` + `addChild`) + removeChildren
+// del tick anterior. PERO `removeChildren()` solo DESCONECTA del scene graph,
+// NO destruye los objetos Graphics. GC los recoge eventualmente, pero a 10
+// ticks/seg con ALC (200+ Graphics/tick) son 2000+ Graphics/seg en heap
+// pendiente de GC → heap crece hasta 2GB+, GC se vuelve lento, FPS cae.
+//
+// Fix: monkeypatch Container.removeChildren para que destruya hijos al quitar.
+// Con `texture: false` preservamos textures bakeadas (sprites de avión que se
+// reusan entre ticks). Cero pérdida funcional, solo libera memoria al toque.
+// ============================================================================
+const _origRemoveChildren = Container.prototype.removeChildren;
+Container.prototype.removeChildren = function (beginIndex?: number, endIndex?: number) {
+  const removed = _origRemoveChildren.call(this, beginIndex, endIndex);
+  for (const child of removed) {
+    try {
+      (child as { destroy?: (opts?: object) => void }).destroy?.({ children: true, texture: false });
+    } catch {
+      // ignore destroy errors (puede pasar si ya fue destruido)
+    }
+  }
+  return removed;
+};
+
 export type Theme = "cic" | "blueprint" | "faa" | "iso" | "neon" | "steam" | "lateral" | "network" | "isodiag" | "simairport" | "airportceo" | "ceofull" | "ceopng" | "huge" | "f5d";
 
 // ---------- Paletas por theme ----------
