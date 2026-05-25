@@ -8018,6 +8018,8 @@ var Sim = (() => {
       if (c.status !== "active") continue;
       const al = g.airlines.find((a) => a.id === c.airlineId);
       if (!al?.iataCode) continue;
+      const isBased = (al.homeBaseAirports ?? []).includes("LEAS");
+      if (!isBased) continue;
       const flights = getFlightsForGameDay(1);
       const overnighters = flights.filter((f) => f.type === "arrival" && f.airlineCode === al.iataCode && f.scheduledMinute >= 19 * 60).sort((a, b) => b.scheduledMinute - a.scheduledMinute);
       if (overnighters.length === 0) continue;

@@ -348,8 +348,13 @@ function seedPreOvernighters(g: GameState): void {
     if (c.status !== "active") continue;
     const al = g.airlines.find((a) => a.id === c.airlineId);
     if (!al?.iataCode) continue;
+    // Pivot iteración 2026-05-25: solo aerolíneas con BASE en LEAS pernoctan. Si la
+    // aerolínea contratada no tiene homeBaseAirports incluyendo LEAS, NO pre-seed.
+    // Vueling sin base → no debería verse al iniciar (turnaround corto durante el día).
+    const isBased = (al.homeBaseAirports ?? []).includes("LEAS");
+    if (!isBased) continue;
     // Buscar el último arrival overnight del Día 1 de esta aerolínea (≥19:00) — modela el
-    // patrón recurrente: si IB3219 vuela todos los días overnight, AYER también lo hizo.
+    // patrón recurrente: si V73585 vuela todos los días overnight, AYER también lo hizo.
     const flights = getFlightsForGameDay(1);
     const overnighters = flights
       .filter((f) => f.type === "arrival" && f.airlineCode === al.iataCode && f.scheduledMinute >= 19 * 60)
