@@ -1346,9 +1346,12 @@ function renderMarket(){
 }
 
 function tierBadge(tier){
+  // Pivot iteración 2026-05-25: usar S.tierLabel canónico para conocer todos los tiers
+  // (incluido "line" del preset, que antes daba "undefined" en el badge). Fallback a
+  // "Standard" si el tier es vacío/desconocido.
   const t = tier || "standard";
-  const labels = { standard: "Standard", premium: "Premium ⭐", deluxe: "Deluxe ⭐⭐" };
-  return \`<span class="tier-badge tier-\${t}">\${labels[t]}</span>\`;
+  const label = (typeof S.tierLabel === "function") ? S.tierLabel(t) : t;
+  return \`<span class="tier-badge tier-\${t}">\${label}</span>\`;
 }
 
 function renderContracts(){
@@ -1403,11 +1406,14 @@ function renderContracts(){
                    meets ? \`<span style="color:var(--success)">✅ puede ofertar (brand +\${brand - t} sobre umbral)</span>\` :
                    \`<span class="muted">⏳ faltan \${t - brand} pts brand</span>\`;
     // Pivot iteración 2026-05-25: separar arrivals en ESCALAS (turnaround corto con
-    // departure pareja <3h) vs PERNOCTAS (último arrival día ≥19:00 SIN departure pareja
-    // Y aerolínea con homeBaseAirports incluyendo LEAS).
+    // departure pareja <3h) vs PERNOCTAS (último arrival día ≥19:00 SIN departure pareja).
+    // Fix: el panel muestra realidad operativa del aeropuerto — TODAS las pernoctas reales
+    // del schedule, no solo las de aerolíneas home-based. El jugador necesita saber qué
+    // pernoctas hay para valorar qué contratos perseguir; si firma con LH, esas 7 noches
+    // serían potenciales daily checks suyos. El filtro home-based vive en el engine
+    // (seedPreOvernighters + isOvernightCandidate del schedule), no en este info-panel.
     let totalArr = 0, escalas = 0, pernoctas = 0;
     try {
-      const isBased = (a.homeBaseAirports ?? []).includes("LEAS");
       for (let d = 1; d <= 7; d++) {
         const flights = (S.getFlightsForGameDay?.(d) ?? []).filter(f => f.airlineCode === a.iataCode);
         const arrivals = flights.filter(f => f.type === "arrival").sort((x,y) => x.scheduledMinute - y.scheduledMinute);
@@ -1415,9 +1421,9 @@ function renderContracts(){
         totalArr += arrivals.length;
         const lastArr = arrivals[arrivals.length - 1];
         for (const arr of arrivals) {
-          const isOvernightCandidate = isBased && arr === lastArr && arr.scheduledMinute >= 19*60;
+          const isLastLate = arr === lastArr && arr.scheduledMinute >= 19*60;
           const hasPairedDep = departures.some(d => d.scheduledMinute > arr.scheduledMinute && d.scheduledMinute - arr.scheduledMinute < 180);
-          if (isOvernightCandidate && !hasPairedDep) pernoctas++;
+          if (isLastLate && !hasPairedDep) pernoctas++;
           else escalas++;
         }
       }
