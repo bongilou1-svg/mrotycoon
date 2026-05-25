@@ -3579,9 +3579,14 @@ setInterval(() => {
   // El tiempo de render() incluye panelRender + mapSync + mapInfo (medidos internamente).
   // Su delta total nos da el "render time" del tick.
   const renderTotal = _tD - _tC;
-  if (renderTotal > window.__perf.slowest) {
-    window.__perf.slowest = renderTotal;
-    window.__perf.slowestWhat = \`render@\${S.formatClock(game.clock.minute)}\`;
+  const tickTotal = _tD - _tA; // advance + render = tick completo
+  if (tickTotal > window.__perf.slowest) {
+    window.__perf.slowest = tickTotal;
+    // Desglose del slowest tick para detectar dónde se va el tiempo cuando spike
+    const advanceMs = _tB - _tA;
+    const renderMs = _tD - _tC;
+    // Si renderMs >> mapSync+panelRender+mapInfo medidos → resto es HUD + GC + notifs (no medido)
+    window.__perf.slowestWhat = \`@\${S.formatClock(game.clock.minute)} (adv \${advanceMs.toFixed(0)}ms · render \${renderMs.toFixed(0)}ms)\`;
   }
   // Report cada 5s real
   if (_tD - _lastPerfReport >= 5000) {
@@ -3591,7 +3596,11 @@ setInterval(() => {
     const apArc = game.archive?.airplanes?.length ?? 0;
     const woActive = game.workOrders.length;
     const woArc = game.archive?.workOrders?.length ?? 0;
-    console.log(\`[PERF] \${p.ticks}t/5s · advance \${(p.advance/t).toFixed(2)}ms · mapSync \${(p.mapSync/t).toFixed(2)}ms · panelRender \${(p.panelRender/t).toFixed(2)}ms · mapInfo \${(p.mapInfo/t).toFixed(2)}ms · slowest \${p.slowest.toFixed(0)}ms (\${p.slowestWhat}) · airplanes \${apActive}A+\${apArc}arc · WOs \${woActive}A+\${woArc}arc\`);
+    console.log(\`[PERF] \${p.ticks}t/5s · adv \${(p.advance/t).toFixed(2)} · mapSync \${(p.mapSync/t).toFixed(2)} · panel \${(p.panelRender/t).toFixed(2)} · mapInfo \${(p.mapInfo/t).toFixed(2)} · SLOWEST \${p.slowest.toFixed(0)}ms \${p.slowestWhat} · airpl \${apActive}A+\${apArc}arc · WO \${woActive}A+\${woArc}arc · ledger \${game.economy.ledger.length}\`);
+    // Si el slowest fue > 100ms, mostrar detalle del estado en ese momento
+    if (p.slowest > 100) {
+      console.warn(\`[PERF spike] \${p.slowest.toFixed(0)}ms — el render fue mucho mayor que la suma de subsistemas medidos. Sospechosos: (1) GC pause del browser, (2) Pixi creando muchos sprites, (3) HUD/notif updates no instrumentados. Memory heap actual: ~\${performance.memory ? (performance.memory.usedJSHeapSize/1048576).toFixed(0)+'MB' : 'n/a'}\`);
+    }
     window.__perf = { advance: 0, mapSync: 0, panelRender: 0, mapInfo: 0, ticks: 0, slowest: 0, slowestWhat: "" };
     _lastPerfReport = _tD;
   }
