@@ -283,6 +283,7 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .newgame-header{margin-bottom:1.5rem;text-align:center}
 .newgame-cards{display:grid;gap:1rem;margin-bottom:1rem}
 .newgame-cards-3{grid-template-columns:repeat(3,1fr)}
+.newgame-cards-airports{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));max-width:1100px;margin:0 auto}
 .newgame-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:.5rem}
 .newgame-card:hover:not(.ng-disabled){border-color:var(--accent);background:rgba(77,163,255,.08);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.4)}
 .newgame-card.ng-disabled{opacity:.4;cursor:not-allowed}
@@ -3156,11 +3157,25 @@ async function doNewGame() {
   render();
 }
 
-/** Procesa elección final: aeropuerto + operador → carga preset → crea game. */
+/** Procesa elección final: aeropuerto + operador → carga preset → crea game.
+ *  Pivot 2026-05-25 multi-airport: ANTES de createGame, swap del runtime
+ *  (schedule+fleet+paths) al aeropuerto elegido. Si el ICAO no tiene runtime
+ *  registrado en DATA.airportRuntime, falla limpiamente. */
 async function startGameFromPreset(presetFile) {
   const presetKey = presetFile.replace(".preset.json", "");
   const preset = S.DATA.presets[presetKey];
   if (!preset) { alert("Preset no encontrado: " + presetFile); return; }
+  const icao = preset.icao;
+  const runtime = S.DATA.airportRuntime[icao];
+  if (!runtime) {
+    alert("Aeropuerto " + icao + " no tiene runtime (schedule/fleet/paths) bundleado todavía. Próximamente.");
+    return;
+  }
+  // Swap data antes de crear game (idempotente: si ya estaba OVD y eliges OVD, no rompe).
+  S.setActiveAirportData(runtime.schedule, runtime.fleet);
+  if (window.Render && Render.setActiveAirportPaths) {
+    Render.setActiveAirportPaths(runtime.paths);
+  }
   await S.getStorage().clear();
   const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders,
     Math.floor(Math.random() * 1e9), [], S.DATA.dailyChecks,
@@ -3180,28 +3195,37 @@ function renderNewGameWizard() {
   const catalog = newGameCatalog ?? S.DATA.airportCatalog;
   let inner = "";
   if (newGameStep === "airport") {
+    const availCount = catalog.airports.filter(a => a.available !== false).length;
     inner = \`<div class="newgame-header">
       <h1 style="margin:0 0 .3rem 0;font-size:1.8rem">🛬 MRO Tycoon · Nueva Partida</h1>
-      <p class="muted" style="margin:0">Paso 1 de 2 · Elige tu aeropuerto base</p>
+      <p class="muted" style="margin:0">Paso 1 de 2 · Elige tu aeropuerto base · \${availCount}/\${catalog.airports.length} disponibles</p>
     </div>
-    <div class="newgame-cards">\`;
+    <div class="newgame-cards newgame-cards-airports">\`;
     for (const ap of catalog.airports) {
       const stars = "⭐".repeat(ap.difficultyOverall);
-      inner += \`<article class="newgame-card" data-newgame-airport="\${ap.icao}">
+      const isAvailable = ap.available !== false;
+      const disabledCls = isAvailable ? "" : " ng-disabled";
+      const tooltip = isAvailable ? "" : \` title="\${esc(ap.comingSoonReason ?? 'Próximamente')}"\`;
+      const dataAttr = isAvailable ? \`data-newgame-airport="\${ap.icao}"\` : "";
+      const footer = isAvailable
+        ? \`<button class="ng-select-btn">Seleccionar →</button>\`
+        : \`<div class="ng-coming-soon">⏳ \${esc(ap.comingSoonReason ?? "Próximamente")}</div>\`;
+      const meta = isAvailable && ap.operators.length > 0
+        ? \`<span><strong>\${ap.operators.length}</strong> operador\${ap.operators.length === 1 ? "" : "es"} contratable\${ap.operators.length === 1 ? "" : "s"}</span>\`
+        : \`<span class="muted">Próximamente</span>\`;
+      inner += \`<article class="newgame-card\${disabledCls}" \${dataAttr}\${tooltip}>
         <div class="ng-card-head">
           <h2>✈️ \${esc(ap.name)} <span class="muted" style="font-size:.7rem">(\${ap.iata}/\${ap.icao} · \${ap.country})</span></h2>
           <span class="ng-stars">\${stars}</span>
         </div>
         <p class="ng-desc">\${esc(ap.shortDesc)}</p>
-        <div class="ng-meta">
-          <span><strong>\${ap.operators.length}</strong> operadores contratables</span>
-        </div>
-        <button class="ng-select-btn">Seleccionar →</button>
+        <div class="ng-meta">\${meta}</div>
+        \${footer}
       </article>\`;
     }
     inner += \`</div>
     <div class="newgame-footer">
-      <p class="muted" style="font-size:.78rem;margin:0">Más aeropuertos próximamente. Cada uno con sus propios operadores, dificultad y experiencia.</p>
+      <p class="muted" style="font-size:.78rem;margin:0">Cada aeropuerto trae layout OSM real + schedule AeroDataBox mayo 2026 + operadores físicos saneados. Los grises se irán activando en próximos sprints.</p>
     </div>\`;
   } else if (newGameStep === "operator") {
     const ap = catalog.airports.find(a => a.icao === newGameSelectedIcao);

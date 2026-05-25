@@ -18,8 +18,29 @@ import type { Airplane, Contract, FleetAircraft, AircraftModel, EngineVariant } 
 import { nextAirplaneInstanceId, applyLandingToFleet } from "./fleet.ts";
 import { DAY_MINUTES } from "./time.ts";
 // JSON snapshots importados en build-time (esbuild loader json + Node TS 22+ con `with`).
-import scheduleData from "../../assets/airports/ovd.schedule.json" with { type: "json" };
-import fleetData from "../../assets/airports/ovd.fleet.json" with { type: "json" };
+// Pivot iteración 2026-05-25 — multi-airport: OVD se mantiene como default cargado
+// estáticamente para preservar compat tests/legacy. Para swap a otro aeropuerto (BIO,
+// ALC, etc.) usar `setActiveAirportData(schedule, fleet)` antes de crear el game.
+import defaultOvdSchedule from "../../assets/airports/ovd.schedule.json" with { type: "json" };
+import defaultOvdFleet from "../../assets/airports/ovd.fleet.json" with { type: "json" };
+
+type AirportScheduleData = typeof defaultOvdSchedule;
+type AirportFleetData = typeof defaultOvdFleet;
+
+let scheduleData: AirportScheduleData = defaultOvdSchedule;
+let fleetData: AirportFleetData = defaultOvdFleet;
+
+/** Swap del aeropuerto activo en runtime (multi-airport).
+ *  Default = OVD (LEAS). Llamar antes de createGame con preset.airportIcao !== "LEAS". */
+export function setActiveAirportData(schedule: AirportScheduleData, fleet: AirportFleetData): void {
+  scheduleData = schedule;
+  fleetData = fleet;
+}
+
+/** Re-export del asset OVD para que sim-all.ts lo exponga en DATA.airportRuntime sin
+ *  duplicar el JSON en el bundle (esbuild dedupes por re-export, no por path doble). */
+export const _ovdScheduleAsset = defaultOvdSchedule;
+export const _ovdFleetAsset = defaultOvdFleet;
 
 export interface ScheduledFlight {
   callsign: string;
@@ -60,7 +81,7 @@ export function getFlightsForGameDay(gameDay: number): ScheduledFlight[] {
 
 /** Pool de stats FH/FC plausibles por operador. Asignación determinista por callsign:
  *  hash → índice estable → mismo callsign siempre arranca con la misma matrícula del pool. */
-function pickPoolStatsForCallsign(callsign: string, airlineCode: string): typeof fleetData.fleet[number] | null {
+function pickPoolStatsForCallsign(callsign: string, airlineCode: string): typeof defaultOvdFleet.fleet[number] | null {
   const candidates = fleetData.fleet.filter((f) => f.airlineCode === airlineCode);
   if (candidates.length === 0) return null;
   let h = 0;
@@ -79,7 +100,7 @@ function pickPoolStatsAvoidingBusy(
   callsign: string,
   airlineCode: string,
   busyRegs: ReadonlySet<string>,
-): typeof fleetData.fleet[number] | null {
+): typeof defaultOvdFleet.fleet[number] | null {
   const candidates = fleetData.fleet.filter((f) => f.airlineCode === airlineCode);
   if (candidates.length === 0) return null;
   let h = 0;

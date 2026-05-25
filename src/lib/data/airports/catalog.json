@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "notes": "Catálogo de aeropuertos + operadores disponibles para New Game. Cada aeropuerto lista sus presets contratables (uno por operador). El operador 'comingSoon' aparece grayed en UI con tooltip explicativo.",
+  "version": 2,
+  "notes": "Catálogo de aeropuertos + operadores disponibles para New Game. Cada aeropuerto lista sus presets contratables (uno por operador). Operadores 'available:false' aparecen grayed con tooltip explicativo. Aeropuertos con 'available:false' aparecen también grayed (no se puede entrar al paso 2).",
   "airports": [
     {
       "icao": "LEAS",
@@ -9,7 +9,8 @@
       "country": "ES",
       "city": "Oviedo",
       "difficultyOverall": 1,
-      "shortDesc": "Aeropuerto regional, ~35 movs/día. 3 operadores principales. Modo aprendizaje.",
+      "shortDesc": "Aeropuerto regional, ~35 movs/día. Modo aprendizaje rookie. Vueling (callouts puros) o Volotea (con pernoctas).",
+      "available": true,
       "operators": [
         {
           "presetFile": "LEAS_vueling.preset.json",
@@ -67,6 +68,84 @@
           "comingSoonReason": "Habilitación CRJ-1000 pendiente — los mecs actuales solo certifican A320/A321."
         }
       ]
+    },
+    {
+      "icao": "LEBB",
+      "iata": "BIO",
+      "name": "Bilbao",
+      "country": "ES",
+      "city": "Bilbao",
+      "difficultyOverall": 2,
+      "shortDesc": "Aeropuerto medio, ~80-100 movs/día. Mix base local (Volotea) + handlers internacionales (Lufthansa, Air Europa). Modo Rookie+.",
+      "available": true,
+      "operators": [
+        {
+          "presetFile": "LEBB_volotea.preset.json",
+          "operatorIata": "V7",
+          "operatorName": "Volotea",
+          "color": "#A20067",
+          "difficulty": 2,
+          "difficultyLabel": "Rookie+",
+          "shortLine": "Base BIO · A320 · pernoctas + dailies",
+          "tagline": "Volotea también tiene base en Bilbao. Mismo flujo que OVD pero con más volumen y competencia handler internacional al lado.",
+          "metrics": {
+            "movsPerWeek": 90,
+            "overnightsPerWeek": 13,
+            "model": "A320 + A319",
+            "balance": 300000,
+            "mechs": "1 dual + 1 helper"
+          },
+          "available": true
+        }
+      ]
+    },
+    {
+      "icao": "LEAL",
+      "iata": "ALC",
+      "name": "Alicante",
+      "country": "ES",
+      "city": "Alicante",
+      "difficultyOverall": 3,
+      "shortDesc": "Aeropuerto turístico, ~150 movs/día. Predominio LCC (Ryanair, easyJet, Vueling). Ritmo intenso de turnarounds cortos.",
+      "available": false,
+      "comingSoonReason": "Pendiente bajar data real AeroDataBox + crear presets LCC. Próximo sprint.",
+      "operators": []
+    },
+    {
+      "icao": "LEMG",
+      "iata": "AGP",
+      "name": "Málaga",
+      "country": "ES",
+      "city": "Málaga",
+      "difficultyOverall": 4,
+      "shortDesc": "Aeropuerto turístico grande, ~250 movs/día. Mix LCC + handlers + estacional. Modo Pro+.",
+      "available": false,
+      "comingSoonReason": "Pendiente bajar data + presets. Sprint posterior a ALC.",
+      "operators": []
+    },
+    {
+      "icao": "LEBL",
+      "iata": "BCN",
+      "name": "Barcelona",
+      "country": "ES",
+      "city": "Barcelona",
+      "difficultyOverall": 5,
+      "shortDesc": "Hub gigante Vueling, ~700 movs/día. Compite con MROs gigantes. Modo experto.",
+      "available": false,
+      "comingSoonReason": "Pendiente. Modo experto, requiere haber dominado aeropuertos pequeños primero.",
+      "operators": []
+    },
+    {
+      "icao": "LEMD",
+      "iata": "MAD",
+      "name": "Madrid Barajas",
+      "country": "ES",
+      "city": "Madrid",
+      "difficultyOverall": 5,
+      "shortDesc": "Hub Iberia mainline + intercontinentales, ~1100 movs/día. Modo dios.",
+      "available": false,
+      "comingSoonReason": "Modo dios. Pendiente. Iberia mainline + intercontinentales + carga. El reto definitivo.",
+      "operators": []
     }
   ]
 }

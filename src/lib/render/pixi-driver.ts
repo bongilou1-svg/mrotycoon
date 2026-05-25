@@ -16,7 +16,19 @@ import { bakeJetSprite } from "./sprite-bakery.ts";
 import { loadAssets, getTexture } from "./assets.ts";
 // F5D · datos OSM del aeropuerto OVD (LEAS) — © OpenStreetMap contributors (ODbL).
 // Generado offline por .scripts/osm_to_pixi.mjs (proyección equirectangular normalizada).
-import ovdPaths from "../../assets/airports/ovd.paths.json" with { type: "json" };
+// Pivot iteración 2026-05-25 — multi-airport: OVD se mantiene como default cargado
+// estáticamente. Para swap a otro aeropuerto (BIO, ALC, etc.) usar
+// `setActiveAirportPaths(paths)` antes de instanciar/redraw el driver.
+import defaultOvdPaths from "../../assets/airports/ovd.paths.json" with { type: "json" };
+
+type AirportPathsData = typeof defaultOvdPaths;
+let activeAirportPaths: AirportPathsData = defaultOvdPaths;
+
+/** Swap del layout activo en runtime (multi-airport). Default = OVD (LEAS).
+ *  Llamar antes de createGame con preset.airportIcao !== "LEAS". */
+export function setActiveAirportPaths(paths: AirportPathsData): void {
+  activeAirportPaths = paths;
+}
 
 export type Theme = "cic" | "blueprint" | "faa" | "iso" | "neon" | "steam" | "lateral" | "network" | "isodiag" | "simairport" | "airportceo" | "ceofull" | "ceopng" | "huge" | "f5d";
 
@@ -2425,7 +2437,7 @@ export class PixiDriver {
     this.worldStaticCache!.addChild(grid);
 
     const area = this.f5dArea();
-    const P = ovdPaths.paths;
+    const P = activeAirportPaths.paths;
 
     // ── Aerodrome boundary (perímetro tenue) ──
     for (const w of P.aerodrome) {
@@ -2910,7 +2922,7 @@ export class PixiDriver {
     this.layerOverlay!.addChild(fpsLbl);
 
     const skinLbl = new Text({
-      text: `skin: f5d · OSM ${ovdPaths.icao} · zoom ${this.camera.zoom.toFixed(2)}× · WASD/wheel`,
+      text: `skin: f5d · OSM ${activeAirportPaths.icao} · zoom ${this.camera.zoom.toFixed(2)}× · WASD/wheel`,
       style: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, fill: 0x3d6f9d },
     });
     skinLbl.anchor.set(0, 1);
@@ -2934,7 +2946,7 @@ export class PixiDriver {
     // Fondo
     root.addChild(new Graphics().rect(mmX, mmY, mmW, mmH).fill({ color: 0x0a1428, alpha: 0.92 }).stroke({ width: 1, color: 0x2c4870 }));
     const area = this.f5dArea();
-    const P = ovdPaths.paths;
+    const P = activeAirportPaths.paths;
     // Apron miniatura
     for (const w of P.apron) {
       const g = new Graphics();

@@ -1,9 +1,28 @@
-// Procesa data raw AeroDataBox → src/assets/airports/ovd.schedule.json + ovd.fleet.json
-// con formato del juego. Usa data del 4-10 mayo 2026 (lunes-domingo) con matrículas
+// Procesa data raw AeroDataBox → src/assets/airports/{slug}.schedule.json + {slug}.fleet.json
+// con formato del juego. Usa los 7 días lunes-domingo (4-10 mayo 2026) con matrículas
 // reales asignadas. Saneamiento via operator-rules.mjs.
+//
+// Uso:
+//   node .scripts/process-airport-schedule.mjs <ICAO> [slug] [cityName]
+//
+// Ejemplos:
+//   node .scripts/process-airport-schedule.mjs LEAS ovd Asturias
+//   node .scripts/process-airport-schedule.mjs LEBB bio Bilbao
+//   node .scripts/process-airport-schedule.mjs LEAL alc Alicante
+//
+// Requiere: data/{slug}_raw/2026-05-04..10_{AM,PM}.json (bajados por fetch-airport-week.mjs).
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolveOperator, OPERATOR_NAMES } from "./operator-rules.mjs";
+
+const ICAO = (process.argv[2] ?? "").toUpperCase();
+const SLUG = (process.argv[3] ?? ICAO).toLowerCase();
+const CITY = process.argv[4] ?? ICAO;
+if (!ICAO) {
+  console.error("Uso: node .scripts/process-airport-schedule.mjs <ICAO> [slug] [cityName]");
+  console.error("Ejemplo: node .scripts/process-airport-schedule.mjs LEBB bio Bilbao");
+  process.exit(1);
+}
 
 const SOURCE_DAYS = {
   monday:    "2026-05-04",
@@ -15,14 +34,16 @@ const SOURCE_DAYS = {
   sunday:    "2026-05-10",
 };
 
+const RAW_DIR = `data/${SLUG}_raw`;
+const OUT_SCHEDULE = `src/assets/airports/${SLUG}.schedule.json`;
+const OUT_FLEET = `src/assets/airports/${SLUG}.fleet.json`;
+
 // Tipos handleable (A320 family CFM56/V2500). Resto es notHandled.
 function classifyAircraft(model) {
   const m = (model ?? "").toLowerCase();
-  // A320 mainline + sharklets
   if (m.includes("a320") && !m.includes("neo")) return { model: "A320", engineVariant: "CFM56", notHandled: false };
   if (m.includes("a321") && !m.includes("neo")) return { model: "A321", engineVariant: "V2500", notHandled: false };
-  if (m.includes("a319")) return { model: "A319", engineVariant: "CFM56", notHandled: true }; // de momento no handleable
-  // Todo lo demás: notHandled
+  if (m.includes("a319")) return { model: "A319", engineVariant: "CFM56", notHandled: true };
   if (m.includes("crj") || m.includes("regional-jet")) return { model: "CRJ-1000", engineVariant: "CF34-8C5", notHandled: true };
   if (m.startsWith("e295") || m.includes("embraer 195") || m.includes("e195")) return { model: "E195-E2", engineVariant: "PW1900G", notHandled: true };
   if (m.includes("embraer 175") || m.includes("e175")) return { model: "E175", engineVariant: "CF34-8E", notHandled: true };
@@ -32,43 +53,28 @@ function classifyAircraft(model) {
   if (m.includes("boeing 737") || m.includes("b737")) return { model: "B737-800", engineVariant: "CFM56-7B", notHandled: true };
   if (m.includes("a321 neo") || m.includes("a321neo")) return { model: "A321neo", engineVariant: "PW1100G", notHandled: true };
   if (m.includes("a320 neo") || m.includes("a320neo")) return { model: "A320neo", engineVariant: "PW1100G", notHandled: true };
-  // Fallback: notHandled
   return { model: "Unknown", engineVariant: "Unknown", notHandled: true };
 }
 
 function operatorToAirlineCode(op) {
-  // Mapeo operador real ICAO → código IATA usado en airlines.json del juego
-  // Esto define quién FACTURA el MRO (dueño de la flota).
+  // operador real ICAO → código IATA usado en airlines.json del juego.
+  // Esto define quién FACTURA el MRO (dueño de la flota, no necesariamente quien aparece
+  // en el callsign — IB CRJ es realmente ANE = Air Nostrum, IBB E295 es NTC = Binter).
   const map = {
-    VOE: "V7",  // Volotea
-    VLG: "VY",  // Vueling
-    ANE: "YW",  // Air Nostrum (callsign IB pero operador físico)
-    IBE: "IB",  // Iberia mainline (raro en OVD pero por si acaso)
-    IBB: "IB",  // Iberia Express
-    EZY: "U2",  // easyJet
-    EZS: "U2",  // easyJet Switzerland (mismo brand para el juego)
-    NTC: "NT",  // Binter
-    DLH: "LH",  // Lufthansa
-    KLM: "KL",  // KLM mainline
-    KLC: "KL",  // KLM Cityhopper (mismo brand)
-    EIN: "EI",  // Aer Lingus
-    BAW: "BA",  // British Airways
-    AFR: "AF",  // Air France
-    RYR: "FR",  // Ryanair
-    TVS: "QS",  // Smart Wings
-    AEA: "UX",  // Air Europa
-    AEX: "X5",  // Air Europa Express
-    EVE: "UX",  // Air Europa otro callsign
-    FRO: "EZ",  // Sun-Air (BA franquicia, aprox)
+    VOE: "V7",  VLG: "VY",  ANE: "YW",  IBE: "IB",  IBB: "IB",
+    EZY: "U2",  EZS: "U2",  NTC: "NT",  DLH: "LH",  KLM: "KL",
+    KLC: "KL",  EIN: "EI",  BAW: "BA",  AFR: "AF",  RYR: "FR",
+    TVS: "QS",  AEA: "UX",  AEX: "X5",  EVE: "UX",  FRO: "EZ",
+    ANS: "AS",  // air nostrum spare
   };
   return map[op] ?? op.slice(0, 2);
 }
 
 function processDay(dateStr) {
   const flights = [];
-  const fleet = new Map(); // reg → {model, engineVariant, airlineCode, airlineName}
+  const fleet = new Map();
   for (const w of ["AM", "PM"]) {
-    const path = `data/ovd_raw/${dateStr}_${w}.json`;
+    const path = `${RAW_DIR}/${dateStr}_${w}.json`;
     if (!existsSync(path)) {
       console.warn(`[warn] missing ${path}`);
       continue;
@@ -89,7 +95,7 @@ function processFlight(ev, type, flights, fleet) {
   const timeStr = type === "arrival"
     ? ev.arrival?.scheduledTime?.local?.slice(11, 16)
     : ev.departure?.scheduledTime?.local?.slice(11, 16);
-  if (!timeStr) return; // sin hora válida
+  if (!timeStr) return;
   const [h, m] = timeStr.split(":").map(Number);
   const scheduledMinute = h * 60 + m;
   const remote = type === "arrival" ? ev.departure?.airport?.iata : ev.arrival?.airport?.iata;
@@ -105,7 +111,6 @@ function processFlight(ev, type, flights, fleet) {
     airlineName: operatorName,
     notHandled: cls.notHandled,
   });
-  // Acumular fleet (matrícula → operador real)
   if (ev.aircraft?.reg) {
     fleet.set(ev.aircraft.reg, {
       registration: ev.aircraft.reg,
@@ -117,14 +122,15 @@ function processFlight(ev, type, flights, fleet) {
   }
 }
 
-console.log("=== Procesando 7 días reales (2026-05-04 a 10) ===");
+console.log(`=== Procesando ${ICAO} (${SLUG}) 7 días reales (2026-05-04 a 10) ===`);
+console.log(`Raw: ${RAW_DIR}`);
 const schedule = {
-  airport: "Asturias",
-  icao: "LEAS",
-  name: "Asturias OVD",
+  airport: CITY,
+  icao: ICAO,
+  name: `${CITY} ${SLUG.toUpperCase()}`,
   source: "AeroDataBox real data 4-10 mayo 2026 + saneamiento operator-rules",
   version: 2,
-  notes: "Datos reales semana 4-10 mayo 2026 (lunes-domingo). Operadores físicos resueltos: callsign IBE+CRJ → ANE, IBB+E295 → NTC, VLG+ATR → AEX, etc.",
+  notes: `Datos reales semana 4-10 mayo 2026 de ${ICAO}. Operadores físicos resueltos via .scripts/operator-rules.mjs (callsigns IBE/IBB/etc → ANE/NTC/etc según modelo+marca).`,
   patterns: {},
 };
 const allFleet = new Map();
@@ -137,17 +143,15 @@ for (const [dayKey, dateStr] of Object.entries(SOURCE_DAYS)) {
   console.log(`  ${dayKey} (${dateStr}): ${flights.length} flights, ${fleet.size} matrículas únicas`);
 }
 
-writeFileSync("src/assets/airports/ovd.schedule.json", JSON.stringify(schedule, null, 2));
-console.log("\n✅ Escrito src/assets/airports/ovd.schedule.json");
+writeFileSync(OUT_SCHEDULE, JSON.stringify(schedule, null, 2));
+console.log(`\n✅ Escrito ${OUT_SCHEDULE}`);
 
-// Genera ovd.fleet.json con matrículas vistas
 const fleetData = {
-  airport: "Asturias",
-  icao: "LEAS",
+  airport: CITY,
+  icao: ICAO,
   source: "AeroDataBox real data 4-10 mayo 2026",
-  notes: "Pool de matrículas reales operando OVD esa semana. FH/cycles plausibles asignados deterministically por hash del registration.",
+  notes: `Pool de matrículas reales operando ${ICAO} esa semana. FH/cycles plausibles asignados deterministically por hash del registration.`,
   fleet: [...allFleet.values()].map((info) => {
-    // FH/cycles plausibles por hash deterministic
     const h = [...info.registration].reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
     const abs = Math.abs(h);
     const totalFH = 8000 + (abs % 25000);
@@ -165,11 +169,11 @@ const fleetData = {
     };
   }),
 };
-writeFileSync("src/assets/airports/ovd.fleet.json", JSON.stringify(fleetData, null, 2));
-console.log(`✅ Escrito src/assets/airports/ovd.fleet.json (${fleetData.fleet.length} matrículas reales)`);
+writeFileSync(OUT_FLEET, JSON.stringify(fleetData, null, 2));
+console.log(`✅ Escrito ${OUT_FLEET} (${fleetData.fleet.length} matrículas reales)`);
 
 // Resumen por operador
-console.log("\n=== Resumen schedule generado (movs / airlineCode) ===");
+console.log(`\n=== Resumen schedule generado (movs / airlineCode) ===`);
 const counts = {};
 for (const dayKey of Object.keys(schedule.patterns)) {
   for (const f of schedule.patterns[dayKey]) {

@@ -5,7 +5,7 @@
 // Mantiene la capa render aislada del bundle Sim — los 803 tests sim siguen sin
 // tocar Pixi, y el UI driver vanilla decide cuándo cargar el mapa.
 
-export { PixiDriver } from "./pixi-driver.ts";
+export { PixiDriver, setActiveAirportPaths } from "./pixi-driver.ts";
 export { ThreeDriver } from "./three-driver.ts";
 export { buildRenderState, timeOfDayFor } from "./sync.ts";
 export { loadAssets, getTexture } from "./assets.ts";

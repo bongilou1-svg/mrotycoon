@@ -78,6 +78,21 @@ const _dailyChecksWithKind = (dailyChecksJson as Array<Record<string, unknown>>)
 import airportCatalogJson from "./data/airports/catalog.json";
 import presetVolotea from "./data/airports/LEAS_volotea.preset.json";
 import presetVueling from "./data/airports/LEAS_vueling.preset.json";
+import presetBioVolotea from "./data/airports/LEBB_volotea.preset.json";
+
+// Pivot iteración 2026-05-25 — Multi-airport: runtime assets (schedule + fleet + OSM paths)
+// por ICAO. Al crear game, build-vanilla.mjs llama setActiveAirportData(schedule, fleet) +
+// setActiveAirportPaths(paths) con los del aeropuerto del preset elegido. OVD ya está
+// importado en schedule.ts/pixi-driver.ts como default — re-usamos esos imports vía
+// re-export (_ovdScheduleAsset/_ovdFleetAsset) para NO duplicar JSON en el bundle.
+// ovd.paths.json sí lo importa sim-all directamente (paths viven solo en pixi-driver que
+// está en otro bundle IIFE separado, así que el Sim bundle necesita su propia ref).
+import { _ovdScheduleAsset, _ovdFleetAsset } from "./sim/schedule.ts";
+import ovdPathsAsset from "../assets/airports/ovd.paths.json";
+// BIO assets — bajados 2026-05-25 (semana 4-10 mayo, saneamiento operator-rules).
+import bioScheduleAsset from "../assets/airports/bio.schedule.json";
+import bioFleetAsset from "../assets/airports/bio.fleet.json";
+import bioPathsAsset from "../assets/airports/bio.paths.json";
 
 export const DATA = {
   workOrders: _workOrdersWithKind,
@@ -89,5 +104,10 @@ export const DATA = {
   presets: {
     LEAS_volotea: presetVolotea,
     LEAS_vueling: presetVueling,
+    LEBB_volotea: presetBioVolotea,
   },
+  airportRuntime: {
+    LEAS: { schedule: _ovdScheduleAsset, fleet: _ovdFleetAsset, paths: ovdPathsAsset },
+    LEBB: { schedule: bioScheduleAsset, fleet: bioFleetAsset, paths: bioPathsAsset },
+  } as Record<string, { schedule: unknown; fleet: unknown; paths: unknown }>,
 };
