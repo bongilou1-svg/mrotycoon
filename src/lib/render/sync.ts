@@ -49,11 +49,7 @@ export function timeOfDayFor(minute: number): TimeOfDay {
 /** P-γ: cuánto dura visualmente el taxi (pista → stand) tras el arrival. No tiene
  *  efecto en el sim — solo controla cuándo el driver muestra el avión "taxiándose" en
  *  motion path frente a "parado en stand". */
-// Pivot iteración 2026-05-25 — Feedback Dani: subir de 4 a 12 min sim para que la
-// animación del taxi (touchdown → runway → taxiway → stand) sea VISIBLE como un
-// recorrido completo y no un brinco corto. A 5x speed son ~2.5 min reales por arrival,
-// suficiente para ver "vidilla" en el aeropuerto. A 1x son 12 min reales (realista).
-export const TAXIING_DURATION_MIN = 12;
+export const TAXIING_DURATION_MIN = 4;
 
 export function buildRenderState(g: GameState): RenderState {
   const stage = g.mroStage;
