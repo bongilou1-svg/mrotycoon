@@ -142,10 +142,64 @@
       "country": "ES",
       "city": "Alicante",
       "difficultyOverall": 3,
-      "shortDesc": "Aeropuerto turístico, ~150 movs/día. Predominio LCC (Ryanair, easyJet, Vueling). Ritmo intenso de turnarounds cortos.",
-      "available": false,
-      "comingSoonReason": "Pendiente bajar data real AeroDataBox + crear presets LCC. Próximo sprint.",
-      "operators": []
+      "shortDesc": "Aeropuerto turístico, ~160 movs/día. Vueling 149/sem · easyJet 152/sem · LCC + Ryanair (no contratable, B737). Pernoctas moderadas, ritmo intenso.",
+      "available": true,
+      "operators": [
+        {
+          "presetFile": "LEAL_aireuropa.preset.json",
+          "operatorIata": "UX",
+          "operatorName": "Air Europa",
+          "color": "#1C5BA8",
+          "difficulty": 2,
+          "difficultyLabel": "Rookie+",
+          "shortLine": "Doméstica MAD-ALC · sin pernoctas · entry-level",
+          "tagline": "Tu entrada suave al ritmo ALC: 4-5 movs/día, solo callouts. Aprende el aeropuerto sin ahogarte.",
+          "metrics": {
+            "movsPerWeek": 30,
+            "overnightsPerWeek": 0,
+            "model": "A320/A321",
+            "balance": 270000,
+            "mechs": "1 dual + 1 helper"
+          },
+          "available": true
+        },
+        {
+          "presetFile": "LEAL_vueling.preset.json",
+          "operatorIata": "VY",
+          "operatorName": "Vueling",
+          "color": "#FFCD00",
+          "difficulty": 3,
+          "difficultyLabel": "Pro",
+          "shortLine": "Base ALC · A320/A321 · turnaround + 6 pernoctas",
+          "tagline": "Preset central de ALC: alto volumen (21/día) + 6 pernoctas/sem. Aprendes a malabarear callouts simultáneos.",
+          "metrics": {
+            "movsPerWeek": 149,
+            "overnightsPerWeek": 6,
+            "model": "A320/A321",
+            "balance": 320000,
+            "mechs": "1 dual + 1 B1 + 1 helper"
+          },
+          "available": true
+        },
+        {
+          "presetFile": "LEAL_easyjet.preset.json",
+          "operatorIata": "U2",
+          "operatorName": "easyJet",
+          "color": "#FF6600",
+          "difficulty": 4,
+          "difficultyLabel": "Pro+",
+          "shortLine": "Hardcore turismo · A320/A321 · turnarounds 30min sin pernocta",
+          "tagline": "El reto duro: 22 movs/día, todo callout urgente, sin overnight para amortizar. Solo si eres pro.",
+          "metrics": {
+            "movsPerWeek": 152,
+            "overnightsPerWeek": 3,
+            "model": "A320/A321",
+            "balance": 340000,
+            "mechs": "2 dual + 1 helper"
+          },
+          "available": true
+        }
+      ]
     },
     {
       "icao": "LEMG",

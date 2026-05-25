@@ -96,6 +96,55 @@ for (const pp of paths.parkingPositions) {
   if (!pp.ref) pp.ref = `vp-${String(vpCounter++).padStart(3, "0")}`;
 }
 
+// Pivot iteración 2026-05-25 — Multi-airport fallback: si OSM no proporciona ningún
+// parking_position (caso ALC mayo 2026, common en aeropuertos no documentados a detalle),
+// fabricamos 11 parking_positions sintéticos distribuidos sobre el centroide del primer
+// apron disponible. Cada uno: línea corta de 2 puntos (centroide_apron → punto_grid).
+// Sin esto, el game tiene stands en game state (H1-S1..) pero el pixi-driver no puede
+// renderizarlos ni posicionar aviones. Esto desbloquea cualquier aeropuerto del catálogo.
+if (paths.parkingPositions.length === 0) {
+  // Tomar primer apron, o si no hay, primer terminal, o si no hay, centroide del bbox.
+  let centerPoint = null;
+  let referenceArea = null;
+  if (paths.apron.length > 0) {
+    referenceArea = paths.apron[0];
+  } else if (paths.terminal.length > 0) {
+    referenceArea = paths.terminal[0];
+  }
+  if (referenceArea && referenceArea.coords.length > 0) {
+    // Centroide promediado del polígono
+    let sx = 0, sy = 0;
+    for (const c of referenceArea.coords) { sx += c[0]; sy += c[1]; }
+    centerPoint = [sx / referenceArea.coords.length, sy / referenceArea.coords.length];
+  } else {
+    centerPoint = [0.5, 0.5]; // fallback: centro del bbox normalizado
+  }
+  // 11 puntos en grid 4×3 (con 1 hueco) alrededor del centroide. Espacing relativo al
+  // bbox normalizado: ~6% horizontal × 5% vertical. Esto deja stands visibles cerca del
+  // apron sin invadir runway/taxiways.
+  const dx = 0.03, dy = 0.025; // medio espacing por mitad de stand
+  const layout = [
+    [-1.5, -1], [-0.5, -1], [0.5, -1], [1.5, -1],   // fila superior 4 stands (H1-S1..S4)
+    [-1.5,  0], [-0.5,  0], [0.5,  0],              // fila media 3 stands (H1-S5, R1, H2-S1)
+    [-1,    1], [0,     1], [1,    1], [2,  1],     // fila inferior 4 stands (B1..B4)
+  ];
+  let synth = 0;
+  for (const [gx, gy] of layout) {
+    const x = centerPoint[0] + gx * dx;
+    const y = centerPoint[1] + gy * dy;
+    const tip = [x, y];
+    const tail = [centerPoint[0], centerPoint[1]]; // línea corta hacia el centro del apron
+    paths.parkingPositions.push({
+      id: 9000000 + synth, // ID artificial para no chocar con OSM IDs reales
+      coords: [tail, tip],
+      name: null,
+      ref: `synth-${String(synth).padStart(2, "0")}`,
+    });
+    synth++;
+  }
+  console.log(`  ⚠️ OSM no tenía parking_positions — generados ${synth} sintéticos sobre apron`);
+}
+
 // Generar standMap: mapping desde IDs lógicos del game (H1-S1..H1-S5, R1, H2-S1, H1-B1,
 // H2-B1, H3-B1, H3-B2) a refs de parking_position del paths.json. Prefiere refs OSM
 // numéricos ("01"-"09") por orden si están disponibles; si no, usa los primeros N

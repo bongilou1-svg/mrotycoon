@@ -81,6 +81,9 @@ import presetVueling from "./data/airports/LEAS_vueling.preset.json";
 import presetBioVolotea from "./data/airports/LEBB_volotea.preset.json";
 import presetBioLufthansa from "./data/airports/LEBB_lufthansa.preset.json";
 import presetBioAirEuropa from "./data/airports/LEBB_aireuropa.preset.json";
+import presetAlcAirEuropa from "./data/airports/LEAL_aireuropa.preset.json";
+import presetAlcVueling from "./data/airports/LEAL_vueling.preset.json";
+import presetAlcEasyjet from "./data/airports/LEAL_easyjet.preset.json";
 
 // Pivot iteración 2026-05-25 — Multi-airport: runtime assets (schedule + fleet + OSM paths)
 // por ICAO. Al crear game, build-vanilla.mjs llama setActiveAirportData(schedule, fleet) +
@@ -95,6 +98,12 @@ import ovdPathsAsset from "../assets/airports/ovd.paths.json";
 import bioScheduleAsset from "../assets/airports/bio.schedule.json";
 import bioFleetAsset from "../assets/airports/bio.fleet.json";
 import bioPathsAsset from "../assets/airports/bio.paths.json";
+// ALC assets — bajados 2026-05-25 (semana 4-10 mayo, saneamiento operator-rules).
+// Nota: OSM Alicante no tagueaba parking_positions → osm_to_pixi.mjs generó 11 sintéticos
+// sobre el centroide del apron como fallback.
+import alcScheduleAsset from "../assets/airports/alc.schedule.json";
+import alcFleetAsset from "../assets/airports/alc.fleet.json";
+import alcPathsAsset from "../assets/airports/alc.paths.json";
 
 export const DATA = {
   workOrders: _workOrdersWithKind,
@@ -109,9 +118,13 @@ export const DATA = {
     LEBB_volotea: presetBioVolotea,
     LEBB_lufthansa: presetBioLufthansa,
     LEBB_aireuropa: presetBioAirEuropa,
+    LEAL_aireuropa: presetAlcAirEuropa,
+    LEAL_vueling: presetAlcVueling,
+    LEAL_easyjet: presetAlcEasyjet,
   },
   airportRuntime: {
     LEAS: { schedule: _ovdScheduleAsset, fleet: _ovdFleetAsset, paths: ovdPathsAsset },
     LEBB: { schedule: bioScheduleAsset, fleet: bioFleetAsset, paths: bioPathsAsset },
+    LEAL: { schedule: alcScheduleAsset, fleet: alcFleetAsset, paths: alcPathsAsset },
   } as Record<string, { schedule: unknown; fleet: unknown; paths: unknown }>,
 };

@@ -1,0 +1,44 @@
+{
+  "icao": "LEAL",
+  "iata": "ALC",
+  "name": "Alicante",
+  "country": "ES",
+  "city": "Alicante",
+  "difficulty": 2,
+  "difficultyLabel": "Rookie+",
+  "description": "Air Europa en ALC: 30 movs/sem (4-5/día), sin pernoctas habituales, ruta doméstica MAD-ALC + alguna canaria. Entry-level perfecto para un aeropuerto turístico — bajo volumen y solo callouts, te permite entender el ritmo ALC sin ahogarte. Cuando subas brand, easyJet o Vueling (volúmenes 5x mayores) te ofertarán.",
+
+  "setup": {
+    "initialBalance": 270000,
+    "initialMechCap": 6,
+    "initialMechs": [
+      { "type": "dual-B1B2", "shift": "morning" },
+      { "type": "helper", "shift": "morning" }
+    ],
+    "marketPreloadDualCandidates": 2,
+    "initialContracts": [
+      {
+        "airlineIata": "UX",
+        "tier": "line",
+        "baseFeePerWeek": 13000,
+        "paymentPerWOMinute": 70,
+        "penaltyPerLateMinute": 6,
+        "minReputation": 45,
+        "expectedLandingsPerDay": 4,
+        "withOvernight": false
+      }
+    ]
+  },
+
+  "operators": [
+    { "iata": "UX",  "icao": "AEA", "name": "Air Europa",      "color": "#1C5BA8", "homeBased": false, "brandThreshold": 60, "fleetModels": ["A320", "A321"] },
+    { "iata": "VY",  "icao": "VLG", "name": "Vueling",         "color": "#FFCD00", "homeBased": false, "brandThreshold": 70, "fleetModels": ["A320", "A321"] },
+    { "iata": "U2",  "icao": "EZY", "name": "easyJet",         "color": "#FF6600", "homeBased": false, "brandThreshold": 75, "fleetModels": ["A320", "A321"] },
+    { "iata": "V7",  "icao": "VOE", "name": "Volotea",         "color": "#A20067", "homeBased": false, "brandThreshold": 65, "fleetModels": ["A320", "A319"] },
+    { "iata": "LH",  "icao": "DLH", "name": "Lufthansa",       "color": "#05164D", "homeBased": false, "brandThreshold": 80, "fleetModels": ["A320", "A321"] },
+    { "iata": "IB",  "icao": "IBB", "name": "Iberia Express",  "color": "#E40000", "homeBased": false, "brandThreshold": 70, "fleetModels": ["A320", "A321"] },
+    { "iata": "EI",  "icao": "EIN", "name": "Aer Lingus",      "color": "#0D754B", "homeBased": false, "brandThreshold": 78, "fleetModels": ["A320"] }
+  ],
+
+  "milestones": []
+}
