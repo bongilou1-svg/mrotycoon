@@ -3019,18 +3019,27 @@ function render(){
     else if (activeTab === "dashboard")  html = renderDashboard();
     else                                 html = renderEconomy();
     if (html !== lastPanelHtml) {
+      const _tPa = performance.now();
       document.getElementById("panel-content").innerHTML = html;
+      const _tPb = performance.now();
+      window.__perf && (window.__perf.panelRender += (_tPb - _tPa));
       lastPanelHtml = html;
     }
     lastPanelRenderMs = nowMs;
   }
+  const _tMa = performance.now();
   syncMapRender();
+  const _tMb = performance.now();
+  window.__perf && (window.__perf.mapSync += (_tMb - _tMa));
   // Pivot iteración 2026-05-25: actualizar panel info overlay sobre el mapa.
   // Throttle 500ms: el panel no necesita 10 actualizaciones/seg, basta con 2. Esto
   // evita filter/sort sobre flights[] (157 BIO, 403 ALC) cada tick a 5x — feedback
   // Dani: el juego se trababa a 5x con bottlenecks acumulados.
   if (activeTab === "map" && !game.gameOver.isOver && (nowMs - lastMapInfoRenderMs) >= 500) {
+    const _tIa = performance.now();
     updateMapInfoPanel();
+    const _tIb = performance.now();
+    window.__perf && (window.__perf.mapInfo += (_tIb - _tIa));
     lastMapInfoRenderMs = nowMs;
   }
 
@@ -3524,9 +3533,18 @@ function ageFleet() {
 
 (async () => { hasSavedSlot = await S.getStorage().hasSave(); render(); })();
 
+// Pivot iteración 2026-05-25 — Performance tracing: agregamos tiempos por subsistema y los
+// reportamos a console cada 5s real. Abrir DevTools (F12) > Console para ver [PERF] lines.
+// Identifica cuál subsistema (advance / mapSync / panelRender / mapInfoPanel) consume más.
+window.__perf = { advance: 0, mapSync: 0, panelRender: 0, mapInfo: 0, ticks: 0, slowest: 0, slowestWhat: "" };
+let _lastPerfReport = performance.now();
+
 setInterval(() => {
   if (game.clock.speed === 0) return;
+  const _tA = performance.now();
   S.advanceGame(game, game.clock.speed);
+  const _tB = performance.now();
+  window.__perf.advance += (_tB - _tA);
   // Pivot línea pura: notif diaria del paquete de trabajo nocturno (~12:00).
   // Una vez por día, si hay overnighters confirmados en pernocta hoy.
   const gd = Math.floor(game.clock.minute / S.DAY_MINUTES) + 1;
@@ -3554,7 +3572,29 @@ setInterval(() => {
     }
     lastProductionPackageDay = gd;
   }
+  const _tC = performance.now();
   render();
+  const _tD = performance.now();
+  window.__perf.ticks++;
+  // El tiempo de render() incluye panelRender + mapSync + mapInfo (medidos internamente).
+  // Su delta total nos da el "render time" del tick.
+  const renderTotal = _tD - _tC;
+  if (renderTotal > window.__perf.slowest) {
+    window.__perf.slowest = renderTotal;
+    window.__perf.slowestWhat = \`render@\${S.formatClock(game.clock.minute)}\`;
+  }
+  // Report cada 5s real
+  if (_tD - _lastPerfReport >= 5000) {
+    const p = window.__perf;
+    const t = Math.max(1, p.ticks);
+    const apActive = game.airplanes.length;
+    const apArc = game.archive?.airplanes?.length ?? 0;
+    const woActive = game.workOrders.length;
+    const woArc = game.archive?.workOrders?.length ?? 0;
+    console.log(\`[PERF] \${p.ticks}t/5s · advance \${(p.advance/t).toFixed(2)}ms · mapSync \${(p.mapSync/t).toFixed(2)}ms · panelRender \${(p.panelRender/t).toFixed(2)}ms · mapInfo \${(p.mapInfo/t).toFixed(2)}ms · slowest \${p.slowest.toFixed(0)}ms (\${p.slowestWhat}) · airplanes \${apActive}A+\${apArc}arc · WOs \${woActive}A+\${woArc}arc\`);
+    window.__perf = { advance: 0, mapSync: 0, panelRender: 0, mapInfo: 0, ticks: 0, slowest: 0, slowestWhat: "" };
+    _lastPerfReport = _tD;
+  }
 }, 100);`;
 
 await main();
