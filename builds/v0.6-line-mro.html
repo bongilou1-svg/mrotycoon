@@ -375,10 +375,12 @@ var Sim = (() => {
     generateCandidate: () => generateCandidate,
     generateDailyArrivals: () => generateDailyArrivals,
     generateInitialContracts: () => generateInitialContracts,
+    generateInitialContractsFromPreset: () => generateInitialContractsFromPreset,
     generateInitialContractsLine: () => generateInitialContractsLine,
     generateInitialDualCandidates: () => generateInitialDualCandidates,
     generateInitialFleet: () => generateInitialFleet,
     generateInitialMechanics: () => generateInitialMechanics,
+    generateMechFromSpec: () => generateMechFromSpec,
     generateRegistration: () => generateRegistration,
     generateScheduledArrivals: () => generateScheduledArrivals,
     getAirplaneInstanceCounter: () => getAirplaneInstanceCounter,
@@ -731,6 +733,29 @@ var Sim = (() => {
       subscriptionHoursPerWeek: defaultSubscriptionHoursPerWeek("line"),
       ...activeTerms
     }];
+  }
+  function generateInitialContractsFromPreset(airlines, specs) {
+    const out = [];
+    let nextId = 1;
+    for (const spec of specs) {
+      const airline = airlines.find((a) => a.iataCode === spec.airlineIata);
+      if (!airline) continue;
+      out.push({
+        id: `C-${nextId.toString().padStart(3, "0")}`,
+        airlineId: airline.id,
+        status: "active",
+        offeredAtMinute: 0,
+        baseFeePerWeek: spec.baseFeePerWeek,
+        paymentPerWOMinute: spec.paymentPerWOMinute,
+        penaltyPerLateMinute: spec.penaltyPerLateMinute,
+        minReputation: spec.minReputation,
+        expectedLandingsPerDay: spec.expectedLandingsPerDay,
+        tier: spec.tier,
+        subscriptionHoursPerWeek: defaultSubscriptionHoursPerWeek(spec.tier)
+      });
+      nextId += 1;
+    }
+    return out;
   }
   function acceptOffer(contracts, contractId, nowMinute) {
     const offered = contracts.find((c) => c.id === contractId);
@@ -1753,7 +1778,54 @@ var Sim = (() => {
   function generateMechanicId(idx) {
     return `M-${idx.toString().padStart(3, "0")}`;
   }
+  function generateMechFromSpec(spec, balance, rng, idx) {
+    const id = generateMechanicId(idx);
+    const name = generateName(rng);
+    if (spec.type === "helper") {
+      return {
+        id,
+        name,
+        base: null,
+        typeRatings: [],
+        efficiency: Number(randFloat(rng, 0.6, 0.85).toFixed(2)),
+        weeklySalary: balance.salaries.helper,
+        state: "Idle",
+        assignedWoInstanceId: null,
+        assignedCheckInstanceId: null,
+        stateRemainingMinutes: 0,
+        trainingMinutes: 0,
+        shift: spec.shift,
+        moral: 70
+      };
+    }
+    const base = spec.type === "B2-mainline" ? "B2" : "B1";
+    const models = ["A320", "A321"];
+    const engines = ["CFM56", "V2500"];
+    const cats = spec.type === "dual-B1B2" ? ["B1", "B2"] : [base];
+    const ratings = [];
+    for (const m of models) for (const e of engines) for (const c of cats) {
+      ratings.push({ model: m, engineVariant: e, category: c });
+    }
+    return {
+      id,
+      name,
+      base,
+      typeRatings: ratings,
+      efficiency: Number(randFloat(rng, 0.95, 1.18).toFixed(2)),
+      weeklySalary: spec.type === "dual-B1B2" ? Math.round(balance.salaries.b1Senior * 1.15) : balance.salaries[base === "B1" ? "b1Senior" : "b2Senior"],
+      state: "Idle",
+      assignedWoInstanceId: null,
+      assignedCheckInstanceId: null,
+      stateRemainingMinutes: 0,
+      trainingMinutes: 0,
+      shift: spec.shift,
+      moral: 70
+    };
+  }
   function generateInitialMechanics(rng, balance, opts = {}) {
+    if (opts.specs && opts.specs.length > 0) {
+      return opts.specs.map((s, i) => generateMechFromSpec(s, balance, rng, i + 1));
+    }
     if (opts.linePool) return generateLinePoolMechanics(rng, balance);
     return generateLegacyPoolMechanics(rng, balance);
   }
@@ -3586,7 +3658,7 @@ var Sim = (() => {
     resetMaintenanceCheckCounter(0);
     resetCandidateCounter(0);
     _resetContractCounter(1e3);
-    const initialContracts = lineMode ? generateInitialContractsLine(rng, airlines) : generateInitialContracts(rng, airlines);
+    const initialContracts = opts.airportPreset?.setup?.initialContracts ? generateInitialContractsFromPreset(airlines, opts.airportPreset.setup.initialContracts) : lineMode ? generateInitialContractsLine(rng, airlines) : generateInitialContracts(rng, airlines);
     const activeAirlineIds = new Set(initialContracts.filter((c) => c.status === "active").map((c) => c.airlineId));
     const activeAirlines = airlines.filter((al) => activeAirlineIds.has(al.id));
     const baseFleet = generateInitialFleet(rng, activeAirlines);
@@ -3601,7 +3673,12 @@ var Sim = (() => {
       balance,
       fleet,
       contracts: initialContracts,
-      mechanics: generateInitialMechanics(rng, balance, { linePool: lineMode }),
+      // Pivot iteración 2026-05-25: si hay preset, generar mecs según specs.
+      // Sino, comportamiento legacy (linePool si lineMode, sino pool tradicional).
+      mechanics: generateInitialMechanics(rng, balance, {
+        linePool: lineMode,
+        specs: opts.airportPreset?.setup?.initialMechs
+      }),
       airplanes: [],
       workOrders: [],
       maintenanceChecks: [],

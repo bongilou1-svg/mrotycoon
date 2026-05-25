@@ -19,7 +19,7 @@ import { rollDailyEvents, runwayClosedAt } from "./sim/events.ts";
 import { type ClockState, createClock, advance, DAY_MINUTES, WEEK_MINUTES } from "./sim/time.ts";
 import { type Rng, createRng } from "./sim/rng.ts";
 import {
-  generateInitialContracts, generateInitialContractsLine, activeContracts, expireOffers, acceptOffer, rejectOffer,
+  generateInitialContracts, generateInitialContractsLine, generateInitialContractsFromPreset, activeContracts, expireOffers, acceptOffer, rejectOffer,
   tickContractMarket, tickLineCompetition, tickContractTierUpgrade, brandReputation,
   OFFER_TICK_DAYS, LINE_COMPETITION_TICK_DAYS, TIER_UPGRADE_TICK_DAYS, _resetContractCounter,
 } from "./sim/contracts.ts";
@@ -243,10 +243,15 @@ export function createGame(
   resetMaintenanceCheckCounter(0);
   resetCandidateCounter(0);
   _resetContractCounter(1000);
-  // Contratos: legacy (1 active + 2 offered) vs línea pura (1 active solo).
-  const initialContracts = lineMode
-    ? generateInitialContractsLine(rng, airlines)
-    : generateInitialContracts(rng, airlines);
+  // Contratos:
+  //  - Pivot iteración 2026-05-25: si hay preset, generar exactos del preset.
+  //  - Línea pura legacy: 1 active (Iberia hardcoded).
+  //  - Legacy clásico: 1 active + 2 offered.
+  const initialContracts = opts.airportPreset?.setup?.initialContracts
+    ? generateInitialContractsFromPreset(airlines, opts.airportPreset.setup.initialContracts)
+    : lineMode
+      ? generateInitialContractsLine(rng, airlines)
+      : generateInitialContracts(rng, airlines);
   const activeAirlineIds = new Set(initialContracts.filter((c) => c.status === "active").map((c) => c.airlineId));
   const activeAirlines = airlines.filter((al) => activeAirlineIds.has(al.id));
   // Flota persistente solo para aerolíneas con contrato activo. FH=0 y luego envejece con
@@ -262,7 +267,12 @@ export function createGame(
     balance,
     fleet,
     contracts: initialContracts,
-    mechanics: generateInitialMechanics(rng, balance, { linePool: lineMode }),
+    // Pivot iteración 2026-05-25: si hay preset, generar mecs según specs.
+    // Sino, comportamiento legacy (linePool si lineMode, sino pool tradicional).
+    mechanics: generateInitialMechanics(rng, balance, {
+      linePool: lineMode,
+      specs: opts.airportPreset?.setup?.initialMechs,
+    }),
     airplanes: [],
     workOrders: [],
     maintenanceChecks: [],

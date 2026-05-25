@@ -149,6 +149,47 @@ export function generateInitialContractsLine(rng: Rng, airlines: readonly Airlin
   }];
 }
 
+/** Pivot iteración 2026-05-25: genera contratos iniciales desde preset.
+ *  Cada spec define airlineIata + términos económicos. Si la aerolínea no existe
+ *  en `airlines` se ignora (anomalía en preset). IDs autogenerados C-001, C-002...  */
+export interface InitialContractFromPreset {
+  airlineIata: string;
+  tier: string;
+  baseFeePerWeek: number;
+  paymentPerWOMinute: number;
+  penaltyPerLateMinute: number;
+  minReputation: number;
+  expectedLandingsPerDay: number;
+  withOvernight: boolean;
+}
+
+export function generateInitialContractsFromPreset(
+  airlines: readonly Airline[],
+  specs: readonly InitialContractFromPreset[],
+): Contract[] {
+  const out: Contract[] = [];
+  let nextId = 1;
+  for (const spec of specs) {
+    const airline = airlines.find((a) => a.iataCode === spec.airlineIata);
+    if (!airline) continue; // anomalía: aerolínea del preset no existe en airlines.json
+    out.push({
+      id: `C-${nextId.toString().padStart(3, "0")}`,
+      airlineId: airline.id,
+      status: "active" as const,
+      offeredAtMinute: 0,
+      baseFeePerWeek: spec.baseFeePerWeek,
+      paymentPerWOMinute: spec.paymentPerWOMinute,
+      penaltyPerLateMinute: spec.penaltyPerLateMinute,
+      minReputation: spec.minReputation,
+      expectedLandingsPerDay: spec.expectedLandingsPerDay,
+      tier: spec.tier as Contract["tier"],
+      subscriptionHoursPerWeek: defaultSubscriptionHoursPerWeek(spec.tier as Contract["tier"]),
+    });
+    nextId += 1;
+  }
+  return out;
+}
+
 /** Aceptar una oferta (la mueve a "active"). Devuelve nueva lista.
  *  Pivot Fase B (2026-05-24): si la oferta tiene `upgradesContractId`, el contrato
  *  viejo se marca `cancelled` automáticamente (es un reemplazo de tier). */

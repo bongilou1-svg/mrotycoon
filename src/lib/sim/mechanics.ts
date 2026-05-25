@@ -44,7 +44,56 @@ function generateMechanicId(idx: number): string {
  * El modo línea pura cabe en la oficina mínima del MRO regional. Sin night → daily checks
  * empiezan a las 06:00 (penalty parcial aceptable hasta endgame unlock).
  */
-export function generateInitialMechanics(rng: Rng, balance: Balance, opts: { linePool?: boolean } = {}): Mechanic[] {
+/** Spec de mec inicial del preset. Define qué tipo de mec generar y en qué turno. */
+export type InitialMechType = "dual-B1B2" | "B1-mainline" | "B2-mainline" | "helper";
+export interface MechSpecForGen {
+  type: InitialMechType;
+  shift: "morning" | "afternoon" | "night";
+}
+
+/** Pivot iteración 2026-05-25: genera 1 mec según spec del preset. Tipos:
+ *   - `dual-B1B2`: senior con TODOS los type ratings A320/A321 × CFM56/V2500 × B1+B2 (8 ratings).
+ *   - `B1-mainline`: B1 senior con ratings A320/A321 × CFM56/V2500 (4 ratings).
+ *   - `B2-mainline`: B2 senior, mismos ratings.
+ *   - `helper`: sin base, sin ratings.
+ *  El idx se incrementa externamente para id único. */
+export function generateMechFromSpec(spec: MechSpecForGen, balance: Balance, rng: Rng, idx: number): Mechanic {
+  const id = generateMechanicId(idx);
+  const name = generateName(rng);
+  if (spec.type === "helper") {
+    return {
+      id, name, base: null, typeRatings: [],
+      efficiency: Number(randFloat(rng, 0.6, 0.85).toFixed(2)),
+      weeklySalary: balance.salaries.helper,
+      state: "Idle", assignedWoInstanceId: null, assignedCheckInstanceId: null,
+      stateRemainingMinutes: 0, trainingMinutes: 0, shift: spec.shift, moral: 70,
+    };
+  }
+  const base = spec.type === "B2-mainline" ? "B2" as const : "B1" as const;
+  // dual-B1B2 y mainline: ratings completos sobre A320/A321 × CFM56/V2500.
+  const models: Array<"A320" | "A321"> = ["A320", "A321"];
+  const engines: Array<"CFM56" | "V2500"> = ["CFM56", "V2500"];
+  const cats: Array<"B1" | "B2"> = spec.type === "dual-B1B2" ? ["B1", "B2"] : [base];
+  const ratings = [];
+  for (const m of models) for (const e of engines) for (const c of cats) {
+    ratings.push({ model: m, engineVariant: e, category: c });
+  }
+  return {
+    id, name, base, typeRatings: ratings,
+    efficiency: Number(randFloat(rng, 0.95, 1.18).toFixed(2)),
+    weeklySalary: spec.type === "dual-B1B2"
+      ? Math.round(balance.salaries.b1Senior * 1.15) // dual cobra prima
+      : balance.salaries[base === "B1" ? "b1Senior" : "b2Senior"],
+    state: "Idle", assignedWoInstanceId: null, assignedCheckInstanceId: null,
+    stateRemainingMinutes: 0, trainingMinutes: 0, shift: spec.shift, moral: 70,
+  };
+}
+
+export function generateInitialMechanics(rng: Rng, balance: Balance, opts: { linePool?: boolean; specs?: MechSpecForGen[] } = {}): Mechanic[] {
+  // Pivot iteración 2026-05-25: si hay specs del preset, generar exactamente esos.
+  if (opts.specs && opts.specs.length > 0) {
+    return opts.specs.map((s, i) => generateMechFromSpec(s, balance, rng, i + 1));
+  }
   if (opts.linePool) return generateLinePoolMechanics(rng, balance);
   return generateLegacyPoolMechanics(rng, balance);
 }

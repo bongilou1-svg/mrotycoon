@@ -59,6 +59,48 @@ console.log("\n=== createGame propaga airportIcao desde preset ===");
   const customPreset = { ...presetData, setup: { ...presetData.setup, initialBalance: 500000 } };
   const gCustom = createGame(balance, airlines, templates, 42, undefined, undefined, { airportPreset: customPreset });
   expect(gCustom.economy.balance === 500000, `preset balance 500k aplicado (got ${gCustom.economy.balance})`);
+
+  // Mecs del preset (LEAS = 1 dual-B1B2)
+  expect(gPreset.mechanics.length === 1, `preset OVD: 1 mec (got ${gPreset.mechanics.length})`);
+  const dual = gPreset.mechanics[0];
+  expect(dual.base === "B1", "mec dual base=B1");
+  expect(dual.typeRatings.length === 8, `dual tiene 8 type ratings A320/A321 × CFM56/V2500 × B1+B2 (got ${dual.typeRatings.length})`);
+  expect(dual.typeRatings.some(r => r.category === "B1"), "incluye ratings B1");
+  expect(dual.typeRatings.some(r => r.category === "B2"), "incluye ratings B2");
+  expect(dual.shift === "morning", "shift morning");
+
+  // Preset con 3 mecs distintos: helper + B1 + B2
+  const presetMulti = { ...presetData, setup: { ...presetData.setup, initialMechs: [
+    { type: "dual-B1B2", shift: "morning" },
+    { type: "B1-mainline", shift: "afternoon" },
+    { type: "helper", shift: "night" },
+  ]}};
+  const gMulti = createGame(balance, airlines, templates, 42, undefined, undefined, { airportPreset: presetMulti });
+  expect(gMulti.mechanics.length === 3, `3 mecs en preset multi (got ${gMulti.mechanics.length})`);
+  expect(gMulti.mechanics[1].typeRatings.length === 4, "B1-mainline tiene 4 ratings A320/A321 × CFM56/V2500");
+  expect(gMulti.mechanics[1].typeRatings.every(r => r.category === "B1"), "B1-mainline solo B1");
+  expect(gMulti.mechanics[2].base === null, "helper sin base");
+  expect(gMulti.mechanics[2].typeRatings.length === 0, "helper sin ratings");
+
+  // Contratos iniciales desde preset
+  expect(gPreset.contracts.length === 1, `1 contrato inicial del preset (got ${gPreset.contracts.length})`);
+  const c = gPreset.contracts[0];
+  expect(c.status === "active", "contrato active");
+  expect(c.baseFeePerWeek === 15000, `fee semanal del preset = 15000 (got ${c.baseFeePerWeek})`);
+  expect(c.tier === "line", "tier line del preset");
+  // El airline debe matchear el iataCode del preset (IB)
+  const iberiaAir = airlines.find(a => a.iataCode === "IB");
+  expect(c.airlineId === iberiaAir.id, "contrato vinculado a Iberia (airlineIata IB del preset)");
+
+  // Preset multi-contrato (V7 + VY)
+  const presetMultiContract = { ...presetData, setup: { ...presetData.setup, initialContracts: [
+    { airlineIata: "V7", tier: "line", baseFeePerWeek: 12000, paymentPerWOMinute: 55, penaltyPerLateMinute: 4, minReputation: 40, expectedLandingsPerDay: 4, withOvernight: true },
+    { airlineIata: "VY", tier: "line", baseFeePerWeek: 8000, paymentPerWOMinute: 50, penaltyPerLateMinute: 5, minReputation: 50, expectedLandingsPerDay: 2, withOvernight: false },
+  ]}};
+  const gMC = createGame(balance, airlines, templates, 42, undefined, undefined, { airportPreset: presetMultiContract });
+  expect(gMC.contracts.length === 2, `2 contratos en preset multi-contract (got ${gMC.contracts.length})`);
+  const cVOE = gMC.contracts.find(c => c.airlineId === airlines.find(a => a.iataCode === "V7").id);
+  expect(cVOE?.baseFeePerWeek === 12000, "Volotea fee 12k del preset");
 }
 
 console.log("\n=== Save v14 propaga airportIcao ===");
