@@ -12,37 +12,37 @@
       "shortDesc": "Aeropuerto regional, ~35 movs/día. 3 operadores principales. Modo aprendizaje.",
       "operators": [
         {
-          "presetFile": "LEAS_volotea.preset.json",
-          "operatorIata": "V7",
-          "operatorName": "Volotea",
-          "color": "#A20067",
-          "difficulty": 1,
-          "difficultyLabel": "Rookie",
-          "shortLine": "Base operativa OVD · A320 · pernoctas",
-          "tagline": "Operador local te confía sus aviones. Aprende sin presión.",
-          "metrics": {
-            "movsPerWeek": 146,
-            "overnightsPerWeek": 21,
-            "model": "A320 + A319",
-            "balance": 250000,
-            "mechs": "1 dual"
-          },
-          "available": true
-        },
-        {
           "presetFile": "LEAS_vueling.preset.json",
           "operatorIata": "VY",
           "operatorName": "Vueling",
           "color": "#FFCD00",
-          "difficulty": 2,
-          "difficultyLabel": "Rookie+",
-          "shortLine": "Turnaround corto · A320/A321 · sin pernoctas",
-          "tagline": "Aprende a reaccionar rápido a callouts.",
+          "difficulty": 1,
+          "difficultyLabel": "Rookie",
+          "shortLine": "Solo callouts · A320/A321 · sin pernoctas",
+          "tagline": "Un solo flujo: callout llega, lo arreglas antes de salir. Empieza por aquí si no sabes ni por dónde tirar.",
           "metrics": {
             "movsPerWeek": 68,
             "overnightsPerWeek": 2,
             "model": "A320/A321",
             "balance": 200000,
+            "mechs": "1 dual"
+          },
+          "available": true
+        },
+        {
+          "presetFile": "LEAS_volotea.preset.json",
+          "operatorIata": "V7",
+          "operatorName": "Volotea",
+          "color": "#A20067",
+          "difficulty": 2,
+          "difficultyLabel": "Rookie+",
+          "shortLine": "Base OVD · A320 · callouts + pernoctas + dailies",
+          "tagline": "Más volumen, dos flujos (callouts de día + daily checks de noche). Más a gestionar, también más ingresos estables.",
+          "metrics": {
+            "movsPerWeek": 146,
+            "overnightsPerWeek": 21,
+            "model": "A320 + A319",
+            "balance": 250000,
             "mechs": "1 dual"
           },
           "available": true

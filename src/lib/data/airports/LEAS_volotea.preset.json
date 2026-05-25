@@ -4,9 +4,9 @@
   "name": "Asturias",
   "country": "ES",
   "city": "Oviedo",
-  "difficulty": 1,
-  "difficultyLabel": "Rookie",
-  "description": "Tu primer cliente: Volotea. Operador local con base operativa en OVD (3-6 matrículas A320 pernoctan rotando). Volumen estable (146 movs/sem), pernoctas con daily checks, callouts puntuales. La opción más fluida para aprender el oficio.",
+  "difficulty": 2,
+  "difficultyLabel": "Rookie+",
+  "description": "Volotea: operador local con base en OVD (3-6 matrículas A320 pernoctan rotando). Volumen estable (146 movs/sem), dos flujos de trabajo simultáneos: callouts diurnos (corto plazo) + daily checks nocturnos durante la pernocta. Más cosas que gestionar que Vueling (turno noche, asignación pernocta, daily check largo), pero también más ingresos estables. Empieza aquí si ya tienes claro el flujo callout y quieres dar el siguiente paso.",
 
   "setup": {
     "initialBalance": 250000,

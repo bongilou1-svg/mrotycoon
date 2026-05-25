@@ -4,9 +4,9 @@
   "name": "Asturias",
   "country": "ES",
   "city": "Oviedo",
-  "difficulty": 2,
-  "difficultyLabel": "Rookie+",
-  "description": "Tu primer cliente: Vueling. Turnaround corto (sin pernoctas habituales), 68 movs/sem. Cuando un A320 aterriza con problema, te llaman al callout y debes resolver antes del próximo despegue (~55min). Aprende a reaccionar rápido bajo presión. Cuando subas brand, Volotea podría ofrecerte un contrato base con pernoctas.",
+  "difficulty": 1,
+  "difficultyLabel": "Rookie",
+  "description": "Tu primer cliente: Vueling. Turnaround corto (sin pernoctas habituales), 68 movs/sem. Cuando un A320 aterriza con problema, te llaman al callout y debes resolver antes del próximo despegue (~55min). Un solo flujo de trabajo: aprende a reaccionar rápido bajo presión sin liarte con pernoctas ni daily checks. Cuando subas brand, Volotea podría ofrecerte un contrato base con pernoctas (siguiente escalón).",
 
   "setup": {
     "initialBalance": 200000,
