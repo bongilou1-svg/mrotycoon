@@ -38,6 +38,12 @@ export interface RenderAirplane {
   /** P-γ: 0..1 — progreso del taxi (arrival → arrival + TAXIING_DURATION_MIN). 1 una vez
    *  terminado el taxi. El driver interpola la posición. */
   taxiProgress: number;
+  /** Pivot iteración 2026-05-25 — Taxi-out (departure): true durante la ventana después
+   *  de actualDepartureMinute. El driver pinta motion path stand→pista (inverso de
+   *  taxiing). Permite visualizar el avión saliendo. */
+  departing?: boolean;
+  /** 0..1 progreso del taxi-out (actualDeparture → actualDeparture + TAXIING_DURATION_MIN). */
+  taxiOutProgress?: number;
   /** Pivot 2026-05-24: estado visual semántico — el driver lo mapea a paleta. */
   displayState: AirplaneDisplayState;
   /** WO callout abierta más relevante (la primera open en orden de emisión). Si está set,

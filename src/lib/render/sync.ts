@@ -78,14 +78,30 @@ export function buildRenderState(g: GameState): RenderState {
   }
 
   const airplanes: RenderAirplane[] = g.airplanes
-    .filter((a) => a.arrivalMinute <= now && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now))
+    .filter((a) => {
+      if (a.arrivalMinute > now) return false; // futuro
+      if (a.actualDepartureMinute === undefined) return true; // sigue en stand
+      // Pivot iteración 2026-05-25: mantener visible durante la ventana de taxi-out
+      // (animación stand → cabecera runway) tras la salida real.
+      return (now - a.actualDepartureMinute) < TAXIING_DURATION_MIN;
+    })
     .map((a) => {
       const contract = contractById.get(a.contractId);
       const taxiAge = now - a.arrivalMinute;
-      const taxiing = taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN;
+      const taxiing = taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN
+        && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now);
       const taxiProgress = TAXIING_DURATION_MIN > 0
         ? Math.max(0, Math.min(1, taxiAge / TAXIING_DURATION_MIN))
         : 1;
+      // Pivot iteración 2026-05-25 — Taxi-out: animación stand → runway tras
+      // actualDepartureMinute. Mantiene el avión visible un poco más con motion path
+      // inverso para que el jugador vea la salida (no que el avión "se teletransporte").
+      const departing = a.actualDepartureMinute !== undefined
+        && (now - a.actualDepartureMinute) >= 0
+        && (now - a.actualDepartureMinute) < TAXIING_DURATION_MIN;
+      const taxiOutProgress = (departing && a.actualDepartureMinute !== undefined)
+        ? Math.max(0, Math.min(1, (now - a.actualDepartureMinute) / TAXIING_DURATION_MIN))
+        : 0;
       // Pivot iteración 2026-05-24: derivar displayState semántico para que el driver
       // pinte el avión con color/badge según situación operativa. Prioridad:
       // aog > delayed > working > daily > idle. Los IDs activos permiten click contextual.
@@ -119,6 +135,7 @@ export function buildRenderState(g: GameState): RenderState {
         overnight: a.overnight ?? false,
         taxiing,
         taxiProgress,
+        ...(departing ? { departing, taxiOutProgress } : {}),
         displayState,
         ...(activeWoInstanceId ? { activeWoInstanceId } : {}),
         ...(activeCheckInstanceId ? { activeCheckInstanceId } : {}),
