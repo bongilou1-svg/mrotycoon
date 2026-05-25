@@ -213,6 +213,17 @@ export interface GameState {
    *  donde se juega esta partida. Si undefined, partida legacy (asumir LEAS). Al
    *  cargar un save, se usa para volver a cargar el preset correspondiente. */
   airportIcao?: string;
+  /** Pivot iteración 2026-05-25 — Performance archive. Aviones Departed y WOs cerradas
+   *  más antiguas de 6h sim se mueven aquí desde sus arrays principales (g.airplanes,
+   *  g.workOrders) para que el hot path del tick no las itere. Se RETIENEN 90 días sim
+   *  como audit trail (Event Tracking "Todos", modal flota historial). Pasados los 90d
+   *  se purgan definitivamente. KPIs agregados (departureKPI/hoursKPI/reputation) NO
+   *  dependen de esta lista — son contadores que se actualizan al cierre de cada WO/avión.
+   *  Inicialmente vacío. */
+  archive?: {
+    airplanes: Airplane[];
+    workOrders: WorkOrderInstance[];
+  };
 }
 
 export interface CreateGameOptions {
@@ -328,6 +339,7 @@ export function createGame(
     hoursKPI: createHoursKPI(),
     lastWeeklyHoursSnapshot: {},
     airportIcao: opts.airportPreset?.icao, // undefined si no se pasó preset (legacy)
+    archive: { airplanes: [], workOrders: [] }, // perf archive: vacío al inicio
   };
   // Pivot iteración 2026-05-25 — Multi-airport: extender homeBaseAirports de las
   // aerolíneas del game state con las declaradas como `homeBased:true` en el preset.
@@ -463,6 +475,71 @@ function rollEventsIfNewDay(g: GameState): void {
       }
     }
   }
+}
+
+/** Pivot iteración 2026-05-25 — Performance archive.
+ *
+ *  Mueve a `g.archive` (que NO se itera en hot paths del tick):
+ *   - airplanes Departed cuyo actualDepartureMinute es más antiguo que ARCHIVE_AGE_MIN
+ *   - workOrders Completed/Failed/Deferred-expired cuya última actividad es más antigua
+ *
+ *  Luego purga del archive las entries más antiguas que ARCHIVE_RETENTION_MIN (90 días sim).
+ *
+ *  Llamado cada N ticks (NO cada tick — el cost es bajo pero acumula). Si se llama solo cuando
+ *  el reloj cruza una hora natural (cada 60 min sim), basta.
+ *
+ *  Idempotente. NO afecta KPIs agregados (departureKPI/hoursKPI/reputation viven aparte).
+ *  Las WOs Deferred ACTIVAS (no vencidas, esperando próximo landing) NO se archivan — siguen
+ *  vivas en g.workOrders hasta que el avión aterrice y se cierren. */
+const ARCHIVE_AGE_MIN = 360;            // 6h sim: tiempo para que un avión Departed deje de ser "recién salido"
+const ARCHIVE_RETENTION_MIN = 90 * 24 * 60; // 90 días sim · política Dani 2026-05-25
+function archiveStaleEntries(g: GameState): void {
+  if (!g.archive) g.archive = { airplanes: [], workOrders: [] };
+  const now = g.clock.minute;
+  const cutoffArchive = now - ARCHIVE_AGE_MIN;
+  const cutoffRetention = now - ARCHIVE_RETENTION_MIN;
+
+  // 1. Mover airplanes Departed antiguos a archive
+  const remainingAirplanes: Airplane[] = [];
+  for (const a of g.airplanes) {
+    const isDepartedOld = a.status === "Departed"
+      && a.actualDepartureMinute !== undefined
+      && a.actualDepartureMinute < cutoffArchive;
+    if (isDepartedOld) {
+      g.archive.airplanes.push(a);
+    } else {
+      remainingAirplanes.push(a);
+    }
+  }
+  if (remainingAirplanes.length !== g.airplanes.length) {
+    g.airplanes = remainingAirplanes;
+  }
+
+  // 2. Mover workOrders cerradas antiguas a archive
+  const remainingWos: WorkOrderInstance[] = [];
+  for (const w of g.workOrders) {
+    const isClosed = w.phase === "Completed" || w.phase === "Failed";
+    // Para Deferred: solo archivar si EXPIRÓ (deferralExpiryMinute pasó) — las vivas siguen siendo activas
+    const isExpiredDefer = w.phase === "Deferred"
+      && w.deferralExpiryMinute !== undefined
+      && w.deferralExpiryMinute < cutoffArchive;
+    if ((isClosed || isExpiredDefer) && (w.completionMinute ?? w.deferralExpiryMinute ?? 0) < cutoffArchive) {
+      g.archive.workOrders.push(w);
+    } else {
+      remainingWos.push(w);
+    }
+  }
+  if (remainingWos.length !== g.workOrders.length) {
+    g.workOrders = remainingWos;
+  }
+
+  // 3. Purga archive más antiguo que retention (90d)
+  g.archive.airplanes = g.archive.airplanes.filter(a =>
+    (a.actualDepartureMinute ?? a.arrivalMinute) >= cutoffRetention
+  );
+  g.archive.workOrders = g.archive.workOrders.filter(w =>
+    (w.completionMinute ?? w.deferralExpiryMinute ?? w.emissionMinute) >= cutoffRetention
+  );
 }
 
 /** Pivot iteración 2026-05-25: re-attach de MEL deferreds entre landings de la misma
@@ -1203,6 +1280,15 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
 
   // 6. Avanzar reloj
   g.clock = advance(g.clock, stepMinutes);
+
+  // 6b. Pivot iteración 2026-05-25 — Performance archive: si cruzamos una hora natural,
+  // archivar airplanes Departed + WOs cerradas antiguas (>6h sim) y purgar archive
+  // > 90 días sim. Cero pérdida de datos visibles al jugador (Event Tracking, modal
+  // flota historial siguen leyendo de archive). Cost manejable porque solo se llama
+  // ~1 vez por hora sim (no cada tick).
+  if (Math.floor(next / 60) > Math.floor(now / 60)) {
+    archiveStaleEntries(g);
+  }
 
   // 7. Cierre semanal si cruzamos
   if (Math.floor(next / WEEK_MINUTES) > Math.floor(now / WEEK_MINUTES)) {

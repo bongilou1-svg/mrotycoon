@@ -416,6 +416,7 @@ let saveIndicator = "";
 // Render-loop optimizations: evita destruir DOM mientras el usuario clica.
 let lastPanelHtml = "";
 let lastNotifsHtml = "";
+let lastMapInfoRenderMs = 0; // throttle 500ms del panel info del mapa
 let lastModalHtml = "";
 let lastPanelRenderMs = 0;
 function invalidatePanelCache(){ lastPanelHtml = ""; lastPanelRenderMs = 0; }
@@ -503,7 +504,22 @@ function syncMapRender(){
 function fmtClock(min){ return S.formatClock(min); }
 function fmt(n){ return Number(n).toLocaleString("es-ES"); }
 function airlineName(id){ const a = game.airlines.find(x => x.id === id); return a ? a.name : id; }
-function airplaneByInstance(id){ return game.airplanes.find(a => a.instanceId === id); }
+// Pivot iteración 2026-05-25 — Performance archive: helpers que consultan también el
+// archivo (Departed antiguos + WOs cerradas movidas a g.archive). El hot path del tick
+// itera SOLO g.airplanes/g.workOrders activos. La UI que muestra histórico (Event Tracking
+// "Todos", modal flota, dashboard counters) usa estos helpers para tener visibilidad
+// completa de los 90 días sim retenidos.
+function allAirplanes(){ return [...(game.airplanes || []), ...(game.archive?.airplanes || [])]; }
+function allWorkOrders(){ return [...(game.workOrders || []), ...(game.archive?.workOrders || [])]; }
+function airplaneByInstance(id){
+  // Buscar primero en activos (más probable), luego en archive
+  return game.airplanes.find(a => a.instanceId === id)
+      ?? game.archive?.airplanes?.find(a => a.instanceId === id);
+}
+function workOrderByInstance(id){
+  return game.workOrders.find(w => w.instanceId === id)
+      ?? game.archive?.workOrders?.find(w => w.instanceId === id);
+}
 function activeWos(){ return game.workOrders.filter(w => w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred"); }
 function deferredWos(){ return game.workOrders.filter(w => w.phase === "Deferred").sort((a,b) => (a.deferralExpiryMinute??0) - (b.deferralExpiryMinute??0)); }
 function melCat(tpl){ return tpl ? S.getMelCategory(tpl) : null; }
@@ -799,14 +815,19 @@ function inferAssignmentStatus(wo, tpl, ap) {
 function buildEventFeed(){
   const events = [];
   // WOs callout + diferidas + completadas/failed (NO daily checks — esos van agrupados).
-  for (const wo of game.workOrders) {
+  // Pivot iteración 2026-05-25 — Performance archive: itera ambas listas (g.workOrders
+  // activas + g.archive.workOrders cerradas archivadas). El filtro "Activos" del Event
+  // Tracking sigue filtrando por e.open (que es !isClosed) → archive (todo cerrado) no
+  // aparece en Activos. "Todos" sí ve el histórico completo de 90 días sim retenidos.
+  const allWos = [...game.workOrders, ...(game.archive?.workOrders || [])];
+  for (const wo of allWos) {
     const tpl = game.templates.find(t => t.id === wo.templateId) || game.dailyCheckTemplates?.find?.(t => t.id === wo.templateId);
     const isDaily = wo.templateId?.startsWith?.("DC-");
     if (isDaily) continue; // agrupados abajo, no entries sueltas
     const isDeferred = wo.phase === "Deferred";
     const isClosed = wo.phase === "Completed" || wo.phase === "Failed";
     const isFinding = wo.parentWoInstanceId !== undefined;
-    const ap = game.airplanes.find(a => a.instanceId === wo.airplaneInstanceId);
+    const ap = airplaneByInstance(wo.airplaneInstanceId); // lookup también en archive
     events.push({
       kind: "wo",
       id: wo.instanceId,
@@ -828,10 +849,11 @@ function buildEventFeed(){
   }
   // Daily check: AGRUPADO por avión (un solo entry con subtareas X/Y, no N cards sueltas).
   // Una pernocta → un daily check → N subtareas internas (las DC-* del sim).
+  // Pivot 2026-05-25 — Archive: itera ambas listas para conservar histórico de dailies cerrados.
   const dailyByAirplane = new Map();
-  for (const wo of game.workOrders) {
+  for (const wo of allWos) {
     if (!wo.templateId?.startsWith?.("DC-")) continue;
-    const ap = game.airplanes.find(a => a.instanceId === wo.airplaneInstanceId);
+    const ap = airplaneByInstance(wo.airplaneInstanceId); // lookup activos + archive
     if (!ap) continue;
     const key = ap.instanceId;
     if (!dailyByAirplane.has(key)) dailyByAirplane.set(key, { ap, wos: [] });
@@ -1662,7 +1684,7 @@ function renderDashboard(){
     </div>
     <div class="dash-card">
       <div class="dash-title">✅ WOs completadas (acumuladas)</div>
-      <div class="dash-big">\${game.workOrders.filter(w => w.phase === "Completed").length}</div>
+      <div class="dash-big">\${allWorkOrders().filter(w => w.phase === "Completed").length}</div>
       \${sparkline(woComp, { color: "var(--success)" })}
     </div>
     <div class="dash-card">
@@ -2661,7 +2683,7 @@ function renderModal(){
     return;
   }
   if (!selectedWoId) { back.classList.remove("open"); lastModalHtml = ""; return; }
-  const wo = game.workOrders.find(w => w.instanceId === selectedWoId);
+  const wo = workOrderByInstance(selectedWoId); // busca también en archive (histórico WO)
   if (!wo) { back.classList.remove("open"); return; }
   // Pivot iteración 2026-05-25: las DC-* (subtareas daily) y los findings viven en
   // dailyCheckTemplates / templates respectivamente. Buscar en ambos catálogos.
@@ -3003,9 +3025,14 @@ function render(){
     lastPanelRenderMs = nowMs;
   }
   syncMapRender();
-  // Pivot iteración 2026-05-25: actualizar panel info overlay sobre el mapa cada tick.
-  // No-op cuando #map-info-panel no existe (otros tabs activos o canvas aún no montado).
-  if (activeTab === "map" && !game.gameOver.isOver) updateMapInfoPanel();
+  // Pivot iteración 2026-05-25: actualizar panel info overlay sobre el mapa.
+  // Throttle 500ms: el panel no necesita 10 actualizaciones/seg, basta con 2. Esto
+  // evita filter/sort sobre flights[] (157 BIO, 403 ALC) cada tick a 5x — feedback
+  // Dani: el juego se trababa a 5x con bottlenecks acumulados.
+  if (activeTab === "map" && !game.gameOver.isOver && (nowMs - lastMapInfoRenderMs) >= 500) {
+    updateMapInfoPanel();
+    lastMapInfoRenderMs = nowMs;
+  }
 
   // Notifs: misma estrategia (memoization + throttle ligero).
   const notifs = game.notifications.slice(-12).reverse();

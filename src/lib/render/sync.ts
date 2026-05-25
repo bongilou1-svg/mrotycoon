@@ -4,6 +4,7 @@
 // Tests deterministas en `tests/render_sync.mjs`.
 
 import { canUnlockHangars, type GameState } from "../game.ts";
+import type { WorkOrderInstance } from "$lib/types";
 import { currentStands } from "../sim/stands.ts";
 import { runwayClosedAt } from "../sim/events.ts";
 import { DAY_MINUTES } from "../sim/time.ts";
@@ -58,10 +59,28 @@ export function buildRenderState(g: GameState): RenderState {
   // por processDepartures) — un avión con WO activa sigue en stand más allá de su
   // scheduledDeparture hasta que la WO cierre. Si no tiene actualDeparture aún, está presente.
   const now = g.clock.minute;
+
+  // Pivot iteración 2026-05-25 — Performance: pre-indexar workOrders activas, contracts y
+  // maintenanceChecks UNA SOLA VEZ en lugar de hacer find/filter PER airplane (O(N²) → O(N)).
+  // Para BIO con 50 airplanes activos y 100 WOs esto pasa de ~5.000 ops a ~150 ops por tick.
+  const activeWosByAirplane = new Map<string, WorkOrderInstance[]>();
+  for (const w of g.workOrders) {
+    if (w.phase === "Completed" || w.phase === "Failed" || w.phase === "Deferred") continue;
+    const arr = activeWosByAirplane.get(w.airplaneInstanceId);
+    if (arr) arr.push(w);
+    else activeWosByAirplane.set(w.airplaneInstanceId, [w]);
+  }
+  const contractById = new Map<string, typeof g.contracts[number]>();
+  for (const c of g.contracts) contractById.set(c.id, c);
+  const inProgressCheckByReg = new Map<string, typeof g.maintenanceChecks[number]>();
+  for (const c of g.maintenanceChecks) {
+    if (c.phase === "InProgress") inProgressCheckByReg.set(c.registration, c);
+  }
+
   const airplanes: RenderAirplane[] = g.airplanes
     .filter((a) => a.arrivalMinute <= now && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now))
     .map((a) => {
-      const contract = g.contracts.find((c) => c.id === a.contractId);
+      const contract = contractById.get(a.contractId);
       const taxiAge = now - a.arrivalMinute;
       const taxiing = taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN;
       const taxiProgress = TAXIING_DURATION_MIN > 0
@@ -70,15 +89,10 @@ export function buildRenderState(g: GameState): RenderState {
       // Pivot iteración 2026-05-24: derivar displayState semántico para que el driver
       // pinte el avión con color/badge según situación operativa. Prioridad:
       // aog > delayed > working > daily > idle. Los IDs activos permiten click contextual.
-      const woOnPlane = g.workOrders.filter(
-        (w) => w.airplaneInstanceId === a.instanceId &&
-          w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred",
-      );
+      const woOnPlane = activeWosByAirplane.get(a.instanceId) ?? [];
       const dailyOpen = woOnPlane.filter((w) => w.templateId?.startsWith?.("DC-"));
       const calloutsOpen = woOnPlane.filter((w) => !w.templateId?.startsWith?.("DC-"));
-      const checkOnPlane = g.maintenanceChecks.find(
-        (c) => c.registration === a.registration && c.phase === "InProgress",
-      );
+      const checkOnPlane = inProgressCheckByReg.get(a.registration);
       const hasMechWorking = woOnPlane.some(
         (w) => w.assignedMechanicIds.length > 0 && (w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework" || w.phase === "Inspection"),
       ) || (checkOnPlane !== undefined && checkOnPlane.assignedMechanicIds.length > 0);
@@ -139,17 +153,26 @@ export function buildRenderState(g: GameState): RenderState {
   // Mecs visibles. Para cada uno con destino, resolvemos el standId destino vía
   // assignedWoInstanceId → airplane.standId, o vía assignedCheckInstanceId → check.standId.
   // P-γ: progress 0..1 para interpolación del furgo en motion path oficina→stand.
+  // Pivot iteración 2026-05-25 — Performance: pre-index workOrders/airplanes/checks
+  // por instanceId para que el .map(m=>) abajo sea O(1) por mecánico en lugar de O(N).
+  const woById = new Map<string, WorkOrderInstance>();
+  for (const w of g.workOrders) woById.set(w.instanceId, w);
+  const airplaneById = new Map<string, typeof g.airplanes[number]>();
+  for (const a of g.airplanes) airplaneById.set(a.instanceId, a);
+  const checkById = new Map<string, typeof g.maintenanceChecks[number]>();
+  for (const c of g.maintenanceChecks) checkById.set(c.instanceId, c);
+
   const travelMin = (g.balance.officeToStandMinutes ?? 2) || 1;
   const mechanics: RenderMechanic[] = g.mechanics.map((m) => {
     let destStandId: string | null = null;
     if (m.assignedWoInstanceId) {
-      const wo = g.workOrders.find((w) => w.instanceId === m.assignedWoInstanceId);
+      const wo = woById.get(m.assignedWoInstanceId);
       if (wo) {
-        const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
+        const ap = airplaneById.get(wo.airplaneInstanceId);
         destStandId = ap?.standId || null;
       }
     } else if (m.assignedCheckInstanceId) {
-      const chk = g.maintenanceChecks.find((c) => c.instanceId === m.assignedCheckInstanceId);
+      const chk = checkById.get(m.assignedCheckInstanceId);
       destStandId = chk?.standId || null;
     }
     let progress = 0;

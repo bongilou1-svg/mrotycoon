@@ -27,7 +27,7 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  v11 = pivot línea pura · Fase A modelo HH: añade hoursKPI (book vs actual).
  *  v12 = pivot línea pura · Fase B Tiers: añade tierUpgradeLastTickMinute + upgrade
  *  field en Contract. */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 export interface GameSavePayload {
   version: number;
@@ -81,6 +81,9 @@ export interface GameSavePayload {
   management?: GameState["management"];
   // v14 (pivot iteración 2026-05-25 · Multi-airport): ICAO del aeropuerto de la partida.
   airportIcao?: string;
+  // v15 (pivot iteración 2026-05-25 · Performance archive): Departed + WOs cerradas
+  // antiguas movidas aquí para que el tick no las itere. Retención 90 días sim.
+  archive?: { airplanes: GameState["airplanes"]; workOrders: GameState["workOrders"] };
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -127,6 +130,7 @@ export function serializeGame(g: GameState): GameSavePayload {
     lastWeeklyHoursSnapshot: g.lastWeeklyHoursSnapshot,
     management: g.management,
     airportIcao: g.airportIcao,
+    archive: g.archive, // v15: performance archive (Departed + WOs cerradas antiguas)
   };
 }
 
@@ -144,8 +148,8 @@ export function deserializeGame(
   dailyCheckTemplates: WorkOrderTemplate[] = [],
 ): GameState {
   // v8 puede leer v7 y v6 con migración (campos nuevos default). v5 y previos requieren upgrade explícito.
-  if (payload.version !== SAVE_VERSION && payload.version !== 13 && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
-    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 13, 12, 11, 10, 9, 8, 7 o 6 con migración)`);
+  if (payload.version !== SAVE_VERSION && payload.version !== 14 && payload.version !== 13 && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
+    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 14, 13, 12, 11, 10, 9, 8, 7 o 6 con migración)`);
   }
   resetAirplaneInstanceCounter(payload.aliCounter);
   resetMaintenanceCheckCounter(payload.mcCounter);
@@ -194,6 +198,11 @@ export function deserializeGame(
     // v14 (pivot iteración 2026-05-25 · Multi-airport): icao del aeropuerto. Saves
     // pre-v14 no lo tienen → undefined = partida legacy (asume LEAS hardcoded).
     airportIcao: payload.airportIcao,
+    // v15 (pivot iteración 2026-05-25 · Performance archive): listas archivadas para
+    // que el tick no las itere. Saves pre-v15 no lo traen → empezar vacío (los Departed
+    // y WOs cerradas viejas del save siguen en g.airplanes/g.workOrders hasta que
+    // archiveStaleEntries() los mueva en el próximo cruce de hora natural).
+    archive: payload.archive ?? { airplanes: [], workOrders: [] },
     compliance: payload.compliance,
     candidates: payload.candidates,
     marketLastRefreshMinute: payload.marketLastRefreshMinute,
