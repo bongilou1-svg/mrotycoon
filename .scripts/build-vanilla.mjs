@@ -289,7 +289,13 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .map-info-panel .mip-sep{border-top:1px dashed rgba(120,140,180,.18);margin:.4rem 0 .25rem 0}
 
 /* Pivot iteración 2026-05-25 — New Game wizard overlay */
-.newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.95);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
+.newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.97);backdrop-filter:blur(10px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
+.newgame-intro{text-align:center;max-width:560px;padding:1rem}
+.ng-intro-logo{font-size:5rem;margin-bottom:.5rem;line-height:1;filter:drop-shadow(0 4px 12px rgba(77,163,255,.4))}
+.ng-intro-title{font-size:3rem;margin:.3rem 0 .2rem 0;font-weight:700;letter-spacing:-.02em;background:linear-gradient(135deg,#4da3ff,#7fb3e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ng-intro-sub{font-size:1rem;color:var(--muted);margin:0 0 2.5rem 0;font-weight:300}
+.ng-intro-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:.5rem}
+.ng-intro-foot{font-size:.72rem;color:var(--muted);margin:3rem 0 0 0;opacity:.5}
 .newgame-panel{max-width:1200px;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .newgame-header{margin-bottom:1.5rem;text-align:center}
 .newgame-cards{display:grid;gap:1rem;margin-bottom:1rem}
@@ -375,11 +381,19 @@ const S = window.Sim;
 // para que el sim no auto-dispare A-checks al cruzar trigger. Daily checks (pernoctas) siguen
 // activos vía dailyChecks. Re-habilitar cuando exista sistema de "trabajos planificados
 // avanzados" y permisos de hangar (ahora mismo el juego es solo callouts + pernoctas).
-let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, [], S.DATA.dailyChecks, { lineMode: true });
+// Pivot iteración 2026-05-25: placeholder game vacío al cargar el bundle. Sin lineMode
+// para SKIPEAR seedPreOvernighters (evita phantom aviones OVD por debajo del wizard intro).
+// El game REAL se construye cuando el usuario elige preset en startGameFromPreset() o
+// restaura su save en doContinueFromIntro(). Hasta entonces, el wizard intro cubre todo.
+let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, [], S.DATA.dailyChecks, { lineMode: false });
 let activeTab = "map"; // pivot línea pura: arrancamos en mapa (wow factor) y operaciones aparte
 let officeSubtab = "team"; // Pivot iteración 2026-05-25: "team" | "hiring" | "management"
-// Pivot iteración 2026-05-25 — New Game wizard: null | "airport" | "operator"
-let newGameStep = null;
+// Pivot iteración 2026-05-25 — Wizard de arranque: SIEMPRE empezamos en "intro" para que
+// el usuario decida explícitamente (Continuar / Nueva partida / Borrar guardado). Sin esto
+// el HTML aterrizaba mostrando un game default OVD pre-seedeado por debajo del wizard, que
+// confundía al jugador. Pasa a "airport" → "operator" → null (juego visible).
+// null | "intro" | "airport" | "operator"
+let newGameStep = "intro";
 let newGameSelectedIcao = null;
 let newGameCatalog = null; // cargado lazy desde catalog.json bundled
 let lastProductionPackageDay = 0; // notif diaria del paquete de trabajo nocturno (12:00)
@@ -3015,6 +3029,19 @@ document.body.addEventListener("click", (e) => {
   if (e.target.id === "btn-load") { doLoad(); return; }
   if (e.target.id === "btn-new")  { doNewGame(); return; }
   // Pivot iteración 2026-05-25 — New Game wizard handlers
+  // Intro step
+  if (e.target.id === "ng-start") { newGameStep = "airport"; render(); return; }
+  if (e.target.id === "ng-continue") { doContinueFromIntro(); return; }
+  if (e.target.id === "ng-clear-save") {
+    if (!confirm("¿Borrar partida guardada definitivamente? No se puede deshacer.")) return;
+    (async () => {
+      await S.getStorage().clear();
+      hasSavedSlot = false;
+      render();
+    })();
+    return;
+  }
+  // Airport/operator steps
   const ngAirport = e.target.closest("[data-newgame-airport]");
   if (ngAirport) { newGameSelectedIcao = ngAirport.dataset.newgameAirport; newGameStep = "operator"; render(); return; }
   const ngPreset = e.target.closest("[data-newgame-preset]");
@@ -3248,12 +3275,47 @@ async function doLoad() {
     const payload = await S.getStorage().load();
     if (!payload) { alert("No hay partida guardada."); return; }
     const loaded = S.deserializeGame(payload, S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, S.DATA.maintenanceChecks, S.DATA.dailyChecks);
+    swapRuntimeForGame(loaded);
     Object.assign(game, loaded);
     saveIndicator = "loaded";
     render();
     setTimeout(() => { saveIndicator = ""; render(); }, 2000);
   } catch (e) {
     alert("Error al cargar: " + e.message);
+  }
+}
+
+/** Continuar partida desde la pantalla intro: misma lógica que doLoad() pero cierra
+ *  el wizard al terminar (newGameStep = null) en lugar de mantenerlo abierto. */
+async function doContinueFromIntro() {
+  try {
+    const payload = await S.getStorage().load();
+    if (!payload) { alert("No hay partida guardada."); return; }
+    const loaded = S.deserializeGame(payload, S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, S.DATA.maintenanceChecks, S.DATA.dailyChecks);
+    // Swap runtime al aeropuerto del save antes de sobrescribir game (para que el
+    // pixi-driver y schedule.ts arranquen con los assets correctos del aeropuerto).
+    swapRuntimeForGame(loaded);
+    Object.assign(game, loaded);
+    newGameStep = null;
+    saveIndicator = "loaded";
+    render();
+    setTimeout(() => { saveIndicator = ""; render(); }, 2000);
+  } catch (e) {
+    alert("Error al cargar: " + e.message);
+  }
+}
+
+/** Helper: dado un game state, swap del runtime (schedule+fleet+paths) al aeropuerto
+ *  correspondiente. Idempotente: si airportIcao no está en airportRuntime, no hace nada
+ *  (asume default OVD ya cargado). */
+function swapRuntimeForGame(gameState) {
+  const icao = gameState.airportIcao;
+  if (!icao) return; // legacy save sin airportIcao → asumir OVD default
+  const runtime = S.DATA.airportRuntime[icao];
+  if (!runtime) return;
+  S.setActiveAirportData(runtime.schedule, runtime.fleet);
+  if (window.Render && Render.setActiveAirportPaths) {
+    Render.setActiveAirportPaths(runtime.paths);
   }
 }
 async function doNewGame() {
@@ -3303,7 +3365,26 @@ function renderNewGameWizard() {
   if (newGameStep === null) return "";
   const catalog = newGameCatalog ?? S.DATA.airportCatalog;
   let inner = "";
-  if (newGameStep === "airport") {
+  if (newGameStep === "intro") {
+    // Pantalla intro de arranque: title big, subtítulo, 2-3 botones según haya save.
+    const continueBtn = hasSavedSlot
+      ? \`<button id="ng-continue" class="ng-select-btn primary" style="font-size:1rem;padding:.85rem 1.6rem">⏩ Continuar partida</button>\`
+      : \`<button class="ng-select-btn primary" style="font-size:1rem;padding:.85rem 1.6rem;opacity:.4;cursor:not-allowed" disabled>⏩ Continuar partida (sin guardado)</button>\`;
+    const clearBtn = hasSavedSlot
+      ? \`<button id="ng-clear-save" class="ng-back-btn" style="margin-top:1.5rem;font-size:.78rem">🗑 Borrar partida guardada</button>\`
+      : "";
+    inner = \`<div class="newgame-intro">
+      <div class="ng-intro-logo">🛬</div>
+      <h1 class="ng-intro-title">MRO Tycoon</h1>
+      <p class="ng-intro-sub">Gestión de mantenimiento aeronáutico</p>
+      <div class="ng-intro-actions">
+        <button id="ng-start" class="ng-select-btn primary" style="font-size:1rem;padding:.85rem 1.6rem">▶ Nueva partida</button>
+        \${continueBtn}
+      </div>
+      \${clearBtn}
+      <p class="ng-intro-foot">v0.6 · línea pura · datos reales AeroDataBox mayo 2026</p>
+    </div>\`;
+  } else if (newGameStep === "airport") {
     const availCount = catalog.airports.filter(a => a.available !== false).length;
     inner = \`<div class="newgame-header">
       <h1 style="margin:0 0 .3rem 0;font-size:1.8rem">🛬 MRO Tycoon · Nueva Partida</h1>
