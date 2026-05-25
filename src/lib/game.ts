@@ -209,11 +209,21 @@ export interface GameState {
    *  hoursKPI.perAirline[id].bookHoursBilled al último weekly close. Permite que el
    *  próximo weekly close calcule las HH facturadas DELTA esa semana. */
   lastWeeklyHoursSnapshot: Record<string, number>;
+  /** Pivot iteración 2026-05-25 — Framework multi-aeropuerto. ICAO del aeropuerto
+   *  donde se juega esta partida. Si undefined, partida legacy (asumir LEAS). Al
+   *  cargar un save, se usa para volver a cargar el preset correspondiente. */
+  airportIcao?: string;
 }
 
 export interface CreateGameOptions {
   /** Pivot MRO línea pura (2026-05-24). Default false (compat tests legacy). UI lo pasa true. */
   lineMode?: boolean;
+  /** Pivot iteración 2026-05-25 — Framework multi-aeropuerto. Si se pasa, el setup
+   *  inicial (balance, mecs, contratos) se deriva del preset en vez de los hardcoded
+   *  legacy. Si undefined, comportamiento actual (compat con todos los tests y saves).
+   *  Cuando esté completo, el UI siempre pasará un preset al iniciar partida desde la
+   *  pantalla de selección de aeropuerto. */
+  airportPreset?: import("./types/airport-preset").AirportPreset;
 }
 
 export function createGame(
@@ -269,7 +279,8 @@ export function createGame(
     contractMarketLastTickMinute: 0,
     lineCompetitionLastTickMinute: 0,
     tierUpgradeLastTickMinute: 0,
-    economy: createEconomy(balance.startingBalance),
+    // Pivot iteración 2026-05-25: si hay preset, balance inicial del preset. Sino, legacy.
+    economy: createEconomy(opts.airportPreset?.setup?.initialBalance ?? balance.startingBalance),
     // Línea pura: aerolínea contratada arranca a rep 60 (margen para subir/bajar);
     // legacy mantiene todas a startingReputation.
     reputation: (() => {
@@ -306,6 +317,7 @@ export function createGame(
     departureKPI: createDepartureKPI(),
     hoursKPI: createHoursKPI(),
     lastWeeklyHoursSnapshot: {},
+    airportIcao: opts.airportPreset?.icao, // undefined si no se pasó preset (legacy)
   };
   // Pivot iteración 2026-05-25: pre-seed de aviones que pasaron la NOCHE ANTERIOR en
   // stand. Sin esto, el mapa arranca vacío al inicio del Día 1 06:00 — irreal para

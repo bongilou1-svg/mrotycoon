@@ -27,7 +27,7 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  v11 = pivot línea pura · Fase A modelo HH: añade hoursKPI (book vs actual).
  *  v12 = pivot línea pura · Fase B Tiers: añade tierUpgradeLastTickMinute + upgrade
  *  field en Contract. */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 export interface GameSavePayload {
   version: number;
@@ -79,6 +79,8 @@ export interface GameSavePayload {
   lastWeeklyHoursSnapshot?: Record<string, number>;
   // v13 (pivot iteración 2026-05-25 · Management): normas operativas configurables.
   management?: GameState["management"];
+  // v14 (pivot iteración 2026-05-25 · Multi-airport): ICAO del aeropuerto de la partida.
+  airportIcao?: string;
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -124,6 +126,7 @@ export function serializeGame(g: GameState): GameSavePayload {
     tierUpgradeLastTickMinute: g.tierUpgradeLastTickMinute,
     lastWeeklyHoursSnapshot: g.lastWeeklyHoursSnapshot,
     management: g.management,
+    airportIcao: g.airportIcao,
   };
 }
 
@@ -141,8 +144,8 @@ export function deserializeGame(
   dailyCheckTemplates: WorkOrderTemplate[] = [],
 ): GameState {
   // v8 puede leer v7 y v6 con migración (campos nuevos default). v5 y previos requieren upgrade explícito.
-  if (payload.version !== SAVE_VERSION && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
-    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 12, 11, 10, 9, 8, 7 o 6 con migración)`);
+  if (payload.version !== SAVE_VERSION && payload.version !== 13 && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
+    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 13, 12, 11, 10, 9, 8, 7 o 6 con migración)`);
   }
   resetAirplaneInstanceCounter(payload.aliCounter);
   resetMaintenanceCheckCounter(payload.mcCounter);
@@ -188,6 +191,9 @@ export function deserializeGame(
       }
       return m;
     })(),
+    // v14 (pivot iteración 2026-05-25 · Multi-airport): icao del aeropuerto. Saves
+    // pre-v14 no lo tienen → undefined = partida legacy (asume LEAS hardcoded).
+    airportIcao: payload.airportIcao,
     compliance: payload.compliance,
     candidates: payload.candidates,
     marketLastRefreshMinute: payload.marketLastRefreshMinute,

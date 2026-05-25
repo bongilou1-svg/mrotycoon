@@ -3250,7 +3250,7 @@ var Sim = (() => {
   }
 
   // src/lib/sim/save.ts
-  var SAVE_VERSION = 13;
+  var SAVE_VERSION = 14;
   function serializeGame(g) {
     return {
       version: SAVE_VERSION,
@@ -3292,12 +3292,13 @@ var Sim = (() => {
       hoursKPI: g.hoursKPI,
       tierUpgradeLastTickMinute: g.tierUpgradeLastTickMinute,
       lastWeeklyHoursSnapshot: g.lastWeeklyHoursSnapshot,
-      management: g.management
+      management: g.management,
+      airportIcao: g.airportIcao
     };
   }
   function deserializeGame(payload, balance, airlines, templates, checkDefinitions = [], dailyCheckTemplates = []) {
-    if (payload.version !== SAVE_VERSION && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
-      throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 12, 11, 10, 9, 8, 7 o 6 con migraci\xF3n)`);
+    if (payload.version !== SAVE_VERSION && payload.version !== 13 && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
+      throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 13, 12, 11, 10, 9, 8, 7 o 6 con migraci\xF3n)`);
     }
     resetAirplaneInstanceCounter(payload.aliCounter);
     resetMaintenanceCheckCounter(payload.mcCounter);
@@ -3343,6 +3344,9 @@ var Sim = (() => {
         }
         return m;
       })(),
+      // v14 (pivot iteración 2026-05-25 · Multi-airport): icao del aeropuerto. Saves
+      // pre-v14 no lo tienen → undefined = partida legacy (asume LEAS hardcoded).
+      airportIcao: payload.airportIcao,
       compliance: payload.compliance,
       candidates: payload.candidates,
       marketLastRefreshMinute: payload.marketLastRefreshMinute,
@@ -3612,7 +3616,8 @@ var Sim = (() => {
       contractMarketLastTickMinute: 0,
       lineCompetitionLastTickMinute: 0,
       tierUpgradeLastTickMinute: 0,
-      economy: createEconomy(balance.startingBalance),
+      // Pivot iteración 2026-05-25: si hay preset, balance inicial del preset. Sino, legacy.
+      economy: createEconomy(opts.airportPreset?.setup?.initialBalance ?? balance.startingBalance),
       // Línea pura: aerolínea contratada arranca a rep 60 (margen para subir/bajar);
       // legacy mantiene todas a startingReputation.
       reputation: (() => {
@@ -3649,7 +3654,9 @@ var Sim = (() => {
       lineModeEnabled: lineMode,
       departureKPI: createDepartureKPI(),
       hoursKPI: createHoursKPI(),
-      lastWeeklyHoursSnapshot: {}
+      lastWeeklyHoursSnapshot: {},
+      airportIcao: opts.airportPreset?.icao
+      // undefined si no se pasó preset (legacy)
     };
     if (lineMode) seedPreOvernighters(g);
     return g;

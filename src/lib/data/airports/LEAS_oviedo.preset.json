@@ -1,0 +1,72 @@
+{
+  "icao": "LEAS",
+  "iata": "OVD",
+  "name": "Asturias",
+  "country": "ES",
+  "city": "Oviedo",
+  "difficulty": 1,
+  "difficultyLabel": "Rookie",
+  "description": "Aeropuerto regional con ~25 movimientos/día. Volotea base + Air Nostrum CRJ + Vueling turnaround. Modo aprendizaje: pocos clientes, poca presión, márgenes ajustados.",
+
+  "setup": {
+    "initialBalance": 250000,
+    "initialMechCap": 5,
+    "initialMechs": [
+      { "type": "dual-B1B2", "shift": "morning" }
+    ],
+    "marketPreloadDualCandidates": 2,
+    "initialContracts": [
+      {
+        "airlineIata": "IB",
+        "tier": "line",
+        "baseFeePerWeek": 15000,
+        "paymentPerWOMinute": 60,
+        "penaltyPerLateMinute": 5,
+        "minReputation": 40,
+        "expectedLandingsPerDay": 6,
+        "withOvernight": true
+      }
+    ]
+  },
+
+  "operators": [
+    {
+      "iata": "IB",
+      "icao": "IBE",
+      "name": "Iberia Express",
+      "color": "#E40000",
+      "homeBased": true,
+      "brandThreshold": 60,
+      "fleetModels": ["A320", "A321"]
+    },
+    {
+      "iata": "VY",
+      "icao": "VLG",
+      "name": "Vueling",
+      "color": "#FFCD00",
+      "homeBased": false,
+      "brandThreshold": 70,
+      "fleetModels": ["A320", "A321"]
+    },
+    {
+      "iata": "V7",
+      "icao": "VOE",
+      "name": "Volotea",
+      "color": "#A20067",
+      "homeBased": true,
+      "brandThreshold": 55,
+      "fleetModels": ["A320", "A319"]
+    },
+    {
+      "iata": "U2",
+      "icao": "EZY",
+      "name": "easyJet",
+      "color": "#FF6600",
+      "homeBased": false,
+      "brandThreshold": 80,
+      "fleetModels": ["A320", "A321"]
+    }
+  ],
+
+  "milestones": []
+}
