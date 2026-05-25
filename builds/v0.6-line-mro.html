@@ -163,6 +163,17 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .clickable-chip{cursor:pointer;padding:.05rem .35rem;border-radius:4px;border:1px solid transparent;transition:background .12s,border-color .12s;position:relative;z-index:2}
 .clickable-chip:hover{background:rgba(77,163,255,.18);border-color:rgba(77,163,255,.45)}
 .daily-card:hover{outline:1px dashed rgba(140,150,200,.4);outline-offset:2px}
+/* Pivot iteración 2026-05-25 — Panel info overlay sobre el mapa */
+.map-info-panel{position:absolute;top:12px;left:12px;z-index:10;background:rgba(7,13,24,.82);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:6px;padding:.55rem .75rem;font-family:var(--mono);font-size:.72rem;line-height:1.45;min-width:220px;max-width:260px;color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:auto}
+.map-info-panel h3{margin:.1rem 0 .25rem 0;font-size:.66rem;color:#7fb3e8;text-transform:uppercase;letter-spacing:.06em;font-weight:600;font-family:var(--sans)}
+.map-info-panel .mip-row{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;padding:.08rem 0;font-size:.72rem}
+.map-info-panel .mip-time{color:#7fb3e8;font-weight:600;min-width:46px}
+.map-info-panel .mip-callsign{color:var(--text);flex:1}
+.map-info-panel .mip-route{color:var(--muted);font-size:.68rem;text-align:right}
+.map-info-panel .mip-empty{color:var(--muted);font-style:italic;padding:.15rem 0;font-size:.7rem}
+.map-info-panel .mip-more{color:var(--muted);font-size:.65rem;text-align:center;padding:.15rem 0;font-style:italic}
+.map-info-panel .mip-sep{border-top:1px dashed rgba(120,140,180,.18);margin:.4rem 0 .25rem 0}
+
 /* Pivot iteración 2026-05-25 — New Game wizard overlay */
 .newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.95);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
 .newgame-panel{max-width:1200px;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -264,7 +275,7 @@ var Sim = (() => {
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // src/lib/sim-all.ts
+  // ../../mrotycoon/src/lib/sim-all.ts
   var sim_all_exports = {};
   __export(sim_all_exports, {
     ACTIVE_TRAINING_COST_EUR: () => ACTIVE_TRAINING_COST_EUR,
@@ -514,7 +525,7 @@ var Sim = (() => {
     updateAirplaneStatuses: () => updateAirplaneStatuses
   });
 
-  // src/lib/sim/rng.ts
+  // ../../mrotycoon/src/lib/sim/rng.ts
   function createRng(seed) {
     const rng = {
       state: seed >>> 0,
@@ -554,7 +565,7 @@ var Sim = (() => {
     return out;
   }
 
-  // src/lib/sim/time.ts
+  // ../../mrotycoon/src/lib/sim/time.ts
   var START_MINUTE = 360;
   var MINUTES_PER_TICK_AT_1X = 1;
   var DAY_MINUTES = 24 * 60;
@@ -603,7 +614,7 @@ var Sim = (() => {
     return `D${day} ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
   }
 
-  // src/lib/types/contract.ts
+  // ../../mrotycoon/src/lib/types/contract.ts
   function tierAllowsACheck(tier) {
     return tier === "a-check" || tier === "c-check" || tier === "d-check" || tier === "deluxe";
   }
@@ -666,7 +677,7 @@ var Sim = (() => {
     }
   }
 
-  // src/lib/sim/contracts.ts
+  // ../../mrotycoon/src/lib/sim/contracts.ts
   var TIER_FEE_MULT = {
     standard: 1,
     // legacy Fase 4.5
@@ -973,7 +984,7 @@ var Sim = (() => {
     return { contracts: updated, newOffers, cancellations };
   }
 
-  // src/lib/sim/fleet.ts
+  // ../../mrotycoon/src/lib/sim/fleet.ts
   var FLEET_SIZE_PER_AIRLINE = 8;
   var FH_PER_LEG_MIN = 1;
   var FH_PER_LEG_MAX = 5;
@@ -1129,7 +1140,7 @@ var Sim = (() => {
     return fleet.map((f) => f.registration === registration ? { ...f, [key]: value } : f);
   }
 
-  // src/lib/sim/stands.ts
+  // ../../mrotycoon/src/lib/sim/stands.ts
   var ALL_STANDS = [
     // Stage 1 base — 5 line stands operativos del aeropuerto regional
     { id: "H1-S1", type: "line" },
@@ -1172,7 +1183,7 @@ var Sim = (() => {
     return ALL_STANDS.find((s) => s.id === id)?.type;
   }
 
-  // src/lib/sim/airplanes.ts
+  // ../../mrotycoon/src/lib/sim/airplanes.ts
   var INITIAL_STANDS = LINE_STAND_IDS;
   var TURNAROUND_MIN = 45;
   var TURNAROUND_MAX = 90;
@@ -1279,7 +1290,7 @@ var Sim = (() => {
     return airplanesOnStand(airplanes, nowMinute).filter((p) => p.standId !== "").length;
   }
 
-  // src/assets/airports/ovd.schedule.json
+  // ../../mrotycoon/src/assets/airports/ovd.schedule.json
   var ovd_schedule_default = {
     airport: "Asturias",
     icao: "LEAS",
@@ -4781,7 +4792,7 @@ var Sim = (() => {
     }
   };
 
-  // src/assets/airports/ovd.fleet.json
+  // ../../mrotycoon/src/assets/airports/ovd.fleet.json
   var ovd_fleet_default = {
     airport: "Asturias",
     icao: "LEAS",
@@ -5796,7 +5807,7 @@ var Sim = (() => {
     ]
   };
 
-  // src/lib/sim/schedule.ts
+  // ../../mrotycoon/src/lib/sim/schedule.ts
   var scheduleData = ovd_schedule_default;
   var fleetData = ovd_fleet_default;
   function setActiveAirportData(schedule, fleet) {
@@ -5966,7 +5977,7 @@ var Sim = (() => {
     };
   }
 
-  // src/lib/sim/workorders.ts
+  // ../../mrotycoon/src/lib/sim/workorders.ts
   var _instanceCounter = 0;
   function _resetInstanceCounter() {
     _instanceCounter = 0;
@@ -6037,7 +6048,7 @@ var Sim = (() => {
     return picked.map((tpl) => instantiateWorkOrder(tpl, airplane, balance));
   }
 
-  // src/lib/sim/mechanics.ts
+  // ../../mrotycoon/src/lib/sim/mechanics.ts
   var MECHANIC_CAP_INITIAL = 5;
   var FIRST_NAMES = [
     "Pedro",
@@ -6318,7 +6329,7 @@ var Sim = (() => {
     return out;
   }
 
-  // src/lib/sim/shifts.ts
+  // ../../mrotycoon/src/lib/sim/shifts.ts
   var MORNING_START = 6 * 60;
   var MORNING_END = 14 * 60;
   var AFTERNOON_END = 22 * 60;
@@ -6541,7 +6552,7 @@ var Sim = (() => {
     return { mechanics: newMechanics, events };
   }
 
-  // src/lib/sim/assignment.ts
+  // ../../mrotycoon/src/lib/sim/assignment.ts
   function assignMechanicsToWo(mechanics, workOrders, woInstanceId, certifierId, helperIds, balance) {
     const wo = workOrders.find((w) => w.instanceId === woInstanceId);
     if (!wo) return { mechanics: [...mechanics], workOrders: [...workOrders], error: "WO not found" };
@@ -6633,7 +6644,7 @@ var Sim = (() => {
     return total;
   }
 
-  // src/lib/sim/wo_state_machine.ts
+  // ../../mrotycoon/src/lib/sim/wo_state_machine.ts
   function phaseDuration(template, phase, balance) {
     switch (phase) {
       case "Inspection":
@@ -6732,7 +6743,7 @@ var Sim = (() => {
     );
   }
 
-  // src/lib/sim/economy.ts
+  // ../../mrotycoon/src/lib/sim/economy.ts
   var _txCounter = 0;
   function _resetTxCounter() {
     _txCounter = 0;
@@ -6839,7 +6850,7 @@ var Sim = (() => {
     return eco.negativeStreakWeeks >= 2;
   }
 
-  // src/lib/sim/reputation.ts
+  // ../../mrotycoon/src/lib/sim/reputation.ts
   function createReputation(initial, airlines) {
     const clamped = Math.max(0, Math.min(100, initial));
     const perAirline = {};
@@ -6892,7 +6903,7 @@ var Sim = (() => {
     return createReputation(v, airlines);
   }
 
-  // src/lib/sim/maintenance.ts
+  // ../../mrotycoon/src/lib/sim/maintenance.ts
   var mcCounter = 0;
   function resetMaintenanceCheckCounter(value = 0) {
     mcCounter = value;
@@ -7131,7 +7142,7 @@ var Sim = (() => {
     };
   }
 
-  // src/lib/sim/mel.ts
+  // ../../mrotycoon/src/lib/sim/mel.ts
   var MEL_DEFERRAL_DAYS = {
     A: 3,
     B: 10,
@@ -7206,7 +7217,7 @@ var Sim = (() => {
     return { workOrders: newWos, events };
   }
 
-  // src/lib/sim/compliance.ts
+  // ../../mrotycoon/src/lib/sim/compliance.ts
   var INITIAL_COMPLIANCE_SCORE = 80;
   var AUDIT_INTERVAL_MIN_DAYS = 60;
   var AUDIT_INTERVAL_MAX_DAYS = 90;
@@ -7310,7 +7321,7 @@ var Sim = (() => {
     return "bad";
   }
 
-  // src/lib/sim/labor.ts
+  // ../../mrotycoon/src/lib/sim/labor.ts
   var POOL_MIN = 5;
   var POOL_MAX = 10;
   var MARKET_REFRESH_DAYS = 7;
@@ -7562,7 +7573,7 @@ var Sim = (() => {
     return { mechanics: newMechanics, events };
   }
 
-  // src/lib/types/departureKPI.ts
+  // ../../mrotycoon/src/lib/types/departureKPI.ts
   function createDepartureKPI() {
     return {
       totalDepartures: 0,
@@ -7590,7 +7601,7 @@ var Sim = (() => {
   var AOG_DELAY_THRESHOLD_MIN = 180;
   var AOG_ESCALATION_PENALTY_EUR = 1e4;
 
-  // src/lib/types/hoursKPI.ts
+  // ../../mrotycoon/src/lib/types/hoursKPI.ts
   function bookHoursForTemplate(tpl) {
     return tpl.durationMinutes / 60;
   }
@@ -7630,7 +7641,7 @@ var Sim = (() => {
     }
   }
 
-  // src/lib/sim/save.ts
+  // ../../mrotycoon/src/lib/sim/save.ts
   var SAVE_VERSION = 14;
   function serializeGame(g) {
     return {
@@ -7755,7 +7766,7 @@ var Sim = (() => {
     };
   }
 
-  // src/lib/sim/storage.ts
+  // ../../mrotycoon/src/lib/sim/storage.ts
   var SLOT_KEY = "mro-tycoon-save-v1";
   var LocalStorageBackend = class {
     async save(payload) {
@@ -7818,7 +7829,7 @@ var Sim = (() => {
     _backend = b;
   }
 
-  // src/lib/types/mroStage.ts
+  // ../../mrotycoon/src/lib/types/mroStage.ts
   var STAGE_CONFIG = {
     1: {
       costEur: 0,
@@ -7854,7 +7865,7 @@ var Sim = (() => {
     }
   };
 
-  // src/lib/sim/events.ts
+  // ../../mrotycoon/src/lib/sim/events.ts
   var RUNWAY_CLOSURE_DAILY_PROB = 0.06;
   var SERVICE_BULLETIN_DAILY_PROB = 0.04;
   var CLOSURE_REASONS = [
@@ -7934,7 +7945,7 @@ var Sim = (() => {
     return events.some((e) => e.type === "runway_closure" && nowMinute >= e.startMinute && nowMinute < e.endMinute);
   }
 
-  // src/lib/sim/foreman.ts
+  // ../../mrotycoon/src/lib/sim/foreman.ts
   function hasActiveLead(mechanics) {
     return mechanics.some((m) => m.isLeadForeman && (m.state === "Idle" || m.state === "OffShift"));
   }
@@ -7949,7 +7960,7 @@ var Sim = (() => {
     return candidates[0];
   }
 
-  // src/lib/game.ts
+  // ../../mrotycoon/src/lib/game.ts
   var HANGAR_UNLOCK_MIN_REP_AVG = 80;
   var HANGAR_UNLOCK_MIN_BALANCE_EUR = 1e6;
   var HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS = 3;
@@ -9010,7 +9021,7 @@ var Sim = (() => {
     return { ok: true };
   }
 
-  // src/lib/data/workorders.json
+  // ../../mrotycoon/src/lib/data/workorders.json
   var workorders_default = [
     { id: "WO-001", description: "Engine #1 oil servicing \u2014 top up CFM56-5B reservoir within MIN/MAX range (AMM 12-13-79-680-001). Use Mobil Jet Oil II. Verify sight glass + magnetic chip detector for FOD.", ata: 12, requiredCategory: "B1", durationMinutes: 20, aircraftModelsCompatibles: ["A320", "A321"], engineVariantsCompatibles: ["CFM56", "V2500"], deferrable: true, severity: "Minor", isAOG: false, probability: 1, partsRequired: ["Mobil Jet Oil II, 5L NATO O-156"], toolsRequired: ["Oil servicing trolley"] },
     { id: "WO-002", description: "Engine #2 oil servicing \u2014 V2500 IAE reservoir top-up to nominal level (AMM 12-13-79-680-002). Replace breather cap if seal degraded. Sign sight-glass check on tech log.", ata: 12, requiredCategory: "B1", durationMinutes: 23, aircraftModelsCompatibles: ["A320", "A321"], engineVariantsCompatibles: ["CFM56", "V2500"], deferrable: true, severity: "Minor", isAOG: false, probability: 1, partsRequired: ["Mobil Jet Oil II, 5L NATO O-156"], toolsRequired: ["Oil servicing trolley"] },
@@ -9114,7 +9125,7 @@ var Sim = (() => {
     { id: "WO-100", description: "Engine #1 HP turbine borescope inspection \u2014 CFM56-5B (AMM 72-50-00-200-001). Inspect stages 1-2 NGV + blades. Photo-document any blade tip rubs or cracks. Issue ALOC.", ata: 71, requiredCategory: "B1", durationMinutes: 57, aircraftModelsCompatibles: ["A320", "A321"], engineVariantsCompatibles: ["CFM56", "V2500"], deferrable: false, severity: "Minor", isAOG: false, probability: 1, partsRequired: [], toolsRequired: ["Borescope 6mm flexible", "Engine work stand", "Camera/recorder", "Plug kit for igniter ports"] }
   ];
 
-  // src/lib/data/airlines.json
+  // ../../mrotycoon/src/lib/data/airlines.json
   var airlines_default = [
     {
       id: "AL-001",
@@ -9239,7 +9250,7 @@ var Sim = (() => {
     }
   ];
 
-  // src/lib/data/balance.json
+  // ../../mrotycoon/src/lib/data/balance.json
   var balance_default = {
     $comment: "Constantes de tuneo. Editar valores aqu\xED cambia balance sin recompilar. Probabilidades legacy conservadas (validar en Fase 4 playtest).",
     startingBalance: 25e4,
@@ -9281,7 +9292,7 @@ var Sim = (() => {
     landingsVariance: 0.2
   };
 
-  // src/lib/data/maintenance_checks.json
+  // ../../mrotycoon/src/lib/data/maintenance_checks.json
   var maintenance_checks_default = [
     {
       $comment_A: "A-check real: 50-150 man-hours = ~6-19 person-days(24h). Subido manDays 2\u21928 para coherencia con real. ParkingDays 1 \u2713 (overnight).",
@@ -9342,7 +9353,7 @@ var Sim = (() => {
     }
   ];
 
-  // src/lib/data/daily_checks.json
+  // ../../mrotycoon/src/lib/data/daily_checks.json
   var daily_checks_default = [
     {
       id: "DC-001",
@@ -9426,7 +9437,7 @@ var Sim = (() => {
     }
   ];
 
-  // src/lib/data/wo_classification.json
+  // ../../mrotycoon/src/lib/data/wo_classification.json
   var wo_classification_default = {
     _meta: {
       generated: "2026-05-24",
@@ -9542,7 +9553,7 @@ var Sim = (() => {
     ]
   };
 
-  // src/lib/data/airports/catalog.json
+  // ../../mrotycoon/src/lib/data/airports/catalog.json
   var catalog_default = {
     version: 2,
     notes: "Cat\xE1logo de aeropuertos + operadores disponibles para New Game. Cada aeropuerto lista sus presets contratables (uno por operador). Operadores 'available:false' aparecen grayed con tooltip explicativo. Aeropuertos con 'available:false' aparecen tambi\xE9n grayed (no se puede entrar al paso 2).",
@@ -9695,7 +9706,7 @@ var Sim = (() => {
     ]
   };
 
-  // src/lib/data/airports/LEAS_volotea.preset.json
+  // ../../mrotycoon/src/lib/data/airports/LEAS_volotea.preset.json
   var LEAS_volotea_preset_default = {
     icao: "LEAS",
     iata: "OVD",
@@ -9739,7 +9750,7 @@ var Sim = (() => {
     milestones: []
   };
 
-  // src/lib/data/airports/LEAS_vueling.preset.json
+  // ../../mrotycoon/src/lib/data/airports/LEAS_vueling.preset.json
   var LEAS_vueling_preset_default = {
     icao: "LEAS",
     iata: "OVD",
@@ -9812,7 +9823,7 @@ var Sim = (() => {
     ]
   };
 
-  // src/lib/data/airports/LEBB_volotea.preset.json
+  // ../../mrotycoon/src/lib/data/airports/LEBB_volotea.preset.json
   var LEBB_volotea_preset_default = {
     icao: "LEBB",
     iata: "BIO",
@@ -9858,7 +9869,7 @@ var Sim = (() => {
     milestones: []
   };
 
-  // src/assets/airports/ovd.paths.json
+  // ../../mrotycoon/src/assets/airports/ovd.paths.json
   var ovd_paths_default = {
     icao: "OVD",
     source: "OpenStreetMap contributors (ODbL)",
@@ -13361,7 +13372,7 @@ var Sim = (() => {
     }
   };
 
-  // src/assets/airports/bio.schedule.json
+  // ../../mrotycoon/src/assets/airports/bio.schedule.json
   var bio_schedule_default = {
     airport: "Bilbao",
     icao: "LEBB",
@@ -25443,7 +25454,7 @@ var Sim = (() => {
     }
   };
 
-  // src/assets/airports/bio.fleet.json
+  // ../../mrotycoon/src/assets/airports/bio.fleet.json
   var bio_fleet_default = {
     airport: "Bilbao",
     icao: "LEBB",
@@ -29428,7 +29439,7 @@ var Sim = (() => {
     ]
   };
 
-  // src/assets/airports/bio.paths.json
+  // ../../mrotycoon/src/assets/airports/bio.paths.json
   var bio_paths_default = {
     icao: "BIO",
     source: "OpenStreetMap contributors (ODbL)",
@@ -36194,7 +36205,7 @@ var Sim = (() => {
     }
   };
 
-  // src/lib/sim-all.ts
+  // ../../mrotycoon/src/lib/sim-all.ts
   var _kindByWoId = /* @__PURE__ */ new Map();
   {
     const arr = wo_classification_default.classifications;
@@ -41612,7 +41623,102 @@ function renderHangarDeferrals(){
 // Pivot línea pura: tab Mapa = solo el canvas Pixi en skin F5D, sin selector de variantes.
 // El canvas se monta vía syncMapRender() — aquí solo damos el host.
 function renderMap(){
-  return `<div class="pixi-host" id="pixi-host" style="height:calc(100vh - 96px);min-height:480px"></div>`;
+  // Pivot iteración 2026-05-25: overlay panel discreto top-left con
+  // aviones en tierra + próx 3 salidas + próx 3 llegadas. Se actualiza
+  // cada tick vía updateMapInfoPanel() — NO regenera el HTML del wrapper
+  // para no destruir el canvas Pixi montado dentro.
+  return `<div class="map-wrapper" style="position:relative;height:calc(100vh - 96px);min-height:480px">
+    <div class="pixi-host" id="pixi-host" style="width:100%;height:100%"></div>
+    <div id="map-info-panel" class="map-info-panel"></div>
+  </div>`;
+}
+
+/** Actualiza el panel info overlay sobre el mapa. Idempotente: se llama cada tick
+ *  cuando activeTab === "map" y el panel está montado. NO toca el canvas Pixi. */
+function updateMapInfoPanel(){
+  const el = document.getElementById("map-info-panel");
+  if (!el) return;
+  const now = game.clock.minute;
+  const dayMinute = now % 1440;
+  const currentDay = S.getDay(now);
+
+  const onGround = game.airplanes.filter(a => a.status !== "Departed");
+
+  // Próx 3 salidas: aviones en tierra ordenados por scheduledDepartureMinute futuro
+  const nextDeps = [...onGround]
+    .filter(a => a.scheduledDepartureMinute >= now)
+    .sort((a, b) => a.scheduledDepartureMinute - b.scheduledDepartureMinute)
+    .slice(0, 3);
+
+  // Próx 3 llegadas: schedule del día filtrado por scheduledMinute > dayMinute y handleable
+  const flights = (S.getFlightsForGameDay?.(currentDay) ?? []);
+  const nextArrs = flights
+    .filter(f => f.type === "arrival" && f.scheduledMinute > dayMinute && !f.notHandled)
+    .sort((a, b) => a.scheduledMinute - b.scheduledMinute)
+    .slice(0, 3);
+
+  // Helper: HH:MM a partir de minuto de día (0-1439).
+  const hhmm = (m) => {
+    const mod = ((m % 1440) + 1440) % 1440;
+    return String(Math.floor(mod / 60)).padStart(2, "0") + ":" + String(mod % 60).padStart(2, "0");
+  };
+  // Helper: HH:MM con "+1" si es mañana.
+  const hhmmRel = (absMin) => {
+    const dDelta = S.getDay(absMin) - currentDay;
+    return hhmm(absMin) + (dDelta > 0 ? ` <span class="muted">+${dDelta}d</span>` : "");
+  };
+
+  let html = '';
+
+  // ── En tierra ──
+  html += `<h3>🅿️ En tierra · ${onGround.length}</h3>`;
+  if (onGround.length === 0) {
+    html += `<div class="mip-empty">Sin aviones en stand</div>`;
+  } else {
+    // Ordenamos por scheduledDepartureMinute para mostrar los que salen antes primero
+    const sortedOnGround = [...onGround]
+      .sort((a, b) => a.scheduledDepartureMinute - b.scheduledDepartureMinute);
+    for (const a of sortedOnGround.slice(0, 4)) {
+      const cs = a.nextDepartureCallsign ?? a.arrivalCallsign ?? "";
+      html += `<div class="mip-row">
+        <span class="mip-callsign mono">${esc(a.registration)}</span>
+        <span class="mip-route">${esc(a.standId)} ${a.overnight ? "🌙" : ""}</span>
+      </div>`;
+    }
+    if (sortedOnGround.length > 4) {
+      html += `<div class="mip-more">+${sortedOnGround.length - 4} más</div>`;
+    }
+  }
+
+  // ── Próx salidas ──
+  html += `<div class="mip-sep"></div><h3>🛫 Próximas salidas</h3>`;
+  if (nextDeps.length === 0) {
+    html += `<div class="mip-empty">Sin salidas programadas</div>`;
+  } else {
+    for (const a of nextDeps) {
+      const cs = a.nextDepartureCallsign ?? a.registration;
+      html += `<div class="mip-row">
+        <span class="mip-time">${hhmmRel(a.scheduledDepartureMinute)}</span>
+        <span class="mip-callsign mono">${esc(cs)}</span>
+      </div>`;
+    }
+  }
+
+  // ── Próx llegadas ──
+  html += `<div class="mip-sep"></div><h3>🛬 Próximas llegadas</h3>`;
+  if (nextArrs.length === 0) {
+    html += `<div class="mip-empty">Sin llegadas hoy</div>`;
+  } else {
+    for (const f of nextArrs) {
+      html += `<div class="mip-row">
+        <span class="mip-time">${hhmm(f.scheduledMinute)}</span>
+        <span class="mip-callsign mono">${esc(f.callsign)}</span>
+        <span class="mip-route">← ${esc(f.remote ?? "?")}</span>
+      </div>`;
+    }
+  }
+
+  el.innerHTML = html;
 }
 
 // ===========================================================================
@@ -43849,6 +43955,9 @@ function render(){
     lastPanelRenderMs = nowMs;
   }
   syncMapRender();
+  // Pivot iteración 2026-05-25: actualizar panel info overlay sobre el mapa cada tick.
+  // No-op cuando #map-info-panel no existe (otros tabs activos o canvas aún no montado).
+  if (activeTab === "map" && !game.gameOver.isOver) updateMapInfoPanel();
 
   // Notifs: misma estrategia (memoization + throttle ligero).
   const notifs = game.notifications.slice(-12).reverse();

@@ -277,6 +277,17 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .clickable-chip{cursor:pointer;padding:.05rem .35rem;border-radius:4px;border:1px solid transparent;transition:background .12s,border-color .12s;position:relative;z-index:2}
 .clickable-chip:hover{background:rgba(77,163,255,.18);border-color:rgba(77,163,255,.45)}
 .daily-card:hover{outline:1px dashed rgba(140,150,200,.4);outline-offset:2px}
+/* Pivot iteración 2026-05-25 — Panel info overlay sobre el mapa */
+.map-info-panel{position:absolute;top:12px;left:12px;z-index:10;background:rgba(7,13,24,.82);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:6px;padding:.55rem .75rem;font-family:var(--mono);font-size:.72rem;line-height:1.45;min-width:220px;max-width:260px;color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:auto}
+.map-info-panel h3{margin:.1rem 0 .25rem 0;font-size:.66rem;color:#7fb3e8;text-transform:uppercase;letter-spacing:.06em;font-weight:600;font-family:var(--sans)}
+.map-info-panel .mip-row{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;padding:.08rem 0;font-size:.72rem}
+.map-info-panel .mip-time{color:#7fb3e8;font-weight:600;min-width:46px}
+.map-info-panel .mip-callsign{color:var(--text);flex:1}
+.map-info-panel .mip-route{color:var(--muted);font-size:.68rem;text-align:right}
+.map-info-panel .mip-empty{color:var(--muted);font-style:italic;padding:.15rem 0;font-size:.7rem}
+.map-info-panel .mip-more{color:var(--muted);font-size:.65rem;text-align:center;padding:.15rem 0;font-style:italic}
+.map-info-panel .mip-sep{border-top:1px dashed rgba(120,140,180,.18);margin:.4rem 0 .25rem 0}
+
 /* Pivot iteración 2026-05-25 — New Game wizard overlay */
 .newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.95);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
 .newgame-panel{max-width:1200px;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -641,7 +652,102 @@ function renderHangarDeferrals(){
 // Pivot línea pura: tab Mapa = solo el canvas Pixi en skin F5D, sin selector de variantes.
 // El canvas se monta vía syncMapRender() — aquí solo damos el host.
 function renderMap(){
-  return \`<div class="pixi-host" id="pixi-host" style="height:calc(100vh - 96px);min-height:480px"></div>\`;
+  // Pivot iteración 2026-05-25: overlay panel discreto top-left con
+  // aviones en tierra + próx 3 salidas + próx 3 llegadas. Se actualiza
+  // cada tick vía updateMapInfoPanel() — NO regenera el HTML del wrapper
+  // para no destruir el canvas Pixi montado dentro.
+  return \`<div class="map-wrapper" style="position:relative;height:calc(100vh - 96px);min-height:480px">
+    <div class="pixi-host" id="pixi-host" style="width:100%;height:100%"></div>
+    <div id="map-info-panel" class="map-info-panel"></div>
+  </div>\`;
+}
+
+/** Actualiza el panel info overlay sobre el mapa. Idempotente: se llama cada tick
+ *  cuando activeTab === "map" y el panel está montado. NO toca el canvas Pixi. */
+function updateMapInfoPanel(){
+  const el = document.getElementById("map-info-panel");
+  if (!el) return;
+  const now = game.clock.minute;
+  const dayMinute = now % 1440;
+  const currentDay = S.getDay(now);
+
+  const onGround = game.airplanes.filter(a => a.status !== "Departed");
+
+  // Próx 3 salidas: aviones en tierra ordenados por scheduledDepartureMinute futuro
+  const nextDeps = [...onGround]
+    .filter(a => a.scheduledDepartureMinute >= now)
+    .sort((a, b) => a.scheduledDepartureMinute - b.scheduledDepartureMinute)
+    .slice(0, 3);
+
+  // Próx 3 llegadas: schedule del día filtrado por scheduledMinute > dayMinute y handleable
+  const flights = (S.getFlightsForGameDay?.(currentDay) ?? []);
+  const nextArrs = flights
+    .filter(f => f.type === "arrival" && f.scheduledMinute > dayMinute && !f.notHandled)
+    .sort((a, b) => a.scheduledMinute - b.scheduledMinute)
+    .slice(0, 3);
+
+  // Helper: HH:MM a partir de minuto de día (0-1439).
+  const hhmm = (m) => {
+    const mod = ((m % 1440) + 1440) % 1440;
+    return String(Math.floor(mod / 60)).padStart(2, "0") + ":" + String(mod % 60).padStart(2, "0");
+  };
+  // Helper: HH:MM con "+1" si es mañana.
+  const hhmmRel = (absMin) => {
+    const dDelta = S.getDay(absMin) - currentDay;
+    return hhmm(absMin) + (dDelta > 0 ? \` <span class="muted">+\${dDelta}d</span>\` : "");
+  };
+
+  let html = '';
+
+  // ── En tierra ──
+  html += \`<h3>🅿️ En tierra · \${onGround.length}</h3>\`;
+  if (onGround.length === 0) {
+    html += \`<div class="mip-empty">Sin aviones en stand</div>\`;
+  } else {
+    // Ordenamos por scheduledDepartureMinute para mostrar los que salen antes primero
+    const sortedOnGround = [...onGround]
+      .sort((a, b) => a.scheduledDepartureMinute - b.scheduledDepartureMinute);
+    for (const a of sortedOnGround.slice(0, 4)) {
+      const cs = a.nextDepartureCallsign ?? a.arrivalCallsign ?? "";
+      html += \`<div class="mip-row">
+        <span class="mip-callsign mono">\${esc(a.registration)}</span>
+        <span class="mip-route">\${esc(a.standId)} \${a.overnight ? "🌙" : ""}</span>
+      </div>\`;
+    }
+    if (sortedOnGround.length > 4) {
+      html += \`<div class="mip-more">+\${sortedOnGround.length - 4} más</div>\`;
+    }
+  }
+
+  // ── Próx salidas ──
+  html += \`<div class="mip-sep"></div><h3>🛫 Próximas salidas</h3>\`;
+  if (nextDeps.length === 0) {
+    html += \`<div class="mip-empty">Sin salidas programadas</div>\`;
+  } else {
+    for (const a of nextDeps) {
+      const cs = a.nextDepartureCallsign ?? a.registration;
+      html += \`<div class="mip-row">
+        <span class="mip-time">\${hhmmRel(a.scheduledDepartureMinute)}</span>
+        <span class="mip-callsign mono">\${esc(cs)}</span>
+      </div>\`;
+    }
+  }
+
+  // ── Próx llegadas ──
+  html += \`<div class="mip-sep"></div><h3>🛬 Próximas llegadas</h3>\`;
+  if (nextArrs.length === 0) {
+    html += \`<div class="mip-empty">Sin llegadas hoy</div>\`;
+  } else {
+    for (const f of nextArrs) {
+      html += \`<div class="mip-row">
+        <span class="mip-time">\${hhmm(f.scheduledMinute)}</span>
+        <span class="mip-callsign mono">\${esc(f.callsign)}</span>
+        <span class="mip-route">← \${esc(f.remote ?? "?")}</span>
+      </div>\`;
+    }
+  }
+
+  el.innerHTML = html;
 }
 
 // ===========================================================================
@@ -2878,6 +2984,9 @@ function render(){
     lastPanelRenderMs = nowMs;
   }
   syncMapRender();
+  // Pivot iteración 2026-05-25: actualizar panel info overlay sobre el mapa cada tick.
+  // No-op cuando #map-info-panel no existe (otros tabs activos o canvas aún no montado).
+  if (activeTab === "map" && !game.gameOver.isOver) updateMapInfoPanel();
 
   // Notifs: misma estrategia (memoization + throttle ligero).
   const notifs = game.notifications.slice(-12).reverse();
