@@ -73,10 +73,21 @@ const _dailyChecksWithKind = (dailyChecksJson as Array<Record<string, unknown>>)
   kind: "mpd" as const,
 } as never));
 
+// Pivot iteración 2026-05-25 — Catálogo de aeropuertos + presets bundleados para
+// el wizard New Game (selección aeropuerto → operador inicial).
+import airportCatalogJson from "./data/airports/catalog.json";
+import presetVolotea from "./data/airports/LEAS_volotea.preset.json";
+import presetVueling from "./data/airports/LEAS_vueling.preset.json";
+
 export const DATA = {
   workOrders: _workOrdersWithKind,
   airlines: airlinesJson,
   balance: balanceJson,
   maintenanceChecks: maintenanceChecksJson,
   dailyChecks: _dailyChecksWithKind,
+  airportCatalog: airportCatalogJson,
+  presets: {
+    LEAS_volotea: presetVolotea,
+    LEAS_vueling: presetVueling,
+  },
 };

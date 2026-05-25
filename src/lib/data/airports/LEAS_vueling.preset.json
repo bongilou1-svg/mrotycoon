@@ -1,0 +1,74 @@
+{
+  "icao": "LEAS",
+  "iata": "OVD",
+  "name": "Asturias",
+  "country": "ES",
+  "city": "Oviedo",
+  "difficulty": 2,
+  "difficultyLabel": "Rookie+",
+  "description": "Tu primer cliente: Vueling. Turnaround corto (sin pernoctas habituales), 68 movs/sem. Cuando un A320 aterriza con problema, te llaman al callout y debes resolver antes del próximo despegue (~55min). Aprende a reaccionar rápido bajo presión. Cuando subas brand, Volotea podría ofrecerte un contrato base con pernoctas.",
+
+  "setup": {
+    "initialBalance": 200000,
+    "initialMechCap": 5,
+    "initialMechs": [
+      { "type": "dual-B1B2", "shift": "morning" }
+    ],
+    "marketPreloadDualCandidates": 2,
+    "initialContracts": [
+      {
+        "airlineIata": "VY",
+        "tier": "line",
+        "baseFeePerWeek": 5000,
+        "paymentPerWOMinute": 55,
+        "penaltyPerLateMinute": 5,
+        "minReputation": 40,
+        "expectedLandingsPerDay": 2,
+        "withOvernight": false
+      }
+    ]
+  },
+
+  "operators": [
+    { "iata": "V7",  "icao": "VOE", "name": "Volotea",         "color": "#A20067", "homeBased": true,  "brandThreshold": 55, "fleetModels": ["A320", "A319"] },
+    { "iata": "VY",  "icao": "VLG", "name": "Vueling",         "color": "#FFCD00", "homeBased": false, "brandThreshold": 70, "fleetModels": ["A320", "A321"] },
+    { "iata": "IB",  "icao": "IBB", "name": "Iberia Express",  "color": "#E40000", "homeBased": false, "brandThreshold": 65, "fleetModels": ["A320", "A321"] },
+    { "iata": "U2",  "icao": "EZY", "name": "easyJet",         "color": "#FF6600", "homeBased": false, "brandThreshold": 85, "fleetModels": ["A320", "A321"] },
+    { "iata": "YW",  "icao": "ANE", "name": "Air Nostrum",     "color": "#003D7A", "homeBased": true,  "brandThreshold": 75, "fleetModels": ["CRJ"],          "requiresUnlockType": "CRJ" },
+    { "iata": "NT",  "icao": "NTC", "name": "Binter Canarias", "color": "#1F8B4C", "homeBased": false, "brandThreshold": 80, "fleetModels": ["E195"],         "requiresUnlockType": "E195" },
+    { "iata": "LH",  "icao": "DLH", "name": "Lufthansa",       "color": "#05164D", "homeBased": false, "brandThreshold": 85, "fleetModels": ["A320", "A321"] },
+    { "iata": "KL",  "icao": "KLC", "name": "KLM Cityhopper",  "color": "#00A1DE", "homeBased": false, "brandThreshold": 80, "fleetModels": ["E175"],         "requiresUnlockType": "E175" },
+    { "iata": "EI",  "icao": "EIN", "name": "Aer Lingus",      "color": "#0D754B", "homeBased": false, "brandThreshold": 78, "fleetModels": ["A320"] }
+  ],
+
+  "milestones": [
+    {
+      "id": "first-volotea-base",
+      "trigger": { "brandMin": 65, "daysMin": 14 },
+      "type": "newContractOffer",
+      "params": { "airlineIata": "V7", "tier": "line", "withOvernight": true, "expectedLandingsPerDay": 4 },
+      "notif": "🎉 Volotea quiere basar 1 avión en tu hangar — primera pernocta MRO"
+    },
+    {
+      "id": "volotea-expansion",
+      "trigger": { "brandMin": 78, "previousMilestone": "first-volotea-base" },
+      "type": "upgradeContract",
+      "params": { "airlineIata": "V7", "tier": "line", "expectedLandingsPerDay": 8 },
+      "notif": "🎉 Volotea confía en ti — base ampliada a 2 matrículas"
+    },
+    {
+      "id": "unlock-CRJ-maintenance",
+      "trigger": { "balanceMin": 500000, "investmentRequired": 200000 },
+      "type": "unlockAircraftType",
+      "params": { "type": "CRJ" },
+      "notif": "✅ Habilitación CRJ pagada — Air Nostrum es accesible"
+    },
+    {
+      "id": "air-nostrum-firma",
+      "trigger": { "brandMin": 80, "previousMilestone": "unlock-CRJ-maintenance" },
+      "type": "newContractOffer",
+      "params": { "airlineIata": "YW", "tier": "line", "withOvernight": true, "expectedLandingsPerDay": 8 },
+      "notif": "🎉 Air Nostrum oferta contrato MRO — bomba económica MAD route (187 movs/mes)"
+    }
+  ]
+}

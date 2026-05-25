@@ -19,13 +19,16 @@ function expect(cond, msg, detail) {
 console.log("\n=== sim/schedule · F5D scope creep ===");
 
 // 1. Metadata del snapshot
+// Nota 2026-05-25: tras saneamiento operator-rules (commit 652e263) el schedule
+// usa datos REALES OVD mayo 2026. `airport` ahora es nombre ("Asturias"),
+// e IB mainline ya no opera OVD (todos sus codeshare son ANE = Air Nostrum CRJ).
 const meta = getScheduleMetadata();
-expect(meta.airport === "OVD", `airport=OVD (got ${meta.airport})`);
+expect(meta.airport === "Asturias", `airport=Asturias (got ${meta.airport})`);
 expect(meta.icao === "LEAS", `icao=LEAS (got ${meta.icao})`);
 expect(meta.totalFlights >= 80, `totalFlights ≥ 80 (got ${meta.totalFlights})`);
-expect(meta.airlines.IB > 0, `IB presente (${meta.airlines.IB})`);
-expect(meta.airlines.VY > 0, `VY presente (${meta.airlines.VY})`);
-expect(meta.airlines.V7 > 0, `V7 presente (${meta.airlines.V7})`);
+expect(meta.airlines.V7 > 0, `V7 (Volotea) presente (${meta.airlines.V7})`);
+expect(meta.airlines.VY > 0, `VY (Vueling) presente (${meta.airlines.VY})`);
+expect(meta.airlines.YW > 0, `YW (Air Nostrum) presente (${meta.airlines.YW})`);
 
 // 2. Cycling determinístico: día 1 = lunes, día 8 = lunes
 const day1 = getFlightsForGameDay(1);

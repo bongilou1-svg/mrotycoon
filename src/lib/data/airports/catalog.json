@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "notes": "Catálogo de aeropuertos + operadores disponibles para New Game. Cada aeropuerto lista sus presets contratables (uno por operador). El operador 'comingSoon' aparece grayed en UI con tooltip explicativo.",
+  "airports": [
+    {
+      "icao": "LEAS",
+      "iata": "OVD",
+      "name": "Asturias",
+      "country": "ES",
+      "city": "Oviedo",
+      "difficultyOverall": 1,
+      "shortDesc": "Aeropuerto regional, ~35 movs/día. 3 operadores principales. Modo aprendizaje.",
+      "operators": [
+        {
+          "presetFile": "LEAS_volotea.preset.json",
+          "operatorIata": "V7",
+          "operatorName": "Volotea",
+          "color": "#A20067",
+          "difficulty": 1,
+          "difficultyLabel": "Rookie",
+          "shortLine": "Base operativa OVD · A320 · pernoctas",
+          "tagline": "Operador local te confía sus aviones. Aprende sin presión.",
+          "metrics": {
+            "movsPerWeek": 146,
+            "overnightsPerWeek": 21,
+            "model": "A320 + A319",
+            "balance": 250000,
+            "mechs": "1 dual"
+          },
+          "available": true
+        },
+        {
+          "presetFile": "LEAS_vueling.preset.json",
+          "operatorIata": "VY",
+          "operatorName": "Vueling",
+          "color": "#FFCD00",
+          "difficulty": 2,
+          "difficultyLabel": "Rookie+",
+          "shortLine": "Turnaround corto · A320/A321 · sin pernoctas",
+          "tagline": "Aprende a reaccionar rápido a callouts.",
+          "metrics": {
+            "movsPerWeek": 68,
+            "overnightsPerWeek": 2,
+            "model": "A320/A321",
+            "balance": 200000,
+            "mechs": "1 dual"
+          },
+          "available": true
+        },
+        {
+          "presetFile": "LEAS_airnostrum.preset.json",
+          "operatorIata": "YW",
+          "operatorName": "Air Nostrum",
+          "color": "#003D7A",
+          "difficulty": 4,
+          "difficultyLabel": "Pro",
+          "shortLine": "Base CRJ OVD-MAD · 187 movs/mes",
+          "tagline": "Hardcore: flota CRJ. Requiere habilitación CRJ (próximamente jugable).",
+          "metrics": {
+            "movsPerWeek": 53,
+            "overnightsPerWeek": 17,
+            "model": "CRJ-1000",
+            "balance": 350000,
+            "mechs": "1 CRJ-rated"
+          },
+          "available": false,
+          "comingSoonReason": "Habilitación CRJ-1000 pendiente — los mecs actuales solo certifican A320/A321."
+        }
+      ]
+    }
+  ]
+}

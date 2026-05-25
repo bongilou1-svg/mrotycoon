@@ -1,0 +1,45 @@
+{
+  "icao": "LEAS",
+  "iata": "OVD",
+  "name": "Asturias",
+  "country": "ES",
+  "city": "Oviedo",
+  "difficulty": 1,
+  "difficultyLabel": "Rookie",
+  "description": "Tu primer cliente: Volotea. Operador local con base operativa en OVD (3-6 matrículas A320 pernoctan rotando). Volumen estable (146 movs/sem), pernoctas con daily checks, callouts puntuales. La opción más fluida para aprender el oficio.",
+
+  "setup": {
+    "initialBalance": 250000,
+    "initialMechCap": 5,
+    "initialMechs": [
+      { "type": "dual-B1B2", "shift": "morning" }
+    ],
+    "marketPreloadDualCandidates": 2,
+    "initialContracts": [
+      {
+        "airlineIata": "V7",
+        "tier": "line",
+        "baseFeePerWeek": 15000,
+        "paymentPerWOMinute": 65,
+        "penaltyPerLateMinute": 5,
+        "minReputation": 40,
+        "expectedLandingsPerDay": 5,
+        "withOvernight": true
+      }
+    ]
+  },
+
+  "operators": [
+    { "iata": "V7",  "icao": "VOE", "name": "Volotea",         "color": "#A20067", "homeBased": true,  "brandThreshold": 55, "fleetModels": ["A320", "A319"] },
+    { "iata": "VY",  "icao": "VLG", "name": "Vueling",         "color": "#FFCD00", "homeBased": false, "brandThreshold": 70, "fleetModels": ["A320", "A321"] },
+    { "iata": "IB",  "icao": "IBB", "name": "Iberia Express",  "color": "#E40000", "homeBased": false, "brandThreshold": 65, "fleetModels": ["A320", "A321"] },
+    { "iata": "U2",  "icao": "EZY", "name": "easyJet",         "color": "#FF6600", "homeBased": false, "brandThreshold": 85, "fleetModels": ["A320", "A321"] },
+    { "iata": "YW",  "icao": "ANE", "name": "Air Nostrum",     "color": "#003D7A", "homeBased": true,  "brandThreshold": 75, "fleetModels": ["CRJ"], "requiresUnlockType": "CRJ" },
+    { "iata": "NT",  "icao": "NTC", "name": "Binter Canarias", "color": "#1F8B4C", "homeBased": false, "brandThreshold": 80, "fleetModels": ["E195"], "requiresUnlockType": "E195" },
+    { "iata": "LH",  "icao": "DLH", "name": "Lufthansa",       "color": "#05164D", "homeBased": false, "brandThreshold": 85, "fleetModels": ["A320", "A321"] },
+    { "iata": "KL",  "icao": "KLC", "name": "KLM Cityhopper",  "color": "#00A1DE", "homeBased": false, "brandThreshold": 80, "fleetModels": ["E175"], "requiresUnlockType": "E175" },
+    { "iata": "EI",  "icao": "EIN", "name": "Aer Lingus",      "color": "#0D754B", "homeBased": false, "brandThreshold": 78, "fleetModels": ["A320"] }
+  ],
+
+  "milestones": []
+}

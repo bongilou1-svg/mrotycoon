@@ -277,6 +277,31 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .clickable-chip{cursor:pointer;padding:.05rem .35rem;border-radius:4px;border:1px solid transparent;transition:background .12s,border-color .12s;position:relative;z-index:2}
 .clickable-chip:hover{background:rgba(77,163,255,.18);border-color:rgba(77,163,255,.45)}
 .daily-card:hover{outline:1px dashed rgba(140,150,200,.4);outline-offset:2px}
+/* Pivot iteración 2026-05-25 — New Game wizard overlay */
+.newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.95);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
+.newgame-panel{max-width:1200px;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.newgame-header{margin-bottom:1.5rem;text-align:center}
+.newgame-cards{display:grid;gap:1rem;margin-bottom:1rem}
+.newgame-cards-3{grid-template-columns:repeat(3,1fr)}
+.newgame-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:.5rem}
+.newgame-card:hover:not(.ng-disabled){border-color:var(--accent);background:rgba(77,163,255,.08);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.newgame-card.ng-disabled{opacity:.4;cursor:not-allowed}
+.ng-card-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.ng-card-head h2{margin:0;font-size:1.2rem;font-weight:600}
+.ng-stars{font-size:.85rem;letter-spacing:.05em}
+.ng-shortline{font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ng-desc{font-style:italic;color:var(--text);font-size:.88rem;margin:.3rem 0;line-height:1.4}
+.ng-metrics{display:grid;grid-template-columns:1fr 1fr;gap:.3rem .6rem;font-size:.78rem;padding:.5rem;background:rgba(0,0,0,.2);border-radius:5px;margin-top:.5rem}
+.ng-metrics > div{display:flex;justify-content:space-between;gap:.4rem}
+.ng-meta{font-size:.85rem;color:var(--muted);margin:.3rem 0}
+.ng-select-btn{margin-top:auto;padding:.5rem 1rem;background:rgba(77,163,255,.15);color:var(--accent);border:1px solid var(--accent);border-radius:5px;cursor:pointer;font-size:.9rem;transition:background .15s}
+.ng-select-btn:hover{background:var(--accent);color:#fff}
+.ng-select-btn.primary{background:var(--accent);color:#fff;font-weight:600}
+.ng-select-btn.primary:hover{background:#3a8edb}
+.ng-coming-soon{margin-top:auto;padding:.5rem;background:rgba(245,185,69,.1);color:var(--warning);border:1px dashed var(--warning);border-radius:5px;font-size:.78rem;text-align:center}
+.ng-back-btn{padding:.4rem .8rem;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:.85rem}
+.ng-back-btn:hover{color:var(--text);border-color:var(--accent)}
+.newgame-footer{text-align:center;margin-top:1.5rem;display:flex;justify-content:space-between;align-items:center}
 .fleet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;gap:.4rem}
 .fleet-reg{font-family:var(--mono);font-weight:600;color:var(--text);font-size:.85rem}
 .fleet-meta{display:flex;flex-wrap:wrap;gap:.4rem;color:var(--muted)}
@@ -341,6 +366,10 @@ const S = window.Sim;
 let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, [], S.DATA.dailyChecks, { lineMode: true });
 let activeTab = "map"; // pivot línea pura: arrancamos en mapa (wow factor) y operaciones aparte
 let officeSubtab = "team"; // Pivot iteración 2026-05-25: "team" | "hiring" | "management"
+// Pivot iteración 2026-05-25 — New Game wizard: null | "airport" | "operator"
+let newGameStep = null;
+let newGameSelectedIcao = null;
+let newGameCatalog = null; // cargado lazy desde catalog.json bundled
 let lastProductionPackageDay = 0; // notif diaria del paquete de trabajo nocturno (12:00)
 let selectedWoId = null;
 let complianceModalOpen = false;
@@ -2718,6 +2747,15 @@ function tweenNumber(el, target, duration = 400, formatter = (v) => v.toLocaleSt
 }
 
 function render(){
+  // Pivot iteración 2026-05-25: New Game wizard overlay. Si está activo, mostrarlo
+  // como overlay full-screen y no renderizar el resto. Se inyecta en un div dedicado.
+  let ngOverlay = document.getElementById("newgame-overlay-root");
+  if (!ngOverlay) {
+    ngOverlay = document.createElement("div");
+    ngOverlay.id = "newgame-overlay-root";
+    document.body.appendChild(ngOverlay);
+  }
+  ngOverlay.innerHTML = renderNewGameWizard();
   document.getElementById("clock").textContent = fmtClock(game.clock.minute);
   document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
   const balEl = document.getElementById("bal");
@@ -2866,6 +2904,12 @@ document.body.addEventListener("click", (e) => {
   if (e.target.id === "btn-save") { doSave(); return; }
   if (e.target.id === "btn-load") { doLoad(); return; }
   if (e.target.id === "btn-new")  { doNewGame(); return; }
+  // Pivot iteración 2026-05-25 — New Game wizard handlers
+  const ngAirport = e.target.closest("[data-newgame-airport]");
+  if (ngAirport) { newGameSelectedIcao = ngAirport.dataset.newgameAirport; newGameStep = "operator"; render(); return; }
+  const ngPreset = e.target.closest("[data-newgame-preset]");
+  if (ngPreset) { startGameFromPreset(ngPreset.dataset.newgamePreset); return; }
+  if (e.target.id === "ng-back") { newGameStep = "airport"; render(); return; }
   if (e.target.id === "btn-age-fleet") { ageFleet(); return; }
   if (e.target.id === "btn-autopause") { game.autoPauseEnabled = !game.autoPauseEnabled; render(); return; }
   if (e.target.closest("#kpi-compliance")) { complianceModalOpen = true; invalidateModalCache(); render(); return; }
@@ -3103,14 +3147,101 @@ async function doLoad() {
   }
 }
 async function doNewGame() {
-  if (!confirm("¿Empezar nueva partida? Se perderá el progreso actual.")) return;
+  // Pivot iteración 2026-05-25: abrir wizard New Game en lugar de crear directo.
+  // Si ya hay save, confirmar antes de descartarlo.
+  if (hasSavedSlot && !confirm("¿Empezar nueva partida? Se perderá el progreso actual.")) return;
+  newGameStep = "airport";
+  newGameSelectedIcao = null;
+  newGameCatalog = S.DATA.airportCatalog;
+  render();
+}
+
+/** Procesa elección final: aeropuerto + operador → carga preset → crea game. */
+async function startGameFromPreset(presetFile) {
+  const presetKey = presetFile.replace(".preset.json", "");
+  const preset = S.DATA.presets[presetKey];
+  if (!preset) { alert("Preset no encontrado: " + presetFile); return; }
   await S.getStorage().clear();
-  const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, Math.floor(Math.random() * 1e9), [], S.DATA.dailyChecks, { lineMode: true });
+  const fresh = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders,
+    Math.floor(Math.random() * 1e9), [], S.DATA.dailyChecks,
+    { lineMode: true, airportPreset: preset });
   lastProductionPackageDay = 0;
   Object.assign(game, fresh);
   hasSavedSlot = false;
   selectedWoId = null;
+  newGameStep = null;
+  newGameSelectedIcao = null;
   render();
+}
+
+/** Renderiza overlay wizard New Game (full-screen). */
+function renderNewGameWizard() {
+  if (newGameStep === null) return "";
+  const catalog = newGameCatalog ?? S.DATA.airportCatalog;
+  let inner = "";
+  if (newGameStep === "airport") {
+    inner = \`<div class="newgame-header">
+      <h1 style="margin:0 0 .3rem 0;font-size:1.8rem">🛬 MRO Tycoon · Nueva Partida</h1>
+      <p class="muted" style="margin:0">Paso 1 de 2 · Elige tu aeropuerto base</p>
+    </div>
+    <div class="newgame-cards">\`;
+    for (const ap of catalog.airports) {
+      const stars = "⭐".repeat(ap.difficultyOverall);
+      inner += \`<article class="newgame-card" data-newgame-airport="\${ap.icao}">
+        <div class="ng-card-head">
+          <h2>✈️ \${esc(ap.name)} <span class="muted" style="font-size:.7rem">(\${ap.iata}/\${ap.icao} · \${ap.country})</span></h2>
+          <span class="ng-stars">\${stars}</span>
+        </div>
+        <p class="ng-desc">\${esc(ap.shortDesc)}</p>
+        <div class="ng-meta">
+          <span><strong>\${ap.operators.length}</strong> operadores contratables</span>
+        </div>
+        <button class="ng-select-btn">Seleccionar →</button>
+      </article>\`;
+    }
+    inner += \`</div>
+    <div class="newgame-footer">
+      <p class="muted" style="font-size:.78rem;margin:0">Más aeropuertos próximamente. Cada uno con sus propios operadores, dificultad y experiencia.</p>
+    </div>\`;
+  } else if (newGameStep === "operator") {
+    const ap = catalog.airports.find(a => a.icao === newGameSelectedIcao);
+    if (!ap) { newGameStep = "airport"; return renderNewGameWizard(); }
+    inner = \`<div class="newgame-header">
+      <h1 style="margin:0 0 .3rem 0;font-size:1.8rem">🛬 \${esc(ap.name)} · Elige tu primer cliente</h1>
+      <p class="muted" style="margin:0">Paso 2 de 2 · El operador define tu setup inicial (flota, fees, dificultad)</p>
+    </div>
+    <div class="newgame-cards newgame-cards-3">\`;
+    for (const op of ap.operators) {
+      const stars = "⭐".repeat(op.difficulty);
+      const disabledCls = op.available ? "" : " ng-disabled";
+      const tooltip = op.available ? "" : \` title="\${esc(op.comingSoonReason ?? 'Próximamente')}"\`;
+      inner += \`<article class="newgame-card\${disabledCls}" \${op.available ? \`data-newgame-preset="\${op.presetFile}"\` : ""} \${tooltip}>
+        <div class="ng-card-head">
+          <h2 style="color:\${op.color}">\${esc(op.operatorName)} <span class="muted" style="font-size:.7rem">\${op.operatorIata}</span></h2>
+          <span class="ng-stars">\${stars} <span class="muted" style="font-size:.7rem">\${esc(op.difficultyLabel)}</span></span>
+        </div>
+        <div class="ng-shortline">\${esc(op.shortLine)}</div>
+        <p class="ng-desc">"\${esc(op.tagline)}"</p>
+        <div class="ng-metrics">
+          <div><span class="muted">Movs/sem</span> <strong>\${op.metrics.movsPerWeek}</strong></div>
+          <div><span class="muted">🌙 Pernoctas/sem</span> <strong>\${op.metrics.overnightsPerWeek}</strong></div>
+          <div><span class="muted">Modelo</span> <strong>\${esc(op.metrics.model)}</strong></div>
+          <div><span class="muted">💰 Balance</span> <strong>\${op.metrics.balance.toLocaleString("es-ES")} €</strong></div>
+          <div><span class="muted">👤 Mecs</span> <strong>\${esc(op.metrics.mechs)}</strong></div>
+        </div>
+        \${op.available
+          ? \`<button class="ng-select-btn primary">🚀 Empezar con \${esc(op.operatorName)}</button>\`
+          : \`<div class="ng-coming-soon">⏳ Próximamente: \${esc(op.comingSoonReason ?? "")}</div>\`}
+      </article>\`;
+    }
+    inner += \`</div>
+    <div class="newgame-footer">
+      <button id="ng-back" class="ng-back-btn">← Cambiar aeropuerto</button>
+    </div>\`;
+  }
+  return \`<div id="newgame-overlay" class="newgame-overlay">
+    <div class="newgame-panel">\${inner}</div>
+  </div>\`;
 }
 
 function ageFleet() {
