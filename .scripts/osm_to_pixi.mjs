@@ -99,21 +99,25 @@ for (const w of ways) {
   }
 }
 
-// Pivot iteración 2026-05-25 — Multi-airport: añadir gates/parking nodes como
-// parking_positions de 1 punto. ALC tiene 84 gates como nodes (no ways) con refs
-// "8", "10", "12"... Estos se procesan IGUAL que ways tras esta conversión.
-// La línea simbólica del stand se aproxima offset 5m hacia el norte para que el
-// renderer tenga "tail → tip" coherente sin requerir el polígono real del taxiway.
-const OFFSET_DEG = 0.00005; // ~5.5m a esta latitud, dirección estética
-for (const n of gateNodes) {
-  const tip = project(n.lon, n.lat);
-  const tail = project(n.lon, n.lat + OFFSET_DEG);
-  paths.parkingPositions.push({
-    id: n.id,
-    coords: [tail, tip],
-    name: n.tags?.name || null,
-    ref: n.tags?.ref || null,
-  });
+// Pivot iteración 2026-05-25 — Gates nodes SOLO como fallback si NO hay parking_positions
+// reales. Feedback Dani: en OVD aparecían las puertas de embarque "5", "6", "7"... como
+// "stands" cuando NO lo son (son boarding gates del terminal, no stands de aviones).
+// La regla correcta: si OSM tiene parking_positions ways (caso OVD 16, BIO 51), usamos
+// SOLO esos. Si NO hay ways (caso ALC con 0 parkings), usamos gate nodes como aproximación.
+// Esto evita contaminar el mapa con elementos que no son stands de avión.
+if (paths.parkingPositions.length === 0 && gateNodes.length > 0) {
+  console.log(`  ⚠️ OSM no tiene parking_positions ways — uso ${gateNodes.length} gate nodes como fallback`);
+  const OFFSET_DEG = 0.00005; // ~5.5m a esta latitud
+  for (const n of gateNodes) {
+    const tip = project(n.lon, n.lat);
+    const tail = project(n.lon, n.lat + OFFSET_DEG);
+    paths.parkingPositions.push({
+      id: n.id,
+      coords: [tail, tip],
+      name: n.tags?.name || null,
+      ref: n.tags?.ref || null,
+    });
+  }
 }
 
 // Pivot iteración 2026-05-25 — Multi-airport: garantizar que TODOS los parking_positions
