@@ -2355,13 +2355,20 @@ export class PixiDriver {
   // El renderer escala al viewport actual preservando aspect ratio del bbox.
 
   /** Mapping sim stand id → ref OSM parking_position.
-   *  Pivot línea pura · iteración 2026-05-24: extendido para cubrir los 5 line stands
-   *  iniciales (H1-S1..H1-S5 → 01-05) + R1 (06) y H2-S1 (07) de progresión. Los
-   *  passthroughs ahora usan solo 08, 08A, 09 (3 stands para tráfico no contratado). */
-  private static readonly F5D_STAND_MAP: Record<string, string> = {
+   *  Pivot iteración 2026-05-25 — Multi-airport: este mapping ahora vive en
+   *  `activeAirportPaths.standMap` (generado por osm_to_pixi.mjs por aeropuerto).
+   *  Esta constante se mantiene como FALLBACK por si paths.json viejos no traen standMap.
+   *  Se accede vía getStandMap() para preferir el del aeropuerto activo. */
+  private static readonly F5D_STAND_MAP_FALLBACK: Record<string, string> = {
     "H1-S1": "01", "H1-S2": "02", "H1-S3": "03", "H1-S4": "04", "H1-S5": "05",
     "R1": "06", "H2-S1": "07",
   };
+
+  /** Devuelve el standMap del aeropuerto activo (o fallback OVD si no está disponible). */
+  private getStandMap(): Record<string, string> {
+    return (activeAirportPaths as { standMap?: Record<string, string> }).standMap
+      ?? PixiDriver.F5D_STAND_MAP_FALLBACK;
+  }
 
   /** Rect dibujable en world coords F5D (fijo, no depende del viewport). El world tiene
    *  aspect 1.25 ≈ aspect OVD (1.251). Margen interior para que la pista no toque borde. */
@@ -2561,7 +2568,11 @@ export class PixiDriver {
     const apByStand = new Map<string, typeof state.airplanes[number]>();
     for (const ap of state.airplanes) if (ap.standId) apByStand.set(ap.standId, ap);
 
-    // Index parking refs por código (01-09 + 08A)
+    // Index parking refs por código (refs OSM "01"-"09" + sintéticos "vp-NNN" generados
+    // por osm_to_pixi.mjs para aeropuertos sin refs OSM disponibles).
+    // Pivot iteración 2026-05-25: ya NO filtramos por `pp.ref` (todos lo tienen tras el
+    // converter actualizado). Solo filtramos por coords vacías por seguridad.
+    const standMap = this.getStandMap();
     const standPositions = new Map<string, { x: number; y: number; coords: { x: number; y: number }[] }>();
     for (const pp of P.parkingPositions) {
       if (!pp.ref || pp.coords.length === 0) continue;
@@ -2572,8 +2583,8 @@ export class PixiDriver {
 
     // Render cada parking position con marca
     for (const [ref, pos] of standPositions) {
-      // Mapping sim a OSM ref
-      const simId = Object.entries(PixiDriver.F5D_STAND_MAP).find(([_k, v]) => v === ref)?.[0];
+      // Mapping sim a OSM ref (usa standMap del aeropuerto activo)
+      const simId = Object.entries(standMap).find(([_k, v]) => v === ref)?.[0];
       const ap = simId ? apByStand.get(simId) : undefined;
       const active = ap !== undefined;
       // Marca stand
@@ -2636,7 +2647,7 @@ export class PixiDriver {
     // ── Aviones taxiing (P-δ: trail multi-dot + bloom doble + halo pulsante) ──
     for (const ap of state.airplanes) {
       if (!ap.taxiing || !ap.standId) continue;
-      const ref = PixiDriver.F5D_STAND_MAP[ap.standId];
+      const ref = this.getStandMap()[ap.standId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
@@ -2678,7 +2689,7 @@ export class PixiDriver {
     const pulsePhase = (Math.sin(state.minute / 4) + 1) / 2; // 0..1 oscilación
     for (const ap of state.airplanes) {
       if (ap.taxiing || !ap.standId) continue;
-      const ref = PixiDriver.F5D_STAND_MAP[ap.standId];
+      const ref = this.getStandMap()[ap.standId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
@@ -2849,7 +2860,7 @@ export class PixiDriver {
     for (const m of state.mechanics) {
       if (!m.destStandId) continue;
       if (m.state !== "ToPlane" && m.state !== "Returning") continue;
-      const ref = PixiDriver.F5D_STAND_MAP[m.destStandId];
+      const ref = this.getStandMap()[m.destStandId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
@@ -2976,7 +2987,7 @@ export class PixiDriver {
     // Stands activos
     for (const ap of state.airplanes) {
       if (ap.taxiing || !ap.standId) continue;
-      const ref = PixiDriver.F5D_STAND_MAP[ap.standId];
+      const ref = this.getStandMap()[ap.standId];
       const pp = P.parkingPositions.find((p) => p.ref === ref);
       if (!pp || pp.coords.length === 0) continue;
       const tip = this.f5dProject(pp.coords[pp.coords.length - 1], area);

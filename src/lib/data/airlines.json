@@ -119,5 +119,18 @@
     "basedAircraftCount": 4,
     "brandThreshold": 78,
     "homeBaseAirports": []
+  },
+  {
+    "id": "AL-010",
+    "name": "Air Europa",
+    "iataCode": "UX",
+    "color": "#1C5BA8",
+    "fleet": [
+      { "model": "A320", "engineVariant": "CFM56" },
+      { "model": "A321", "engineVariant": "V2500" }
+    ],
+    "basedAircraftCount": 4,
+    "brandThreshold": 70,
+    "homeBaseAirports": []
   }
 ]

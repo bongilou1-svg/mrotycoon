@@ -79,6 +79,8 @@ import airportCatalogJson from "./data/airports/catalog.json";
 import presetVolotea from "./data/airports/LEAS_volotea.preset.json";
 import presetVueling from "./data/airports/LEAS_vueling.preset.json";
 import presetBioVolotea from "./data/airports/LEBB_volotea.preset.json";
+import presetBioLufthansa from "./data/airports/LEBB_lufthansa.preset.json";
+import presetBioAirEuropa from "./data/airports/LEBB_aireuropa.preset.json";
 
 // Pivot iteración 2026-05-25 — Multi-airport: runtime assets (schedule + fleet + OSM paths)
 // por ICAO. Al crear game, build-vanilla.mjs llama setActiveAirportData(schedule, fleet) +
@@ -105,6 +107,8 @@ export const DATA = {
     LEAS_volotea: presetVolotea,
     LEAS_vueling: presetVueling,
     LEBB_volotea: presetBioVolotea,
+    LEBB_lufthansa: presetBioLufthansa,
+    LEBB_aireuropa: presetBioAirEuropa,
   },
   airportRuntime: {
     LEAS: { schedule: _ovdScheduleAsset, fleet: _ovdFleetAsset, paths: ovdPathsAsset },

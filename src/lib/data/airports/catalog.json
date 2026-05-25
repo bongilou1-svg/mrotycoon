@@ -87,12 +87,48 @@
           "difficulty": 2,
           "difficultyLabel": "Rookie+",
           "shortLine": "Base BIO · A320 · pernoctas + dailies",
-          "tagline": "Volotea también tiene base en Bilbao. Mismo flujo que OVD pero con más volumen y competencia handler internacional al lado.",
+          "tagline": "Volotea también tiene base en Bilbao. Mismo flujo que OVD pero con más volumen.",
           "metrics": {
             "movsPerWeek": 90,
             "overnightsPerWeek": 13,
             "model": "A320 + A319",
             "balance": 300000,
+            "mechs": "1 dual + 1 helper"
+          },
+          "available": true
+        },
+        {
+          "presetFile": "LEBB_aireuropa.preset.json",
+          "operatorIata": "UX",
+          "operatorName": "Air Europa",
+          "color": "#1C5BA8",
+          "difficulty": 3,
+          "difficultyLabel": "Pro",
+          "shortLine": "Doméstica + Europa · A320/A321 · mix turnover/overnight",
+          "tagline": "Variedad operativa, paga puntual, exigencia media. Buen escalón intermedio.",
+          "metrics": {
+            "movsPerWeek": 76,
+            "overnightsPerWeek": 8,
+            "model": "A320/A321",
+            "balance": 280000,
+            "mechs": "1 dual + 1 helper"
+          },
+          "available": true
+        },
+        {
+          "presetFile": "LEBB_lufthansa.preset.json",
+          "operatorIata": "LH",
+          "operatorName": "Lufthansa",
+          "color": "#05164D",
+          "difficulty": 3,
+          "difficultyLabel": "Pro",
+          "shortLine": "FRA/MUC/DUS · A320/A321 · sin pernoctas",
+          "tagline": "Handler internacional germánico: SLA estricto, sin overnight para amortizar dailies. Solo si quieres demostrar.",
+          "metrics": {
+            "movsPerWeek": 86,
+            "overnightsPerWeek": 0,
+            "model": "A320/A321",
+            "balance": 280000,
             "mechs": "1 dual + 1 helper"
           },
           "available": true

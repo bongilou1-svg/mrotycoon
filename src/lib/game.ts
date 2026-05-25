@@ -329,6 +329,25 @@ export function createGame(
     lastWeeklyHoursSnapshot: {},
     airportIcao: opts.airportPreset?.icao, // undefined si no se pasó preset (legacy)
   };
+  // Pivot iteración 2026-05-25 — Multi-airport: extender homeBaseAirports de las
+  // aerolíneas del game state con las declaradas como `homeBased:true` en el preset.
+  // Esto permite que el preset sea la fuente de verdad de "qué aerolíneas tienen base
+  // operativa AQUÍ" sin tener que editar airlines.json global cada vez que añadimos un
+  // aeropuerto. Ejemplo: BIO preset dice V7.homeBased=true → extendemos
+  // V7.homeBaseAirports con ["LEBB"] solo para esta partida.
+  const presetIcao = opts.airportPreset?.icao;
+  const presetOps = opts.airportPreset?.operators;
+  if (presetIcao && presetOps) {
+    for (const presetOp of presetOps) {
+      if (!presetOp.homeBased) continue;
+      const airline = g.airlines.find((a) => a.iataCode === presetOp.iata);
+      if (!airline) continue;
+      const existing = airline.homeBaseAirports ?? [];
+      if (!existing.includes(presetIcao)) {
+        airline.homeBaseAirports = [...existing, presetIcao];
+      }
+    }
+  }
   // Pivot iteración 2026-05-25: pre-seed de aviones que pasaron la NOCHE ANTERIOR en
   // stand. Sin esto, el mapa arranca vacío al inicio del Día 1 06:00 — irreal para
   // un aeropuerto regional. Por cada aerolínea contratada con overnight habitual,
@@ -348,10 +367,12 @@ function seedPreOvernighters(g: GameState): void {
     if (c.status !== "active") continue;
     const al = g.airlines.find((a) => a.id === c.airlineId);
     if (!al?.iataCode) continue;
-    // Pivot iteración 2026-05-25: solo aerolíneas con BASE en LEAS pernoctan. Si la
-    // aerolínea contratada no tiene homeBaseAirports incluyendo LEAS, NO pre-seed.
-    // Vueling sin base → no debería verse al iniciar (turnaround corto durante el día).
-    const isBased = (al.homeBaseAirports ?? []).includes("LEAS");
+    // Pivot iteración 2026-05-25: solo aerolíneas con BASE en este aeropuerto pernoctan.
+    // El airportIcao se toma del game state (set desde preset.icao en createGame).
+    // El homeBaseAirports puede venir del global airlines.json o haber sido extendido
+    // por el preset (operators[].homeBased) en createGame.
+    const airportIcao = g.airportIcao ?? "LEAS";
+    const isBased = (al.homeBaseAirports ?? []).includes(airportIcao);
     if (!isBased) continue;
     // Buscar el último arrival overnight del Día 1 de esta aerolínea (≥19:00) — modela el
     // patrón recurrente: si V73585 vuela todos los días overnight, AYER también lo hizo.

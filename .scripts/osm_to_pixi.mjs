@@ -86,12 +86,50 @@ for (const w of ways) {
   }
 }
 
+// Pivot iteración 2026-05-25 — Multi-airport: garantizar que TODOS los parking_positions
+// tengan un `ref` (sintético "vp-NNN" si OSM no proporciona uno). Esto asegura que el
+// pixi-driver puede indexarlos uniformemente sin importar de qué aeropuerto vienen.
+// Aeropuertos pequeños como OVD suelen tener refs "01"-"09"; los grandes (BIO, MAD,
+// BCN) raramente los tienen y caerían como invisibles antes del fix.
+let vpCounter = 0;
+for (const pp of paths.parkingPositions) {
+  if (!pp.ref) pp.ref = `vp-${String(vpCounter++).padStart(3, "0")}`;
+}
+
+// Generar standMap: mapping desde IDs lógicos del game (H1-S1..H1-S5, R1, H2-S1, H1-B1,
+// H2-B1, H3-B1, H3-B2) a refs de parking_position del paths.json. Prefiere refs OSM
+// numéricos ("01"-"09") por orden si están disponibles; si no, usa los primeros N
+// parking_positions del array (orden de aparición en OSM).
+const SIM_STAND_IDS = ["H1-S1", "H1-S2", "H1-S3", "H1-S4", "H1-S5", "R1", "H2-S1", "H1-B1", "H2-B1", "H3-B1", "H3-B2"];
+// Refs OSM numéricos primero (01, 02, ..., 08A, 09) ordenados por valor numérico.
+const realRefs = paths.parkingPositions
+  .filter((p) => p.ref && /^\d+[A-Z]?$/.test(p.ref))
+  .sort((a, b) => {
+    const na = parseInt(a.ref, 10), nb = parseInt(b.ref, 10);
+    if (na !== nb) return na - nb;
+    return a.ref.localeCompare(b.ref);
+  })
+  .map((p) => p.ref);
+// Pool restante: parking_positions que NO están ya en realRefs (sintéticos vp-NNN o refs
+// no-numéricos), en su orden de aparición OSM.
+const usedSet = new Set(realRefs);
+const restRefs = paths.parkingPositions
+  .map((p) => p.ref)
+  .filter((r) => !usedSet.has(r));
+// Concatenar: reales primero (preserva mapping OVD pre-refactor), sintéticos después.
+const refsToUse = [...realRefs, ...restRefs];
+const standMap = {};
+for (let i = 0; i < SIM_STAND_IDS.length && i < refsToUse.length; i++) {
+  standMap[SIM_STAND_IDS[i]] = refsToUse[i];
+}
+
 const output = {
   icao: icao.toUpperCase(),
   source: "OpenStreetMap contributors (ODbL)",
   bbox: { minLon, maxLon, minLat, maxLat },
   aspectRatio: Math.round(aspectRatio * 1000) / 1000,
   paths,
+  standMap,
   counts: Object.fromEntries(Object.entries(paths).map(([k, v]) => [k, v.length])),
 };
 

@@ -202,7 +202,8 @@ export function buildRenderState(g: GameState): RenderState {
       const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
       if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
     }
-    const airportIcao = "LEAS"; // hardcode hasta que tengamos múltiples aeropuertos
+    // Pivot iteración 2026-05-25 — Multi-airport: usar airportIcao del game state.
+    const airportIcao = g.airportIcao ?? "LEAS";
     const isBaseByCode = new Map<string, boolean>();
     for (const al of g.airlines) {
       if (!al.iataCode) continue;

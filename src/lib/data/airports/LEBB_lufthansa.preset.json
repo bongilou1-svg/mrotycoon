@@ -1,0 +1,46 @@
+{
+  "icao": "LEBB",
+  "iata": "BIO",
+  "name": "Bilbao",
+  "country": "ES",
+  "city": "Bilbao",
+  "difficulty": 3,
+  "difficultyLabel": "Pro",
+  "description": "Lufthansa en BIO: handler internacional A320/A321 (rutas FRA/MUC/DUS, ~86 movs/sem). Cero pernoctas habituales: el avión llega de Alemania por la mañana, gira en ~80min y vuelve. Te llaman al callout solo si hay finding. Difícil porque (1) SLA estricto del schedule Lufthansa, (2) no tienes overnight para amortizar daily checks, (3) Lufthansa exige rep alta para mantener contrato. Modo Pro: empieza aquí si quieres demostrar que sabes lo de los rookies sobradamente.",
+
+  "setup": {
+    "initialBalance": 280000,
+    "initialMechCap": 6,
+    "initialMechs": [
+      { "type": "dual-B1B2", "shift": "morning" },
+      { "type": "helper", "shift": "morning" }
+    ],
+    "marketPreloadDualCandidates": 2,
+    "initialContracts": [
+      {
+        "airlineIata": "LH",
+        "tier": "line",
+        "baseFeePerWeek": 22000,
+        "paymentPerWOMinute": 90,
+        "penaltyPerLateMinute": 12,
+        "minReputation": 65,
+        "expectedLandingsPerDay": 6,
+        "withOvernight": false
+      }
+    ]
+  },
+
+  "operators": [
+    { "iata": "LH",  "icao": "DLH", "name": "Lufthansa",       "color": "#05164D", "homeBased": false, "brandThreshold": 75, "fleetModels": ["A320", "A321"] },
+    { "iata": "V7",  "icao": "VOE", "name": "Volotea",         "color": "#A20067", "homeBased": true,  "brandThreshold": 50, "fleetModels": ["A320", "A319"] },
+    { "iata": "UX",  "icao": "AEA", "name": "Air Europa",      "color": "#1C5BA8", "homeBased": false, "brandThreshold": 70, "fleetModels": ["A320", "A321"] },
+    { "iata": "IB",  "icao": "IBB", "name": "Iberia Express",  "color": "#E40000", "homeBased": false, "brandThreshold": 65, "fleetModels": ["A320", "A321"] },
+    { "iata": "VY",  "icao": "VLG", "name": "Vueling",         "color": "#FFCD00", "homeBased": false, "brandThreshold": 70, "fleetModels": ["A320", "A321"] },
+    { "iata": "U2",  "icao": "EZY", "name": "easyJet",         "color": "#FF6600", "homeBased": false, "brandThreshold": 80, "fleetModels": ["A320", "A321"] },
+    { "iata": "AF",  "icao": "AFR", "name": "Air France",      "color": "#002157", "homeBased": false, "brandThreshold": 80, "fleetModels": ["A320", "A321"] },
+    { "iata": "KL",  "icao": "KLM", "name": "KLM",             "color": "#00A1DE", "homeBased": false, "brandThreshold": 80, "fleetModels": ["A320", "A321"] },
+    { "iata": "EI",  "icao": "EIN", "name": "Aer Lingus",      "color": "#0D754B", "homeBased": false, "brandThreshold": 78, "fleetModels": ["A320"] }
+  ],
+
+  "milestones": []
+}
