@@ -281,7 +281,7 @@ var Sim = (() => {
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
   var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  // ../../mrotycoon/src/lib/sim-all.ts
+  // src/lib/sim-all.ts
   var sim_all_exports = {};
   __export(sim_all_exports, {
     ACTIVE_TRAINING_COST_EUR: () => ACTIVE_TRAINING_COST_EUR,
@@ -463,6 +463,7 @@ var Sim = (() => {
     nextTierUp: () => nextTierUp,
     payForCompletedWo: () => payForCompletedWo,
     pickFleetAircraftForLanding: () => pickFleetAircraftForLanding,
+    pickPoolStatsForCallsign: () => pickPoolStatsForCallsign,
     pickTierForRep: () => pickTierForRep,
     pickWeightedTemplate: () => pickWeightedTemplate,
     randBool: () => randBool,
@@ -531,7 +532,7 @@ var Sim = (() => {
     updateAirplaneStatuses: () => updateAirplaneStatuses
   });
 
-  // ../../mrotycoon/src/lib/sim/rng.ts
+  // src/lib/sim/rng.ts
   function createRng(seed) {
     const rng = {
       state: seed >>> 0,
@@ -571,7 +572,7 @@ var Sim = (() => {
     return out;
   }
 
-  // ../../mrotycoon/src/lib/sim/time.ts
+  // src/lib/sim/time.ts
   var START_MINUTE = 360;
   var MINUTES_PER_TICK_AT_1X = 1;
   var DAY_MINUTES = 24 * 60;
@@ -620,7 +621,7 @@ var Sim = (() => {
     return `D${day} ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
   }
 
-  // ../../mrotycoon/src/lib/types/contract.ts
+  // src/lib/types/contract.ts
   function tierAllowsACheck(tier) {
     return tier === "a-check" || tier === "c-check" || tier === "d-check" || tier === "deluxe";
   }
@@ -683,7 +684,7 @@ var Sim = (() => {
     }
   }
 
-  // ../../mrotycoon/src/lib/sim/contracts.ts
+  // src/lib/sim/contracts.ts
   var TIER_FEE_MULT = {
     standard: 1,
     // legacy Fase 4.5
@@ -990,7 +991,7 @@ var Sim = (() => {
     return { contracts: updated, newOffers, cancellations };
   }
 
-  // ../../mrotycoon/src/lib/sim/fleet.ts
+  // src/lib/sim/fleet.ts
   var FLEET_SIZE_PER_AIRLINE = 8;
   var FH_PER_LEG_MIN = 1;
   var FH_PER_LEG_MAX = 5;
@@ -1146,7 +1147,7 @@ var Sim = (() => {
     return fleet.map((f) => f.registration === registration ? { ...f, [key]: value } : f);
   }
 
-  // ../../mrotycoon/src/lib/sim/stands.ts
+  // src/lib/sim/stands.ts
   var ALL_STANDS = [
     // Stage 1 base — 5 line stands operativos del aeropuerto regional
     { id: "H1-S1", type: "line" },
@@ -1189,7 +1190,7 @@ var Sim = (() => {
     return ALL_STANDS.find((s) => s.id === id)?.type;
   }
 
-  // ../../mrotycoon/src/lib/sim/airplanes.ts
+  // src/lib/sim/airplanes.ts
   var INITIAL_STANDS = LINE_STAND_IDS;
   var TURNAROUND_MIN = 45;
   var TURNAROUND_MAX = 90;
@@ -1296,7 +1297,7 @@ var Sim = (() => {
     return airplanesOnStand(airplanes, nowMinute).filter((p) => p.standId !== "").length;
   }
 
-  // ../../mrotycoon/src/assets/airports/ovd.schedule.json
+  // src/assets/airports/ovd.schedule.json
   var ovd_schedule_default = {
     airport: "Asturias",
     icao: "LEAS",
@@ -4798,7 +4799,7 @@ var Sim = (() => {
     }
   };
 
-  // ../../mrotycoon/src/assets/airports/ovd.fleet.json
+  // src/assets/airports/ovd.fleet.json
   var ovd_fleet_default = {
     airport: "Asturias",
     icao: "LEAS",
@@ -5813,7 +5814,7 @@ var Sim = (() => {
     ]
   };
 
-  // ../../mrotycoon/src/lib/sim/schedule.ts
+  // src/lib/sim/schedule.ts
   var scheduleData = ovd_schedule_default;
   var fleetData = ovd_fleet_default;
   function setActiveAirportData(schedule, fleet) {
@@ -5983,7 +5984,7 @@ var Sim = (() => {
     };
   }
 
-  // ../../mrotycoon/src/lib/sim/workorders.ts
+  // src/lib/sim/workorders.ts
   var _instanceCounter = 0;
   function _resetInstanceCounter() {
     _instanceCounter = 0;
@@ -6054,7 +6055,7 @@ var Sim = (() => {
     return picked.map((tpl) => instantiateWorkOrder(tpl, airplane, balance));
   }
 
-  // ../../mrotycoon/src/lib/sim/mechanics.ts
+  // src/lib/sim/mechanics.ts
   var MECHANIC_CAP_INITIAL = 5;
   var FIRST_NAMES = [
     "Pedro",
@@ -6335,7 +6336,7 @@ var Sim = (() => {
     return out;
   }
 
-  // ../../mrotycoon/src/lib/sim/shifts.ts
+  // src/lib/sim/shifts.ts
   var MORNING_START = 6 * 60;
   var MORNING_END = 14 * 60;
   var AFTERNOON_END = 22 * 60;
@@ -6558,7 +6559,7 @@ var Sim = (() => {
     return { mechanics: newMechanics, events };
   }
 
-  // ../../mrotycoon/src/lib/sim/assignment.ts
+  // src/lib/sim/assignment.ts
   function assignMechanicsToWo(mechanics, workOrders, woInstanceId, certifierId, helperIds, balance) {
     const wo = workOrders.find((w) => w.instanceId === woInstanceId);
     if (!wo) return { mechanics: [...mechanics], workOrders: [...workOrders], error: "WO not found" };
@@ -6650,7 +6651,7 @@ var Sim = (() => {
     return total;
   }
 
-  // ../../mrotycoon/src/lib/sim/wo_state_machine.ts
+  // src/lib/sim/wo_state_machine.ts
   function phaseDuration(template, phase, balance) {
     switch (phase) {
       case "Inspection":
@@ -6749,7 +6750,7 @@ var Sim = (() => {
     );
   }
 
-  // ../../mrotycoon/src/lib/sim/economy.ts
+  // src/lib/sim/economy.ts
   var _txCounter = 0;
   function _resetTxCounter() {
     _txCounter = 0;
@@ -6856,7 +6857,7 @@ var Sim = (() => {
     return eco.negativeStreakWeeks >= 2;
   }
 
-  // ../../mrotycoon/src/lib/sim/reputation.ts
+  // src/lib/sim/reputation.ts
   function createReputation(initial, airlines) {
     const clamped = Math.max(0, Math.min(100, initial));
     const perAirline = {};
@@ -6909,7 +6910,7 @@ var Sim = (() => {
     return createReputation(v, airlines);
   }
 
-  // ../../mrotycoon/src/lib/sim/maintenance.ts
+  // src/lib/sim/maintenance.ts
   var mcCounter = 0;
   function resetMaintenanceCheckCounter(value = 0) {
     mcCounter = value;
@@ -7148,7 +7149,7 @@ var Sim = (() => {
     };
   }
 
-  // ../../mrotycoon/src/lib/sim/mel.ts
+  // src/lib/sim/mel.ts
   var MEL_DEFERRAL_DAYS = {
     A: 3,
     B: 10,
@@ -7223,7 +7224,7 @@ var Sim = (() => {
     return { workOrders: newWos, events };
   }
 
-  // ../../mrotycoon/src/lib/sim/compliance.ts
+  // src/lib/sim/compliance.ts
   var INITIAL_COMPLIANCE_SCORE = 80;
   var AUDIT_INTERVAL_MIN_DAYS = 60;
   var AUDIT_INTERVAL_MAX_DAYS = 90;
@@ -7327,7 +7328,7 @@ var Sim = (() => {
     return "bad";
   }
 
-  // ../../mrotycoon/src/lib/sim/labor.ts
+  // src/lib/sim/labor.ts
   var POOL_MIN = 5;
   var POOL_MAX = 10;
   var MARKET_REFRESH_DAYS = 7;
@@ -7579,7 +7580,7 @@ var Sim = (() => {
     return { mechanics: newMechanics, events };
   }
 
-  // ../../mrotycoon/src/lib/types/departureKPI.ts
+  // src/lib/types/departureKPI.ts
   function createDepartureKPI() {
     return {
       totalDepartures: 0,
@@ -7607,7 +7608,7 @@ var Sim = (() => {
   var AOG_DELAY_THRESHOLD_MIN = 180;
   var AOG_ESCALATION_PENALTY_EUR = 1e4;
 
-  // ../../mrotycoon/src/lib/types/hoursKPI.ts
+  // src/lib/types/hoursKPI.ts
   function bookHoursForTemplate(tpl) {
     return tpl.durationMinutes / 60;
   }
@@ -7647,7 +7648,7 @@ var Sim = (() => {
     }
   }
 
-  // ../../mrotycoon/src/lib/sim/save.ts
+  // src/lib/sim/save.ts
   var SAVE_VERSION = 14;
   function serializeGame(g) {
     return {
@@ -7772,7 +7773,7 @@ var Sim = (() => {
     };
   }
 
-  // ../../mrotycoon/src/lib/sim/storage.ts
+  // src/lib/sim/storage.ts
   var SLOT_KEY = "mro-tycoon-save-v1";
   var LocalStorageBackend = class {
     async save(payload) {
@@ -7835,7 +7836,7 @@ var Sim = (() => {
     _backend = b;
   }
 
-  // ../../mrotycoon/src/lib/types/mroStage.ts
+  // src/lib/types/mroStage.ts
   var STAGE_CONFIG = {
     1: {
       costEur: 0,
@@ -7871,7 +7872,7 @@ var Sim = (() => {
     }
   };
 
-  // ../../mrotycoon/src/lib/sim/events.ts
+  // src/lib/sim/events.ts
   var RUNWAY_CLOSURE_DAILY_PROB = 0.06;
   var SERVICE_BULLETIN_DAILY_PROB = 0.04;
   var CLOSURE_REASONS = [
@@ -7951,7 +7952,7 @@ var Sim = (() => {
     return events.some((e) => e.type === "runway_closure" && nowMinute >= e.startMinute && nowMinute < e.endMinute);
   }
 
-  // ../../mrotycoon/src/lib/sim/foreman.ts
+  // src/lib/sim/foreman.ts
   function hasActiveLead(mechanics) {
     return mechanics.some((m) => m.isLeadForeman && (m.state === "Idle" || m.state === "OffShift"));
   }
@@ -7966,7 +7967,7 @@ var Sim = (() => {
     return candidates[0];
   }
 
-  // ../../mrotycoon/src/lib/game.ts
+  // src/lib/game.ts
   var HANGAR_UNLOCK_MIN_REP_AVG = 80;
   var HANGAR_UNLOCK_MIN_BALANCE_EUR = 1e6;
   var HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS = 3;
@@ -8094,7 +8095,8 @@ var Sim = (() => {
       const pattern = overnighters[0];
       const firstDepartureToday = flights.filter((f) => f.type === "departure" && f.airlineCode === al.iataCode).sort((a, b) => a.scheduledMinute - b.scheduledMinute)[0];
       if (!firstDepartureToday) continue;
-      const physicalReg = al.iataCode === "IB" ? "EC-LUC" : `${al.iataCode}-OVN`;
+      const poolStats = pickPoolStatsForCallsign(firstDepartureToday.callsign, al.iataCode);
+      const physicalReg = poolStats?.registration ?? `${al.iataCode}-OVN`;
       if (standIdx >= standsAvail.length) break;
       const standId = standsAvail[standIdx++];
       const arrivalMinute = -(DAY_MINUTES - pattern.scheduledMinute);
@@ -9041,7 +9043,7 @@ var Sim = (() => {
     return { ok: true };
   }
 
-  // ../../mrotycoon/src/lib/data/workorders.json
+  // src/lib/data/workorders.json
   var workorders_default = [
     { id: "WO-001", description: "Engine #1 oil servicing \u2014 top up CFM56-5B reservoir within MIN/MAX range (AMM 12-13-79-680-001). Use Mobil Jet Oil II. Verify sight glass + magnetic chip detector for FOD.", ata: 12, requiredCategory: "B1", durationMinutes: 20, aircraftModelsCompatibles: ["A320", "A321"], engineVariantsCompatibles: ["CFM56", "V2500"], deferrable: true, severity: "Minor", isAOG: false, probability: 1, partsRequired: ["Mobil Jet Oil II, 5L NATO O-156"], toolsRequired: ["Oil servicing trolley"] },
     { id: "WO-002", description: "Engine #2 oil servicing \u2014 V2500 IAE reservoir top-up to nominal level (AMM 12-13-79-680-002). Replace breather cap if seal degraded. Sign sight-glass check on tech log.", ata: 12, requiredCategory: "B1", durationMinutes: 23, aircraftModelsCompatibles: ["A320", "A321"], engineVariantsCompatibles: ["CFM56", "V2500"], deferrable: true, severity: "Minor", isAOG: false, probability: 1, partsRequired: ["Mobil Jet Oil II, 5L NATO O-156"], toolsRequired: ["Oil servicing trolley"] },
@@ -9145,7 +9147,7 @@ var Sim = (() => {
     { id: "WO-100", description: "Engine #1 HP turbine borescope inspection \u2014 CFM56-5B (AMM 72-50-00-200-001). Inspect stages 1-2 NGV + blades. Photo-document any blade tip rubs or cracks. Issue ALOC.", ata: 71, requiredCategory: "B1", durationMinutes: 57, aircraftModelsCompatibles: ["A320", "A321"], engineVariantsCompatibles: ["CFM56", "V2500"], deferrable: false, severity: "Minor", isAOG: false, probability: 1, partsRequired: [], toolsRequired: ["Borescope 6mm flexible", "Engine work stand", "Camera/recorder", "Plug kit for igniter ports"] }
   ];
 
-  // ../../mrotycoon/src/lib/data/airlines.json
+  // src/lib/data/airlines.json
   var airlines_default = [
     {
       id: "AL-001",
@@ -9283,7 +9285,7 @@ var Sim = (() => {
     }
   ];
 
-  // ../../mrotycoon/src/lib/data/balance.json
+  // src/lib/data/balance.json
   var balance_default = {
     $comment: "Constantes de tuneo. Editar valores aqu\xED cambia balance sin recompilar. Probabilidades legacy conservadas (validar en Fase 4 playtest).",
     startingBalance: 25e4,
@@ -9325,7 +9327,7 @@ var Sim = (() => {
     landingsVariance: 0.2
   };
 
-  // ../../mrotycoon/src/lib/data/maintenance_checks.json
+  // src/lib/data/maintenance_checks.json
   var maintenance_checks_default = [
     {
       $comment_A: "A-check real: 50-150 man-hours = ~6-19 person-days(24h). Subido manDays 2\u21928 para coherencia con real. ParkingDays 1 \u2713 (overnight).",
@@ -9386,7 +9388,7 @@ var Sim = (() => {
     }
   ];
 
-  // ../../mrotycoon/src/lib/data/daily_checks.json
+  // src/lib/data/daily_checks.json
   var daily_checks_default = [
     {
       id: "DC-001",
@@ -9470,7 +9472,7 @@ var Sim = (() => {
     }
   ];
 
-  // ../../mrotycoon/src/lib/data/wo_classification.json
+  // src/lib/data/wo_classification.json
   var wo_classification_default = {
     _meta: {
       generated: "2026-05-24",
@@ -9586,7 +9588,7 @@ var Sim = (() => {
     ]
   };
 
-  // ../../mrotycoon/src/lib/data/airports/catalog.json
+  // src/lib/data/airports/catalog.json
   var catalog_default = {
     version: 2,
     notes: "Cat\xE1logo de aeropuertos + operadores disponibles para New Game. Cada aeropuerto lista sus presets contratables (uno por operador). Operadores 'available:false' aparecen grayed con tooltip explicativo. Aeropuertos con 'available:false' aparecen tambi\xE9n grayed (no se puede entrar al paso 2).",
@@ -9775,7 +9777,7 @@ var Sim = (() => {
     ]
   };
 
-  // ../../mrotycoon/src/lib/data/airports/LEAS_volotea.preset.json
+  // src/lib/data/airports/LEAS_volotea.preset.json
   var LEAS_volotea_preset_default = {
     icao: "LEAS",
     iata: "OVD",
@@ -9819,7 +9821,7 @@ var Sim = (() => {
     milestones: []
   };
 
-  // ../../mrotycoon/src/lib/data/airports/LEAS_vueling.preset.json
+  // src/lib/data/airports/LEAS_vueling.preset.json
   var LEAS_vueling_preset_default = {
     icao: "LEAS",
     iata: "OVD",
@@ -9892,7 +9894,7 @@ var Sim = (() => {
     ]
   };
 
-  // ../../mrotycoon/src/lib/data/airports/LEBB_volotea.preset.json
+  // src/lib/data/airports/LEBB_volotea.preset.json
   var LEBB_volotea_preset_default = {
     icao: "LEBB",
     iata: "BIO",
@@ -9938,7 +9940,7 @@ var Sim = (() => {
     milestones: []
   };
 
-  // ../../mrotycoon/src/lib/data/airports/LEBB_lufthansa.preset.json
+  // src/lib/data/airports/LEBB_lufthansa.preset.json
   var LEBB_lufthansa_preset_default = {
     icao: "LEBB",
     iata: "BIO",
@@ -9983,7 +9985,7 @@ var Sim = (() => {
     milestones: []
   };
 
-  // ../../mrotycoon/src/lib/data/airports/LEBB_aireuropa.preset.json
+  // src/lib/data/airports/LEBB_aireuropa.preset.json
   var LEBB_aireuropa_preset_default = {
     icao: "LEBB",
     iata: "BIO",
@@ -10028,7 +10030,7 @@ var Sim = (() => {
     milestones: []
   };
 
-  // ../../mrotycoon/src/assets/airports/ovd.paths.json
+  // src/assets/airports/ovd.paths.json
   var ovd_paths_default = {
     icao: "OVD",
     source: "OpenStreetMap contributors (ODbL)",
@@ -13550,7 +13552,7 @@ var Sim = (() => {
     }
   };
 
-  // ../../mrotycoon/src/assets/airports/bio.schedule.json
+  // src/assets/airports/bio.schedule.json
   var bio_schedule_default = {
     airport: "Bilbao",
     icao: "LEBB",
@@ -25632,7 +25634,7 @@ var Sim = (() => {
     }
   };
 
-  // ../../mrotycoon/src/assets/airports/bio.fleet.json
+  // src/assets/airports/bio.fleet.json
   var bio_fleet_default = {
     airport: "Bilbao",
     icao: "LEBB",
@@ -29617,7 +29619,7 @@ var Sim = (() => {
     ]
   };
 
-  // ../../mrotycoon/src/assets/airports/bio.paths.json
+  // src/assets/airports/bio.paths.json
   var bio_paths_default = {
     icao: "BIO",
     source: "OpenStreetMap contributors (ODbL)",
@@ -36447,7 +36449,7 @@ var Sim = (() => {
     }
   };
 
-  // ../../mrotycoon/src/lib/sim-all.ts
+  // src/lib/sim-all.ts
   var _kindByWoId = /* @__PURE__ */ new Map();
   {
     const arr = wo_classification_default.classifications;

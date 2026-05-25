@@ -26,7 +26,7 @@ import {
 import { tierLabel } from "./types/contract.ts";
 import { generateDailyArrivals, assignStand } from "./sim/airplanes.ts";
 import { nextAirplaneInstanceId } from "./sim/fleet.ts";
-import { getFlightsForGameDay } from "./sim/schedule.ts";
+import { getFlightsForGameDay, pickPoolStatsForCallsign } from "./sim/schedule.ts";
 import { generateScheduledArrivals } from "./sim/schedule.ts";
 import { currentLineStandIds, currentBaseStandIds } from "./sim/stands.ts";
 import { generateInitialFleet, ageInitialFleet, seedFleetForAirline, resetAirplaneInstanceCounter } from "./sim/fleet.ts";
@@ -389,10 +389,13 @@ function seedPreOvernighters(g: GameState): void {
       .filter((f) => f.type === "departure" && f.airlineCode === al.iataCode)
       .sort((a, b) => a.scheduledMinute - b.scheduledMinute)[0];
     if (!firstDepartureToday) continue; // sin departure, no tiene sentido pre-seedearlo
-    // Matrícula: del pool, evitar las del primer arrival del Día 1 (para que no choque
-    // con el primer landing real). Usamos directo la primera no-busy del pool de la aerolínea.
-    const physicalReg = al.iataCode === "IB" ? "EC-LUC" // matrícula icónica IB para el pre-seed
-      : `${al.iataCode}-OVN`; // fallback genérico
+    // Matrícula: del pool real (bio.fleet.json/ovd.fleet.json) usando el callsign del
+    // primer departure como semilla determinista. Si el pool está vacío (poco probable
+    // post-saneamiento), fallback a sintética "V7-OVN". Esto reemplaza el placeholder
+    // anterior que generaba siempre "V7-OVN" / "IB-OVN" — feedback Dani 2026-05-25:
+    // las matrículas sintéticas se veían raras al arrancar BIO.
+    const poolStats = pickPoolStatsForCallsign(firstDepartureToday.callsign, al.iataCode);
+    const physicalReg = poolStats?.registration ?? `${al.iataCode}-OVN`;
     // Stand libre
     if (standIdx >= standsAvail.length) break; // sin stands libres, no más pre-seeds
     const standId = standsAvail[standIdx++];

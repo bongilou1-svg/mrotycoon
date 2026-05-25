@@ -80,8 +80,10 @@ export function getFlightsForGameDay(gameDay: number): ScheduledFlight[] {
 }
 
 /** Pool de stats FH/FC plausibles por operador. Asignación determinista por callsign:
- *  hash → índice estable → mismo callsign siempre arranca con la misma matrícula del pool. */
-function pickPoolStatsForCallsign(callsign: string, airlineCode: string): typeof defaultOvdFleet.fleet[number] | null {
+ *  hash → índice estable → mismo callsign siempre arranca con la misma matrícula del pool.
+ *  Exportada para que game.ts seedPreOvernighters use matrículas reales del pool
+ *  en lugar de las sintéticas tipo "V7-OVN". */
+export function pickPoolStatsForCallsign(callsign: string, airlineCode: string): typeof defaultOvdFleet.fleet[number] | null {
   const candidates = fleetData.fleet.filter((f) => f.airlineCode === airlineCode);
   if (candidates.length === 0) return null;
   let h = 0;
