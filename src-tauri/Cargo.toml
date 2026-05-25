@@ -16,6 +16,11 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+# Pivot iteración 2026-05-25: tauri-plugin-sql comentado. sqlx exporta ~109k símbolos
+# y el linker LLD de MinGW (toolchain x86_64-pc-windows-gnu) tiene límite 65535 →
+# fallo de compilación. NO afecta runtime: storage.ts usa localStorage del browser,
+# plugin-sql solo era "migración futura". Re-habilitarlo cuando: (1) migremos save
+# a SQLite, o (2) cambiemos toolchain a MSVC (x86_64-pc-windows-msvc).
+# tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
