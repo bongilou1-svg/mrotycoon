@@ -31,7 +31,7 @@ function expect(cond, msg) {
 console.log("\n=== Constantes del sistema ===");
 expect(LINE_OFFER_REP_THRESHOLD === 70, `umbral oferta rep ≥70 (got ${LINE_OFFER_REP_THRESHOLD})`);
 expect(LINE_CANCEL_REP_THRESHOLD === 20, `umbral rescisión rep ≤20 (got ${LINE_CANCEL_REP_THRESHOLD})`);
-expect(LINE_COMPETITION_TICK_DAYS === 30, `ventana 30d (got ${LINE_COMPETITION_TICK_DAYS})`);
+expect(LINE_COMPETITION_TICK_DAYS === 7, `ventana 7d (got ${LINE_COMPETITION_TICK_DAYS})`);
 expect(LINE_OFFER_MAX_PROB > 0 && LINE_OFFER_MAX_PROB <= 1, `prob max ∈ (0,1] (got ${LINE_OFFER_MAX_PROB})`);
 
 console.log("\n=== generateInitialContractsLine: 1 activo + 0 ofertados ===");

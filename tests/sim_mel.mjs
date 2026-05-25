@@ -190,5 +190,67 @@ if (deferableWo) {
     `transacción MEL penalty = -${MEL_EXPIRY_PENALTY_EUR} €`);
 }
 
+console.log("\n=== Re-attach de deferreds al siguiente landing de la misma matrícula ===");
+{
+  // Pivot iteración 2026-05-25: cuando una WO se difiere, vive sobre el
+  // airplaneInstanceId del landing actual. Al despegar ese avión y volver a aterrizar
+  // (nuevo instanceId), la deferral debería re-attach al nuevo landing para que el
+  // jugador pueda cerrarla en la próxima pernocta.
+  const { createGame, advanceGame, deferWoManually } = await import("../src/lib/game.ts");
+  const g = createGame(balance, airlines, templates, 42, defs, [], { lineMode: true });
+  g.autoPauseEnabled = false;
+  g.clock.speed = 1;
+  let safety = 0;
+  // Hasta 7 días o encontrar al menos 1 callout diferible. melCategory se DERIVA del id
+  // del template (no está explícito en JSON), por eso usamos getMelCategory para checkear.
+  const isDeferrableTpl = (tpl) => tpl && !tpl.isAOG && getMelCategory(tpl) !== null;
+  while (g.clock.minute < 7 * DAY_MINUTES && safety < 5000) {
+    advanceGame(g, 5); safety++;
+    for (const aid of Object.keys(g.reputation.perAirline)) g.reputation.perAirline[aid] = 80;
+    const diff = g.workOrders.filter(w => {
+      const tpl = templates.find(t => t.id === w.templateId);
+      return isDeferrableTpl(tpl) && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred";
+    });
+    if (diff.length > 0) break;
+  }
+  const callouts = g.workOrders.filter(w => {
+    const tpl = templates.find(t => t.id === w.templateId);
+    return isDeferrableTpl(tpl) && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred";
+  });
+  if (callouts.length > 0) {
+    const wo = callouts[0];
+    const reg = wo.airplaneRegistration;
+    const oldInstanceId = wo.airplaneInstanceId;
+    // Asegurar B1 idle para firmar MEL
+    for (const m of g.mechanics) {
+      if (m.base === "B1" && !m.isLeadForeman) {
+        m.state = "Idle"; m.assignedWoInstanceId = null; m.assignedCheckInstanceId = null;
+        break;
+      }
+    }
+    const r = deferWoManually(g, wo.instanceId);
+    if (r.ok) {
+      const after = g.workOrders.find(w => w.instanceId === wo.instanceId);
+      expect(after?.phase === "Deferred", "WO defer ok");
+      // Avanzar paso a paso buscando el momento en que la deferral cambia de instanceId
+      // (=reattach ejecutado). El reattach sweep en advanceGame migra la deferral al
+      // próximo landing ACTIVO de la matrícula tras un Departed del viejo.
+      const start = g.clock.minute;
+      let detectedReattach = false;
+      while (g.clock.minute < start + 10 * DAY_MINUTES && !detectedReattach) {
+        advanceGame(g, 30);
+        for (const aid of Object.keys(g.reputation.perAirline)) g.reputation.perAirline[aid] = 80;
+        const cur = g.workOrders.find(w => w.instanceId === wo.instanceId);
+        if (cur && cur.airplaneInstanceId !== oldInstanceId) detectedReattach = true;
+      }
+      expect(detectedReattach, `deferral migrada de ${oldInstanceId.slice(-6)} a otro landing activo (reattach detectado)`);
+    } else {
+      console.log(`  ℹ️ skip reattach: defer falló (${r.error})`);
+    }
+  } else {
+    console.log("  ℹ️ skip reattach: no hay WO diferible en seed 42 día 2");
+  }
+}
+
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

@@ -336,7 +336,11 @@ export const LINE_OFFER_REP_THRESHOLD = 70;
  *  competencia. Mismo umbral que el legacy para coherencia. */
 export const LINE_CANCEL_REP_THRESHOLD = 20;
 /** Días entre ticks de competencia (ventana de renovación: ~mes ingame). */
-export const LINE_COMPETITION_TICK_DAYS = 30;
+// Pivot iteración 2026-05-25: bajado de 30 a 7 días. El tick mensual era demasiado lento
+// — el jugador podía hacer una semana excelente sin sentir feedback en el mercado de
+// contratos durante 3-4 semanas. Tick semanal alinea con el ciclo natural del juego
+// (cierre weekly cobra fees + paga salarios + evalúa mercado).
+export const LINE_COMPETITION_TICK_DAYS = 7;
 /** Prob máxima de oferta cuando rep=100 (escala lineal desde 70). */
 export const LINE_OFFER_MAX_PROB = 0.6;
 

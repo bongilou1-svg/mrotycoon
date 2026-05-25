@@ -10,10 +10,23 @@ import { DAY_MINUTES } from "../sim/time.ts";
 import { getFlightsForGameDay } from "../sim/schedule.ts";
 import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay, AirplaneDisplayState } from "./types.ts";
 
-/** OSM parking positions de LEAS NO mapeadas al sim. Pivot iteración 2026-05-24:
- *  F5D_STAND_MAP ahora usa 01-07 (sim ampliado). Passthroughs usan los 3 restantes
- *  para tráfico del schedule no trabajable por el jugador (no contratado o not handled). */
-const PASSTHROUGH_OSM_STANDS = ["08", "08A", "09"];
+/** Pivot iteración 2026-05-25: ya NO una constante fija. Los passthrough usan TODOS los
+ *  stands principales OSM que el sim NO ocupa según etapa actual del MRO. Stage 1: sim
+ *  ocupa 01-05 (H1-S1..H1-S5) → passthrough disponibles 06, 07, 08, 08A, 09. Stage 2:
+ *  sim añade R1 → 06 no disponible. Y así. Coherente con realidad OVD: aviones comerciales
+ *  (Air Nostrum, Ryanair) usan stands principales del terminal junto a Iberia, no se
+ *  apartan a aviación general. */
+const ALL_OSM_PARKING_REFS = ["01", "02", "03", "04", "05", "06", "07", "08", "08A", "09"];
+const SIM_OCCUPIED_BY_STAGE: Record<number, string[]> = {
+  1: ["01", "02", "03", "04", "05"],
+  2: ["01", "02", "03", "04", "05", "06"],
+  3: ["01", "02", "03", "04", "05", "06", "07"],
+  4: ["01", "02", "03", "04", "05", "06", "07"],
+};
+function passthroughStandsForStage(stage: 1 | 2 | 3 | 4): string[] {
+  const simOcc = new Set(SIM_OCCUPIED_BY_STAGE[stage] ?? []);
+  return ALL_OSM_PARKING_REFS.filter((r) => !simOcc.has(r));
+}
 
 /** Duración visual del turnaround para passthroughs en minutos. Igual que el
  *  SCHEDULED_TURNAROUND_MIN del sim (55 min) — el avión se ve en stand 55min
@@ -157,12 +170,13 @@ export function buildRenderState(g: GameState): RenderState {
   // Pivot línea pura · aeropuerto vivo: para cada flight del día actualmente en
   // ventana de turnaround que NO es uno de los aviones reales (sin contrato firmado
   // o type rating no habilitado), construimos un pseudo-render entry. Stand asignado
-  // round-robin sobre los PASSTHROUGH_OSM_STANDS libres.
+  // round-robin sobre los OSM parking refs libres según etapa MRO.
   const passthroughTraffic: RenderPassthroughTraffic[] = [];
   if (g.useScheduleArrivals && g.lineModeEnabled) {
     const today = Math.floor(g.clock.minute / DAY_MINUTES) + 1;
     const dayStart = (today - 1) * DAY_MINUTES;
     const flights = getFlightsForGameDay(today);
+    const passthroughStands = passthroughStandsForStage(stage);
     // Pivot línea pura · iteración 2026-05-24 fix: comparar callsign del leg, NO la
     // matrícula. Tras el cambio "registration = matrícula real EC-XXX + arrivalCallsign
     // = IB3219 callsign IATA", el filtro de duplicados debe usar el callsign para no
@@ -180,27 +194,46 @@ export function buildRenderState(g: GameState): RenderState {
       if (al?.iataCode) contractsByCode.set(al.iataCode, c.id);
     }
     // Heurística overnight de los passthroughs (mismo criterio que schedule.ts):
-    // por aerolínea, el último arrival ≥19:00 se queda en stand toda la noche.
+    // por aerolínea, el último arrival ≥19:00 se queda en stand toda la noche SI Y SOLO
+    // SI la aerolínea tiene base operativa aquí (homeBaseAirports incluye el ICAO).
     const lastArrivalByCode = new Map<string, number>();
     for (const f of flights) {
       if (f.type !== "arrival") continue;
       const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
       if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
     }
+    const airportIcao = "LEAS"; // hardcode hasta que tengamos múltiples aeropuertos
+    const isBaseByCode = new Map<string, boolean>();
+    for (const al of g.airlines) {
+      if (!al.iataCode) continue;
+      const bases = al.homeBaseAirports ?? [];
+      isBaseByCode.set(al.iataCode, bases.includes(airportIcao));
+    }
 
     let standIdx = 0;
+    // Pivot iteración 2026-05-25: pre-loop para "overnighters del AYER" — al arrancar
+    // el día 1 a las 06:00 conceptualmente los overnighters de la noche anterior siguen
+    // en stand hasta su salida ~06:30. Como no hay schedule de Día 0, modelamos el patrón
+    // recurrente: si IB3219/YW8519/FR4571 son overnight HOY, también lo fueron AYER.
+    // Para aerolíneas SIN contrato active aparecen como passthrough; las contratadas YA
+    // tienen su pre-seed real (seedPreOvernighters en game.ts).
+    // Pivot iteración 2026-05-25: el bloque previo de "passthroughs sintéticos por base"
+    // se eliminó — el juego refleja SOLO datos reales del schedule. Si Volotea no tiene
+    // un arrival nocturno en el dataset, no se inventa. Cuando el dataset real (API)
+    // muestre overnighters de V7, aparecerán naturalmente.
     for (const f of flights) {
       if (f.type !== "arrival") continue;
       const arrAbs = dayStart + f.scheduledMinute;
       const isOvernight =
         f.scheduledMinute >= PASSTHROUGH_OVERNIGHT_THRESHOLD_MIN &&
-        lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute;
+        lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute &&
+        isBaseByCode.get(f.airlineCode) === true; // solo basadas pernoctan
       const depAbs = isOvernight
         ? dayStart + DAY_MINUTES + PASSTHROUGH_OVERNIGHT_DEPARTURE_MIN
         : arrAbs + PASSTHROUGH_TURNAROUND_MIN;
       if (g.clock.minute < arrAbs || g.clock.minute >= depAbs) continue;
       if (realCallsigns.has(f.callsign)) continue; // ya es real, no doblar
-      if (standIdx >= PASSTHROUGH_OSM_STANDS.length) break; // overflow, los extras se saltan
+      if (standIdx >= passthroughStands.length) break; // overflow, los extras se saltan
       const taxiAge = g.clock.minute - arrAbs;
       const taxiing = taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN;
       const taxiProgress = TAXIING_DURATION_MIN > 0
@@ -209,7 +242,7 @@ export function buildRenderState(g: GameState): RenderState {
       passthroughTraffic.push({
         callsign: f.callsign,
         airlineCode: f.airlineCode,
-        standOsmRef: PASSTHROUGH_OSM_STANDS[standIdx++],
+        standOsmRef: passthroughStands[standIdx++],
         taxiing,
         taxiProgress,
         notHandled: f.notHandled === true,

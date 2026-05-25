@@ -68,6 +68,31 @@ function pickPoolStatsForCallsign(callsign: string, airlineCode: string): typeof
   return candidates[Math.abs(h) % candidates.length];
 }
 
+/** Pivot iteración 2026-05-25: variante con fallback a matrícula alternativa del pool
+ *  si la primary está ocupada. Realidad operacional: si el avión EC-IXM aún sigue en
+ *  mantenimiento al MRO y la aerolínea tiene que operar el siguiente IB3219, asigna
+ *  otra matrícula del pool. Resuelve el bug donde el IB3219 día N+1 se saltaba porque
+ *  EC-IXM seguía en stand desde la noche anterior con WO abierta.
+ *  Recorre el pool empezando por la matrícula primary (orden determinista hash) y va
+ *  saltando hasta encontrar una libre. Si TODAS están busy, devuelve null. */
+function pickPoolStatsAvoidingBusy(
+  callsign: string,
+  airlineCode: string,
+  busyRegs: ReadonlySet<string>,
+): typeof fleetData.fleet[number] | null {
+  const candidates = fleetData.fleet.filter((f) => f.airlineCode === airlineCode);
+  if (candidates.length === 0) return null;
+  let h = 0;
+  for (let i = 0; i < callsign.length; i++) h = ((h << 5) - h + callsign.charCodeAt(i)) | 0;
+  const startIdx = Math.abs(h) % candidates.length;
+  // Rotar el array empezando por startIdx y devolver la primera no-busy.
+  for (let offset = 0; offset < candidates.length; offset++) {
+    const cand = candidates[(startIdx + offset) % candidates.length];
+    if (!busyRegs.has(cand.registration)) return cand;
+  }
+  return null; // todas ocupadas
+}
+
 /** Si la matrícula no existe en fleet, la añade con stats FH/FC del pool plausible.
  *  Mismo callsign siempre asigna mismo pool entry (hash determinista). */
 function ensureFleetEntry(
@@ -127,7 +152,7 @@ export function generateScheduledArrivals(
   contracts: readonly Contract[],
   fleet: readonly FleetAircraft[],
   busyRegistrations: ReadonlySet<string> = new Set(),
-  airlines: readonly { id: string; iataCode?: string }[] = [],
+  airlines: readonly { id: string; iataCode?: string; homeBaseAirports?: string[] }[] = [],
 ): { arrivals: Airplane[]; updatedFleet: FleetAircraft[] } {
   const flights = getFlightsForGameDay(gameDay);
   const activeContracts = contracts.filter((c) => c.status === "active");
@@ -164,9 +189,20 @@ export function generateScheduledArrivals(
     const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
     if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
   }
+  // Pivot iteración 2026-05-25: solo aerolíneas con BASE en este aeropuerto pernoctan.
+  // Vueling/easyJet/Ryanair hacen turnaround corto en OVD aunque su último arrival sea
+  // tarde. Solo Iberia y Volotea (homeBaseAirports incluye "LEAS") dejan aviones overnight.
+  const airportIcao = scheduleData.icao;
+  const baseByCode = new Map<string, boolean>();
+  for (const al of airlines) {
+    const code = (al as { iataCode?: string }).iataCode;
+    const bases = (al as { homeBaseAirports?: string[] }).homeBaseAirports ?? [];
+    if (code) baseByCode.set(code, bases.includes(airportIcao));
+  }
   function isOvernightCandidate(f: { scheduledMinute: number; airlineCode: string }): boolean {
     if (f.scheduledMinute < OVERNIGHT_THRESHOLD_MIN) return false;
-    return lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute;
+    if (lastArrivalByCode.get(f.airlineCode) !== f.scheduledMinute) return false;
+    return baseByCode.get(f.airlineCode) === true; // solo si la aerolínea tiene base aquí
   }
 
   // Helper para encontrar el next departure pareja de un arrival (misma aerolínea,
@@ -187,9 +223,13 @@ export function generateScheduledArrivals(
     // matrícula física REAL (EC-XXX / G-XXX del fleet pool), NO el callsign del vuelo.
     // Mismo callsign hashea siempre a la misma matrícula (determinista). El callsign
     // se guarda en arrivalCallsign para info contextual del leg.
-    const poolStats = pickPoolStatsForCallsign(f.callsign, f.airlineCode);
+    // Pivot iteración 2026-05-25 fix: si la primary está busy (ej. EC-IXM sigue en
+    // mantenimiento en el MRO desde overnight), elegir otra matrícula libre del pool
+    // de la aerolínea. Sin este fallback, el callsign del día siguiente se saltaba
+    // → "Día 2 sin overnight" cuando en realidad sí había uno planificado.
+    const poolStats = pickPoolStatsAvoidingBusy(f.callsign, f.airlineCode, busyRegistrations);
     const physicalReg = poolStats?.registration ?? f.callsign; // fallback al callsign si no hay pool
-    if (busyRegistrations.has(physicalReg)) continue;
+    if (busyRegistrations.has(physicalReg)) continue; // todas las del pool ocupadas, skip
     // Pivot línea pura: vuelos con modelo/motor no habilitado (Embraer, CRJ, ATR, B737)
     // se ven en el panel Schedule pero NO generan Airplane en el sim hasta que se
     // habilite el type rating correspondiente.

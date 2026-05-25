@@ -315,7 +315,11 @@ const BODY = `<div class="app">
       <button data-tab="planning">📋 Production Planning <span class="badge" id="badge-planning">0</span></button>
       <button data-tab="office">🏢 Oficina <span class="badge" id="badge-office">0</span></button>
       <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
-      <button data-tab="market">🤝 Mercado <span class="badge" id="badge-candidates">5</span></button>
+      <!-- Pivot iteración 2026-05-25: Mercado renombrado a "Contratación" y movido como
+           subsección dentro de Oficina (el reclutamiento es competencia de RRHH del MRO,
+           no una tab top-level). El badge de candidatos se muestra ahora en la sub-tab. -->
+      <!-- <button data-tab="market">🤝 Mercado <span class="badge" id="badge-candidates">5</span></button> -->
+      <span style="display:none"><span class="badge" id="badge-candidates">5</span></span>
       <button disabled title="🏗️ Construcción de hangares — próximamente (sistema de permisos + obra civil en futura fase)" style="opacity:0.4;cursor:not-allowed">🏗️ Hangares <span style="font-size:.7rem">próx.</span></button>
       <button data-tab="dashboard">📊 Dashboard</button>
       <button data-tab="economy">💼 Economía</button>
@@ -336,6 +340,7 @@ const S = window.Sim;
 // avanzados" y permisos de hangar (ahora mismo el juego es solo callouts + pernoctas).
 let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, [], S.DATA.dailyChecks, { lineMode: true });
 let activeTab = "map"; // pivot línea pura: arrancamos en mapa (wow factor) y operaciones aparte
+let officeSubtab = "team"; // Pivot iteración 2026-05-25: "team" | "hiring" | "management"
 let lastProductionPackageDay = 0; // notif diaria del paquete de trabajo nocturno (12:00)
 let selectedWoId = null;
 let complianceModalOpen = false;
@@ -980,6 +985,68 @@ function renderCoverageGantt(){
 // del avión vía Travel). En lineMode tiene cap MECHANIC_CAP_INITIAL (5) hasta que
 // se desbloqueen hangares en endgame. Esta vista agrupa: detalle de la oficina
 // (capacidad, salarios totales, cobertura, moral media) + lista de mecánicos.
+// ===========================================================================
+// Pivot iteración 2026-05-25 — Management (políticas operativas de la oficina)
+// ===========================================================================
+// Toggles + selects que el jugador configura una vez como "normas de la casa".
+// El sim las consulta cada tick. Defaults sensatos para que la partida funcione
+// sin tocar nada, pero el jugador puede afinar para reducir micromanagement
+// (auto-assign, MEL auto-defer) o pagar más por agilidad (overtime auto).
+function renderOfficeManagement(){
+  const m = game.management ?? { autoAssignTrivial: true, melAutoDefer: "never", overtimeAutoCall: false };
+  // Auto-pausa también lo exponemos aquí aunque el toggle del HUD siga funcionando
+  const ap = !!game.autoPauseEnabled;
+
+  let h = '<h3 style="margin-top:0">⚙️ Management · Normas operativas</h3>';
+  h += '<p class="muted" style="margin-bottom:1rem;font-size:.88rem">Configura cómo el equipo de la oficina actúa <strong>sin tu intervención</strong>. Cada política es una regla del MRO que el sim aplica cada tick. Defaults: el juego es jugable sin tocar nada, pero puedes afinar para reducir micromanagement o pagar más por agilidad operativa.</p>';
+
+  // Card: auto-pause
+  h += \`<div style="border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;margin-bottom:.6rem">
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-weight:600">
+      <input type="checkbox" data-mgmt-toggle="autoPause" \${ap ? "checked" : ""} style="width:18px;height:18px">
+      <span>🚨 Auto-pausa en eventos críticos</span>
+    </label>
+    <p class="muted" style="margin:.3rem 0 0 1.7rem;font-size:.82rem">Cuando aparece una WO <strong>AOG</strong> o <strong>Critical</strong>, el reloj se pone automáticamente en pausa para que decidas. Útil al inicio; desactivable cuando ya juegas a 5x sin susto.</p>
+  </div>\`;
+
+  // Card: auto-assign trivial
+  h += \`<div style="border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;margin-bottom:.6rem">
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-weight:600">
+      <input type="checkbox" data-mgmt-toggle="autoAssignTrivial" \${m.autoAssignTrivial ? "checked" : ""} style="width:18px;height:18px">
+      <span>🤖 Auto-asignar WO al primer mec elegible</span>
+    </label>
+    <p class="muted" style="margin:.3rem 0 0 1.7rem;font-size:.82rem">Cuando una WO entra sin equipo y hay un B1/B2 Idle con type rating válido, el sim lo asigna automáticamente (greedy: primer match). Desactiva si quieres asignar manualmente cada caso (control total, más micro-management).</p>
+  </div>\`;
+
+  // Card: overtime auto-call
+  h += \`<div style="border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;margin-bottom:.6rem">
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-weight:600">
+      <input type="checkbox" data-mgmt-toggle="overtimeAutoCall" \${m.overtimeAutoCall ? "checked" : ""} style="width:18px;height:18px">
+      <span>⏱️ Hora extra automática si no hay mec disponible</span>
+    </label>
+    <p class="muted" style="margin:.3rem 0 0 1.7rem;font-size:.82rem">Cuando una WO necesita un certifier y todos los Idle están sin rating válido pero hay un OffShift con rating, llamarlo a hora extra automáticamente. <strong>Cuesta ~½ día de salario al terminar + moral -5</strong>. Salva aviones pero come margen.</p>
+  </div>\`;
+
+  // Card: MEL auto-defer policy
+  h += \`<div style="border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;margin-bottom:.6rem">
+    <div style="font-weight:600;margin-bottom:.4rem">📋 Política de MEL auto-defer</div>
+    <p class="muted" style="margin:.2rem 0 .6rem 0;font-size:.82rem">El sim puede diferir WO automáticamente (firmando MEL) para liberar aviones que iban a entrar en retraso. Solo aplica a WO no-AOG, no-Critical, diferibles. Diferir siempre requiere un B1 idle con rating (firma el MEL); si no hay, la WO espera al siguiente B1 idle.</p>
+    <div style="display:flex;flex-direction:column;gap:.3rem">
+      \${[
+        { val: "never", label: "Nunca", desc: "Solo tú decides desde el modal WO. Control total, más micromanagement." },
+        { val: "ifWouldDelay", label: "Si el fix no cabe antes del departure ⭐ recomendado", desc: "Compara tiempo estimado de reparación con margen al despegue. Si va a retrasar igual → mejor diferir y liberar el avión. Si hay margen → intenta fix normal." },
+        { val: "always", label: "Siempre que sea diferible", desc: "Agresivo: cualquier WO diferible se firma como MEL al instante. Aviones siempre libres, pero acumulas backlog de MEL pendientes." },
+      ].map(opt => \`<label style="display:flex;align-items:flex-start;gap:.5rem;cursor:pointer;padding:.3rem .5rem;border:1px solid \${m.melAutoDefer === opt.val ? 'var(--accent)' : 'var(--border-s)'};border-radius:4px;background:\${m.melAutoDefer === opt.val ? 'rgba(77,163,255,.08)' : 'transparent'}">
+        <input type="radio" name="mgmt-meldefer" value="\${opt.val}" \${m.melAutoDefer === opt.val ? "checked" : ""} data-mgmt-meldefer="\${opt.val}" style="margin-top:.15rem">
+        <span><strong>\${opt.label}</strong><br><span class="muted" style="font-size:.78rem">\${opt.desc}</span></span>
+      </label>\`).join("")}
+    </div>
+  </div>\`;
+
+  h += '<p class="muted" style="margin-top:1rem;font-size:.78rem">💡 Estas decisiones forman parte del estilo de juego: minimal (todo manual, control total, slow), eficiente (auto-assign + auto-defer = el sim navega solo, tú solo intervienes en críticos), o agresivo (overtime + defer always = sales caro pero pierdes pocos aviones).</p>';
+  return h;
+}
+
 function renderOffice(){
   const mechs = game.mechanics;
   const cap = S.MECHANIC_CAP_INITIAL ?? 5;
@@ -1008,6 +1075,27 @@ function renderOffice(){
   const offshiftCount = mechs.filter(m => m.state === "OffShift").length;
 
   let h = '<h2>🏢 Oficina</h2>';
+  // Pivot iteración 2026-05-25: sub-tabs para no saturar la vista. "Equipo" = panel
+  // operacional (capacidad + mecs + cobertura horaria). "Contratación" = pool de
+  // candidatos (antes tab "Mercado" top-level). Conceptualmente todo es RRHH del MRO,
+  // tiene sentido bajo un solo paraguas.
+  const candCount = (game.candidates ?? []).length;
+  h += \`<div class="subtabs" style="display:flex;gap:.5rem;margin-bottom:.75rem;border-bottom:1px solid var(--border);padding-bottom:.4rem">
+    <button class="subtab\${officeSubtab === 'team' ? ' active' : ''}" data-office-subtab="team" style="padding:.3rem .8rem;background:\${officeSubtab === 'team' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'team' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">👷 Equipo</button>
+    <button class="subtab\${officeSubtab === 'hiring' ? ' active' : ''}" data-office-subtab="hiring" style="padding:.3rem .8rem;background:\${officeSubtab === 'hiring' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'hiring' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">🤝 Contratación <span class="badge" style="margin-left:.3rem">\${candCount}</span></button>
+    <button class="subtab\${officeSubtab === 'management' ? ' active' : ''}" data-office-subtab="management" style="padding:.3rem .8rem;background:\${officeSubtab === 'management' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'management' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">⚙️ Management</button>
+  </div>\`;
+  // Subseción "Contratación" delega a renderMarket (pool de candidatos)
+  if (officeSubtab === "hiring") {
+    h += renderMarket();
+    return h;
+  }
+  // Subseción "Management" = normas operativas de la oficina
+  if (officeSubtab === "management") {
+    h += renderOfficeManagement();
+    return h;
+  }
+  // === Resto = subseción "Equipo" ===
   h += '<p class="muted" style="margin-bottom:.5rem">Sede física del MRO. Los mecánicos esperan aquí entre WOs y se desplazan al stand cuando se les asigna trabajo (Travel ~2min). Cap inicial limitado a 5 mecs hasta desbloquear hangares en endgame.</p>';
   // ===== Bloque detalle de la oficina =====
   h += '<div class="office-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.6rem;margin-bottom:1rem">';
@@ -1074,8 +1162,10 @@ function renderOffice(){
 
 function renderMarket(){
   const candidates = game.candidates || [];
-  if (candidates.length === 0) return '<h2>Mercado laboral</h2><div class="empty">Pool vacío. Refresca tras unos días ingame.</div>';
-  let h = \`<h2>Mercado laboral · \${candidates.length} candidato\${candidates.length===1?'':'s'}</h2>\`;
+  // Pivot iteración 2026-05-25: renombrado a "Contratación" — vive como subseción de
+  // Oficina. El h2 ya no se renderiza top-level (la cabecera la pone renderOffice).
+  if (candidates.length === 0) return '<h3 style="margin-top:0">🤝 Contratación</h3><div class="empty">Pool vacío. Refresca tras unos días ingame.</div>';
+  let h = \`<h3 style="margin-top:0">🤝 Contratación · \${candidates.length} candidato\${candidates.length===1?'':'s'}</h3>\`;
   h += '<p class="muted" style="margin-bottom:.75rem">Pool se refresca cada 7 días ingame. Signing bonus = 4 semanas de salario esperado.</p>';
   h += '<div class="cand-grid">';
   for (const c of candidates) {
@@ -1125,6 +1215,71 @@ function renderContracts(){
     const expIn = c.expiresAtMinute ? Math.max(0, c.expiresAtMinute - game.clock.minute) : 0;
     h += \`<article class="contract-card offer" data-contract-id="\${c.id}" style="cursor:pointer" title="Click para detalle"><header><strong>\${esc(airlineName(c.airlineId))}</strong> · \${c.id} \${tierBadge(c.tier)} · expira en \${expIn}m</header><div class="kvs"><span>Cuota semanal: <strong>\${fmt(c.baseFeePerWeek)} €</strong></span><span>€/min WO: <strong>\${c.paymentPerWOMinute}</strong></span><span>Penalty: <strong>\${c.penaltyPerLateMinute} €/min</strong></span><span>Rep. min.: <strong>\${c.minReputation}</strong></span></div><div class="actions"><button class="primary" data-accept="\${c.id}">Aceptar</button><button data-reject="\${c.id}">Rechazar</button></div></article>\`;
   }
+
+  // Pivot iteración 2026-05-25 — Sección "Aerolíneas interesadas" (movida del Dashboard).
+  // Aquí tiene más sentido conceptualmente: contratos activos + ofertas vivas + pipeline
+  // de aerolíneas que potencialmente firmarán cuando subas el brand. Muestra el próximo
+  // tick de competencia (cada 7 días) y, por aerolínea, distancia al umbral + condiciones
+  // operativas (overnight → daily checks · sin overnight → solo callouts).
+  const kpi = game.departureKPI ?? S.createDepartureKPI();
+  const contractedRepsForBrand = game.contracts
+    .filter(c => c.status === "active")
+    .map(c => game.reputation.perAirline[c.airlineId] ?? 50);
+  const brand = (typeof S.brandReputation === "function") ? S.brandReputation({
+    totalDepartures: kpi.totalDepartures,
+    totalOnTime: kpi.totalOnTime,
+    totalAog: kpi.totalAog,
+    contractedReps: contractedRepsForBrand,
+  }) : 0;
+  // Próximo tick = lineCompetitionLastTickMinute + 7d.
+  const tickInterval = (S.LINE_COMPETITION_TICK_DAYS ?? 7) * S.DAY_MINUTES;
+  const nextTickMinute = (game.lineCompetitionLastTickMinute ?? 0) + tickInterval;
+  const minsToNextTick = Math.max(0, nextTickMinute - game.clock.minute);
+  const daysToNext = Math.floor(minsToNextTick / S.DAY_MINUTES);
+  const hoursToNext = Math.floor((minsToNextTick % S.DAY_MINUTES) / 60);
+  const tickLabel = daysToNext > 0 ? \`\${daysToNext}d \${hoursToNext}h\` : \`\${hoursToNext}h\`;
+
+  h += '<h3 style="margin-top:1.5rem">🌟 Aerolíneas interesadas (pipeline)</h3>';
+  h += \`<p class="muted" style="margin-bottom:.5rem;font-size:.85rem">Tu <strong>brand del MRO</strong> = <strong style="color:\${brand >= 70 ? 'var(--success)' : brand >= 40 ? 'var(--warning)' : 'var(--muted)'}">\${brand}/100</strong> (50% rep media contratadas · 30% on-time · 20% (1-AOG)). El mercado se evalúa cada <strong>\${S.LINE_COMPETITION_TICK_DAYS ?? 7} días</strong> ingame. <strong>Próxima evaluación en \${tickLabel}</strong>. Si tu brand cruza el umbral de una aerolínea, ese tick puede ofertarte. Las condiciones (fee/payment/penalty) escalan con cuánto excedas su umbral. <strong>Aerolíneas sin overnight</strong> mandan solo callouts cuando un avión aterriza con problema (sin paquete daily).</p>\`;
+  h += '<table style="font-size:.85rem">';
+  h += '<thead><tr><th>Aerolínea</th><th>Volumen OVD/sem</th><th>Umbral brand</th><th>Estado</th><th>Modo trabajo</th></tr></thead><tbody>';
+  // Tabla ordenada por threshold asc.
+  const sorted = game.airlines.filter(a => a.iataCode).slice().sort((a,b) => (a.brandThreshold ?? 70) - (b.brandThreshold ?? 70));
+  for (const a of sorted) {
+    const t = a.brandThreshold ?? 70;
+    const hasContract = game.contracts.some(c => c.airlineId === a.id && (c.status === "active" || c.status === "offered"));
+    const meets = brand >= t;
+    const status = hasContract ? '<span style="color:var(--success)">✓ ya contratada / oferta viva</span>' :
+                   meets ? \`<span style="color:var(--success)">✅ puede ofertar (brand +\${brand - t} sobre umbral)</span>\` :
+                   \`<span class="muted">⏳ faltan \${t - brand} pts brand</span>\`;
+    // Volumen aprox: contar arrivals del schedule de esta aerolínea (7d).
+    let volumen = 0;
+    try {
+      for (let d = 1; d <= 7; d++) {
+        for (const f of (S.getFlightsForGameDay?.(d) ?? [])) {
+          if (f.type === "arrival" && f.airlineCode === a.iataCode) volumen++;
+        }
+      }
+    } catch (e) {}
+    // Modo trabajo: si el schedule tiene overnight = paquetes daily; si no = solo callouts.
+    // Heurística simple: si tiene arrivals ≥19:00 → overnight posible.
+    let modo = "callouts puntuales";
+    try {
+      for (let d = 1; d <= 7; d++) {
+        const flights = S.getFlightsForGameDay?.(d) ?? [];
+        const lateArr = flights.filter(f => f.type === "arrival" && f.airlineCode === a.iataCode && f.scheduledMinute >= 19*60);
+        if (lateArr.length > 0) { modo = "paquetes nocturnos + callouts"; break; }
+      }
+    } catch (e) {}
+    h += \`<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;background:\${a.color};border-radius:50%;margin-right:.4rem"></span>\${esc(a.name)} <span class="mono muted">\${a.iataCode}</span></td>
+      <td class="mono">\${volumen} arr</td>
+      <td class="mono"><strong>\${t}</strong></td>
+      <td>\${status}</td>
+      <td class="muted">\${modo}</td>
+    </tr>\`;
+  }
+  h += '</tbody></table>';
   return h;
 }
 
@@ -1257,7 +1412,7 @@ function renderDashboard(){
   <p class="muted" style="margin-bottom:.75rem">Series semanales (último año ingame, max 52 semanas). Cada punto = cierre de semana.</p>
 
   <h3 style="margin-top:1rem">🌟 Brand Reputation del MRO</h3>
-  <p class="muted" style="margin-bottom:.5rem">Score objetivo que las aerolíneas SIN contrato observan. Deriva de tus KPIs (50% rep media de contratadas · 30% on-time · 20% (1-AOG)). Cada aerolínea tiene su propio umbral según presencia en OVD — Volotea (local) te quiere antes, easyJet (esporádica) más tarde.</p>
+  <p class="muted" style="margin-bottom:.5rem">Score objetivo que las aerolíneas SIN contrato observan. Deriva de tus KPIs (50% rep media de contratadas · 30% on-time · 20% (1-AOG)). Cada aerolínea tiene su propio umbral — ver <strong>Contratos</strong> para el pipeline completo de aerolíneas interesadas + próxima evaluación.</p>
   <div class="dash-grid">
     <div class="dash-card">
       <div class="dash-title">🌟 Brand del MRO</div>
@@ -1266,34 +1421,6 @@ function renderDashboard(){
       <div class="muted" style="font-size:.72rem;margin-top:.3rem">\${brandHint}</div>
     </div>
   </div>
-
-  <h4 style="margin-top:1rem">Aerolíneas que pueden ofertarte</h4>
-  <p class="muted" style="margin-bottom:.5rem;font-size:.78rem">Cuando tu brand cruza el umbral de una aerolínea, en el siguiente tick de competencia (cada 30 días) puede aparecerte su oferta. Las condiciones (fee/payment/penalty) escalan con cuánto excedas su umbral.</p>
-  <table style="font-size:.85rem">
-    <thead><tr><th>Aerolínea</th><th>Umbral brand</th><th>Estado</th><th>Distancia</th></tr></thead>
-    <tbody>
-      \${(() => {
-        const rows = [];
-        const sorted = game.airlines.filter(a => a.iataCode).slice().sort((a,b) => (a.brandThreshold ?? 70) - (b.brandThreshold ?? 70));
-        for (const a of sorted) {
-          const t = a.brandThreshold ?? 70;
-          const hasContract = game.contracts.some(c => c.airlineId === a.id && (c.status === "active" || c.status === "offered"));
-          const meets = brand >= t;
-          const status = hasContract ? '<span style="color:var(--success)">✓ ya contratada/oferta</span>' :
-                         meets ? '<span style="color:var(--success)">✅ puede ofertar</span>' :
-                         '<span style="color:var(--muted)">⏳ pendiente</span>';
-          const dist = hasContract ? '—' : meets ? \`+\${brand - t} sobre umbral\` : \`faltan \${t - brand} pts\`;
-          rows.push(\`<tr>
-            <td><span style="display:inline-block;width:8px;height:8px;background:\${a.color};border-radius:50%;margin-right:.4rem"></span>\${esc(a.name)}</td>
-            <td class="mono"><strong>\${t}</strong></td>
-            <td>\${status}</td>
-            <td class="muted">\${dist}</td>
-          </tr>\`);
-        }
-        return rows.join("");
-      })()}
-    </tbody>
-  </table>
 
   <h3 style="margin-top:1.5rem">📈 TDR — Total Delay Ratio</h3>
   <p class="muted" style="margin-bottom:.5rem">Minutos medios de retraso por departure. Si una WO bloquea al avión más allá de su hora prevista, acumula delay. Departure con delay ≥ 3h escala a AOG (penalty extra + rep delta).</p>
@@ -1975,8 +2102,77 @@ function renderFleetDetailModal(){
   // Landings recientes
   const landings = game.airplanes.filter(a => a.registration === f.registration).sort((a,b) => b.arrivalMinute - a.arrivalMinute).slice(0, 5);
 
+  // Pivot iteración 2026-05-25 · banner "Próx. salida" prominente:
+  // Buscar el landing activo (en stand ahora) de esta matrícula para mostrar countdown
+  // hasta el departure. Color: rojo <30min, ámbar <2h, verde >2h.
+  const now = game.clock.minute;
+  const activeLanding = game.airplanes.find(a =>
+    a.registration === f.registration &&
+    a.arrivalMinute <= now &&
+    (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now)
+  );
+  let nextDepartureBanner = '';
+  if (activeLanding) {
+    const depMin = activeLanding.scheduledDepartureMinute;
+    const minsLeft = depMin - now;
+    const depCallsign = activeLanding.nextDepartureCallsign ?? "—";
+    let bgColor, txtColor, urgencyTag;
+    if (minsLeft < 0) {
+      bgColor = "rgba(255,71,87,.2)"; txtColor = "var(--danger)"; urgencyTag = \`🛑 RETRASADO \${-minsLeft}m\`;
+    } else if (minsLeft < 30) {
+      bgColor = "rgba(255,71,87,.15)"; txtColor = "var(--danger)"; urgencyTag = "⏰ inminente";
+    } else if (minsLeft < 120) {
+      bgColor = "rgba(245,185,69,.15)"; txtColor = "var(--warning)"; urgencyTag = "⏱️ pronto";
+    } else {
+      bgColor = "rgba(63,185,80,.12)"; txtColor = "var(--success)"; urgencyTag = "🛫 programado";
+    }
+    const h = Math.floor(Math.abs(minsLeft)/60), mm = Math.abs(minsLeft)%60;
+    const countdown = minsLeft < 0 ? \`-\${h>0?h+'h ':''}\${mm}min\` : \`\${h>0?h+'h ':''}\${mm}min\`;
+    nextDepartureBanner = \`<div style="background:\${bgColor};border:1px solid \${txtColor};border-radius:6px;padding:.7rem 1rem;margin-bottom:.8rem">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Próx. salida \${urgencyTag}</div>
+          <div style="font-size:1.2rem;font-weight:600;color:\${txtColor};margin-top:.1rem">\${esc(depCallsign)} @ \${fmtClock(depMin)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.78rem;color:var(--muted)">En</div>
+          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:\${txtColor}">\${countdown}</div>
+        </div>
+      </div>
+      <div class="muted" style="font-size:.75rem;margin-top:.3rem">Llegó \${activeLanding.arrivalCallsign ? '<strong class="mono">' + esc(activeLanding.arrivalCallsign) + '</strong> ' : ''}@ \${fmtClock(activeLanding.arrivalMinute)} · stand <strong>\${esc(activeLanding.standId || "—")}</strong>\${activeLanding.overnight ? ' · 🌙 pernocta' : ''}</div>
+    </div>\`;
+  }
+
+  // WOs activas detalladas (no solo count)
+  const woActiveOnLanding = activeLanding
+    ? woActive.filter(w => w.airplaneInstanceId === activeLanding.instanceId)
+    : woActive;
+  let activeWosBlock = '';
+  if (woActiveOnLanding.length > 0) {
+    activeWosBlock = '<h4>WOs activas ahora</h4><div style="display:flex;flex-direction:column;gap:.3rem">';
+    for (const w of woActiveOnLanding) {
+      const tpl = game.templates.find(t => t.id === w.templateId) || game.dailyCheckTemplates?.find?.(t => t.id === w.templateId);
+      const mechs = w.assignedMechanicIds.map(id => game.mechanics.find(m => m.id === id)?.name).filter(Boolean);
+      const isDaily = w.templateId?.startsWith?.("DC-");
+      const icon = isDaily ? "🌙" : tpl?.isAOG ? "🛑" : "🔧";
+      const phaseColor = w.phase === "Deferred" ? "var(--warning)"
+        : (w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework" || w.phase === "Inspection") ? "var(--accent)"
+        : "var(--muted)";
+      activeWosBlock += \`<article class="wo-card" data-wo="\${w.instanceId}" style="cursor:pointer;padding:.4rem .7rem;border:1px solid var(--border);border-radius:5px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+          <div><span style="font-size:1rem">\${icon}</span> <strong class="mono">\${w.instanceId}</strong> · \${esc(tpl?.description?.slice(0,45) ?? w.templateId)}</div>
+          <span class="wo-phase" style="color:\${phaseColor};border-color:\${phaseColor}">\${w.phase}</span>
+        </div>
+        <div class="muted" style="font-size:.75rem;margin-top:.2rem">ATA \${tpl?.ata ?? "?"} · \${tpl?.requiredCategory ?? "?"} · \${mechs.length > 0 ? '👤 ' + mechs.map(esc).join(", ") : '<span style="color:var(--warning)">⚠️ sin asignar</span>'}</div>
+      </article>\`;
+    }
+    activeWosBlock += '</div>';
+  }
+
   let inner = \`<header class="modal-head"><h3>✈️ \${esc(f.registration)} · \${f.model} / \${f.engineVariant}</h3><button class="close" id="modal-close">×</button></header>
   <div class="modal-body">
+    \${nextDepartureBanner}
+    \${activeWosBlock}
     <div class="kvs"><span>Aerolínea: <strong>\${esc(al?.name ?? f.airlineId)}</strong></span><span>Total FH: <strong>\${f.totalFH.toFixed(0)}</strong></span><span>Total cycles: <strong>\${f.totalCycles}</strong></span></div>
 
     <h4>Estado A/C/D checks</h4>
@@ -2310,9 +2506,72 @@ function renderModal(){
   if (!selectedWoId) { back.classList.remove("open"); lastModalHtml = ""; return; }
   const wo = game.workOrders.find(w => w.instanceId === selectedWoId);
   if (!wo) { back.classList.remove("open"); return; }
-  const tpl = game.templates.find(t => t.id === wo.templateId);
+  // Pivot iteración 2026-05-25: las DC-* (subtareas daily) y los findings viven en
+  // dailyCheckTemplates / templates respectivamente. Buscar en ambos catálogos.
+  const tpl = game.templates.find(t => t.id === wo.templateId)
+    || game.dailyCheckTemplates?.find?.(t => t.id === wo.templateId);
   const ap = airplaneByInstance(wo.airplaneInstanceId);
   if (!tpl || !ap) { back.classList.remove("open"); return; }
+
+  // Pivot iteración 2026-05-25: short-circuit para WO CERRADAS (Completed/Failed/Deferred)
+  // — el modal normal está pensado para WO activa con asignación/defer. Para cerradas
+  // mostramos historial: cuándo terminó, on-time o late, fee/penalty cobrada, mecs.
+  if (wo.phase === "Completed" || wo.phase === "Failed" || wo.phase === "Deferred") {
+    // Recuperar info histórica del ledger (no la guardamos en wo directamente)
+    const feeTx = game.economy.ledger.find(t => t.type === "workOrderPayment" && t.description?.includes(wo.instanceId));
+    const penaltyTx = game.economy.ledger.find(t => t.type === "penalty" && t.description?.includes(wo.instanceId));
+    const completionMin = feeTx?.minute ?? penaltyTx?.minute;
+    const totalDuration = completionMin ? completionMin - wo.emissionMinute : null;
+    const wasOnTime = completionMin !== undefined ? completionMin <= wo.slaMinute : null;
+    const lateMins = (completionMin !== undefined && completionMin > wo.slaMinute) ? completionMin - wo.slaMinute : 0;
+    const phaseColor = wo.phase === "Completed" ? "var(--success)" : wo.phase === "Failed" ? "var(--danger)" : "var(--warning)";
+    const phaseIcon = wo.phase === "Completed" ? "✓" : wo.phase === "Failed" ? "✗" : "📋";
+    const isFinding = wo.parentWoInstanceId !== undefined;
+    let inner = \`<header class="modal-head"><h3>\${phaseIcon} \${wo.instanceId} — \${esc(tpl.description)}</h3><button class="close" id="modal-close">×</button></header>
+    <div class="modal-body">
+      <div style="margin-bottom:.5rem"><span class="wo-phase" style="background:rgba(0,0,0,.3);color:\${phaseColor};border-color:\${phaseColor}">\${wo.phase.toUpperCase()}</span>\${isFinding ? ' <span class="muted">🔍 finding (derivado de daily check previo)</span>' : ''}</div>
+      <div class="kvs">
+        <span>Template: <strong class="mono">\${esc(tpl.id)}</strong></span>
+        <span>ATA: <strong>\${tpl.ata}</strong></span>
+        <span>Categoría requerida: <strong>\${tpl.requiredCategory}</strong></span>
+        <span>Avión: <strong>\${esc(ap.registration)}</strong> (\${ap.model}/\${ap.engineVariant})\${ap.arrivalCallsign ? ' · vuelo <strong class="mono">' + esc(ap.arrivalCallsign) + '</strong>' : ''}</span>
+        <span>Severidad: <strong>\${tpl.severity}</strong>\${tpl.isAOG ? ' 🛑 AOG' : ''}</span>
+        <span>Book HH: <strong>\${(tpl.durationMinutes/60).toFixed(1)}h</strong></span>
+      </div>
+      <h4 style="margin-top:.8rem">Línea de tiempo</h4>
+      <div class="kvs">
+        <span>Emitida: <strong class="mono">\${fmtClock(wo.emissionMinute)}</strong></span>
+        <span>SLA (departure): <strong class="mono">\${fmtClock(wo.slaMinute)}</strong></span>
+        \${completionMin ? \`<span>\${wo.phase === "Failed" ? "Marcada Failed" : "Completada"}: <strong class="mono">\${fmtClock(completionMin)}</strong></span>\` : ''}
+        \${totalDuration !== null ? \`<span>Duración total: <strong>\${Math.floor(totalDuration/60)}h \${totalDuration%60}min</strong></span>\` : ''}
+      </div>\`;
+    if (wo.phase === "Deferred") {
+      const expiryMin = wo.deferralExpiryMinute;
+      const expiryRemaining = expiryMin ? Math.max(0, expiryMin - game.clock.minute) : 0;
+      const expiryDays = Math.ceil(expiryRemaining / S.DAY_MINUTES);
+      inner += \`<h4 style="margin-top:.5rem">📋 MEL en curso</h4>
+        <div class="kvs">
+          <span>Categoría MEL: <strong>\${wo.melCategory ?? "—"}</strong></span>
+          <span>Expira: <strong class="mono">\${expiryMin ? fmtClock(expiryMin) : "—"}</strong> (en \${expiryDays}d)</span>
+        </div>
+        <p class="muted" style="margin-top:.4rem;font-size:.8rem">Si expira sin cerrarse: -\${S.MEL_EXPIRY_PENALTY_EUR ?? 10000} € + delta rep negativo. Puedes "Reparar ya" para volver a activa.</p>
+        <div style="margin-top:.5rem"><button data-undefer-wo="\${wo.instanceId}">🔧 Reparar ya (vuelve a ToPlane)</button></div>\`;
+    } else if (wasOnTime !== null) {
+      inner += \`<h4 style="margin-top:.5rem">💰 Resultado económico</h4>
+        <div class="kvs">
+          <span>On-time: <strong style="color:\${wasOnTime ? 'var(--success)' : 'var(--danger)'}">\${wasOnTime ? "✓ Sí (cerró antes del departure)" : "✗ No (causó delay " + lateMins + "m)"}</strong></span>
+          \${feeTx ? \`<span>Fee cobrada: <strong style="color:var(--success)">+\${feeTx.amount.toLocaleString("es-ES")} €</strong></span>\` : ''}
+          \${penaltyTx ? \`<span>Penalty: <strong style="color:var(--danger)">\${penaltyTx.amount.toLocaleString("es-ES")} €</strong></span>\` : ''}
+        </div>\`;
+    }
+    inner += '</div>';
+    if (inner !== lastModalHtml) {
+      document.getElementById("modal-content").innerHTML = inner;
+      lastModalHtml = inner;
+    }
+    back.classList.add("open");
+    return;
+  }
 
   // F5C fix: mostrar TODOS los mecánicos con rating válido (no solo Idle). Los no-Idle aparecen
   // con su estado para que el jugador entienda por qué no son asignables. assignMechanicsToWo
@@ -2567,7 +2826,7 @@ function render(){
     else if (activeTab === "planning")    html = renderProductionPlanning();
     else if (activeTab === "office")  html = renderOffice();
     else if (activeTab === "contracts")  html = renderContracts();
-    else if (activeTab === "market")     html = renderMarket();
+    else if (activeTab === "market")     { activeTab = "office"; officeSubtab = "hiring"; html = renderOffice(); } // backward compat saves antiguos
     else if (activeTab === "construction") html = renderConstruction();
     else if (activeTab === "dashboard")  html = renderDashboard();
     else                                 html = renderEconomy();
@@ -2624,6 +2883,30 @@ document.body.addEventListener("click", (e) => {
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
   const tabBtn = e.target.closest(".side > button");
   if (tabBtn && tabBtn.dataset.tab) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
+  // Pivot iteración 2026-05-25: sub-tabs de Oficina (Equipo / Contratación / Management).
+  const officeSubBtn = e.target.closest("[data-office-subtab]");
+  if (officeSubBtn) { officeSubtab = officeSubBtn.dataset.officeSubtab; invalidatePanelCache(); render(); return; }
+  // Pivot iteración 2026-05-25: toggles de Management (checkboxes).
+  const mgmtToggle = e.target.closest("[data-mgmt-toggle]");
+  if (mgmtToggle && e.target.tagName === "INPUT") {
+    const key = mgmtToggle.dataset.mgmtToggle;
+    if (!game.management) game.management = { autoAssignTrivial: true, melAutoDefer: "never", overtimeAutoCall: false };
+    if (key === "autoPause") game.autoPauseEnabled = e.target.checked;
+    else if (key === "autoAssignTrivial") game.management.autoAssignTrivial = e.target.checked;
+    else if (key === "overtimeAutoCall") game.management.overtimeAutoCall = e.target.checked;
+    invalidatePanelCache();
+    render();
+    return;
+  }
+  // Pivot iteración 2026-05-25: radio buttons de MEL auto-defer policy.
+  const melRadio = e.target.closest("[data-mgmt-meldefer]");
+  if (melRadio && e.target.tagName === "INPUT") {
+    if (!game.management) game.management = { autoAssignTrivial: true, melAutoDefer: "never", overtimeAutoCall: false };
+    game.management.melAutoDefer = melRadio.dataset.mgmtMeldefer;
+    invalidatePanelCache();
+    render();
+    return;
+  }
   // === Pivot iteración 2026-05-24: chips clickables específicos ===
   // Estos handlers se evalúan ANTES de los handlers de card genéricas (wo-card, check-card,
   // daily-card) para que un click sobre un chip dentro de una card abra el modal del chip
@@ -2636,8 +2919,11 @@ document.body.addEventListener("click", (e) => {
   const dailyCard = e.target.closest("[data-daily-airplane]");
   if (dailyCard) { detailDailyAirplaneId = dailyCard.dataset.dailyAirplane; invalidateModalCache(); render(); return; }
   // === Cards genéricas (WO, check, mech, contract) — se evalúan DESPUÉS ===
-  const woCard = e.target.closest(".wo-card:not(.base)");
-  if (woCard && woCard.dataset.wo) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; render(); return; }
+  // Pivot iteración 2026-05-25: aceptar cards de WO aunque sean .base (Closed) — el
+  // modal detecta phase Completed/Failed y muestra info histórica (sin botones de
+  // asignar/defer). data-wo es la condición real, no la clase visual.
+  const woCard = e.target.closest(".wo-card[data-wo]");
+  if (woCard) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; render(); return; }
   const mechRow = e.target.closest("[data-mech-id]");
   if (mechRow && !e.target.closest("button") && !e.target.closest("select")) {
     detailMechId = mechRow.dataset.mechId;

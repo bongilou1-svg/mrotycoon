@@ -28,3 +28,7 @@ src-tauri/WixTools/
 .env
 .env.*
 !.env.example
+
+# Data raw descargada de APIs (no commit — usar scripts para regenerar)
+# IMPORTANTE: solo el /data en raíz, no afectar src/lib/data/
+/data/

@@ -2731,14 +2731,15 @@ export class PixiDriver {
     for (const pt of state.passthroughTraffic) {
       const pos = standPositions.get(pt.standOsmRef);
       if (!pos) continue;
-      // Pivot iteración 2026-05-24 · paleta passthrough refinada:
-      //   notHandled (Embraer/CRJ/ATR/B737/A321neo) → gris bajo (no habilitable hoy).
+      // Pivot iteración 2026-05-25 · paleta passthrough con visibilidad mejorada
+      // (el gris anterior era casi invisible). Ahora:
+      //   notHandled (Embraer/CRJ/ATR/B737/A321neo) → gris claro azulado (#94a4be).
       //   handled SIN contrato (operadores como Vueling/easyJet/Volotea con vuelos OVD)
       //     → violeta suave (#a78bfa) — pista visual "podrías firmar este operador".
       //   handled CON contrato (futuro: callsigns extra fuera de cap) → cyan tenue.
-      const baseColor = pt.notHandled ? 0x5d6677 : pt.contracted ? 0x3aa9ff : 0xa78bfa;
-      const haloAlpha = pt.notHandled ? 0.06 : 0.14;
-      const dotAlpha = pt.notHandled ? 0.5 : 0.85;
+      const baseColor = pt.notHandled ? 0x94a4be : pt.contracted ? 0x3aa9ff : 0xa78bfa;
+      const haloAlpha = pt.notHandled ? 0.16 : 0.18;
+      const dotAlpha = pt.notHandled ? 0.85 : 0.9;
       if (pt.taxiing) {
         const entryX = area.x + area.w * 0.3, entryY = area.y + area.h * 0.65;
         const px = entryX + (pos.x - entryX) * pt.taxiProgress;

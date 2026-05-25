@@ -210,7 +210,11 @@ function expect(cond, msg) {
 console.log("\n--- Sanity ---");
 expect(results.every((r) => r.woGenerated > 0), "todas las seeds generan al menos 1 WO");
 expect(results.every((r) => r.completed > 0), "todas completan al menos 1 WO");
-expect(avg(results, "woGenerated") >= 60, `≥ 60 WOs/${DAYS}d en media (got ${avg(results, "woGenerated").toFixed(1)})`);
+// Pivot iteración 2026-05-25: bajado de 60 a 30 — el sim emite menos WO por:
+// (a) AOG threshold 3h saca aviones del stand antes (menos ventana para callouts),
+// (b) SLA por scheduledDeparture invalida WO que vencen, (c) tick competition 7d
+// acorta vida de contratos en setup stress (menos arrivals tras rescisión).
+expect(avg(results, "woGenerated") >= 30, `≥ 30 WOs/${DAYS}d en media (got ${avg(results, "woGenerated").toFixed(1)})`);
 // Fase 4 target progresivo: en baseline aceptamos hasta 3/5 game overs como antes (no regresión).
 // Tras rebalance debería bajar a 0/5.
 // Pivot MRO línea pura: la viabilidad económica con 1 sola aerolínea + cap mecánicos = 4 + sin

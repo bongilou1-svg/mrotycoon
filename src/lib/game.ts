@@ -25,6 +25,8 @@ import {
 } from "./sim/contracts.ts";
 import { tierLabel } from "./types/contract.ts";
 import { generateDailyArrivals, assignStand } from "./sim/airplanes.ts";
+import { nextAirplaneInstanceId } from "./sim/fleet.ts";
+import { getFlightsForGameDay } from "./sim/schedule.ts";
 import { generateScheduledArrivals } from "./sim/schedule.ts";
 import { currentLineStandIds, currentBaseStandIds } from "./sim/stands.ts";
 import { generateInitialFleet, ageInitialFleet, seedFleetForAirline, resetAirplaneInstanceCounter } from "./sim/fleet.ts";
@@ -147,6 +149,26 @@ export interface GameState {
    *  casos triviales (1 cert eligible) y hace auto-handoff entre turnos. Default false
    *  (el jugador activa cuando contrata su primer TMA). */
   autoAssignEnabled: boolean;
+  /** Pivot iteración 2026-05-25 · Management: políticas operativas configurables desde
+   *  la tab Oficina → Management. Permiten al jugador definir "normas de la casa" para
+   *  que el sim haga decisiones rutinarias sin micro-management constante. */
+  management: {
+    /** Auto-asigna mecs Idle elegibles a WOs sin equipo (greedy: primer match). Si false,
+     *  el jugador debe asignar manualmente desde el modal. Default true. */
+    autoAssignTrivial: boolean;
+    /** Política de MEL auto-defer:
+     *   - "never": el jugador difiere manualmente desde el modal WO.
+     *   - "ifWouldDelay": (RECOMENDADO) compara tiempo estimado de fix con margen al
+     *      departure. Si fix > margen → diferir (el avión iba a entrar en retraso de
+     *      todos modos). Si fix ≤ margen → intentar fix normal.
+     *   - "always": diferir auto cualquier WO diferible apenas se emite. Mantienes el
+     *      avión siempre libre, asumes coste MEL pendiente. */
+    melAutoDefer: "never" | "ifWouldDelay" | "always";
+    /** Si true, cuando no hay mec idle elegible para una WO pero hay uno OffShift con
+     *  rating válido, llamarlo automáticamente a hora extra (cuesta ~½ día salario,
+     *  moral -5). Default false (decisión económica del jugador). */
+    overtimeAutoCall: boolean;
+  };
   /** Fase 5A X: etapa actual del MRO (1-4). Default 1. */
   mroStage: MroStage;
   /** Fase 5A X: build en curso (si lo hay). Cuando completionMinute pasa, sube mroStage. */
@@ -222,7 +244,7 @@ export function createGame(
   const baseFleet = generateInitialFleet(rng, activeAirlines);
   const marketRng = createRng(seed + 3);
   const fleet = ageInitialFleet(marketRng, baseFleet);
-  return {
+  const g: GameState = {
     clock: createClock(undefined, 0), // arranca pausado en START_MINUTE (06:00 día 1)
     airlines,
     templates,
@@ -268,6 +290,11 @@ export function createGame(
     autoPauseEnabled: true,
     shiftGatingEnabled: true,
     autoAssignEnabled: false,
+    management: {
+      autoAssignTrivial: true,
+      melAutoDefer: "ifWouldDelay", // pivot 2026-05-25: realista por default
+      overtimeAutoCall: false,
+    },
     mroStage: 1,
     activeBuild: null,
     kpiHistory: [],
@@ -280,6 +307,89 @@ export function createGame(
     hoursKPI: createHoursKPI(),
     lastWeeklyHoursSnapshot: {},
   };
+  // Pivot iteración 2026-05-25: pre-seed de aviones que pasaron la NOCHE ANTERIOR en
+  // stand. Sin esto, el mapa arranca vacío al inicio del Día 1 06:00 — irreal para
+  // un aeropuerto regional. Por cada aerolínea contratada con overnight habitual,
+  // colocamos un avión "que llegó anoche y sale esta mañana 06:30". Daily check ya
+  // completado (lo hizo el turno night ficticio). Visualmente: al abrir el juego ya
+  // ves vida en stand y el primer evento es el departure de la mañana.
+  if (lineMode) seedPreOvernighters(g);
+  return g;
+}
+
+/** Pre-seed de aviones que pasaron la noche pasada en stand. Ver comentario en createGame. */
+function seedPreOvernighters(g: GameState): void {
+  const startMinute = g.clock.minute; // típicamente 360 (06:00)
+  const standsAvail = currentLineStandIds(g.mroStage);
+  let standIdx = 0;
+  for (const c of g.contracts) {
+    if (c.status !== "active") continue;
+    const al = g.airlines.find((a) => a.id === c.airlineId);
+    if (!al?.iataCode) continue;
+    // Buscar el último arrival overnight del Día 1 de esta aerolínea (≥19:00) — modela el
+    // patrón recurrente: si IB3219 vuela todos los días overnight, AYER también lo hizo.
+    const flights = getFlightsForGameDay(1);
+    const overnighters = flights
+      .filter((f) => f.type === "arrival" && f.airlineCode === al.iataCode && f.scheduledMinute >= 19 * 60)
+      .sort((a, b) => b.scheduledMinute - a.scheduledMinute); // último primero
+    if (overnighters.length === 0) continue;
+    const pattern = overnighters[0]; // ej IB3219 @ 21:05
+    // Pivot iteración 2026-05-25: la SALIDA del pre-overnighter debe ser el PRIMER departure
+    // REAL de la aerolínea hoy (no un valor inventado tipo 06:30). Conceptualmente el
+    // avión que pernoctó ayer es el que opera la primera rotación de salida hoy.
+    const firstDepartureToday = flights
+      .filter((f) => f.type === "departure" && f.airlineCode === al.iataCode)
+      .sort((a, b) => a.scheduledMinute - b.scheduledMinute)[0];
+    if (!firstDepartureToday) continue; // sin departure, no tiene sentido pre-seedearlo
+    // Matrícula: del pool, evitar las del primer arrival del Día 1 (para que no choque
+    // con el primer landing real). Usamos directo la primera no-busy del pool de la aerolínea.
+    const physicalReg = al.iataCode === "IB" ? "EC-LUC" // matrícula icónica IB para el pre-seed
+      : `${al.iataCode}-OVN`; // fallback genérico
+    // Stand libre
+    if (standIdx >= standsAvail.length) break; // sin stands libres, no más pre-seeds
+    const standId = standsAvail[standIdx++];
+    const arrivalMinute = -(DAY_MINUTES - pattern.scheduledMinute); // ej -175 = "ayer 21:05"
+    const scheduledDepartureMinute = firstDepartureToday.scheduledMinute; // departure real del schedule
+    const instanceId = nextAirplaneInstanceId();
+    g.airplanes.push({
+      instanceId,
+      registration: physicalReg,
+      model: pattern.model as "A320" | "A321",
+      engineVariant: pattern.engineVariant as "CFM56" | "V2500",
+      contractId: c.id,
+      standId,
+      arrivalMinute,
+      scheduledDepartureMinute,
+      status: "Idle",
+      flightHoursThisLeg: 2.5,
+      overnight: true,
+      arrivalCallsign: pattern.callsign,
+      nextDepartureCallsign: firstDepartureToday.callsign,
+    });
+    // Asegurar entry en fleet (para que A/C/D y daily lookups funcionen)
+    if (!g.fleet.some((f) => f.registration === physicalReg)) {
+      g.fleet.push({
+        registration: physicalReg,
+        airlineId: c.airlineId,
+        model: pattern.model as "A320" | "A321",
+        engineVariant: pattern.engineVariant as "CFM56" | "V2500",
+        totalFH: 12000, totalCycles: 4500,
+        fhSinceLastA: 200, cyclesSinceLastA: 80,
+        fhSinceLastC: 1200, cyclesSinceLastC: 400,
+        fhSinceLastD: 8000, cyclesSinceLastD: 2800,
+      });
+    }
+    // Emit las DC-* del overnight como YA COMPLETADAS (el turno night ficticio las hizo).
+    // Visualmente el jugador ve "EC-LUC · Daily check · X/X subtareas ✓" en feed.
+    const dcs = rollDailyChecksOnOvernight(g.woRng,
+      { instanceId, registration: physicalReg, arrivalMinute, scheduledDepartureMinute,
+        model: pattern.model, engineVariant: pattern.engineVariant, contractId: c.id,
+        standId, status: "Idle", flightHoursThisLeg: 2.5 } as never,
+      g.dailyCheckTemplates, g.balance);
+    for (const wo of dcs) {
+      g.workOrders.push({ ...wo, phase: "Completed" });
+    }
+  }
 }
 
 /** Fase 5C: rollea eventos aleatorios cuando entramos en un día nuevo. Llamado desde
@@ -301,6 +411,39 @@ function rollEventsIfNewDay(g: GameState): void {
         pushNotification(g, `📢 Airbus emite SB sobre ${ev.model}/${ev.engineVariant === "any" ? "todos motores" : ev.engineVariant} · afectados: ${regs}`, "info");
       }
     }
+  }
+}
+
+/** Pivot iteración 2026-05-25: re-attach de MEL deferreds entre landings de la misma
+ *  matrícula. Una WO Deferred apunta al `airplaneInstanceId` del landing donde se diferió,
+ *  pero cuando el avión despega (Departed) ese instanceId queda "huérfano" — el defecto
+ *  físico sigue en la matrícula. Coherente con MEL real: el defecto pertenece al avión,
+ *  no al vuelo.
+ *
+ *  Esta función hace un SWEEP de todas las deferreds: si su `airplaneInstanceId` actual
+ *  apunta a un avión que YA NO está presente (Departed o no existe), busca el próximo
+ *  landing FUTURO de la misma matrícula y reasigna. Si no hay landing futuro inmediato,
+ *  la deferral se queda apuntando al viejo (vivirá hasta que aterrice otro o expire).
+ *  Idempotente. Se llama en cada tick (después de processDepartures y ensureArrivals)
+ *  para cubrir el caso en que ambos landings se pre-generaron antes del defer. */
+function reattachDeferralsToActiveLandings(g: GameState): void {
+  const now = g.clock.minute;
+  for (let i = 0; i < g.workOrders.length; i++) {
+    const w = g.workOrders[i];
+    if (w.phase !== "Deferred") continue;
+    const currentLanding = g.airplanes.find((a) => a.instanceId === w.airplaneInstanceId);
+    // Si el landing actual sigue presente (no Departed), nada que hacer.
+    if (currentLanding && currentLanding.status !== "Departed") continue;
+    // Buscar próximo landing de la misma matrícula que sea PRESENTE o FUTURO y NO Departed.
+    const candidates = g.airplanes
+      .filter((a) => a.registration === w.airplaneRegistration &&
+        a.instanceId !== w.airplaneInstanceId &&
+        a.status !== "Departed" &&
+        (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now))
+      .sort((a, b) => a.arrivalMinute - b.arrivalMinute);
+    if (candidates.length === 0) continue; // no hay próximo, sigue colgada del viejo
+    const next = candidates[0];
+    g.workOrders[i] = { ...w, airplaneInstanceId: next.instanceId };
   }
 }
 
@@ -696,18 +839,95 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   // Pivot línea pura · iteración 2026-05-24: buscar template también en
   // dailyCheckTemplates — antes los DC-* (subtareas de daily) no se auto-asignaban
   // porque el find solo miraba en templates.
-  for (const wo of g.workOrders) {
-    if (wo.assignedMechanicIds.length > 0 || wo.phase !== "ToPlane") continue;
-    const tpl = g.templates.find((t) => t.id === wo.templateId)
-      || g.dailyCheckTemplates.find((t) => t.id === wo.templateId);
-    const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
-    if (!tpl || !ap) continue;
-    const certs = eligibleCertifiers(g.mechanics, tpl, ap.model, ap.engineVariant);
-    if (certs.length === 0) continue;
-    const res = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, certs[0].id, [], g.balance);
-    if (!res.error) {
-      g.mechanics = res.mechanics;
-      g.workOrders = res.workOrders;
+  // Pivot iteración 2026-05-25 · Management: condicionado a `g.management.autoAssignTrivial`
+  // (default true). Si false, el jugador asigna manualmente desde el modal WO. Si true Y
+  // overtimeAutoCall, también llama a OffShift como hora extra cuando no hay Idle elegible.
+  const mgmt = g.management;
+  if (mgmt.autoAssignTrivial) {
+    for (const wo of g.workOrders) {
+      if (wo.assignedMechanicIds.length > 0 || wo.phase !== "ToPlane") continue;
+      const tpl = g.templates.find((t) => t.id === wo.templateId)
+        || g.dailyCheckTemplates.find((t) => t.id === wo.templateId);
+      const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
+      if (!tpl || !ap) continue;
+      const certs = eligibleCertifiers(g.mechanics, tpl, ap.model, ap.engineVariant);
+      if (certs.length > 0) {
+        const res = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, certs[0].id, [], g.balance);
+        if (!res.error) {
+          g.mechanics = res.mechanics;
+          g.workOrders = res.workOrders;
+        }
+        continue;
+      }
+      // Pivot iteración 2026-05-25: overtime auto-call. Si no hay Idle elegible pero hay
+      // un OffShift con rating válido → llamarlo a hora extra (cuesta ~½ día salario al
+      // terminar + moral -5). Solo si el management lo permite.
+      if (mgmt.overtimeAutoCall) {
+        const offshiftCert = g.mechanics.find((m) =>
+          m.state === "OffShift" && !m.isLeadForeman &&
+          m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === tpl.requiredCategory),
+        );
+        if (offshiftCert) {
+          // Convertir a Idle temporal con overtimeOriginalShift set → al volver a Idle
+          // tras Returning, cobra overtime y restaura turno.
+          for (let i = 0; i < g.mechanics.length; i++) {
+            if (g.mechanics[i].id === offshiftCert.id) {
+              g.mechanics[i] = {
+                ...g.mechanics[i],
+                state: "Idle" as const,
+                overtimeOriginalShift: g.mechanics[i].shift,
+                moral: Math.max(0, (g.mechanics[i].moral ?? 70) - 5),
+              };
+              break;
+            }
+          }
+          pushNotification(g, `⏱️ ${offshiftCert.name} llamado a hora extra para ${wo.airplaneRegistration}`, "warning");
+          const res2 = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, offshiftCert.id, [], g.balance);
+          if (!res2.error) {
+            g.mechanics = res2.mechanics;
+            g.workOrders = res2.workOrders;
+          }
+        }
+      }
+    }
+  }
+
+  // 2b. Pivot iteración 2026-05-25 · MEL auto-defer policy.
+  //   - "never": jugador difiere manual.
+  //   - "ifWouldDelay" (default): compara tiempo de fix estimado vs margen al departure.
+  //      Si el fix no cabe antes del departure → diferir (el avión iba a retrasar igual).
+  //      Si cabe → no diferir, dejar que auto-assign lo coja. Modela decisión racional
+  //      del MRO: "si voy a quedar tarde, mejor liberar el avión y reparar al volver".
+  //   - "always": cualquier WO diferible se difiere en cuanto se emite. Agresivo.
+  // Nota: deferWoManually requiere B1 idle con rating para firmar el MEL. Si no hay,
+  // la WO se queda esperando (la política intenta el defer pero res.ok será false).
+  if (mgmt.melAutoDefer !== "never") {
+    for (const wo of g.workOrders) {
+      if (wo.phase !== "ToPlane" || wo.assignedMechanicIds.length > 0) continue;
+      const tpl = g.templates.find((t) => t.id === wo.templateId);
+      if (!tpl) continue; // daily checks no se difieren auto
+      if (tpl.isAOG || tpl.severity === "Critical") continue;
+      if (!tpl.deferrable && tpl.melCategory == null) continue;
+      const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
+      if (!ap) continue;
+
+      if (mgmt.melAutoDefer === "ifWouldDelay") {
+        // Estimar tiempo de fix: usar durationMinutes del template como referencia
+        // (asume team óptimo eficiencia ~1.0). Margen = scheduledDeparture - now.
+        // Si fix >= margen: el avión iba a salir tarde de todas formas → mejor diferir.
+        const timeToDeparture = ap.scheduledDepartureMinute - g.clock.minute;
+        const estimatedFixMin = tpl.durationMinutes;
+        // Margen de seguridad: 10 min para travel+inspection inicial.
+        if (estimatedFixMin + 10 <= timeToDeparture) continue; // hay margen, no diferir
+      }
+      // (en "always" siempre intentamos diferir)
+      const res = deferWoManually(g, wo.instanceId);
+      if (res.ok) {
+        const policyLabel = mgmt.melAutoDefer === "ifWouldDelay"
+          ? "evitar retraso"
+          : "política agresiva";
+        pushNotification(g, `🤖 MEL auto-firmado · ${wo.airplaneRegistration} liberado (${policyLabel})`, "info");
+      }
     }
   }
 
@@ -923,6 +1143,12 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   //     escalation si delay ≥ AOG_DELAY_THRESHOLD_MIN (3h). Si tienen WO activa, siguen
   //     ocupando stand (delay acumula).
   processDepartures(g, next);
+
+  // 5d. Pivot iteración 2026-05-25: re-attach de MEL deferreds a próximos landings.
+  // Tras processDepartures algunos aviones pasan a Departed → sus deferreds quedan
+  // huérfanas. Las migramos al próximo landing planificado de la misma matrícula
+  // para que el jugador pueda cerrarlas en la próxima pernocta.
+  reattachDeferralsToActiveLandings(g);
 
   // 6. Avanzar reloj
   g.clock = advance(g.clock, stepMinutes);
@@ -1335,7 +1561,16 @@ export function deferWoManually(
       : m,
   );
   g.workOrders = g.workOrders.map((w) => (w.instanceId === woInstanceId ? newWo : w));
-  pushNotification(g, `✍️ ${signer.name} firma MEL · ${wo.airplaneRegistration} diferida`, "info");
+  // Días que queda viva la deferral según categoría MEL (A:3 / B:10 / C:120 etc según balance).
+  const melCat = newWo.melCategory ?? "?";
+  const expiryDays = newWo.deferralExpiryMinute
+    ? Math.max(0, Math.ceil((newWo.deferralExpiryMinute - g.clock.minute) / DAY_MINUTES))
+    : "?";
+  pushNotification(
+    g,
+    `✍️ MEL ${melCat} firmado por ${signer.name} · ${wo.airplaneRegistration} liberado · cerrar en ≤${expiryDays}d (próxima pernocta o pierde rep+€)`,
+    "info",
+  );
   return { ok: true };
 }
 

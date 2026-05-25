@@ -11,7 +11,8 @@
       { "model": "A321", "engineVariant": "CFM56" }
     ],
     "basedAircraftCount": 8,
-    "brandThreshold": 60
+    "brandThreshold": 60,
+    "homeBaseAirports": ["LEAS"]
   },
   {
     "id": "AL-002",
@@ -24,7 +25,8 @@
       { "model": "A321", "engineVariant": "V2500" }
     ],
     "basedAircraftCount": 6,
-    "brandThreshold": 70
+    "brandThreshold": 70,
+    "homeBaseAirports": []
   },
   {
     "id": "AL-003",
@@ -37,7 +39,8 @@
       { "model": "A321", "engineVariant": "V2500" }
     ],
     "basedAircraftCount": 4,
-    "brandThreshold": 55
+    "brandThreshold": 55,
+    "homeBaseAirports": ["LEAS"]
   },
   {
     "id": "AL-004",
@@ -51,6 +54,7 @@
       { "model": "A321", "engineVariant": "V2500" }
     ],
     "basedAircraftCount": 9,
-    "brandThreshold": 80
+    "brandThreshold": 80,
+    "homeBaseAirports": []
   }
 ]

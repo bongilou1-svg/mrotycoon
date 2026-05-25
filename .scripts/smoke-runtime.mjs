@@ -253,6 +253,47 @@ if (MODE === "line") {
   }
 }
 check(g.airplanes.length > 0, "Aviones generados", `${g.airplanes.length} en ${DAYS}d`);
+
+// Pivot iteración 2026-05-25: verificar que el scheduler no pierde arrivals por gaps de
+// pool primary (bug del IB3219 día 2 que mapeaba a EC-IXM atascada). Para cada día,
+// expected = arrivals del schedule de aerolíneas contratadas; actual = aviones generados.
+if (MODE === "line") {
+  try {
+    const { getFlightsForGameDay: gff } = await import("../src/lib/sim/schedule.ts");
+    const isHandled = (f) => ["A320", "A321"].includes(f.model) && ["CFM56", "V2500"].includes(f.engineVariant);
+    const contractedAirlineIds = new Set(g.contracts.filter(c => c.status === "active" || c.status === "cancelled").map(c => c.airlineId));
+    const contractedIatas = new Set();
+    for (const al of g.airlines) {
+      if (al.iataCode && contractedAirlineIds.has(al.id)) contractedIatas.add(al.iataCode);
+    }
+    let gapsDetected = 0;
+    let totalExpected = 0;
+    let totalActual = 0;
+    for (let d = 1; d <= DAYS; d++) {
+      for (const iata of contractedIatas) {
+        const expected = gff(d).filter(f => f.type === "arrival" && f.airlineCode === iata && isHandled(f)).length;
+        const dayStart = (d - 1) * DAY_MINUTES;
+        const dayEnd = d * DAY_MINUTES;
+        const contractIds = new Set(g.contracts.filter(c => {
+          const al = g.airlines.find(a => a.id === c.airlineId);
+          return al?.iataCode === iata;
+        }).map(c => c.id));
+        const actual = g.airplanes.filter(a => contractIds.has(a.contractId) && a.arrivalMinute >= dayStart && a.arrivalMinute < dayEnd).length;
+        totalExpected += expected;
+        totalActual += actual;
+        // No marcamos gap si el contrato se canceló (cero arrivals posteriores OK).
+        const cancelled = g.contracts.some(c => {
+          const al = g.airlines.find(a => a.id === c.airlineId);
+          return al?.iataCode === iata && c.status === "cancelled";
+        });
+        if (actual < expected && !(actual === 0 && cancelled)) gapsDetected++;
+      }
+    }
+    check(gapsDetected === 0, "Cero gaps en cobertura del scheduler", `expected ${totalExpected} / actual ${totalActual} arrivals contratados · ${gapsDetected} días con gap`);
+  } catch (e) {
+    console.log(`   ⚠️  no se pudo verificar cobertura: ${e.message}`);
+  }
+}
 check(overnighters.length > 0 || g.airplanes.filter((a) => a.overnight).length > 0,
   "Pernoctas en horizonte inicial",
   `${g.airplanes.filter((a) => a.overnight).length} marcadas`);

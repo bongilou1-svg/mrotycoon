@@ -26,4 +26,12 @@ export interface Airline {
    *  ofertado escalan con cuánto supere el brand este threshold (más brand sobre
    *  umbral = mejor fee, payment, penalty). */
   brandThreshold?: number;
+  /** Pivot iteración 2026-05-25: ICAOs de aeropuertos donde la aerolínea tiene BASE
+   *  operativa (sus aviones pernoctan habitualmente ahí). Cuando un arrival aterriza
+   *  en uno de estos aeropuertos y es el último del día de la aerolínea, se considera
+   *  OVERNIGHT real (pernocta para mantenimiento + primera rotación del día siguiente).
+   *  Las aerolíneas SIN base en el aeropuerto hacen turnaround corto (55min sale otra
+   *  vez). Iberia Express y Volotea tienen base en LEAS (OVD). Vueling/easyJet/Ryanair
+   *  no. Escalable a otros aeropuertos cuando se añadan. */
+  homeBaseAirports?: string[];
 }

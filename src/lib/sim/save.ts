@@ -27,7 +27,7 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  v11 = pivot línea pura · Fase A modelo HH: añade hoursKPI (book vs actual).
  *  v12 = pivot línea pura · Fase B Tiers: añade tierUpgradeLastTickMinute + upgrade
  *  field en Contract. */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 export interface GameSavePayload {
   version: number;
@@ -77,6 +77,8 @@ export interface GameSavePayload {
   tierUpgradeLastTickMinute?: number;
   // v12 (pivot línea pura · Fase D): snapshot HH al último weekly close por aerolínea.
   lastWeeklyHoursSnapshot?: Record<string, number>;
+  // v13 (pivot iteración 2026-05-25 · Management): normas operativas configurables.
+  management?: GameState["management"];
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -121,6 +123,7 @@ export function serializeGame(g: GameState): GameSavePayload {
     hoursKPI: g.hoursKPI,
     tierUpgradeLastTickMinute: g.tierUpgradeLastTickMinute,
     lastWeeklyHoursSnapshot: g.lastWeeklyHoursSnapshot,
+    management: g.management,
   };
 }
 
@@ -138,8 +141,8 @@ export function deserializeGame(
   dailyCheckTemplates: WorkOrderTemplate[] = [],
 ): GameState {
   // v8 puede leer v7 y v6 con migración (campos nuevos default). v5 y previos requieren upgrade explícito.
-  if (payload.version !== SAVE_VERSION && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
-    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 11, 10, 9, 8, 7 o 6 con migración)`);
+  if (payload.version !== SAVE_VERSION && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
+    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 12, 11, 10, 9, 8, 7 o 6 con migración)`);
   }
   resetAirplaneInstanceCounter(payload.aliCounter);
   resetMaintenanceCheckCounter(payload.mcCounter);
@@ -172,6 +175,19 @@ export function deserializeGame(
     autoPauseEnabled: payload.autoPauseEnabled ?? true,
     shiftGatingEnabled: payload.shiftGatingEnabled ?? true,
     autoAssignEnabled: payload.autoAssignEnabled ?? false,
+    // v13 (pivot iteración 2026-05-25 · Management): defaults sensatos para saves antiguos.
+    // Migración del valor intermedio "ifBlockedAndNoFix" (que existió brevemente) → "ifWouldDelay".
+    management: (() => {
+      const m = payload.management ?? {
+        autoAssignTrivial: true,
+        melAutoDefer: "ifWouldDelay" as const,
+        overtimeAutoCall: false,
+      };
+      if ((m.melAutoDefer as string) === "ifBlockedAndNoFix") {
+        return { ...m, melAutoDefer: "ifWouldDelay" as const };
+      }
+      return m;
+    })(),
     compliance: payload.compliance,
     candidates: payload.candidates,
     marketLastRefreshMinute: payload.marketLastRefreshMinute,
