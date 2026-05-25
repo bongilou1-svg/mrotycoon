@@ -2,11 +2,851 @@
   "version": 0.6,
   "generator": "Overpass API 0.7.62.11 87bfad18",
   "osm3s": {
-    "timestamp_osm_base": "2026-05-25T15:28:46Z",
+    "timestamp_osm_base": "2026-05-25T15:57:15Z",
     "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
   },
   "elements": [
 
+{
+  "type": "node",
+  "id": 2156791324,
+  "lat": 38.2838390,
+  "lon": -0.5532883,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "22"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791333,
+  "lat": 38.2839975,
+  "lon": -0.5544816,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "20"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791384,
+  "lat": 38.2841609,
+  "lon": -0.5554681,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "18"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791398,
+  "lat": 38.2846765,
+  "lon": -0.5567821,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "16"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791402,
+  "lat": 38.2847593,
+  "lon": -0.5573763,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "14"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791406,
+  "lat": 38.2848042,
+  "lon": -0.5593782,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "8"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791411,
+  "lat": 38.2848277,
+  "lon": -0.5579766,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "12"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791417,
+  "lat": 38.2849089,
+  "lon": -0.5585742,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "10"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791441,
+  "lat": 38.2852585,
+  "lon": -0.5511785,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "35"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791445,
+  "lat": 38.2853395,
+  "lon": -0.5609408,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "6C"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791447,
+  "lat": 38.2853759,
+  "lon": -0.5510910,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "200"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791448,
+  "lat": 38.2853976,
+  "lon": -0.5522838,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "31"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791450,
+  "lat": 38.2854244,
+  "lon": -0.5517007,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "33"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791452,
+  "lat": 38.2853852,
+  "lon": -0.5509878,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "36"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791455,
+  "lat": 38.2854347,
+  "lon": -0.5616961,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "6B"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791456,
+  "lat": 38.2856110,
+  "lon": -0.5633830,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "4C"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791459,
+  "lat": 38.2854682,
+  "lon": -0.5527302,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "29"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791468,
+  "lat": 38.2855385,
+  "lon": -0.5624508,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "6A"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791472,
+  "lat": 38.2855785,
+  "lon": -0.5631972,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "4B"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791475,
+  "lat": 38.2856656,
+  "lon": -0.5639091,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "4A"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791484,
+  "lat": 38.2856428,
+  "lon": -0.5534154,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "27"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791499,
+  "lat": 38.2857114,
+  "lon": -0.5544640,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "23"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791500,
+  "lat": 38.2857177,
+  "lon": -0.5539839,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "25"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791504,
+  "lat": 38.2858353,
+  "lon": -0.5558193,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "89"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791509,
+  "lat": 38.2858355,
+  "lon": -0.5550161,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "19"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791513,
+  "lat": 38.2858428,
+  "lon": -0.5647413,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "2"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791518,
+  "lat": 38.2859275,
+  "lon": -0.5564814,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "87"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791519,
+  "lat": 38.2858734,
+  "lon": -0.5508020,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "37"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791525,
+  "lat": 38.2858841,
+  "lon": -0.5671723,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "1A"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791531,
+  "lat": 38.2860249,
+  "lon": -0.5571699,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "85"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791542,
+  "lat": 38.2861178,
+  "lon": -0.5578360,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "83"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791550,
+  "lat": 38.2861349,
+  "lon": -0.5506200,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "39"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791552,
+  "lat": 38.2862108,
+  "lon": -0.5585068,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "81"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791559,
+  "lat": 38.2863007,
+  "lon": -0.5594726,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "11A"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791563,
+  "lat": 38.2864140,
+  "lon": -0.5599596,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "11"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791569,
+  "lat": 38.2865022,
+  "lon": -0.5605562,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "9A"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791573,
+  "lat": 38.2863556,
+  "lon": -0.5670654,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "1B"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791578,
+  "lat": 38.2864899,
+  "lon": -0.5505330,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "41"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791582,
+  "lat": 38.2866411,
+  "lon": -0.5612217,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "9"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791588,
+  "lat": 38.2867404,
+  "lon": -0.5618120,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "7"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791595,
+  "lat": 38.2868596,
+  "lon": -0.5624804,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "5"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791598,
+  "lat": 38.2868455,
+  "lon": -0.5669415,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "1C"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791600,
+  "lat": 38.2869148,
+  "lon": -0.5630338,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "3B"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791606,
+  "lat": 38.2869457,
+  "lon": -0.5505572,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "43"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791607,
+  "lat": 38.2869812,
+  "lon": -0.5635313,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "3A"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791626,
+  "lat": 38.2874017,
+  "lon": -0.5503371,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "45"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791629,
+  "lat": 38.2877317,
+  "lon": -0.5502558,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "47"
+  }
+},
+{
+  "type": "node",
+  "id": 2156791634,
+  "lat": 38.2880925,
+  "lon": -0.5501761,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "49"
+  }
+},
+{
+  "type": "node",
+  "id": 3847527142,
+  "lat": 38.2857753,
+  "lon": -0.5665279,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E1"
+  }
+},
+{
+  "type": "node",
+  "id": 3847527156,
+  "lat": 38.2862422,
+  "lon": -0.5664420,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E2"
+  }
+},
+{
+  "type": "node",
+  "id": 3847529978,
+  "lat": 38.2867858,
+  "lon": -0.5663199,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E3"
+  }
+},
+{
+  "type": "node",
+  "id": 5656154357,
+  "lat": 38.2867663,
+  "lon": -0.5641409,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "D6"
+  }
+},
+{
+  "type": "node",
+  "id": 5656154359,
+  "lat": 38.2869863,
+  "lon": -0.5640967,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "D3"
+  }
+},
+{
+  "type": "node",
+  "id": 5656154363,
+  "lat": 38.2868576,
+  "lon": -0.5647920,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "D5"
+  }
+},
+{
+  "type": "node",
+  "id": 5656154365,
+  "lat": 38.2870792,
+  "lon": -0.5647679,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "D2"
+  }
+},
+{
+  "type": "node",
+  "id": 5656154368,
+  "lat": 38.2869491,
+  "lon": -0.5654237,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "D4"
+  }
+},
+{
+  "type": "node",
+  "id": 9546999041,
+  "lat": 38.2871658,
+  "lon": -0.5653880,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "D1"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067028,
+  "lat": 38.2866412,
+  "lon": -0.5625291,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E4"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067029,
+  "lat": 38.2867824,
+  "lon": -0.5635756,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "H1"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067030,
+  "lat": 38.2867151,
+  "lon": -0.5630786,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "H2"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067031,
+  "lat": 38.2865415,
+  "lon": -0.5618550,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E5"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067032,
+  "lat": 38.2864594,
+  "lon": -0.5612592,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E6"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067033,
+  "lat": 38.2863617,
+  "lon": -0.5605871,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E7"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067034,
+  "lat": 38.2862802,
+  "lon": -0.5599870,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E8"
+  }
+},
+{
+  "type": "node",
+  "id": 9547067035,
+  "lat": 38.2861755,
+  "lon": -0.5595000,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "E9"
+  }
+},
+{
+  "type": "node",
+  "id": 9551440087,
+  "lat": 38.2852397,
+  "lon": -0.5625173,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "H3"
+  }
+},
+{
+  "type": "node",
+  "id": 9551440088,
+  "lat": 38.2851335,
+  "lon": -0.5617638,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "H4"
+  }
+},
+{
+  "type": "node",
+  "id": 9551493335,
+  "lat": 38.2851151,
+  "lon": -0.5609915,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "H5"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290352,
+  "lat": 38.2862904,
+  "lon": -0.5552592,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B18 - B19"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290353,
+  "lat": 38.2862003,
+  "lon": -0.5546377,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B20 - B22"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290354,
+  "lat": 38.2861602,
+  "lon": -0.5543681,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B23"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290355,
+  "lat": 38.2861002,
+  "lon": -0.5539094,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B25 - B26"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290356,
+  "lat": 38.2859991,
+  "lon": -0.5531478,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B27 - B29"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290357,
+  "lat": 38.2859002,
+  "lon": -0.5528222,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B30 - B31"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290358,
+  "lat": 38.2858442,
+  "lon": -0.5523624,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B32 - B33"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290359,
+  "lat": 38.2857755,
+  "lon": -0.5518583,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "B34"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290360,
+  "lat": 38.2857929,
+  "lon": -0.5517055,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C35 - C36"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290361,
+  "lat": 38.2860783,
+  "lon": -0.5511633,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C37 - C38"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290362,
+  "lat": 38.2863975,
+  "lon": -0.5510918,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C39 - C40"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290363,
+  "lat": 38.2867174,
+  "lon": -0.5510291,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C41 - C42"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290364,
+  "lat": 38.2870754,
+  "lon": -0.5510094,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C43 - C45"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290365,
+  "lat": 38.2873675,
+  "lon": -0.5508891,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C46 - C47"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290366,
+  "lat": 38.2876828,
+  "lon": -0.5508162,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C48 - C49"
+  }
+},
+{
+  "type": "node",
+  "id": 12909290367,
+  "lat": 38.2880053,
+  "lon": -0.5507396,
+  "tags": {
+    "aeroway": "gate",
+    "ref": "C50"
+  }
+},
 {
   "type": "way",
   "id": 23035831,

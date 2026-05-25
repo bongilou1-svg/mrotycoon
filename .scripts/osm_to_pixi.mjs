@@ -15,8 +15,15 @@ const outputPath = join("src/assets/airports", `${icao}.paths.json`);
 
 const raw = JSON.parse(readFileSync(inputPath, "utf-8"));
 const ways = raw.elements.filter((e) => e.type === "way" && e.geometry);
+// Pivot iteración 2026-05-25 — Multi-airport: muchos aeropuertos (incluido ALC)
+// taggean gates/stands como NODES (aeroway=gate o aeroway=parking_position node-form),
+// no como ways. Los procesamos como parking_positions de 1 punto para que el converter
+// los trate igual que los ways.
+const gateNodes = raw.elements.filter((e) => e.type === "node"
+  && (e.tags?.aeroway === "gate" || e.tags?.aeroway === "parking_position")
+  && typeof e.lon === "number" && typeof e.lat === "number");
 
-// Calcula bbox real desde todas las coords
+// Calcula bbox real desde todas las coords (ways + gate nodes)
 let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
 for (const w of ways) {
   for (const p of w.geometry) {
@@ -25,6 +32,12 @@ for (const w of ways) {
     if (p.lat < minLat) minLat = p.lat;
     if (p.lat > maxLat) maxLat = p.lat;
   }
+}
+for (const n of gateNodes) {
+  if (n.lon < minLon) minLon = n.lon;
+  if (n.lon > maxLon) maxLon = n.lon;
+  if (n.lat < minLat) minLat = n.lat;
+  if (n.lat > maxLat) maxLat = n.lat;
 }
 
 // Proyección equirectangular con corrección de latitud — preserva aspecto real
@@ -84,6 +97,23 @@ for (const w of ways) {
   } else {
     paths.other.push(item);
   }
+}
+
+// Pivot iteración 2026-05-25 — Multi-airport: añadir gates/parking nodes como
+// parking_positions de 1 punto. ALC tiene 84 gates como nodes (no ways) con refs
+// "8", "10", "12"... Estos se procesan IGUAL que ways tras esta conversión.
+// La línea simbólica del stand se aproxima offset 5m hacia el norte para que el
+// renderer tenga "tail → tip" coherente sin requerir el polígono real del taxiway.
+const OFFSET_DEG = 0.00005; // ~5.5m a esta latitud, dirección estética
+for (const n of gateNodes) {
+  const tip = project(n.lon, n.lat);
+  const tail = project(n.lon, n.lat + OFFSET_DEG);
+  paths.parkingPositions.push({
+    id: n.id,
+    coords: [tail, tip],
+    name: n.tags?.name || null,
+    ref: n.tags?.ref || null,
+  });
 }
 
 // Pivot iteración 2026-05-25 — Multi-airport: garantizar que TODOS los parking_positions
