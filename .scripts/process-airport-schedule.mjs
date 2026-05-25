@@ -110,6 +110,9 @@ function processFlight(ev, type, flights, fleet) {
     airlineCode,
     airlineName: operatorName,
     notHandled: cls.notHandled,
+    // Pivot iteración 2026-05-25 — matrícula REAL del raw (si AeroDataBox la trae).
+    // Habilita cálculo correcto de pernoctas por matrícula (no por callsign hash).
+    reg: ev.aircraft?.reg ?? null,
   });
   if (ev.aircraft?.reg) {
     fleet.set(ev.aircraft.reg, {
@@ -143,8 +146,64 @@ for (const [dayKey, dateStr] of Object.entries(SOURCE_DAYS)) {
   console.log(`  ${dayKey} (${dateStr}): ${flights.length} flights, ${fleet.size} matrículas únicas`);
 }
 
+// Pivot iteración 2026-05-25 — Pre-cálculo de stats de pernoctas reales por airline.
+// El panel del juego usa estas stats en lugar de heurísticas frágiles. Una matrícula
+// pernoctó el día N si:
+//   1. Tuvo al menos un arrival el día N
+//   2. Tras su último arrival del día N, NO tuvo ningún departure ese día
+//   3. Tuvo un departure el día N+1 (= durmió y voló mañana)
+// Cuenta TODAS las matrículas que pernoctan cada noche (no solo la "última del día").
+const PATTERN_KEYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+function computeOvernightStats() {
+  // Recoger todos los flights por (reg, dayKey)
+  const byRegDay = {};
+  for (const [dayKey, flights] of Object.entries(schedule.patterns)) {
+    for (const f of flights) {
+      if (!f.reg) continue;
+      const k = f.reg + "|" + dayKey;
+      if (!byRegDay[k]) byRegDay[k] = { reg: f.reg, dayKey, airlineCode: f.airlineCode, arrivals: [], departures: [] };
+      byRegDay[k][f.type === "arrival" ? "arrivals" : "departures"].push(f);
+    }
+  }
+  const overnights = {}; // airlineCode -> { totalPerWeek, perDay: { dayKey: count }, distinctRegs: Set }
+  for (const e of Object.values(byRegDay)) {
+    if (e.arrivals.length === 0) continue;
+    const lastArr = e.arrivals.reduce((m, a) => a.scheduledMinute > m.scheduledMinute ? a : m, e.arrivals[0]);
+    const sameDayDepAfter = e.departures.some(d => d.scheduledMinute > lastArr.scheduledMinute);
+    if (sameDayDepAfter) continue;
+    const dayIdx = PATTERN_KEYS.indexOf(e.dayKey);
+    const nextDayKey = PATTERN_KEYS[(dayIdx + 1) % 7];
+    const kNext = e.reg + "|" + nextDayKey;
+    const nextEntry = byRegDay[kNext];
+    if (!nextEntry || nextEntry.departures.length === 0) continue;
+    // ✓ Pernoctó
+    if (!overnights[e.airlineCode]) overnights[e.airlineCode] = { totalPerWeek: 0, perDay: {}, distinctRegs: new Set() };
+    overnights[e.airlineCode].totalPerWeek++;
+    overnights[e.airlineCode].perDay[e.dayKey] = (overnights[e.airlineCode].perDay[e.dayKey] || 0) + 1;
+    overnights[e.airlineCode].distinctRegs.add(e.reg);
+  }
+  // Convertir Set → array para JSON-serializable
+  const out = {};
+  for (const [code, s] of Object.entries(overnights)) {
+    out[code] = {
+      totalPerWeek: s.totalPerWeek,
+      perDay: s.perDay,
+      distinctRegs: s.distinctRegs.size,
+      avgPerNight: Math.round(s.totalPerWeek / 7 * 10) / 10,
+    };
+  }
+  return out;
+}
+schedule.overnightStats = computeOvernightStats();
+
 writeFileSync(OUT_SCHEDULE, JSON.stringify(schedule, null, 2));
 console.log(`\n✅ Escrito ${OUT_SCHEDULE}`);
+console.log(`\n=== Pernoctas REALES por airline (matrícula que duerme aquí + sale día siguiente) ===`);
+const ovs = Object.entries(schedule.overnightStats).sort((a,b) => b[1].totalPerWeek - a[1].totalPerWeek);
+for (const [code, st] of ovs) {
+  if (st.totalPerWeek === 0) continue;
+  console.log(`  ${code.padEnd(4)}  ${String(st.totalPerWeek).padStart(3)} pernoctas/sem  (~${st.avgPerNight}/noche · ${st.distinctRegs} matrículas distintas)`);
+}
 
 const fleetData = {
   airport: CITY,

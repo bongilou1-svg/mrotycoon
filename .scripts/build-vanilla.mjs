@@ -1405,34 +1405,33 @@ function renderContracts(){
     const status = hasContract ? '<span style="color:var(--success)">✓ ya contratada / oferta viva</span>' :
                    meets ? \`<span style="color:var(--success)">✅ puede ofertar (brand +\${brand - t} sobre umbral)</span>\` :
                    \`<span class="muted">⏳ faltan \${t - brand} pts brand</span>\`;
-    // Pivot iteración 2026-05-25: separar arrivals en ESCALAS (turnaround corto con
-    // departure pareja <3h) vs PERNOCTAS (último arrival día ≥19:00 SIN departure pareja).
-    // Fix: el panel muestra realidad operativa del aeropuerto — TODAS las pernoctas reales
-    // del schedule, no solo las de aerolíneas home-based. El jugador necesita saber qué
-    // pernoctas hay para valorar qué contratos perseguir; si firma con LH, esas 7 noches
-    // serían potenciales daily checks suyos. El filtro home-based vive en el engine
-    // (seedPreOvernighters + isOvernightCandidate del schedule), no en este info-panel.
-    let totalArr = 0, escalas = 0, pernoctas = 0;
+    // Pivot iteración 2026-05-25 — Pernoctas REALES desde overnightStats pre-calculadas
+    // por process-airport-schedule.mjs (cuenta TODAS las matrículas que duermen y salen
+    // mañana, no solo "última del día" como la heurística vieja que daba bug — feedback
+    // Dani: VY BIO real son 4-6 aviones/noche, no 1).
+    // El total de arrivals/sem viene del schedule. Pernoctas-aviones = overnightStats.
+    // Escalas = arr - pernoctas (todo lo que no duerme es escala/turnaround).
+    let totalArr = 0, pernoctas = 0, distinctOvnRegs = 0;
     try {
       for (let d = 1; d <= 7; d++) {
         const flights = (S.getFlightsForGameDay?.(d) ?? []).filter(f => f.airlineCode === a.iataCode);
-        const arrivals = flights.filter(f => f.type === "arrival").sort((x,y) => x.scheduledMinute - y.scheduledMinute);
-        const departures = flights.filter(f => f.type === "departure");
-        totalArr += arrivals.length;
-        const lastArr = arrivals[arrivals.length - 1];
-        for (const arr of arrivals) {
-          const isLastLate = arr === lastArr && arr.scheduledMinute >= 19*60;
-          const hasPairedDep = departures.some(d => d.scheduledMinute > arr.scheduledMinute && d.scheduledMinute - arr.scheduledMinute < 180);
-          if (isLastLate && !hasPairedDep) pernoctas++;
-          else escalas++;
-        }
+        totalArr += flights.filter(f => f.type === "arrival").length;
+      }
+      // overnightStats está embebido en el schedule del aeropuerto activo
+      const icao = game.airportIcao;
+      const runtime = icao && S.DATA.airportRuntime?.[icao];
+      const ovnStats = runtime?.schedule?.overnightStats?.[a.iataCode];
+      if (ovnStats) {
+        pernoctas = ovnStats.totalPerWeek;
+        distinctOvnRegs = ovnStats.distinctRegs;
       }
     } catch (e) {}
+    const escalas = Math.max(0, totalArr - pernoctas);
     h += \`<tr>
       <td><span style="display:inline-block;width:8px;height:8px;background:\${a.color};border-radius:50%;margin-right:.4rem"></span>\${esc(a.name)} <span class="mono muted">\${a.iataCode}</span></td>
       <td class="mono">\${totalArr}</td>
       <td class="mono">\${escalas}</td>
-      <td class="mono"\${pernoctas > 0 ? ' style="color:var(--accent);font-weight:600"' : ''}>\${pernoctas}\${pernoctas > 0 ? ' 🌙' : ''}</td>
+      <td class="mono"\${pernoctas > 0 ? ' style="color:var(--accent);font-weight:600"' : ''} title="\${pernoctas > 0 ? distinctOvnRegs + ' matrículas distintas rotando' : ''}">\${pernoctas}\${pernoctas > 0 ? ' 🌙' : ''}\${distinctOvnRegs > 1 ? ' <span class="muted" style="font-size:.7em">('+distinctOvnRegs+' regs)</span>' : ''}</td>
       <td class="mono"><strong>\${t}</strong></td>
       <td>\${status}</td>
     </tr>\`;

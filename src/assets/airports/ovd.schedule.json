@@ -4,7 +4,7 @@
   "name": "Asturias OVD",
   "source": "AeroDataBox real data 4-10 mayo 2026 + saneamiento operator-rules",
   "version": 2,
-  "notes": "Datos reales semana 4-10 mayo 2026 (lunes-domingo). Operadores físicos resueltos: callsign IBE+CRJ → ANE, IBB+E295 → NTC, VLG+ATR → AEX, etc.",
+  "notes": "Datos reales semana 4-10 mayo 2026 de LEAS. Operadores físicos resueltos via .scripts/operator-rules.mjs (callsigns IBE/IBB/etc → ANE/NTC/etc según modelo+marca).",
   "patterns": {
     "monday": [
       {
@@ -16,7 +16,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73924",
@@ -27,7 +28,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73595",
@@ -38,7 +40,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "IB1236",
@@ -49,7 +52,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MSB"
       },
       {
         "callsign": "V73861",
@@ -60,7 +64,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73592",
@@ -71,7 +76,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73572",
@@ -82,7 +88,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "VY3866",
@@ -93,7 +100,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBD"
       },
       {
         "callsign": "IB1119",
@@ -104,7 +112,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "VY1570",
@@ -115,7 +124,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MQE"
       },
       {
         "callsign": "VY1573",
@@ -126,7 +136,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MQE"
       },
       {
         "callsign": "IB1120",
@@ -137,7 +148,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "VY3867",
@@ -148,7 +160,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBD"
       },
       {
         "callsign": "V73593",
@@ -159,7 +172,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73860",
@@ -170,7 +184,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73925",
@@ -181,7 +196,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73511",
@@ -192,7 +208,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQN"
       },
       {
         "callsign": "V73602",
@@ -203,7 +220,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73573",
@@ -214,7 +232,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "V73510",
@@ -225,7 +244,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQN"
       },
       {
         "callsign": "V73582",
@@ -236,7 +256,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "NT5233",
@@ -247,7 +268,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "IB1122",
@@ -258,7 +280,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MQQ"
       },
       {
         "callsign": "V73924",
@@ -269,7 +292,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73603",
@@ -280,7 +304,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73583",
@@ -291,7 +316,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73800",
@@ -302,7 +328,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "VY1578",
@@ -313,7 +340,8 @@
         "engineVariant": "PW1100G",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73831",
@@ -324,7 +352,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY6626",
@@ -335,7 +364,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LVV"
       },
       {
         "callsign": "VY1579",
@@ -346,7 +376,8 @@
         "engineVariant": "PW1100G",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73814",
@@ -357,7 +388,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY3864",
@@ -368,7 +400,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1223",
@@ -379,7 +412,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OSN"
       },
       {
         "callsign": "VY3865",
@@ -390,7 +424,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OKG"
       },
       {
         "callsign": "IB1224",
@@ -401,7 +436,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OSN"
       },
       {
         "callsign": "NT5242",
@@ -412,7 +448,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "NT5243",
@@ -423,7 +460,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73815",
@@ -434,7 +472,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "V73801",
@@ -445,7 +484,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73584",
@@ -456,7 +496,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73600",
@@ -467,7 +508,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY6627",
@@ -478,7 +520,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LVV"
       },
       {
         "callsign": "VY1572",
@@ -489,7 +532,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MES"
       },
       {
         "callsign": "VY1571",
@@ -500,7 +544,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MES"
       },
       {
         "callsign": "IB1235",
@@ -511,7 +556,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MXA"
       },
       {
         "callsign": "V73830",
@@ -522,7 +568,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       }
     ],
     "tuesday": [
@@ -535,7 +582,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73601",
@@ -546,7 +594,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1236",
@@ -557,7 +606,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MXA"
       },
       {
         "callsign": "V73571",
@@ -568,7 +618,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73544",
@@ -579,7 +630,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "V73518",
@@ -590,7 +642,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1119",
@@ -601,7 +654,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "IB1120",
@@ -612,7 +666,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MVC"
       },
       {
         "callsign": "VY3866",
@@ -623,7 +678,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LOB"
       },
       {
         "callsign": "VY3867",
@@ -634,7 +690,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LOB"
       },
       {
         "callsign": "V73570",
@@ -645,7 +702,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73802",
@@ -656,7 +714,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "NT5232",
@@ -667,7 +726,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "IB1121",
@@ -678,7 +738,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MTZ"
       },
       {
         "callsign": "NT5233",
@@ -689,7 +750,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73519",
@@ -700,7 +762,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1122",
@@ -711,7 +774,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MTZ"
       },
       {
         "callsign": "V73545",
@@ -722,7 +786,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73803",
@@ -733,7 +798,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73590",
@@ -744,7 +810,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "VY1578",
@@ -755,7 +822,8 @@
         "engineVariant": "PW127M",
         "airlineCode": "X5",
         "airlineName": "Air Europa Express",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MLE"
       },
       {
         "callsign": "VY1579",
@@ -766,7 +834,8 @@
         "engineVariant": "PW127M",
         "airlineCode": "X5",
         "airlineName": "Air Europa Express",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MLE"
       },
       {
         "callsign": "V73584",
@@ -777,7 +846,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "VY3864",
@@ -788,7 +858,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MKN"
       },
       {
         "callsign": "IB1223",
@@ -799,7 +870,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MOX"
       },
       {
         "callsign": "VY3865",
@@ -810,7 +882,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MKN"
       },
       {
         "callsign": "IB1224",
@@ -821,7 +894,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MOX"
       },
       {
         "callsign": "V73591",
@@ -832,7 +906,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "V73831",
@@ -843,7 +918,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73582",
@@ -854,7 +930,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "EI740",
@@ -865,7 +942,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "EI",
         "airlineName": "Aer Lingus",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EI-DEK"
       },
       {
         "callsign": "EI741",
@@ -876,7 +954,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "EI",
         "airlineName": "Aer Lingus",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EI-DEK"
       },
       {
         "callsign": "VY1572",
@@ -887,7 +966,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KCU"
       },
       {
         "callsign": "VY1571",
@@ -898,7 +978,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KCU"
       },
       {
         "callsign": "IB1235",
@@ -909,7 +990,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MVZ"
       },
       {
         "callsign": "V73830",
@@ -920,7 +1002,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73583",
@@ -931,7 +1014,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       }
     ],
     "wednesday": [
@@ -944,7 +1028,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1236",
@@ -955,7 +1040,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MVZ"
       },
       {
         "callsign": "V73584",
@@ -966,7 +1052,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-ISI"
       },
       {
         "callsign": "V73831",
@@ -977,7 +1064,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1119",
@@ -988,7 +1076,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-LOV"
       },
       {
         "callsign": "VY1570",
@@ -999,7 +1088,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MEL"
       },
       {
         "callsign": "CX1937",
@@ -1010,7 +1100,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "VY1573",
@@ -1021,7 +1112,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MEL"
       },
       {
         "callsign": "VY3868",
@@ -1032,7 +1124,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY3869",
@@ -1043,7 +1136,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LVT"
       },
       {
         "callsign": "V73560",
@@ -1054,7 +1148,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "NT5232",
@@ -1065,7 +1160,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "IB1121",
@@ -1076,7 +1172,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OOQ"
       },
       {
         "callsign": "E97310",
@@ -1087,7 +1184,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "UX",
         "airlineName": "Air Europa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LZD"
       },
       {
         "callsign": "NT5233",
@@ -1098,7 +1196,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "AA8749",
@@ -1109,7 +1208,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "E97311",
@@ -1120,7 +1220,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "UX",
         "airlineName": "Air Europa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LZD"
       },
       {
         "callsign": "QS3428",
@@ -1131,7 +1232,8 @@
         "engineVariant": "CFM56-7B",
         "airlineCode": "QS",
         "airlineName": "Smart Wings",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "OK-SWJ"
       },
       {
         "callsign": "V73830",
@@ -1142,7 +1244,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "QS3429",
@@ -1153,7 +1256,8 @@
         "engineVariant": "CFM56-7B",
         "airlineCode": "QS",
         "airlineName": "Smart Wings",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "OK-SWJ"
       },
       {
         "callsign": "V73585",
@@ -1164,7 +1268,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73800",
@@ -1175,7 +1280,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "VY1578",
@@ -1186,7 +1292,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OKJ"
       },
       {
         "callsign": "V73925",
@@ -1197,7 +1304,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "VY1579",
@@ -1208,7 +1316,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OKJ"
       },
       {
         "callsign": "V73561",
@@ -1219,7 +1328,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "IB1223",
@@ -1230,7 +1340,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OSN"
       },
       {
         "callsign": "LH1552",
@@ -1241,7 +1352,8 @@
         "engineVariant": "V2500",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "D-AISV"
       },
       {
         "callsign": "V73582",
@@ -1252,7 +1364,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY3866",
@@ -1263,7 +1376,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1224",
@@ -1274,7 +1388,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OSN"
       },
       {
         "callsign": "E97312",
@@ -1285,7 +1400,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "UX",
         "airlineName": "Air Europa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LZD"
       },
       {
         "callsign": "LH1553",
@@ -1296,7 +1412,8 @@
         "engineVariant": "V2500",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "D-AISV"
       },
       {
         "callsign": "VY3867",
@@ -1307,7 +1424,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBD"
       },
       {
         "callsign": "E97313",
@@ -1318,7 +1436,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "UX",
         "airlineName": "Air Europa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LZD"
       },
       {
         "callsign": "NT5242",
@@ -1329,7 +1448,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "NT5243",
@@ -1340,7 +1460,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73801",
@@ -1351,7 +1472,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73583",
@@ -1362,7 +1484,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73930",
@@ -1373,7 +1496,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73594",
@@ -1384,7 +1508,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "VY1572",
@@ -1395,7 +1520,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MAI"
       },
       {
         "callsign": "VY1571",
@@ -1406,7 +1532,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MAI"
       },
       {
         "callsign": "IB1235",
@@ -1417,7 +1544,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MVC"
       },
       {
         "callsign": "V73931",
@@ -1428,7 +1556,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       }
     ],
     "thursday": [
@@ -1441,7 +1570,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73595",
@@ -1452,7 +1582,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "IB1236",
@@ -1463,7 +1594,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MVC"
       },
       {
         "callsign": "V73571",
@@ -1474,7 +1606,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73586",
@@ -1485,7 +1618,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73582",
@@ -1496,7 +1630,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "IB1119",
@@ -1507,7 +1642,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "VY1570",
@@ -1518,7 +1654,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MJC"
       },
       {
         "callsign": "IB1120",
@@ -1529,7 +1666,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "VY1573",
@@ -1540,7 +1678,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MJC"
       },
       {
         "callsign": "V73570",
@@ -1551,7 +1690,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73814",
@@ -1562,7 +1702,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73587",
@@ -1573,7 +1714,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73802",
@@ -1584,7 +1726,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "VY6626",
@@ -1595,7 +1738,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-LVO"
       },
       {
         "callsign": "NT5232",
@@ -1606,7 +1750,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-NHA"
       },
       {
         "callsign": "IB1121",
@@ -1617,7 +1762,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OSN"
       },
       {
         "callsign": "NT5233",
@@ -1628,7 +1774,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "IB1122",
@@ -1639,7 +1786,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OSN"
       },
       {
         "callsign": "VY3864",
@@ -1650,7 +1798,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OOV"
       },
       {
         "callsign": "VY3865",
@@ -1661,7 +1810,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OOV"
       },
       {
         "callsign": "V73583",
@@ -1672,7 +1822,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "VY6627",
@@ -1683,7 +1834,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73815",
@@ -1694,7 +1846,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73831",
@@ -1705,7 +1858,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73803",
@@ -1716,7 +1870,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73572",
@@ -1727,7 +1882,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1223",
@@ -1738,7 +1894,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MJQ"
       },
       {
         "callsign": "V73592",
@@ -1749,7 +1906,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY1576",
@@ -1760,7 +1918,8 @@
         "engineVariant": "V2500",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MPV"
       },
       {
         "callsign": "IB1224",
@@ -1771,7 +1930,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MJQ"
       },
       {
         "callsign": "VY1577",
@@ -1782,7 +1942,8 @@
         "engineVariant": "V2500",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73830",
@@ -1793,7 +1954,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "NT5242",
@@ -1804,7 +1966,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73518",
@@ -1815,7 +1978,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "NT5243",
@@ -1826,7 +1990,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73593",
@@ -1837,7 +2002,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73573",
@@ -1848,7 +2014,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73925",
@@ -1859,7 +2026,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73584",
@@ -1870,7 +2038,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1225",
@@ -1881,7 +2050,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MLO"
       },
       {
         "callsign": "IB1226",
@@ -1892,7 +2062,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MLO"
       },
       {
         "callsign": "VY1572",
@@ -1903,7 +2074,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY3866",
@@ -1914,7 +2086,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBD"
       },
       {
         "callsign": "VY1571",
@@ -1925,7 +2098,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MFM"
       },
       {
         "callsign": "VY3867",
@@ -1936,7 +2110,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1235",
@@ -1947,7 +2122,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OOQ"
       }
     ],
     "friday": [
@@ -1960,7 +2136,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73585",
@@ -1971,7 +2148,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73519",
@@ -1982,7 +2160,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1236",
@@ -1993,7 +2172,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OOQ"
       },
       {
         "callsign": "V73600",
@@ -2004,7 +2184,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73861",
@@ -2015,7 +2196,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73544",
@@ -2026,7 +2208,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1119",
@@ -2037,7 +2220,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MXA"
       },
       {
         "callsign": "VY1570",
@@ -2048,7 +2232,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MJB"
       },
       {
         "callsign": "IB1120",
@@ -2059,7 +2244,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-JRE"
       },
       {
         "callsign": "VY1573",
@@ -2070,7 +2256,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MJB"
       },
       {
         "callsign": "V73601",
@@ -2081,7 +2268,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "V73603",
@@ -2092,7 +2280,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73800",
@@ -2103,7 +2292,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73511",
@@ -2114,7 +2304,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MVH"
       },
       {
         "callsign": "V73602",
@@ -2125,7 +2316,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NQM"
       },
       {
         "callsign": "VY1578",
@@ -2136,7 +2328,8 @@
         "engineVariant": "V2500",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MLM"
       },
       {
         "callsign": "V73510",
@@ -2147,7 +2340,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MVH"
       },
       {
         "callsign": "VY3866",
@@ -2158,7 +2352,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBF"
       },
       {
         "callsign": "VY1579",
@@ -2169,7 +2364,8 @@
         "engineVariant": "V2500",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MLM"
       },
       {
         "callsign": "IB1121",
@@ -2180,7 +2376,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MJQ"
       },
       {
         "callsign": "VY3867",
@@ -2191,7 +2388,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1122",
@@ -2202,7 +2400,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MJQ"
       },
       {
         "callsign": "V73860",
@@ -2213,7 +2412,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73545",
@@ -2224,7 +2424,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73572",
@@ -2235,7 +2436,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73801",
@@ -2246,7 +2448,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73592",
@@ -2257,7 +2460,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1223",
@@ -2268,7 +2472,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OTG"
       },
       {
         "callsign": "LH1552",
@@ -2279,7 +2484,8 @@
         "engineVariant": "PW1100G",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "D-AINA"
       },
       {
         "callsign": "V73582",
@@ -2290,7 +2496,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "IB1224",
@@ -2301,7 +2508,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OTG"
       },
       {
         "callsign": "LH1553",
@@ -2312,7 +2520,8 @@
         "engineVariant": "PW1100G",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "D-AINA"
       },
       {
         "callsign": "V73924",
@@ -2323,7 +2532,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "NT5242",
@@ -2334,7 +2544,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73593",
@@ -2345,7 +2556,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73925",
@@ -2356,7 +2568,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NOL"
       },
       {
         "callsign": "NT5243",
@@ -2367,7 +2580,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73584",
@@ -2378,7 +2592,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73573",
@@ -2389,7 +2604,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73831",
@@ -2400,7 +2616,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73583",
@@ -2411,7 +2628,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73594",
@@ -2422,7 +2640,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "VY3864",
@@ -2433,7 +2652,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBF"
       },
       {
         "callsign": "VY1572",
@@ -2444,7 +2664,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MGE"
       },
       {
         "callsign": "VY3865",
@@ -2455,7 +2676,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBF"
       },
       {
         "callsign": "VY1571",
@@ -2466,7 +2688,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1235",
@@ -2477,7 +2700,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MJQ"
       },
       {
         "callsign": "V73585",
@@ -2488,7 +2712,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       }
     ],
     "saturday": [
@@ -2501,7 +2726,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73560",
@@ -2512,7 +2738,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "IB1236",
@@ -2523,7 +2750,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MJQ"
       },
       {
         "callsign": "V73604",
@@ -2534,7 +2762,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73582",
@@ -2545,7 +2774,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "IB1119",
@@ -2556,7 +2786,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "IB1120",
@@ -2567,7 +2798,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-LUL"
       },
       {
         "callsign": "VY1570",
@@ -2578,7 +2810,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MFM"
       },
       {
         "callsign": "VY1573",
@@ -2589,7 +2822,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MFM"
       },
       {
         "callsign": "V73583",
@@ -2600,7 +2834,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73925",
@@ -2611,7 +2846,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "NT5232",
@@ -2622,7 +2858,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "NT5233",
@@ -2633,7 +2870,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73561",
@@ -2644,7 +2882,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73605",
@@ -2655,7 +2894,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73831",
@@ -2666,7 +2906,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73584",
@@ -2677,7 +2918,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73924",
@@ -2688,7 +2930,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "VY1578",
@@ -2699,7 +2942,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MFL"
       },
       {
         "callsign": "KL1557",
@@ -2710,7 +2954,8 @@
         "engineVariant": "CF34-8E",
         "airlineCode": "KL",
         "airlineName": "KLM Cityhopper",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "PH-EXX"
       },
       {
         "callsign": "VY1579",
@@ -2721,7 +2966,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MFL"
       },
       {
         "callsign": "V73590",
@@ -2732,7 +2978,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "KL1558",
@@ -2743,7 +2990,8 @@
         "engineVariant": "CF34-8E",
         "airlineCode": "KL",
         "airlineName": "KLM Cityhopper",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "PH-EXX"
       },
       {
         "callsign": "IB1223",
@@ -2754,7 +3002,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OTG"
       },
       {
         "callsign": "LH1552",
@@ -2765,7 +3014,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "D-AILM"
       },
       {
         "callsign": "VY3864",
@@ -2776,7 +3026,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OFY"
       },
       {
         "callsign": "V73830",
@@ -2787,7 +3038,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "IB1224",
@@ -2798,7 +3050,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OTG"
       },
       {
         "callsign": "VY3865",
@@ -2809,7 +3062,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OFY"
       },
       {
         "callsign": "LH1553",
@@ -2820,7 +3074,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "D-AILM"
       },
       {
         "callsign": "V73585",
@@ -2831,7 +3086,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73540",
@@ -2842,7 +3098,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "NT5242",
@@ -2853,7 +3110,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73518",
@@ -2864,7 +3122,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "NT5243",
@@ -2875,7 +3134,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "IB1225",
@@ -2886,7 +3146,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-LKF"
       },
       {
         "callsign": "EI740",
@@ -2897,7 +3158,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "EI",
         "airlineName": "Aer Lingus",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EI-DEP"
       },
       {
         "callsign": "IB1226",
@@ -2908,7 +3170,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-LKF"
       },
       {
         "callsign": "VY1572",
@@ -2919,7 +3182,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OJF"
       },
       {
         "callsign": "EI741",
@@ -2930,7 +3194,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "EI",
         "airlineName": "Aer Lingus",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EI-DEP"
       },
       {
         "callsign": "VY1571",
@@ -2941,7 +3206,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OJF"
       },
       {
         "callsign": "V73830",
@@ -2952,7 +3218,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       }
     ],
     "sunday": [
@@ -2965,7 +3232,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73591",
@@ -2976,7 +3244,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73541",
@@ -2987,7 +3256,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73586",
@@ -2998,7 +3268,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73930",
@@ -3009,7 +3280,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73584",
@@ -3020,7 +3292,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "IB1119",
@@ -3031,7 +3304,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-LJX"
       },
       {
         "callsign": "IB1120",
@@ -3042,7 +3316,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-LJX"
       },
       {
         "callsign": "VY1574",
@@ -3053,7 +3328,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73931",
@@ -3064,7 +3340,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73550",
@@ -3075,7 +3352,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "VY1575",
@@ -3086,7 +3364,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-OKI"
       },
       {
         "callsign": "V73587",
@@ -3097,7 +3376,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73585",
@@ -3108,7 +3388,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73831",
@@ -3119,7 +3400,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73571",
@@ -3130,7 +3412,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "NT5232",
@@ -3141,7 +3424,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "KLJ6477",
@@ -3152,7 +3436,8 @@
         "engineVariant": "CFM56-7B",
         "airlineCode": "KL",
         "airlineName": "KLJ",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "LY-JMS"
       },
       {
         "callsign": "NT5233",
@@ -3163,7 +3448,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73830",
@@ -3174,7 +3460,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73570",
@@ -3185,7 +3472,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73802",
@@ -3196,7 +3484,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "VY1578",
@@ -3207,7 +3496,8 @@
         "engineVariant": "V2500",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MLM"
       },
       {
         "callsign": "KL1557",
@@ -3218,7 +3508,8 @@
         "engineVariant": "CF34-8E",
         "airlineCode": "KL",
         "airlineName": "KLM Cityhopper",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "PH-EXH"
       },
       {
         "callsign": "VY6626",
@@ -3229,7 +3520,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KDH"
       },
       {
         "callsign": "V73572",
@@ -3240,7 +3532,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73551",
@@ -3251,7 +3544,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "KL1558",
@@ -3262,7 +3556,8 @@
         "engineVariant": "CF34-8E",
         "airlineCode": "KL",
         "airlineName": "KLM Cityhopper",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "PH-EXH"
       },
       {
         "callsign": "VY1579",
@@ -3273,7 +3568,8 @@
         "engineVariant": "V2500",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MLM"
       },
       {
         "callsign": "VY3864",
@@ -3284,7 +3580,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBD"
       },
       {
         "callsign": "IB1223",
@@ -3295,7 +3592,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "LH1552",
@@ -3306,7 +3604,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "D-AIWA"
       },
       {
         "callsign": "VY3865",
@@ -3317,7 +3616,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBD"
       },
       {
         "callsign": "IB1224",
@@ -3328,7 +3628,8 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-OOR"
       },
       {
         "callsign": "LH1553",
@@ -3339,7 +3640,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "LH",
         "airlineName": "Lufthansa",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "D-AIWA"
       },
       {
         "callsign": "V73592",
@@ -3350,7 +3652,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "NT5242",
@@ -3361,7 +3664,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-NEZ"
       },
       {
         "callsign": "NT5243",
@@ -3372,7 +3676,8 @@
         "engineVariant": "PW1900G",
         "airlineCode": "NT",
         "airlineName": "Binter Canarias",
-        "notHandled": true
+        "notHandled": true,
+        "reg": null
       },
       {
         "callsign": "V73803",
@@ -3383,7 +3688,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73573",
@@ -3394,7 +3700,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KMI"
       },
       {
         "callsign": "V73925",
@@ -3405,7 +3712,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-NTL"
       },
       {
         "callsign": "V73593",
@@ -3416,7 +3724,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "V73582",
@@ -3427,7 +3736,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": null
       },
       {
         "callsign": "V73594",
@@ -3438,7 +3748,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "V7",
         "airlineName": "Volotea",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MBK"
       },
       {
         "callsign": "VY6627",
@@ -3449,7 +3760,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-KDH"
       },
       {
         "callsign": "KLJ6478",
@@ -3460,7 +3772,8 @@
         "engineVariant": "CFM56-7B",
         "airlineCode": "KL",
         "airlineName": "KLJ",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "LY-JMS"
       },
       {
         "callsign": "VY1572",
@@ -3471,7 +3784,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MVE"
       },
       {
         "callsign": "VY1571",
@@ -3482,7 +3796,8 @@
         "engineVariant": "CFM56",
         "airlineCode": "VY",
         "airlineName": "Vueling",
-        "notHandled": false
+        "notHandled": false,
+        "reg": "EC-MVE"
       },
       {
         "callsign": "IB1235",
@@ -3493,8 +3808,34 @@
         "engineVariant": "CF34-8C5",
         "airlineCode": "YW",
         "airlineName": "Air Nostrum",
-        "notHandled": true
+        "notHandled": true,
+        "reg": "EC-MLO"
       }
     ]
+  },
+  "overnightStats": {
+    "V7": {
+      "totalPerWeek": 8,
+      "perDay": {
+        "monday": 3,
+        "tuesday": 2,
+        "wednesday": 2,
+        "friday": 1
+      },
+      "distinctRegs": 3,
+      "avgPerNight": 1.1
+    },
+    "YW": {
+      "totalPerWeek": 5,
+      "perDay": {
+        "monday": 1,
+        "tuesday": 1,
+        "wednesday": 1,
+        "thursday": 1,
+        "friday": 1
+      },
+      "distinctRegs": 5,
+      "avgPerNight": 0.7
+    }
   }
 }

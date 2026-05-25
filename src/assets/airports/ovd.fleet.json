@@ -2,7 +2,7 @@
   "airport": "Asturias",
   "icao": "LEAS",
   "source": "AeroDataBox real data 4-10 mayo 2026",
-  "notes": "Pool de matrículas reales operando OVD esa semana. FH/cycles plausibles asignados deterministically por hash del registration.",
+  "notes": "Pool de matrículas reales operando LEAS esa semana. FH/cycles plausibles asignados deterministically por hash del registration.",
   "fleet": [
     {
       "registration": "EC-MSB",
