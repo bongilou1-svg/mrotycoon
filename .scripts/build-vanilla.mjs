@@ -1242,7 +1242,7 @@ function renderContracts(){
   h += '<h3 style="margin-top:1.5rem">🌟 Aerolíneas interesadas (pipeline)</h3>';
   h += \`<p class="muted" style="margin-bottom:.5rem;font-size:.85rem">Tu <strong>brand del MRO</strong> = <strong style="color:\${brand >= 70 ? 'var(--success)' : brand >= 40 ? 'var(--warning)' : 'var(--muted)'}">\${brand}/100</strong> (50% rep media contratadas · 30% on-time · 20% (1-AOG)). El mercado se evalúa cada <strong>\${S.LINE_COMPETITION_TICK_DAYS ?? 7} días</strong> ingame. <strong>Próxima evaluación en \${tickLabel}</strong>. Si tu brand cruza el umbral de una aerolínea, ese tick puede ofertarte. Las condiciones (fee/payment/penalty) escalan con cuánto excedas su umbral. <strong>Aerolíneas sin overnight</strong> mandan solo callouts cuando un avión aterriza con problema (sin paquete daily).</p>\`;
   h += '<table style="font-size:.85rem">';
-  h += '<thead><tr><th>Aerolínea</th><th>Volumen OVD/sem</th><th>Umbral brand</th><th>Estado</th><th>Modo trabajo</th></tr></thead><tbody>';
+  h += '<thead><tr><th>Aerolínea</th><th>Arrivals/sem</th><th>🔄 Escalas</th><th>🌙 Pernoctas</th><th>Umbral brand</th><th>Estado</th></tr></thead><tbody>';
   // Tabla ordenada por threshold asc.
   const sorted = game.airlines.filter(a => a.iataCode).slice().sort((a,b) => (a.brandThreshold ?? 70) - (b.brandThreshold ?? 70));
   for (const a of sorted) {
@@ -1252,31 +1252,33 @@ function renderContracts(){
     const status = hasContract ? '<span style="color:var(--success)">✓ ya contratada / oferta viva</span>' :
                    meets ? \`<span style="color:var(--success)">✅ puede ofertar (brand +\${brand - t} sobre umbral)</span>\` :
                    \`<span class="muted">⏳ faltan \${t - brand} pts brand</span>\`;
-    // Volumen aprox: contar arrivals del schedule de esta aerolínea (7d).
-    let volumen = 0;
+    // Pivot iteración 2026-05-25: separar arrivals en ESCALAS (turnaround corto con
+    // departure pareja <3h) vs PERNOCTAS (último arrival día ≥19:00 SIN departure pareja
+    // Y aerolínea con homeBaseAirports incluyendo LEAS).
+    let totalArr = 0, escalas = 0, pernoctas = 0;
     try {
+      const isBased = (a.homeBaseAirports ?? []).includes("LEAS");
       for (let d = 1; d <= 7; d++) {
-        for (const f of (S.getFlightsForGameDay?.(d) ?? [])) {
-          if (f.type === "arrival" && f.airlineCode === a.iataCode) volumen++;
+        const flights = (S.getFlightsForGameDay?.(d) ?? []).filter(f => f.airlineCode === a.iataCode);
+        const arrivals = flights.filter(f => f.type === "arrival").sort((x,y) => x.scheduledMinute - y.scheduledMinute);
+        const departures = flights.filter(f => f.type === "departure");
+        totalArr += arrivals.length;
+        const lastArr = arrivals[arrivals.length - 1];
+        for (const arr of arrivals) {
+          const isOvernightCandidate = isBased && arr === lastArr && arr.scheduledMinute >= 19*60;
+          const hasPairedDep = departures.some(d => d.scheduledMinute > arr.scheduledMinute && d.scheduledMinute - arr.scheduledMinute < 180);
+          if (isOvernightCandidate && !hasPairedDep) pernoctas++;
+          else escalas++;
         }
-      }
-    } catch (e) {}
-    // Modo trabajo: si el schedule tiene overnight = paquetes daily; si no = solo callouts.
-    // Heurística simple: si tiene arrivals ≥19:00 → overnight posible.
-    let modo = "callouts puntuales";
-    try {
-      for (let d = 1; d <= 7; d++) {
-        const flights = S.getFlightsForGameDay?.(d) ?? [];
-        const lateArr = flights.filter(f => f.type === "arrival" && f.airlineCode === a.iataCode && f.scheduledMinute >= 19*60);
-        if (lateArr.length > 0) { modo = "paquetes nocturnos + callouts"; break; }
       }
     } catch (e) {}
     h += \`<tr>
       <td><span style="display:inline-block;width:8px;height:8px;background:\${a.color};border-radius:50%;margin-right:.4rem"></span>\${esc(a.name)} <span class="mono muted">\${a.iataCode}</span></td>
-      <td class="mono">\${volumen} arr</td>
+      <td class="mono">\${totalArr}</td>
+      <td class="mono">\${escalas}</td>
+      <td class="mono"\${pernoctas > 0 ? ' style="color:var(--accent);font-weight:600"' : ''}>\${pernoctas}\${pernoctas > 0 ? ' 🌙' : ''}</td>
       <td class="mono"><strong>\${t}</strong></td>
       <td>\${status}</td>
-      <td class="muted">\${modo}</td>
     </tr>\`;
   }
   h += '</tbody></table>';

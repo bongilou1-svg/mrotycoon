@@ -63,7 +63,9 @@ console.log("\n=== generateScheduledArrivals detecta overnight cuando NO hay dep
   // Vuelos sintéticos: 1 arr sin departure pareja (overnight), 1 arr con departure pareja (no overnight).
   // No podemos modificar el JSON del snapshot, pero podemos testear el flag overnight en arrivals
   // del snapshot real comprobando que vuelos con departure pareja NO son overnight.
-  const fakeAirlines = [{ id: "AL-FAKE", name: "Fake", color: "#888", iataCode: "IB", fleet: [{ model: "A320", engineVariant: "CFM56" }] }];
+  // Pivot 2026-05-25 data real: usar V7 Volotea (operador A320 real OVD) en vez de IB
+  // que ahora casi no tiene arrivals (los IB son codeshare YW Air Nostrum con CRJ).
+  const fakeAirlines = [{ id: "AL-FAKE", name: "Fake", color: "#888", iataCode: "V7", homeBaseAirports: ["LEAS"], fleet: [{ model: "A320", engineVariant: "V2500" }] }];
   const fakeContracts = [{
     id: "C-FAKE", airlineId: "AL-FAKE", status: "active", expectedLandingsPerDay: 5,
     baseFeePerWeek: 10000, paymentPerWOMinute: 50, penaltyPerLateMinute: 5, minReputation: 40,

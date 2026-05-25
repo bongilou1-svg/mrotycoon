@@ -34,4 +34,9 @@ export interface Airline {
    *  vez). Iberia Express y Volotea tienen base en LEAS (OVD). Vueling/easyJet/Ryanair
    *  no. Escalable a otros aeropuertos cuando se añadan. */
   homeBaseAirports?: string[];
+  /** Pivot iteración 2026-05-25: si está set, esta aerolínea SOLO puede contratarse
+   *  cuando el jugador desbloquea habilitación para este tipo de avión. Ej: "CRJ"
+   *  para Air Nostrum, "E195" para Binter, "E175" para KLM Cityhopper. Si undefined,
+   *  contratable desde el día 1 si el brand cruza threshold. */
+  requiresUnlockType?: string;
 }

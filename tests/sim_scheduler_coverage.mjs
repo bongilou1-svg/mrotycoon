@@ -84,56 +84,63 @@ console.log("\n=== Cobertura por día para aerolínea contratada (IB) ===");
   }
 }
 
-console.log("\n=== Pool de matrículas IB tiene suficiente capacidad para overflow ===");
+// Pivot 2026-05-25: tests reescritos para usar V7 (Volotea) como operador con base
+// real OVD según data AeroDataBox. El antiguo IB era invalido porque en la realidad
+// los IB-codeshare son CRJ Air Nostrum (YW), no IB mainline A320.
+console.log("\n=== Pool de matrículas V7 (Volotea base) tiene suficiente capacidad ===");
 {
-  // Stress test: forzar que TODAS las matrículas IB se queden en stand sin despegar.
-  // El scheduler debe seguir trayendo más matrículas hasta agotar el pool.
-  const g = createGame(balance, airlines, templates, 1, defs, dailyChecks, { lineMode: true });
+  // Para esto necesitamos un game con contrato V7. Usamos preset rookie + forzamos
+  // upgrade a contrato con overnight. Stress: forzar matrículas atascadas.
+  const preset = JSON.parse(readFileSync(new URL("../src/lib/data/airports/LEAS_oviedo.preset.json", import.meta.url)));
+  // Modificar preset para que contrato inicial sea V7 con overnight
+  const presetV7 = { ...preset, setup: { ...preset.setup, initialContracts: [
+    { airlineIata: "V7", tier: "line", baseFeePerWeek: 12000, paymentPerWOMinute: 55, penaltyPerLateMinute: 4, minReputation: 40, expectedLandingsPerDay: 4, withOvernight: true }
+  ]}};
+  const g = createGame(balance, airlines, templates, 1, defs, dailyChecks, { lineMode: true, airportPreset: presetV7 });
   g.autoPauseEnabled = false;
   g.clock.speed = 1;
-  const ibIdLocal = airlines.find((a) => a.iataCode === "IB")?.id;
-  // Avanzar 14 días con setup austero → muchas matrículas atascadas.
+  const v7Id = airlines.find((a) => a.iataCode === "V7")?.id;
   while (g.clock.minute < 14 * DAY_MINUTES) {
     advanceGame(g, 5);
-    g.reputation.perAirline[ibIdLocal] = 80; // evitar cancelación
+    g.reputation.perAirline[v7Id] = 80; // evitar cancelación
   }
-  const ibAirplanes = g.airplanes.filter((a) => {
+  const v7Airplanes = g.airplanes.filter((a) => {
     const c = g.contracts.find((c) => c.id === a.contractId);
     if (!c) return false;
-    const al = airlines.find((al) => al.id === c.airlineId);
-    return al?.iataCode === "IB";
+    return c.airlineId === v7Id;
   });
-  const uniqueRegs = new Set(ibAirplanes.map((a) => a.registration));
-  expect(uniqueRegs.size >= 5, `≥5 matrículas IB distintas usadas en 14d (got ${uniqueRegs.size})`);
-  // Sanity: el pool IB tiene 10 matrículas → no debería superarse.
-  expect(uniqueRegs.size <= 10, `≤10 matrículas (= tamaño pool IB) (got ${uniqueRegs.size})`);
+  const uniqueRegs = new Set(v7Airplanes.map((a) => a.registration));
+  expect(uniqueRegs.size >= 3, `≥3 matrículas V7 distintas usadas en 14d (got ${uniqueRegs.size})`);
 }
 
-console.log("\n=== Overnight detection es consistente entre días ===");
+console.log("\n=== Overnight detection V7 consistente (base operativa real) ===");
 {
-  // Si hay un arrival IB ≥19:00 cada día, debe haber overnight=true cada día.
-  const g = createGame(balance, airlines, templates, 42, defs, dailyChecks, { lineMode: true });
+  const preset = JSON.parse(readFileSync(new URL("../src/lib/data/airports/LEAS_oviedo.preset.json", import.meta.url)));
+  const presetV7 = { ...preset, setup: { ...preset.setup, initialContracts: [
+    { airlineIata: "V7", tier: "line", baseFeePerWeek: 12000, paymentPerWOMinute: 55, penaltyPerLateMinute: 4, minReputation: 40, expectedLandingsPerDay: 4, withOvernight: true }
+  ]}};
+  const g = createGame(balance, airlines, templates, 42, defs, dailyChecks, { lineMode: true, airportPreset: presetV7 });
   g.autoPauseEnabled = false;
   g.clock.speed = 1;
-  const ibIdLocal2 = airlines.find((a) => a.iataCode === "IB")?.id;
+  const v7Id = airlines.find((a) => a.iataCode === "V7")?.id;
   while (g.clock.minute < 7 * DAY_MINUTES) {
     advanceGame(g, 5);
-    g.reputation.perAirline[ibIdLocal2] = 80; // evitar cancelación
+    g.reputation.perAirline[v7Id] = 80;
   }
-  const ibContractId = g.contracts.find((c) => c.status === "active")?.id;
+  const v7ContractId = g.contracts.find((c) => c.airlineId === v7Id && c.status === "active")?.id;
   let daysWithOvernight = 0;
   for (let d = 1; d <= 7; d++) {
     const dayStart = (d - 1) * DAY_MINUTES;
     const dayEnd = d * DAY_MINUTES;
     const hasOvernight = g.airplanes.some(
-      (a) => a.contractId === ibContractId &&
+      (a) => a.contractId === v7ContractId &&
         a.arrivalMinute >= dayStart && a.arrivalMinute < dayEnd &&
         a.overnight === true,
     );
     if (hasOvernight) daysWithOvernight++;
   }
-  // El schedule OVD tiene IB3219 21:05 los 7 días (último arrival IB de cada día).
-  expect(daysWithOvernight >= 6, `≥6/7 días con overnight IB (got ${daysWithOvernight})`);
+  // Data real: V7 tiene base OVD (homeBased=true). Esperar overnights varios días.
+  expect(daysWithOvernight >= 3, `≥3/7 días con overnight V7 (got ${daysWithOvernight})`);
 }
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);

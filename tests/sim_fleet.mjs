@@ -87,8 +87,10 @@ for (let i = 0; i < 20; i++) {
 }
 pass++; console.log(`  ✓ pickFleetAircraftForLanding solo devuelve aviones de la aerolínea`);
 
-// 6. pickFleetAircraftForLanding excluye busy
-const busy = new Set(fleetByAirline(fleet, al0.id).slice(0, FLEET_SIZE_PER_AIRLINE - 1).map(f => f.registration));
+// 6. pickFleetAircraftForLanding excluye busy. Pivot 2026-05-25: usar size real de la
+// flota de la aerolínea (basedAircraftCount puede diferir del FLEET_SIZE_PER_AIRLINE default).
+const fleetSize = fleetByAirline(fleet, al0.id).length;
+const busy = new Set(fleetByAirline(fleet, al0.id).slice(0, fleetSize - 1).map(f => f.registration));
 const onlyOneLeft = pickFleetAircraftForLanding(pickRng, al0.id, fleet, busy);
 expect(onlyOneLeft !== null && !busy.has(onlyOneLeft.registration), "respeta busy: pickea el único libre");
 

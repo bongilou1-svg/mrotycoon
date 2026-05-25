@@ -85,8 +85,8 @@ for (let i = 0; i < 50; i++) {
 }
 expect(offered > 0, `con rep alta sí se ofertan algunos contratos en 50 intentos (got ${offered})`);
 
-// rep 0 → no se oferta NUNCA
-const repZero = { "AL-001": 0, "AL-002": 0, "AL-003": 0, "AL-004": 0 };
+// rep 0 → no se oferta NUNCA. Pivot 2026-05-25: airlines ampliado a 9, cubrir todas.
+const repZero = Object.fromEntries(airlines.map(a => [a.id, 0]));
 let neverOffered = true;
 for (let i = 0; i < 50; i++) {
   const res = tickContractMarket(rng, [], airlines, repZero, i * 100);

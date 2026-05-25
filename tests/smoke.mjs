@@ -68,7 +68,7 @@ expect(ataSet.size >= 18, `≥ 18 capítulos ATA cubiertos (got ${ataSet.size})`
 console.log("\n=== airlines.json ===");
 const airlines = readJson(join(dataDir, "airlines.json"));
 expect(Array.isArray(airlines), "es un array");
-expect(airlines.length === 4, `4 aerolíneas (got ${airlines.length})`);
+expect(airlines.length >= 4, `≥4 aerolíneas (got ${airlines.length}) — pivot 2026-05-25 ampliado con YW/NT/LH/KL/EI`);
 // Pivot MRO línea pura (2026-05-24): aerolíneas renombradas a operadores OVD reales
 // con iataCode. La primera es Iberia Express (contrato inicial único del jugador).
 const expectedNames = ["Iberia Express", "Vueling", "Volotea", "easyJet"];

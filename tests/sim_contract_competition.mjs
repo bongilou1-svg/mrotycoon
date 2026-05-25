@@ -260,7 +260,7 @@ console.log("\n=== Per-airline brandThreshold ordena las ofertas (V7→VY→U2) 
   const u2 = airlines.find(a => a.iataCode === "U2");
   expect(v7?.brandThreshold === 55, `Volotea threshold 55 (got ${v7?.brandThreshold})`);
   expect(vy?.brandThreshold === 70, `Vueling threshold 70 (got ${vy?.brandThreshold})`);
-  expect(u2?.brandThreshold === 80, `easyJet threshold 80 (got ${u2?.brandThreshold})`);
+  expect(u2?.brandThreshold === 85, `easyJet threshold 85 (got ${u2?.brandThreshold})`);
 
   // Brand=60 → solo Volotea puede ofertar (55<60, otros >60).
   _resetContractCounter(3000);
@@ -285,7 +285,7 @@ console.log("\n=== Per-airline brandThreshold ordena las ofertas (V7→VY→U2) 
   }
   expect(offerersAt75.has(v7.id), "brand=75 → Volotea oferta");
   expect(offerersAt75.has(vy.id), "brand=75 → Vueling oferta (70<75)");
-  expect(!offerersAt75.has(u2.id), "brand=75 → easyJet NO oferta (80>75)");
+  expect(!offerersAt75.has(u2.id), "brand=75 → easyJet NO oferta (85>75)");
 
   // Brand=90 → todas pueden ofertar.
   _resetContractCounter(5000);

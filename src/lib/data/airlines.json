@@ -10,9 +10,9 @@
       { "model": "A320", "engineVariant": "V2500" },
       { "model": "A321", "engineVariant": "CFM56" }
     ],
-    "basedAircraftCount": 8,
-    "brandThreshold": 60,
-    "homeBaseAirports": ["LEAS"]
+    "basedAircraftCount": 4,
+    "brandThreshold": 65,
+    "homeBaseAirports": []
   },
   {
     "id": "AL-002",
@@ -24,7 +24,7 @@
       { "model": "A320", "engineVariant": "CFM56" },
       { "model": "A321", "engineVariant": "V2500" }
     ],
-    "basedAircraftCount": 6,
+    "basedAircraftCount": 4,
     "brandThreshold": 70,
     "homeBaseAirports": []
   },
@@ -36,9 +36,9 @@
     "color": "#A20067",
     "fleet": [
       { "model": "A320", "engineVariant": "V2500" },
-      { "model": "A321", "engineVariant": "V2500" }
+      { "model": "A320", "engineVariant": "CFM56" }
     ],
-    "basedAircraftCount": 4,
+    "basedAircraftCount": 6,
     "brandThreshold": 55,
     "homeBaseAirports": ["LEAS"]
   },
@@ -50,11 +50,74 @@
     "color": "#FF6600",
     "fleet": [
       { "model": "A320", "engineVariant": "CFM56" },
-      { "model": "A321", "engineVariant": "CFM56" },
+      { "model": "A321", "engineVariant": "CFM56" }
+    ],
+    "basedAircraftCount": 4,
+    "brandThreshold": 85,
+    "homeBaseAirports": []
+  },
+  {
+    "id": "AL-005",
+    "name": "Air Nostrum",
+    "iataCode": "YW",
+    "color": "#003D7A",
+    "fleet": [
+      { "model": "CRJ-1000", "engineVariant": "CF34-8C5" }
+    ],
+    "basedAircraftCount": 12,
+    "brandThreshold": 75,
+    "homeBaseAirports": ["LEAS"],
+    "requiresUnlockType": "CRJ"
+  },
+  {
+    "id": "AL-006",
+    "name": "Binter Canarias",
+    "iataCode": "NT",
+    "color": "#1F8B4C",
+    "fleet": [
+      { "model": "E195-E2", "engineVariant": "PW1900G" }
+    ],
+    "basedAircraftCount": 4,
+    "brandThreshold": 80,
+    "homeBaseAirports": [],
+    "requiresUnlockType": "E195"
+  },
+  {
+    "id": "AL-007",
+    "name": "Lufthansa",
+    "iataCode": "LH",
+    "color": "#05164D",
+    "fleet": [
+      { "model": "A320", "engineVariant": "CFM56" },
       { "model": "A321", "engineVariant": "V2500" }
     ],
-    "basedAircraftCount": 9,
+    "basedAircraftCount": 4,
+    "brandThreshold": 85,
+    "homeBaseAirports": []
+  },
+  {
+    "id": "AL-008",
+    "name": "KLM Cityhopper",
+    "iataCode": "KL",
+    "color": "#00A1DE",
+    "fleet": [
+      { "model": "E175", "engineVariant": "CF34-8E" }
+    ],
+    "basedAircraftCount": 4,
     "brandThreshold": 80,
+    "homeBaseAirports": [],
+    "requiresUnlockType": "E175"
+  },
+  {
+    "id": "AL-009",
+    "name": "Aer Lingus",
+    "iataCode": "EI",
+    "color": "#0D754B",
+    "fleet": [
+      { "model": "A320", "engineVariant": "CFM56" }
+    ],
+    "basedAircraftCount": 4,
+    "brandThreshold": 78,
     "homeBaseAirports": []
   }
 ]

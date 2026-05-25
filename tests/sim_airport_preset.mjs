@@ -19,14 +19,16 @@ expect(isAirportPreset(presetData), "isAirportPreset() validates JSON shape");
 expect(presetData.icao === "LEAS", `icao LEAS (got ${presetData.icao})`);
 expect(presetData.iata === "OVD", `iata OVD`);
 expect(presetData.difficulty === 1, "difficulty 1 (rookie)");
-expect(presetData.setup.initialBalance === 250000, "balance inicial 250k");
+expect(presetData.setup.initialBalance === 200000, "balance inicial 200k rookie");
 expect(presetData.setup.initialMechs.length === 1, "1 mec inicial (rookie austero)");
 expect(presetData.setup.initialMechs[0].type === "dual-B1B2", "tipo dual-B1B2");
 expect(presetData.setup.marketPreloadDualCandidates === 2, "2 candidatos dual en mercado");
 expect(presetData.setup.initialContracts.length === 1, "1 contrato inicial");
-expect(presetData.setup.initialContracts[0].airlineIata === "IB",
-  "contrato inicial = Iberia Express (compat con setup actual)");
-expect(presetData.operators.length === 4, "4 operadores definidos (IB/VY/V7/U2)");
+expect(presetData.setup.initialContracts[0].airlineIata === "VY",
+  "contrato inicial = Vueling callouts (rookie real)");
+expect(presetData.setup.initialContracts[0].withOvernight === false,
+  "rookie: contrato sin overnight (solo callouts puntuales)");
+expect(presetData.operators.length >= 4, `≥4 operadores (got ${presetData.operators.length})`);
 const volotea = presetData.operators.find(o => o.iata === "V7");
 expect(volotea?.homeBased === true, "Volotea = home based (operador local OVD)");
 expect(volotea?.brandThreshold === 55, "Volotea brandThreshold 55");
@@ -53,7 +55,7 @@ console.log("\n=== createGame propaga airportIcao desde preset ===");
   // CON preset: airportIcao = preset.icao
   const gPreset = createGame(balance, airlines, templates, 42, undefined, undefined, { airportPreset: presetData });
   expect(gPreset.airportIcao === "LEAS", `con preset: airportIcao = LEAS (got ${gPreset.airportIcao})`);
-  expect(gPreset.economy.balance === 250000, `con preset: balance inicial = 250k (got ${gPreset.economy.balance})`);
+  expect(gPreset.economy.balance === 200000, `con preset: balance rookie = 200k (got ${gPreset.economy.balance})`);
 
   // Preset con balance custom: aplica
   const customPreset = { ...presetData, setup: { ...presetData.setup, initialBalance: 500000 } };
@@ -82,15 +84,14 @@ console.log("\n=== createGame propaga airportIcao desde preset ===");
   expect(gMulti.mechanics[2].base === null, "helper sin base");
   expect(gMulti.mechanics[2].typeRatings.length === 0, "helper sin ratings");
 
-  // Contratos iniciales desde preset
-  expect(gPreset.contracts.length === 1, `1 contrato inicial del preset (got ${gPreset.contracts.length})`);
+  // Contratos iniciales desde preset (rookie: 1 VY callouts)
+  expect(gPreset.contracts.length === 1, `1 contrato inicial rookie (got ${gPreset.contracts.length})`);
   const c = gPreset.contracts[0];
   expect(c.status === "active", "contrato active");
-  expect(c.baseFeePerWeek === 15000, `fee semanal del preset = 15000 (got ${c.baseFeePerWeek})`);
+  expect(c.baseFeePerWeek === 5000, `fee rookie = 5000 (got ${c.baseFeePerWeek})`);
   expect(c.tier === "line", "tier line del preset");
-  // El airline debe matchear el iataCode del preset (IB)
-  const iberiaAir = airlines.find(a => a.iataCode === "IB");
-  expect(c.airlineId === iberiaAir.id, "contrato vinculado a Iberia (airlineIata IB del preset)");
+  const vyAir = airlines.find(a => a.iataCode === "VY");
+  expect(c.airlineId === vyAir.id, "contrato vinculado a Vueling (rookie real)");
 
   // Preset multi-contrato (V7 + VY)
   const presetMultiContract = { ...presetData, setup: { ...presetData.setup, initialContracts: [
