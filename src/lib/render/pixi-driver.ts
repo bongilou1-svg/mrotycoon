@@ -2676,10 +2676,9 @@ export class PixiDriver {
     }
 
     // ── Cabeceras REALES del primer runway disponible (para animación taxi) ──
-    // Pivot iteración 2026-05-25: feedback Dani "luz q va por la pista". El punto de
-    // entrada/salida ya no es fake (30%×65% del area) sino la cabecera real del runway
-    // OSM más cercana al stand. Para arrival usamos la más cercana al stand (taxi corto);
-    // para departure usamos la opuesta (avión rueda hasta el extremo opuesto para despegar).
+    // Pivot iteración 2026-05-25: feedback Dani "vidilla" — recorrido visible completo
+    // de TOUCHDOWN (cabecera opuesta) → ROLLOUT (recorre runway) → TAXIWAY → STAND
+    // y el inverso para departure. No línea recta corta.
     let runwayHeads: { head1: { x: number; y: number }; head2: { x: number; y: number } } | null = null;
     if (P.runways.length > 0 && P.runways[0].coords.length >= 2) {
       const r = P.runways[0];
@@ -2688,75 +2687,102 @@ export class PixiDriver {
         head2: this.f5dProject(r.coords[r.coords.length - 1], area),
       };
     }
-    const nearestThreshold = (pos: { x: number; y: number }): { x: number; y: number } => {
-      if (!runwayHeads) return { x: area.x + area.w * 0.3, y: area.y + area.h * 0.65 };
+    const fallbackP1 = { x: area.x + area.w * 0.15, y: area.y + area.h * 0.7 };
+    const fallbackP2 = { x: area.x + area.w * 0.85, y: area.y + area.h * 0.3 };
+    /** Devuelve [touchdown=lejana, exitNear=cercana] al stand. */
+    const runwayPathsForArrival = (pos: { x: number; y: number }) => {
+      if (!runwayHeads) return { touchdown: fallbackP2, exitNear: fallbackP1 };
       const d1 = Math.hypot(pos.x - runwayHeads.head1.x, pos.y - runwayHeads.head1.y);
       const d2 = Math.hypot(pos.x - runwayHeads.head2.x, pos.y - runwayHeads.head2.y);
-      return d1 < d2 ? runwayHeads.head1 : runwayHeads.head2;
-    };
-    const farthestThreshold = (pos: { x: number; y: number }): { x: number; y: number } => {
-      if (!runwayHeads) return { x: area.x + area.w * 0.7, y: area.y + area.h * 0.35 };
-      const d1 = Math.hypot(pos.x - runwayHeads.head1.x, pos.y - runwayHeads.head1.y);
-      const d2 = Math.hypot(pos.x - runwayHeads.head2.x, pos.y - runwayHeads.head2.y);
-      return d1 < d2 ? runwayHeads.head2 : runwayHeads.head1;
+      return d1 < d2
+        ? { touchdown: runwayHeads.head2, exitNear: runwayHeads.head1 }
+        : { touchdown: runwayHeads.head1, exitNear: runwayHeads.head2 };
     };
 
-    // ── Aviones taxiing arrival (cabecera más cercana → stand) ──
+    /** Interpola posición sobre lista de waypoints según t∈[0,1].
+     *  Distribuye t proporcionalmente a la longitud de cada segmento (velocidad constante). */
+    const interpPath = (wps: Array<{ x: number; y: number }>, t: number): { x: number; y: number } => {
+      if (wps.length < 2) return wps[0] ?? { x: 0, y: 0 };
+      // Longitudes acumuladas
+      const segLens: number[] = [];
+      let totalLen = 0;
+      for (let i = 1; i < wps.length; i++) {
+        const dx = wps[i].x - wps[i - 1].x, dy = wps[i].y - wps[i - 1].y;
+        const L = Math.hypot(dx, dy);
+        segLens.push(L);
+        totalLen += L;
+      }
+      if (totalLen === 0) return wps[0];
+      const target = Math.max(0, Math.min(1, t)) * totalLen;
+      let acc = 0;
+      for (let i = 0; i < segLens.length; i++) {
+        if (acc + segLens[i] >= target) {
+          const localT = segLens[i] > 0 ? (target - acc) / segLens[i] : 0;
+          return {
+            x: wps[i].x + (wps[i + 1].x - wps[i].x) * localT,
+            y: wps[i].y + (wps[i + 1].y - wps[i].y) * localT,
+          };
+        }
+        acc += segLens[i];
+      }
+      return wps[wps.length - 1];
+    };
+
+    // ── Aviones taxiing arrival (touchdown → rollout → taxi → stand) ──
+    // Pivot iteración 2026-05-25: 3 waypoints — touchdown (cabecera opuesta), exitNear
+    // (cabecera cerca del stand donde "frena y sale" del runway), standPos. Esto da
+    // sensación de aterrizaje real: el avión RECORRE el runway antes de ir al stand.
     for (const ap of state.airplanes) {
       if (!ap.taxiing || !ap.standId) continue;
       const ref = this.getStandMap()[ap.standId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
-      const start = nearestThreshold(standPos);
-      const px = start.x + (standPos.x - start.x) * ap.taxiProgress;
-      const py = start.y + (standPos.y - start.y) * ap.taxiProgress;
-      // Trail line decay desde cabecera al avión actual
-      this.worldDynamic!.addChild(new Graphics().moveTo(start.x, start.y).lineTo(px, py).stroke({ width: 1.5, color: 0x3aa9ff, alpha: 0.35 }));
-      // Trail dots fade detrás del avión
-      for (let i = 1; i <= 4; i++) {
-        const t = Math.max(0, ap.taxiProgress - i * 0.08);
-        const tx = start.x + (standPos.x - start.x) * t;
-        const ty = start.y + (standPos.y - start.y) * t;
-        const alpha = 0.55 - i * 0.12;
-        this.worldDynamic!.addChild(new Graphics().rect(tx - 1.5, ty - 1.5, 3, 3).fill({ color: 0x3aa9ff, alpha }));
+      const { touchdown, exitNear } = runwayPathsForArrival(standPos);
+      const waypoints = [touchdown, exitNear, standPos];
+      const pos = interpPath(waypoints, ap.taxiProgress);
+      // Trail dots LARGOS (10 puntos) para estela visible "vidilla"
+      for (let i = 1; i <= 10; i++) {
+        const t = Math.max(0, ap.taxiProgress - i * 0.025);
+        const tp = interpPath(waypoints, t);
+        const alpha = Math.max(0, 0.55 - i * 0.05);
+        const sz = Math.max(1, 3 - i * 0.18);
+        this.worldDynamic!.addChild(new Graphics().rect(tp.x - sz / 2, tp.y - sz / 2, sz, sz).fill({ color: 0x3aa9ff, alpha }));
       }
       // Bloom + halo + core (luz cyan = arrival)
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 18).fill({ color: 0x3aa9ff, alpha: 0.08 }));
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 10).fill({ color: 0x3aa9ff, alpha: 0.22 }));
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 3.5).fill(0xa8dafc));
+      this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 18).fill({ color: 0x3aa9ff, alpha: 0.08 }));
+      this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 10).fill({ color: 0x3aa9ff, alpha: 0.22 }));
+      this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 3.5).fill(0xa8dafc));
     }
 
-    // ── Aviones departing (stand → cabecera opuesta, despegue) ──
-    // Pivot iteración 2026-05-25: animación de salida. Luz ámbar/dorada (vs cyan arrival)
-    // para distinguir visualmente. Acelera ligeramente al final con easeIn (despegue).
+    // ── Aviones departing (stand → taxi → cabecera opuesta → take-off → fade) ──
+    // Pivot iteración 2026-05-25: 3 waypoints inverso — stand, exitNear (cabecera más
+    // cercana = punto de entrada al runway), takeoff (cabecera opuesta = punto donde
+    // ya está en aire). Color ámbar para distinguir de arrival cyan.
     for (const ap of state.airplanes) {
       if (!ap.departing || !ap.standId) continue;
       const ref = this.getStandMap()[ap.standId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
-      const end = farthestThreshold(standPos);
-      // EaseIn cuadrático: al final acelera (simula take-off run)
+      const { touchdown: takeoff, exitNear } = runwayPathsForArrival(standPos);
+      // Inverso: stand → cabecera cercana (entry runway) → cabecera lejana (takeoff)
+      const waypoints = [standPos, exitNear, takeoff];
       const t = ap.taxiOutProgress ?? 0;
-      const easedT = t * t * (3 - 2 * t); // smoothstep — arranque/parada suave
-      const px = standPos.x + (end.x - standPos.x) * easedT;
-      const py = standPos.y + (end.y - standPos.y) * easedT;
-      // Trail line desde stand hasta avión actual (color cálido = departure)
-      this.worldDynamic!.addChild(new Graphics().moveTo(standPos.x, standPos.y).lineTo(px, py).stroke({ width: 1.5, color: 0xf5b945, alpha: 0.35 }));
-      // Trail dots fade
-      for (let i = 1; i <= 4; i++) {
-        const tt = Math.max(0, easedT - i * 0.08);
-        const tx = standPos.x + (end.x - standPos.x) * tt;
-        const ty = standPos.y + (end.y - standPos.y) * tt;
-        const alpha = 0.55 - i * 0.12;
-        this.worldDynamic!.addChild(new Graphics().rect(tx - 1.5, ty - 1.5, 3, 3).fill({ color: 0xf5b945, alpha }));
+      const pos = interpPath(waypoints, t);
+      // Trail dots LARGOS (10 puntos) en ámbar
+      for (let i = 1; i <= 10; i++) {
+        const tt = Math.max(0, t - i * 0.025);
+        const tp = interpPath(waypoints, tt);
+        const alpha = Math.max(0, 0.55 - i * 0.05);
+        const sz = Math.max(1, 3 - i * 0.18);
+        this.worldDynamic!.addChild(new Graphics().rect(tp.x - sz / 2, tp.y - sz / 2, sz, sz).fill({ color: 0xf5b945, alpha }));
       }
-      // Halo cálido — fade out hacia el final (avión "despega" y desaparece)
-      const fadeAlpha = 1 - Math.max(0, (t - 0.7) / 0.3); // fade últimos 30%
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 18).fill({ color: 0xf5b945, alpha: 0.08 * fadeAlpha }));
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 10).fill({ color: 0xf5b945, alpha: 0.22 * fadeAlpha }));
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 3.5).fill({ color: 0xffe399, alpha: fadeAlpha }));
+      // Halo cálido — fade últimos 25% (avión despega y se va)
+      const fadeAlpha = 1 - Math.max(0, (t - 0.75) / 0.25);
+      this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 18).fill({ color: 0xf5b945, alpha: 0.08 * fadeAlpha }));
+      this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 10).fill({ color: 0xf5b945, alpha: 0.22 * fadeAlpha }));
+      this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 3.5).fill({ color: 0xffe399, alpha: fadeAlpha }));
     }
 
     // ── Aviones parados en stand (P-δ: bloom doble + P-ε: hitbox click/hover) ──
