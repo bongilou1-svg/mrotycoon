@@ -29,6 +29,7 @@ Eres el **director de un MRO**: aceptas contratos de aerolíneas, asignas hangar
 - **Time-box agresivo**: si se sale, recortar alcance, no fecha.
 - **Anti-dispersión**: ideas brillantes que aparezcan a mitad → al Parking de `STATUS.md`.
 - **No preguntar lo obvio**: si el plan está acordado, ejecutar y reportar.
+- **GitHub auto-sync (regla a fuego, 2026-05-30)**: cada cierre de fase, cada `builds/v*.html` nuevo, cada cambio sustancial → push automático a `github.com/bongilou1-svg/mrotycoon` antes de cerrar la sesión. Sin pedirlo. Patrón vía skill `github-runner` (bundle → scp → push UM890). Si falla, avisar y NO seguir.
 
 ## Estructura del repo
 ```

@@ -25,7 +25,7 @@ g1.autoPauseEnabled = false;
 for (let i = 0; i < 50; i++) advanceGame(g1, 30);
 
 const payload = serializeGame(g1);
-expect(payload.version === 15, "version=15 (pivot iteración 2026-05-25 · Performance archive)");
+expect(payload.version === 16, "version=16 (corte 2026-05-30 · invalida saves pre-fix seeding)");
 expect(typeof payload.savedAt === "string", "savedAt presente");
 expect(payload.clock.minute === g1.clock.minute, `minuto guardado coincide (${payload.clock.minute})`);
 expect(payload.contracts.length === g1.contracts.length, "contratos guardados");
@@ -145,7 +145,7 @@ expect(gV7.useScheduleArrivals === false, `v7 sin flag → default false en v8 (
 const gWithSchedule = createGame(balance, airlines, templates, 42);
 gWithSchedule.useScheduleArrivals = true;
 const v8Payload = serializeGame(gWithSchedule);
-expect(v8Payload.version === 15, "v15 al serializar (incluye archive)");
+expect(v8Payload.version === 16, "v16 al serializar (corte 2026-05-30)");
 expect(v8Payload.useScheduleArrivals === true, "v8 preserva flag true");
 const gV8 = deserializeGame(v8Payload, balance, airlines, templates);
 expect(gV8.useScheduleArrivals === true, "v8 round-trip preserva flag");
@@ -154,6 +154,25 @@ expect(gV8.useScheduleArrivals === true, "v8 round-trip preserva flag");
 const v7WithFlag = { ...payload, version: 7, useScheduleArrivals: true };
 const gV7WithFlag = deserializeGame(v7WithFlag, balance, airlines, templates);
 expect(gV7WithFlag.useScheduleArrivals === true, "v7 con flag → respetar (forward-compat reading)");
+
+// 7. Corte v16: storage descarta saves contaminados pre-fix seeding (overnighters fantasma).
+//    El corte vive en la capa storage (load/hasSave), NO en deserializeGame (que sigue
+//    migrando v6..16). Esto evita que un save viejo "OVD→Vueling con 19 EN TIERRA" recaiga.
+console.log("\n=== corte v16 (storage descarta saves pre-16) ===");
+const cutBackend = new InMemoryBackend();
+setStorage(cutBackend);
+// Simular un save viejo (v15) ya persistido, como el de Dani.
+const oldPayload = { ...serializeGame(g1), version: 15 };
+// Inyectar directo en el slot interno saltándonos la política de save() (que no valida en
+// escritura): replicamos lo que había en localStorage de una sesión anterior.
+await cutBackend.save(oldPayload); // save() no fuerza versión; persiste tal cual
+expect(!(await cutBackend.hasSave()), "save v15 → hasSave false (purgado por el corte)");
+expect((await cutBackend.load()) === null, "save v15 → load null (no arrastra fantasmas)");
+// Un save de la versión actual SÍ sobrevive.
+const freshPayload = serializeGame(g1);
+await cutBackend.save(freshPayload);
+expect(await cutBackend.hasSave(), "save v16 → hasSave true");
+expect((await cutBackend.load()) !== null, "save v16 → load OK");
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

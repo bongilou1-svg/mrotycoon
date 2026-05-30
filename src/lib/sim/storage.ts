@@ -7,6 +7,19 @@ import type { GameSavePayload } from "./save.ts";
 
 const SLOT_KEY = "mro-tycoon-save-v1";
 
+// Corte 2026-05-30: saves anteriores a v16 podían contener aviones "overnighter" fantasma
+// EN TIERRA, sembrados por la lógica previa al fix de `isBased` (una partida OVD→Vueling
+// debe arrancar vacía; los saves viejos mostraban ~19). Los descartamos al leer para que
+// una partida nueva siempre arranque limpia y el save contaminado no recaiga. Mantenerlo
+// como literal independiente de SAVE_VERSION: futuras subidas de versión con migración NO
+// deben invalidar saves automáticamente; solo se sube este corte cuando haya otro break real.
+const MIN_COMPATIBLE_VERSION = 16;
+
+/** True si el payload es de una versión que sabemos cargar sin arrastrar datos corruptos. */
+function isCompatibleSave(payload: GameSavePayload | null | undefined): boolean {
+  return !!payload && typeof payload.version === "number" && payload.version >= MIN_COMPATIBLE_VERSION;
+}
+
 export interface StorageBackend {
   save(payload: GameSavePayload): Promise<void>;
   load(): Promise<GameSavePayload | null>;
@@ -26,14 +39,35 @@ class LocalStorageBackend implements StorageBackend {
     try {
       const raw = localStorage.getItem(SLOT_KEY);
       if (!raw) return null;
-      return JSON.parse(raw) as GameSavePayload;
+      const payload = JSON.parse(raw) as GameSavePayload;
+      // Corte 2026-05-30: descartar saves incompatibles (pre-v16 con overnighters fantasma).
+      if (!isCompatibleSave(payload)) {
+        localStorage.removeItem(SLOT_KEY);
+        return null;
+      }
+      return payload;
     } catch (e) {
       throw new Error(`No se pudo cargar (localStorage corrupto): ${(e as Error).message}`);
     }
   }
   async hasSave(): Promise<boolean> {
     try {
-      return localStorage.getItem(SLOT_KEY) !== null;
+      const raw = localStorage.getItem(SLOT_KEY);
+      if (!raw) return false;
+      // Validar versión: un save incompatible se purga aquí, de modo que el botón
+      // "Continuar partida" del wizard quede deshabilitado en lugar de cargar basura.
+      let payload: GameSavePayload | null = null;
+      try {
+        payload = JSON.parse(raw) as GameSavePayload;
+      } catch {
+        localStorage.removeItem(SLOT_KEY);
+        return false;
+      }
+      if (!isCompatibleSave(payload)) {
+        localStorage.removeItem(SLOT_KEY);
+        return false;
+      }
+      return true;
     } catch {
       return false;
     }
@@ -47,12 +81,20 @@ class LocalStorageBackend implements StorageBackend {
   }
 }
 
-// In-memory backend para tests Node (sin localStorage).
+// In-memory backend para tests Node (sin localStorage). Aplica la misma política de
+// versión que LocalStorageBackend para que el corte de saves incompatibles sea coherente
+// entre backends (y testeable headless sin mock de localStorage).
 class InMemoryBackend implements StorageBackend {
   private slot: GameSavePayload | null = null;
   async save(p: GameSavePayload) { this.slot = JSON.parse(JSON.stringify(p)); }
-  async load() { return this.slot ? JSON.parse(JSON.stringify(this.slot)) : null; }
-  async hasSave() { return this.slot !== null; }
+  async load() {
+    if (!isCompatibleSave(this.slot)) { this.slot = null; return null; }
+    return JSON.parse(JSON.stringify(this.slot));
+  }
+  async hasSave() {
+    if (!isCompatibleSave(this.slot)) { this.slot = null; return false; }
+    return true;
+  }
   async clear() { this.slot = null; }
 }
 

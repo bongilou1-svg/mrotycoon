@@ -26,8 +26,13 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  (actualDepartureMinute, delayMinutes, aogEscalated). Defaults sanos en migración.
  *  v11 = pivot línea pura · Fase A modelo HH: añade hoursKPI (book vs actual).
  *  v12 = pivot línea pura · Fase B Tiers: añade tierUpgradeLastTickMinute + upgrade
- *  field en Contract. */
-export const SAVE_VERSION = 15;
+ *  field en Contract.
+ *  v16 = corte 2026-05-30: NO cambia el schema. Bump deliberado para INVALIDAR saves
+ *  pre-v16, que podían contener aviones "overnighter" fantasma EN TIERRA sembrados con
+ *  la lógica previa al fix de `isBased` en seedPreOvernighters (una partida OVD→Vueling
+ *  debe arrancar con 0 aviones; los saves viejos mostraban ~19). storage.ts los purga
+ *  al leer; deserializeGame solo acepta la versión actual. */
+export const SAVE_VERSION = 16;
 
 export interface GameSavePayload {
   version: number;
@@ -147,9 +152,14 @@ export function deserializeGame(
   checkDefinitions: CheckDefinition[] = [],
   dailyCheckTemplates: WorkOrderTemplate[] = [],
 ): GameState {
-  // v8 puede leer v7 y v6 con migración (campos nuevos default). v5 y previos requieren upgrade explícito.
-  if (payload.version !== SAVE_VERSION && payload.version !== 14 && payload.version !== 13 && payload.version !== 12 && payload.version !== 11 && payload.version !== 10 && payload.version !== 9 && payload.version !== 8 && payload.version !== 7 && payload.version !== 6) {
-    throw new Error(`Save version ${payload.version} no soportada (esperado ${SAVE_VERSION}, 14, 13, 12, 11, 10, 9, 8, 7 o 6 con migración)`);
+  // deserializeGame mantiene la CAPACIDAD de migrar saves v6..actual (defaults sanos para
+  // campos nuevos). El CORTE de saves contaminados pre-v16 (overnighters fantasma del
+  // seeding previo al fix `isBased`) NO vive aquí: vive en storage.ts (`load`/`hasSave`
+  // purgan < MIN_COMPATIBLE_VERSION) porque es una política de la capa de persistencia/UI,
+  // no de la deserialización pura. Así no rompemos los tests de migración ni el principio
+  // "no romper saves legítimos". Aquí solo rechazamos versiones fuera del rango soportado.
+  if (payload.version < 6 || payload.version > SAVE_VERSION) {
+    throw new Error(`Save version ${payload.version} no soportada (esperado 6..${SAVE_VERSION} con migración)`);
   }
   resetAirplaneInstanceCounter(payload.aliCounter);
   resetMaintenanceCheckCounter(payload.mcCounter);
