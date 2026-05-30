@@ -425,6 +425,34 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .foh-head h1{font-size:clamp(26px,3.4vw,36px);font-weight:800;letter-spacing:-.02em;margin:14px 0 0}
 .foh-head h1 .t{color:var(--accent)}
 .foh-head .sub{color:var(--muted);font-size:14px;margin-top:8px;max-width:760px;line-height:1.5}
+/* ===== Game Over post-mortem (handoff entrega-menu 3, 2026-05-30) ===== */
+.go-root{position:fixed;inset:0;z-index:1100;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 28%,#1a0d10 0%,#070406 100%)}
+.go-bg{position:absolute;inset:0;background:radial-gradient(900px 520px at 50% 0%,rgba(248,81,73,.13) 0%,transparent 60%)}
+.go-grid{position:absolute;inset:0;opacity:.4;background-image:linear-gradient(rgba(120,40,46,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(120,40,46,.12) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(120% 100% at 50% 30%,#000 30%,transparent 85%);mask-image:radial-gradient(120% 100% at 50% 30%,#000 30%,transparent 85%)}
+.go-scan{position:absolute;inset:0;pointer-events:none;opacity:.4;background:repeating-linear-gradient(180deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
+.go-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(20px,4vw,56px);overflow-y:auto;z-index:5}
+.go-eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--danger);margin-bottom:14px}
+.go-title{font-size:clamp(34px,6vw,66px);font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 18px}
+.go-title span{color:var(--danger)}
+.go-reason{max-width:560px;margin-bottom:26px}
+.go-reason .rt{font-size:clamp(17px,2.3vw,23px);font-weight:700;color:var(--danger);margin-bottom:6px}
+.go-reason .rs{font-size:clamp(13px,1.5vw,15px);color:var(--muted);line-height:1.5}
+.go-stats{display:grid;grid-template-columns:repeat(4,minmax(96px,1fr));gap:12px;width:100%;max-width:620px;margin-bottom:22px}
+.go-stat{background:rgba(22,27,34,.7);border:1px solid var(--border-s);border-radius:6px;padding:14px 10px}
+.go-stat .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px}
+.go-stat .v{font-family:var(--mono);font-size:clamp(17px,2.3vw,25px);font-weight:700}
+.go-stat .v span{font-size:.58em;color:var(--muted)}
+.go-chart{width:100%;max-width:560px;margin-bottom:18px}
+.go-chart-h{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px;text-align:left}
+.go-spark{width:100%;height:120px;display:block;background:rgba(10,15,23,.6);border:1px solid var(--border);border-radius:4px}
+.go-nospark{font-size:.82rem;color:var(--muted);padding:1rem;border:1px dashed var(--border-s);border-radius:4px}
+.go-wo{font-size:.9rem;color:var(--muted);margin-bottom:26px}
+.go-wo b{color:var(--text)}
+.go-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.go-btn{font-family:var(--sans);font-size:1rem;font-weight:600;padding:13px 26px;border:1px solid var(--border-s);background:var(--panel);color:var(--text);border-radius:4px;cursor:pointer;transition:all .14s}
+.go-btn:hover{border-color:var(--accent);color:var(--accent)}
+.go-btn.primary{background:var(--danger);border-color:var(--danger);color:#fff}
+.go-btn.primary:hover{background:#ff6b63;border-color:#ff6b63;color:#fff}
 .foh-cards{flex:1;display:grid;gap:18px;margin:clamp(16px,3vh,26px) 0;align-content:start;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
 .foh-cards.ops{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));max-width:1120px}
 .foh-apcard{background:linear-gradient(180deg,rgba(27,35,48,.96),rgba(16,21,30,.96));border:1px solid var(--border-strong);position:relative;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;text-decoration:none;color:var(--text)}
@@ -4569,8 +4597,8 @@ function renderNewGameWizard() {
   return \`<div class="foh-root" id="newgame-overlay">\${bg(newGameStep !== "intro")}\${body}</div>\`;
 }
 
-// Game Over post-mortem (handoff entrega-menu 3). Escrito con concatenación de strings
-// (sin backticks ni ${}) para insertarse seguro dentro del template literal gigante APP_JS.
+// Game Over post-mortem (handoff entrega-menu 3). Escrito con concatenacion de strings
+// (sin backticks ni interpolacion) para insertarse seguro en el template gigante APP_JS.
 function renderGameOver(){
   var dayN = Math.floor(game.clock.minute / S.DAY_MINUTES) + 1;
   var wk = S.getWeek(game.clock.minute);

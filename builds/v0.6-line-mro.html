@@ -312,6 +312,34 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .foh-head h1{font-size:clamp(26px,3.4vw,36px);font-weight:800;letter-spacing:-.02em;margin:14px 0 0}
 .foh-head h1 .t{color:var(--accent)}
 .foh-head .sub{color:var(--muted);font-size:14px;margin-top:8px;max-width:760px;line-height:1.5}
+/* ===== Game Over post-mortem (handoff entrega-menu 3, 2026-05-30) ===== */
+.go-root{position:fixed;inset:0;z-index:1100;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 28%,#1a0d10 0%,#070406 100%)}
+.go-bg{position:absolute;inset:0;background:radial-gradient(900px 520px at 50% 0%,rgba(248,81,73,.13) 0%,transparent 60%)}
+.go-grid{position:absolute;inset:0;opacity:.4;background-image:linear-gradient(rgba(120,40,46,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(120,40,46,.12) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(120% 100% at 50% 30%,#000 30%,transparent 85%);mask-image:radial-gradient(120% 100% at 50% 30%,#000 30%,transparent 85%)}
+.go-scan{position:absolute;inset:0;pointer-events:none;opacity:.4;background:repeating-linear-gradient(180deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
+.go-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(20px,4vw,56px);overflow-y:auto;z-index:5}
+.go-eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--danger);margin-bottom:14px}
+.go-title{font-size:clamp(34px,6vw,66px);font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 18px}
+.go-title span{color:var(--danger)}
+.go-reason{max-width:560px;margin-bottom:26px}
+.go-reason .rt{font-size:clamp(17px,2.3vw,23px);font-weight:700;color:var(--danger);margin-bottom:6px}
+.go-reason .rs{font-size:clamp(13px,1.5vw,15px);color:var(--muted);line-height:1.5}
+.go-stats{display:grid;grid-template-columns:repeat(4,minmax(96px,1fr));gap:12px;width:100%;max-width:620px;margin-bottom:22px}
+.go-stat{background:rgba(22,27,34,.7);border:1px solid var(--border-s);border-radius:6px;padding:14px 10px}
+.go-stat .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px}
+.go-stat .v{font-family:var(--mono);font-size:clamp(17px,2.3vw,25px);font-weight:700}
+.go-stat .v span{font-size:.58em;color:var(--muted)}
+.go-chart{width:100%;max-width:560px;margin-bottom:18px}
+.go-chart-h{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px;text-align:left}
+.go-spark{width:100%;height:120px;display:block;background:rgba(10,15,23,.6);border:1px solid var(--border);border-radius:4px}
+.go-nospark{font-size:.82rem;color:var(--muted);padding:1rem;border:1px dashed var(--border-s);border-radius:4px}
+.go-wo{font-size:.9rem;color:var(--muted);margin-bottom:26px}
+.go-wo b{color:var(--text)}
+.go-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.go-btn{font-family:var(--sans);font-size:1rem;font-weight:600;padding:13px 26px;border:1px solid var(--border-s);background:var(--panel);color:var(--text);border-radius:4px;cursor:pointer;transition:all .14s}
+.go-btn:hover{border-color:var(--accent);color:var(--accent)}
+.go-btn.primary{background:var(--danger);border-color:var(--danger);color:#fff}
+.go-btn.primary:hover{background:#ff6b63;border-color:#ff6b63;color:#fff}
 .foh-cards{flex:1;display:grid;gap:18px;margin:clamp(16px,3vh,26px) 0;align-content:start;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
 .foh-cards.ops{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));max-width:1120px}
 .foh-apcard{background:linear-gradient(180deg,rgba(27,35,48,.96),rgba(16,21,30,.96));border:1px solid var(--border-strong);position:relative;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;text-decoration:none;color:var(--text)}
@@ -97125,6 +97153,11 @@ function render(){
     document.body.appendChild(ngOverlay);
   }
   ngOverlay.innerHTML = renderNewGameWizard();
+  // Game Over post-mortem (2026-05-30): overlay full-screen por encima de todo. Solo si la
+  // partida ha terminado Y no hay wizard activo (el wizard manda si el jugador fue al menú).
+  let goOverlay = document.getElementById("gameover-overlay-root");
+  if (!goOverlay) { goOverlay = document.createElement("div"); goOverlay.id = "gameover-overlay-root"; document.body.appendChild(goOverlay); }
+  goOverlay.innerHTML = (game.gameOver && game.gameOver.isOver && newGameStep === null) ? renderGameOver() : "";
   document.getElementById("clock").textContent = fmtClock(game.clock.minute);
   document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
   const balEl = document.getElementById("bal");
@@ -97334,6 +97367,10 @@ document.body.addEventListener("click", (e) => {
   // Pivot iteración 2026-05-25 — New Game wizard handlers
   // Intro step
   if (e.target.closest("#ng-start")) { newGameStep = "airport"; render(); return; }
+  // Game Over post-mortem (2026-05-30): Reintentar abre selección de aeropuerto; Menú vuelve
+  // al menú principal. La partida nueva (startGameFromPreset) limpia game.gameOver.isOver.
+  if (e.target.closest("#go-retry")) { newGameStep = "airport"; render(); return; }
+  if (e.target.closest("#go-menu")) { newGameStep = "intro"; render(); return; }
   if (e.target.closest("#ng-continue, #ng-continue-card")) { doContinueFromIntro(); return; }
   if (e.target.closest("#ng-clear-save")) {
     if (!confirm("¿Borrar partida guardada definitivamente? No se puede deshacer.")) return;
@@ -97742,6 +97779,61 @@ function renderNewGameWizard() {
     body = `<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> ${esc(ap.name)} · ${ap.icao} / ${ap.iata}</div><div class="foh-steprail"><span class="s done"><span class="n">✓</span> Aeropuerto</span><span class="bar"></span><span class="s on"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 2 de 2 · Tu primer cliente</div><h1>Elige tu <span class="t">operador</span> de arranque</h1><p class="sub">El primer contrato define tu setup inicial — flota, fees y dificultad. Puedes captar a los demás más adelante subiendo reputación.</p></div><div class="foh-cards ops">${cards}</div><div class="foh-foot"><button class="foh-btn back ghost" id="ng-back"><span class="foh-ar"></span> Cambiar aeropuerto</button><div class="right"><span>SETUP REVERSIBLE · CAPTA AL RESTO IN-GAME</span></div></div></div><div class="foh-loader" id="foh-loader"><div class="spin"></div><div class="txt">Inicializando MRO…</div></div>`;
   }
   return `<div class="foh-root" id="newgame-overlay">${bg(newGameStep !== "intro")}${body}</div>`;
+}
+
+// Game Over post-mortem (handoff entrega-menu 3). Escrito con concatenacion de strings
+// (sin backticks ni interpolacion) para insertarse seguro en el template gigante APP_JS.
+function renderGameOver(){
+  var dayN = Math.floor(game.clock.minute / S.DAY_MINUTES) + 1;
+  var wk = S.getWeek(game.clock.minute);
+  var rep = Math.round(S.getAverageRep(game.reputation));
+  var cash = Math.round(game.economy.balance);
+  var reason = game.gameOver.reason;
+  var reasonTxt = reason === "bankruptcy" ? "Bancarrota"
+    : reason === "reputation" ? "Reputación por los suelos"
+    : reason === "compliance" ? "Certificación Part-145 revocada"
+    : "Fin de la partida";
+  var reasonSub = reason === "bankruptcy" ? "Te quedaste sin caja. Los bancos no perdonan a un MRO en números rojos."
+    : reason === "reputation" ? "Ninguna aerolínea confía ya en tu taller."
+    : reason === "compliance" ? "La autoridad aeronáutica te retiró la licencia para firmar trabajos."
+    : "La operación ha terminado.";
+  var hist = game.kpiHistory || [];
+  var woC = hist.reduce(function(s,h){ return s + (h.woCompleted||0); }, 0);
+  var woL = hist.reduce(function(s,h){ return s + (h.woLate||0); }, 0);
+  var woF = hist.reduce(function(s,h){ return s + (h.woFailed||0); }, 0);
+  var spark = "";
+  if (hist.length >= 2) {
+    var vals = hist.map(function(h){ return h.balance||0; });
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    var rng = (mx - mn) || 1, W = 520, H = 120;
+    var pts = vals.map(function(v,i){
+      var x = (i/(vals.length-1))*W;
+      var y = H - ((v-mn)/rng)*H;
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
+    var zeroLine = (mx > 0 && mn < 0) ? '<line x1="0" y1="' + (H-((0-mn)/rng)*H).toFixed(1) + '" x2="520" y2="' + (H-((0-mn)/rng)*H).toFixed(1) + '" stroke="#3a4256" stroke-dasharray="4 4"/>' : "";
+    spark = '<svg viewBox="0 0 520 120" preserveAspectRatio="none" class="go-spark">' + zeroLine + '<polyline points="' + pts + '" fill="none" stroke="#f85149" stroke-width="2"/></svg>';
+  } else {
+    spark = '<div class="go-nospark">Sin histórico semanal suficiente para el gráfico de balance.</div>';
+  }
+  var repColor = rep >= 50 ? "#3fb950" : rep >= 25 ? "#d29922" : "#f85149";
+  var cashColor = cash >= 0 ? "#e6e9ef" : "#f85149";
+  return '<div class="go-root">'
+    + '<div class="go-bg"></div><div class="go-grid"></div><div class="go-scan"></div>'
+    + '<div class="go-screen">'
+    +   '<div class="go-eyebrow">Operación finalizada · Día ' + dayN + '</div>'
+    +   '<h1 class="go-title">FIN DE LA <span>PARTIDA</span></h1>'
+    +   '<div class="go-reason"><div class="rt">' + reasonTxt + '</div><div class="rs">' + reasonSub + '</div></div>'
+    +   '<div class="go-stats">'
+    +     '<div class="go-stat"><div class="k">Días operados</div><div class="v">' + dayN + '</div></div>'
+    +     '<div class="go-stat"><div class="k">Semanas</div><div class="v">' + wk + '</div></div>'
+    +     '<div class="go-stat"><div class="k">Reputación</div><div class="v" style="color:' + repColor + '">' + rep + '<span>/100</span></div></div>'
+    +     '<div class="go-stat"><div class="k">Caja final</div><div class="v" style="color:' + cashColor + '">' + fmt(cash) + '<span> €</span></div></div>'
+    +   '</div>'
+    +   '<div class="go-chart"><div class="go-chart-h">Balance semanal · trayectoria hasta el cierre</div>' + spark + '</div>'
+    +   '<div class="go-wo">Work Orders: <b>' + woC + '</b> completadas · <b style="color:#d29922">' + woL + '</b> tarde · <b style="color:#f85149">' + woF + '</b> falladas</div>'
+    +   '<div class="go-actions"><button class="go-btn primary" id="go-retry">Reintentar</button><button class="go-btn" id="go-menu">Menú principal</button></div>'
+    + '</div></div>';
 }
 
 function ageFleet() {
