@@ -484,6 +484,56 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .set-slide input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 10px rgba(77,163,255,.5)}
 .set-slide .val{font-family:var(--mono);font-size:13px;color:var(--accent);width:42px;text-align:right}
 .set-sel{background:var(--panel);border:1px solid var(--border-s);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;border-radius:3px;cursor:pointer}
+/* ===== Cómo se juega (handoff entrega-menu 3, 2026-05-30) ===== */
+.ht-panel{flex:1;display:grid;grid-template-columns:clamp(200px,22vw,268px) 1fr;background:linear-gradient(180deg,rgba(22,27,34,.94),rgba(14,18,25,.94));border:1px solid var(--border-s);box-shadow:0 24px 60px rgba(0,0,0,.5);margin:clamp(14px,2.5vh,24px) 0;min-height:0;overflow:hidden}
+.ht-steps{border-right:1px solid var(--border);padding:16px 0;overflow-y:auto}
+.ht-stepbtn{display:flex;align-items:center;gap:14px;width:100%;padding:15px 22px;cursor:pointer;background:transparent;border:none;border-left:2px solid transparent;text-align:left;transition:all .13s}
+.ht-stepbtn .n{font-family:var(--mono);font-size:12px;color:var(--subtle);width:24px;transition:color .13s}
+.ht-stepbtn .nm{font-size:14px;font-weight:600;color:var(--muted);transition:color .13s}
+.ht-stepbtn:hover{background:rgba(77,163,255,.05)}.ht-stepbtn:hover .nm{color:var(--text)}
+.ht-stepbtn.on{border-left-color:var(--accent);background:linear-gradient(90deg,rgba(77,163,255,.12),transparent)}
+.ht-stepbtn.on .n,.ht-stepbtn.on .nm{color:var(--accent)}
+.ht-content{padding:clamp(22px,3vw,34px);overflow-y:auto;display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(18px,3vw,30px);align-content:start}
+.ht-kick{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.ht-content h2{font-size:clamp(20px,2.6vw,27px);font-weight:800;letter-spacing:-.01em;margin:12px 0}
+.ht-lead{font-size:clamp(13px,1.5vw,14.5px);color:var(--text);line-height:1.6}
+.ht-content ul{list-style:none;margin:18px 0 0;padding:0}
+.ht-content li{font-size:13.5px;color:var(--muted);line-height:1.5;padding:7px 0 7px 20px;position:relative}
+.ht-content li::before{content:"";position:absolute;left:0;top:13px;width:7px;height:7px;border:1.4px solid var(--accent);transform:rotate(45deg)}
+.ht-content li b{color:var(--text);font-weight:600}
+.ht-art{background:#0a0f17;border:1px solid var(--border);border-radius:4px;padding:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px}
+.ht-loop{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+.ht-node{border:1px solid var(--border-s);background:var(--panel);padding:12px;text-align:center}
+.ht-node .ln{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.1em}
+.ht-node .lt{font-size:13px;font-weight:600;margin-top:5px}
+.ht-node .lc{font-size:11px;color:var(--muted);margin-top:3px}
+.ht-cyc{grid-column:1/-1;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--success)}
+.ht-phrow{display:flex;gap:4px;width:100%}
+.ht-ph{flex:1;text-align:center}
+.ht-ph .bar{height:6px;border-radius:3px;background:var(--border)}
+.ht-ph.done .bar{background:var(--accent)}
+.ht-ph.now .bar{background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.ht-ph .phn{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:7px}
+.ht-ph.now .phn{color:var(--accent)}
+.ht-wo{border:1px solid var(--border-s);background:var(--panel);padding:12px 14px;width:100%}
+.ht-wo .wt{display:flex;align-items:center;justify-content:space-between}
+.ht-wo .reg{font-family:var(--mono);font-size:13px;font-weight:600}
+.ht-wo .sla{font-family:var(--mono);font-size:11px;color:var(--warning)}
+.ht-chips{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.ht-chip{font-family:var(--mono);font-size:10px;padding:3px 7px;border:1px solid var(--border-s);color:var(--muted);border-radius:2px}
+.ht-chip.crit{color:var(--danger);border-color:var(--danger)}
+.ht-gauge{width:100%}
+.ht-gauge .gl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:5px}
+.ht-gauge .gb{height:6px;border-radius:3px;background:var(--border);overflow:hidden}
+.ht-gauge .gb i{display:block;height:100%}
+.ht-aog{display:flex;align-items:center;gap:12px;border:1px solid var(--danger);background:rgba(248,81,73,.08);padding:13px;width:100%}
+.ht-aog .d{width:12px;height:12px;border-radius:50%;background:var(--aog);box-shadow:0 0 12px var(--aog)}
+.ht-aog .at{font-weight:700;font-size:14px}
+.ht-aog .ad{font-size:11px;color:var(--muted);margin-top:2px}
+.ht-dots{display:flex;gap:8px}
+.ht-dot{width:8px;height:8px;border-radius:50%;background:var(--border-s);cursor:pointer;transition:all .14s}
+.ht-dot.on{background:var(--accent);width:22px;border-radius:4px}
+@media(max-width:820px){.ht-panel{grid-template-columns:1fr}.ht-steps{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding:8px}.ht-content{grid-template-columns:1fr}.ht-art{display:none}}
 /* Accesibilidad: clases en <html> aplicadas por applySettings() según mro_settings */
 html.reduce-motion *{animation-duration:0s!important;animation-iteration-count:1!important;transition-duration:0s!important}
 html.hi-contrast{--border:#4a5470;--border-s:#5a6480}
@@ -959,6 +1009,7 @@ let tutGraduated = false; // true tras completar/saltar — no reaparece en la m
 // (pause_panels, confirm, fx, reduce_motion, lang); audio/vídeo quedan como preferencia
 // guardada hasta que exista sonido/sistema de vídeo. settingsCat = categoría activa.
 let settingsCat = "audio";
+let howtoStep = 0; // Cómo se juega (handoff entrega-menu 3): paso activo 0..3
 const SETTINGS_DEFAULTS = {
   vol_music: 55, vol_sfx: 80, vol_alert: 90, mute_bg: true,
   fx: true, reduce_motion: false, contrast: false,
@@ -4252,6 +4303,13 @@ document.body.addEventListener("click", (e) => {
   if (e.target.closest("#ng-start")) { newGameStep = "airport"; render(); return; }
   // Ajustes (handoff entrega-menu 3): abrir / volver / reset + categorías + controles.
   if (e.target.closest("#ng-settings")) { newGameStep = "settings"; settingsCat = "audio"; render(); return; }
+  // Cómo se juega (handoff entrega-menu 3): abrir, navegar 4 pasos, volver / nueva partida.
+  if (e.target.closest("#ng-howto")) { newGameStep = "howto"; howtoStep = 0; render(); return; }
+  if (e.target.closest("#ng-howto-back")) { newGameStep = "intro"; render(); return; }
+  if (e.target.closest("#ng-howto-prev")) { howtoStep = Math.max(0, howtoStep - 1); render(); return; }
+  if (e.target.closest("#ng-howto-next")) { if (howtoStep >= 3) { newGameStep = "airport"; } else { howtoStep += 1; } render(); return; }
+  const htStep = e.target.closest("[data-howto-step]");
+  if (htStep) { howtoStep = parseInt(htStep.dataset.howtoStep, 10) || 0; render(); return; }
   if (e.target.closest("#ng-settings-back")) { newGameStep = "intro"; render(); return; }
   if (e.target.closest("#ng-settings-reset")) { gameSettings = { ...SETTINGS_DEFAULTS }; saveSettings(); render(); return; }
   const setCat = e.target.closest("[data-set-cat]");
@@ -4638,7 +4696,7 @@ function renderNewGameWizard() {
     const exitItem = isTauri ? \`<div class="foh-mi danger" id="ng-exit"><span class="idx">05</span><span class="label">Salir</span><span class="arrow"></span></div>\` : "";
     const clearItem = hasSavedSlot ? \`<div class="foh-mi danger" id="ng-clear-save"><span class="idx">\${isTauri ? "06" : "05"}</span><span class="label">Borrar guardado</span><span class="arrow"></span></div>\` : "";
     const saveCard = hasSavedSlot ? \`<a class="foh-savecard" id="ng-continue-card"><div class="foh-sc-head"><span>💾 Partida guardada</span></div><div class="foh-sc-body"><div class="foh-sc-icao">LEAS<span class="x"> · OVD</span></div><div class="foh-sc-name">Aeropuerto de Asturias</div></div><div class="foh-sc-cta"><span>Continuar partida</span><span class="foh-ar"></span></div></a>\` : "";
-    body = \`<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · LEAS / OVD · Asturias</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>\${continueItem}<div class="foh-mi" id="ng-settings"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Audio · juego · A11y</span><span class="arrow"></span></div><div class="foh-mi disabled"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Próximamente</span></div>\${exitItem}\${clearItem}</nav></div>\${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>\`;
+    body = \`<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · LEAS / OVD · Asturias</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>\${continueItem}<div class="foh-mi" id="ng-settings"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Audio · juego · A11y</span><span class="arrow"></span></div><div class="foh-mi" id="ng-howto"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Manual · 4 pasos</span><span class="arrow"></span></div>\${exitItem}\${clearItem}</nav></div>\${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>\`;
   } else if (newGameStep === "airport") {
     const avail = catalog.airports.filter(a => a.available !== false);
     const availCount = avail.length;
