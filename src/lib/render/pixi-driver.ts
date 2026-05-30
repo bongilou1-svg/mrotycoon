@@ -652,6 +652,14 @@ export class PixiDriver {
     this.worldRoot.position.set(this.camera.x * this.camera.zoom, this.camera.y * this.camera.zoom);
   }
 
+  /** Zoom programático para los controles DOM del mapa F5D (botones +/−/⤢). Delegan en la
+   *  maquinaria de cámara existente (zoomBy ancla al centro; initF5DCamera hace fit-all) y
+   *  re-aplican el último estado para refrescar el viewport del minimapa al instante, incluso
+   *  con el juego en pausa. Solo activos en el skin f5d. */
+  zoomIn(): void { if (this.theme === "f5d") { this.zoomBy(1.18); if (this.lastState) this.apply(this.lastState); } }
+  zoomOut(): void { if (this.theme === "f5d") { this.zoomBy(0.85); if (this.lastState) this.apply(this.lastState); } }
+  fitAll(): void { if (this.theme === "f5d") { this.initF5DCamera(); if (this.lastState) this.apply(this.lastState); } }
+
   apply(state: RenderState): void {
     if (!this.app) return;
     this.lastState = state;
@@ -2395,6 +2403,22 @@ export class PixiDriver {
     "R1": "06", "H2-S1": "07",
   };
 
+  /** Código de stand "airport-style" para la pill del mapa (más inmersivo que el ref OSM
+   *  crudo "01"). Portado/extendido del esquema de three-driver.ts (351/451/551 fila 1,
+   *  352/452 fila 2). Si un simId no está aquí, la pill cae al ref OSM. */
+  private static readonly F5D_STAND_CODE: Record<string, string> = {
+    "H1-S1": "351", "H1-S2": "451", "H1-S3": "551", "H1-S4": "651", "H1-S5": "751",
+    "R1": "352", "H2-S1": "452",
+  };
+
+  /** Color por displayState del ocupante para LED + borde de la pill del stand. Coincide
+   *  con la familia `stateColors` de los aviones para que pill, LED y avión sean cromáticamente
+   *  coherentes. Stand libre → azul apagado. */
+  private static readonly F5D_STAND_STATE_COL: Record<string, number> = {
+    idle: 0x3aa9ff, daily: 0x6dc7ff, working: 0x3fb950, delayed: 0xf5b945, aog: 0xff4757,
+  };
+  private static readonly F5D_STAND_FREE_COL = 0x3d6f9d;
+
   /** Devuelve el standMap del aeropuerto activo (o fallback OVD si no está disponible). */
   private getStandMap(): Record<string, string> {
     return (activeAirportPaths as { standMap?: Record<string, string> }).standMap
@@ -2450,6 +2474,8 @@ export class PixiDriver {
     this.app.renderer.background.color = bgColor;
     // Pulso temporal para stands activos (sin necesidad de event check_completed)
     const pulseT = (Math.sin(state.minute * 0.35) + 1) / 2; // 0..1
+    // Dimensiones de la pill de stand (compartidas: render del stand + overlay del avión)
+    const PILL_W = 50, PILL_H = 20;
     // Inicializa cámara F5D la primera vez (fit-all + centrado)
     if (!this.cameraInitialized) this.initF5DCamera();
     // Limpieza dinámica + HUD/minimap siempre; estática solo si cambia cache key
@@ -2481,7 +2507,7 @@ export class PixiDriver {
     for (const w of P.aerodrome) {
       const g = new Graphics();
       this.f5dDrawPath(g, w.coords, area, true);
-      g.stroke({ width: 0.6, color: 0x1c2d4a, alpha: 0.45 });
+      g.stroke({ width: 1.0, color: 0x1c2d4a, alpha: 0.5 });
       this.worldStaticCache!.addChild(g);
     }
 
@@ -2489,7 +2515,7 @@ export class PixiDriver {
     for (const w of P.apron) {
       const g = new Graphics();
       this.f5dDrawPath(g, w.coords, area, true);
-      g.fill({ color: 0x0d1c33, alpha: 1 }).stroke({ width: 0.5, color: 0x1c2d4a });
+      g.fill({ color: 0x0d1c33, alpha: 1 }).stroke({ width: 1.5, color: 0x1c2d4a });
       this.worldStaticCache!.addChild(g);
     }
 
@@ -2503,14 +2529,14 @@ export class PixiDriver {
       // Highlight central
       const hl = new Graphics();
       this.f5dDrawPath(hl, w.coords, area, false);
-      hl.stroke({ width: 2, color: 0xa8dafc, cap: "butt" });
+      hl.stroke({ width: 3, color: 0xa8dafc, cap: "butt" });
       this.worldStaticCache!.addChild(hl);
       // Centerline dashes (oscuras sobre el highlight)
       if (w.coords.length >= 2) {
         const p0 = this.f5dProject(w.coords[0], area);
         const pN = this.f5dProject(w.coords[w.coords.length - 1], area);
         const cl = new Graphics();
-        strokeDashed(cl, p0.x + 30, p0.y, pN.x - 30, pN.y, 14, 14, 0.6, 0x0a1428, 1);
+        strokeDashed(cl, p0.x + 30, p0.y, pN.x - 30, pN.y, 14, 14, 1.0, 0x0a1428, 1);
         this.worldStaticCache!.addChild(cl);
       }
       // Threshold marks (segmentos cortos cyan claros en cabeceras)
@@ -2529,7 +2555,7 @@ export class PixiDriver {
             thrG.moveTo(cx + px * 4, cy + py * 4).lineTo(cx - px * 4, cy - py * 4);
           }
         }
-        thrG.stroke({ width: 2.5, color: 0xa8dafc });
+        thrG.stroke({ width: 3.5, color: 0xa8dafc });
         this.worldStaticCache!.addChild(thrG);
       }
       // Labels cabecera 11 (start) y 29 (end)
@@ -2558,7 +2584,7 @@ export class PixiDriver {
       for (let i = 0; i < w.coords.length - 1; i++) {
         const a = this.f5dProject(w.coords[i], area);
         const b = this.f5dProject(w.coords[i + 1], area);
-        strokeDashed(g, a.x, a.y, b.x, b.y, 3, 5, 1, 0x3aa9ff, 0.55);
+        strokeDashed(g, a.x, a.y, b.x, b.y, 3, 5, 2.2, 0x3aa9ff, 0.6);
       }
       this.worldStaticCache!.addChild(g);
     }
@@ -2567,7 +2593,7 @@ export class PixiDriver {
     for (const w of P.buildings) {
       const g = new Graphics();
       this.f5dDrawPath(g, w.coords, area, true);
-      g.fill({ color: 0x13243f, alpha: 0.85 }).stroke({ width: 0.5, color: 0x2c4870 });
+      g.fill({ color: 0x13243f, alpha: 0.85 }).stroke({ width: 1.3, color: 0x2c4870 });
       this.worldStaticCache!.addChild(g);
     }
 
@@ -2575,7 +2601,7 @@ export class PixiDriver {
     for (const w of P.terminal) {
       const g = new Graphics();
       this.f5dDrawPath(g, w.coords, area, true);
-      g.fill({ color: 0x13243f, alpha: 1 }).stroke({ width: 0.8, color: 0x2c4870 });
+      g.fill({ color: 0x13243f, alpha: 1 }).stroke({ width: 1.5, color: 0x2c4870 });
       this.worldStaticCache!.addChild(g);
       // Label "Terminal" en el centroide
       let cx = 0, cy = 0;
@@ -2590,7 +2616,7 @@ export class PixiDriver {
     for (const w of P.tower) {
       const g = new Graphics();
       this.f5dDrawPath(g, w.coords, area, true);
-      g.fill({ color: 0x13243f, alpha: 1 }).stroke({ width: 0.6, color: 0x2c4870 });
+      g.fill({ color: 0x13243f, alpha: 1 }).stroke({ width: 1.3, color: 0x2c4870 });
       this.worldStaticCache!.addChild(g);
     }
 
@@ -2612,56 +2638,75 @@ export class PixiDriver {
       standPositions.set(pp.ref, { x: tip.x, y: tip.y, coords: projected });
     }
 
-    // Render cada parking position con marca
+    // Render cada parking position como pill legible (código airport-style + LED + ocupante)
     for (const [ref, pos] of standPositions) {
       // Mapping sim a OSM ref (usa standMap del aeropuerto activo)
       const simId = Object.entries(standMap).find(([_k, v]) => v === ref)?.[0];
       const ap = simId ? apByStand.get(simId) : undefined;
       const active = ap !== undefined;
-      // Marca stand
+      // Color por estado del ocupante (coherente con el avión); libre → azul apagado.
+      const stCol = active
+        ? (PixiDriver.F5D_STAND_STATE_COL[ap!.displayState ?? "idle"] ?? 0x3aa9ff)
+        : PixiDriver.F5D_STAND_FREE_COL;
+      // Código placard (351/451…), cae al ref OSM si no hay mapeo.
+      const code = (simId && PixiDriver.F5D_STAND_CODE[simId]) || ref;
+
+      // Línea guía (entrada del taxiway hacia la posición) — recoloreada al estado
       const g = new Graphics();
-      // Línea guía (entrada del taxiway hacia la posición)
       if (pos.coords.length >= 2) {
         g.moveTo(pos.coords[0].x, pos.coords[0].y);
         for (let i = 1; i < pos.coords.length; i++) g.lineTo(pos.coords[i].x, pos.coords[i].y);
-        g.stroke({ width: 0.6, color: active ? 0xf5b945 : 0x2c4870, alpha: active ? 0.9 : 0.55 });
+        g.stroke({ width: active ? 1.2 : 0.8, color: active ? stCol : 0x2c4870, alpha: active ? 0.85 : 0.5 });
       }
-      // Rect/marca en la punta
-      const boxW = 24, boxH = 14;
-      const box = new Graphics()
-        .rect(pos.x - boxW / 2, pos.y - boxH / 2, boxW, boxH)
-        .fill({ color: active ? 0x2a1a08 : 0x0d1c33, alpha: 1 })
-        .stroke({ width: 0.6, color: active ? 0xf5b945 : 0x2c4870 });
       this.worldStaticCache!.addChild(g);
-      this.worldStaticCache!.addChild(box);
-      if (active) {
-        // P-δ: bloom doble + pulso temporal en stands activos (vida visual)
-        const haloR = 7 + pulseT * 3;
-        const haloA = 0.18 + pulseT * 0.12;
-        // Bloom externo (radio amplio, alpha bajo)
-        this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, haloR + 8).fill({ color: 0xf5b945, alpha: 0.06 }));
-        // Halo principal
-        this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, haloR).fill({ color: 0xf5b945, alpha: haloA }));
-        // Dot core
-        this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, 2.5).fill(0xf5b945));
-      }
-      // Label ref
-      const refLbl = new Text({
-        text: ref,
-        style: { fontFamily: "Inter, sans-serif", fontSize: 11, fill: active ? 0xf5b945 : 0x3d6f9d },
-      });
-      refLbl.position.set(pos.x - boxW / 2 + 2, pos.y - boxH / 2 - 14);
-      this.worldStaticCache!.addChild(refLbl);
 
-      // P-ε: hover outline si está hovered
+      // Glow ambiental del estado detrás de la pill (vida visual + pulso temporal)
+      if (active) {
+        const haloR = 13 + pulseT * 4;
+        this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, haloR + 7).fill({ color: stCol, alpha: 0.05 }));
+        this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, haloR).fill({ color: stCol, alpha: 0.12 + pulseT * 0.06 }));
+      }
+
+      // Pill: fondo oscuro + borde de color de estado
+      const pillX = pos.x - PILL_W / 2, pillY = pos.y - PILL_H / 2;
+      this.worldStaticCache!.addChild(
+        new Graphics()
+          .roundRect(pillX, pillY, PILL_W, PILL_H, 6)
+          .fill({ color: 0x0a1119, alpha: 0.86 })
+          .stroke({ width: 1.4, color: stCol, alpha: 0.95 }),
+      );
+      // LED (glow + core)
+      const ledX = pillX + 10;
+      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pos.y, 5.5).fill({ color: stCol, alpha: 0.32 }));
+      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pos.y, 3).fill(stCol));
+      // Código airport-style (grande, legible)
+      const codeLbl = new Text({
+        text: code,
+        style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: "700", fill: 0xe6f0fb },
+      });
+      codeLbl.anchor.set(0, 0.5);
+      codeLbl.position.set(ledX + 9, pos.y + 0.5);
+      this.worldStaticCache!.addChild(codeLbl);
+
+      // Etiqueta de matrícula del ocupante (o "libre") debajo de la pill
+      const occLbl = new Text({
+        text: active ? ap!.registration : "libre",
+        style: { fontFamily: "JetBrains Mono, monospace", fontSize: 9.5, fontWeight: active ? "600" : "400", fill: stCol },
+      });
+      occLbl.anchor.set(0.5, 0);
+      occLbl.position.set(pos.x, pillY + PILL_H + 3);
+      if (!active) occLbl.alpha = 0.7;
+      this.worldStaticCache!.addChild(occLbl);
+
+      // P-ε: hover outline si está hovered (forma de pill)
       if (this.f5dHoveredStand === ref) {
         this.worldStaticCache!.addChild(
-          new Graphics().rect(pos.x - boxW / 2 - 4, pos.y - boxH / 2 - 4, boxW + 8, boxH + 8).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
+          new Graphics().roundRect(pillX - 3, pillY - 3, PILL_W + 6, PILL_H + 6, 8).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
         );
       }
 
-      // P-ε: hitbox interactivo
-      const hit = new Graphics().rect(pos.x - boxW / 2 - 4, pos.y - boxH / 2 - 4, boxW + 8, boxH + 8).fill({ color: 0x000000, alpha: 0.001 });
+      // P-ε: hitbox interactivo (cubre pill + etiqueta de matrícula)
+      const hit = new Graphics().rect(pillX - 4, pillY - 4, PILL_W + 8, PILL_H + 22).fill({ color: 0x000000, alpha: 0.001 });
       hit.eventMode = "static";
       hit.cursor = "pointer";
       hit.on("pointerover", () => { this.f5dHoveredStand = ref; if (this.lastState) this.apply(this.lastState); });
@@ -2701,43 +2746,19 @@ export class PixiDriver {
       this.worldDynamic!.addChild(new Graphics().circle(px, py, 3.5).fill(0xa8dafc));
     }
 
-    // ── Aviones parados en stand (P-δ: bloom doble + P-ε: hitbox click/hover) ──
-    // Pivot iteración 2026-05-24: paleta semántica según `displayState`:
-    //   idle    → cyan (color original blueprint)        — contratado, sin WO en marcha
-    //   daily   → cyan claro/azul marino                  — daily check abierto (overnight)
-    //   working → verde brillante                        — WO/check con mec asignado en marcha
-    //   delayed → ámbar                                  — pasada hora de salida, sigue en stand
-    //   aog     → rojo pulsante                          — escalado a AOG (>6h o flag in-vivo)
-    // El icono 🔧 (callout) / 🛠️ (A/C/D) / 🌙 (daily) aparece sobre el avión cuando hay
-    // tarea activa — visualmente comunica "hay algo que mirar aquí" y el click va al modal.
-    const stateColors: Record<string, { halo: number; core: number; ring: number; pulse: number }> = {
-      idle:    { halo: 0x3aa9ff, core: 0xa8dafc, ring: 0x5da0e0, pulse: 0 },
-      daily:   { halo: 0x6dc7ff, core: 0xcfeaff, ring: 0x8fb8e0, pulse: 0 },
-      working: { halo: 0x3fb950, core: 0xa6e3a1, ring: 0x7dd99c, pulse: 0 },
-      delayed: { halo: 0xf5b945, core: 0xffe399, ring: 0xf5b945, pulse: 0.5 },
-      aog:     { halo: 0xff4757, core: 0xffadb3, ring: 0xff4757, pulse: 1 },
-    };
-    const pulsePhase = (Math.sin(state.minute / 4) + 1) / 2; // 0..1 oscilación
+    // ── Aviones parados en stand ──
+    // La pill del stand (arriba) ya comunica estado (LED + color por displayState) y la
+    // matrícula del ocupante. Aquí solo añadimos el icono de tarea activa sobre la pill y
+    // el hover/hitbox que abre el modal contextual del avión (check > callout > daily > fleet).
+    // displayState: idle→cyan · daily→cyan claro · working→verde · delayed→ámbar · aog→rojo.
     for (const ap of state.airplanes) {
       if (ap.taxiing || !ap.standId) continue;
       const ref = this.getStandMap()[ap.standId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
-      const ds = ap.displayState ?? "idle";
-      const sc = stateColors[ds] ?? stateColors.idle;
-      const haloAlpha = 0.08 + sc.pulse * pulsePhase * 0.18; // pulso si delayed/aog
-      const coreAlpha = 0.22 + sc.pulse * pulsePhase * 0.30;
-      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 18).fill({ color: sc.halo, alpha: haloAlpha }));
-      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 10).fill({ color: sc.halo, alpha: coreAlpha }));
-      this.worldDynamic!.addChild(new Graphics().circle(standPos.x, standPos.y, 3.5).fill(sc.core));
-      const reg = new Text({
-        text: ap.registration,
-        style: { fontFamily: "Inter, sans-serif", fontSize: 11, fill: sc.ring },
-      });
-      reg.position.set(standPos.x + 10, standPos.y - 4);
-      this.worldDynamic!.addChild(reg);
-      // Iconito de tarea activa: prioridad check > callout > daily.
+      const pillTop = standPos.y - PILL_H / 2;
+      // Iconito de tarea activa: prioridad check > callout > daily. Esquina sup-dcha de la pill.
       let taskIcon = "";
       if (ap.activeCheckInstanceId) taskIcon = "🛠️";
       else if (ap.activeWoInstanceId) taskIcon = "🔧";
@@ -2748,17 +2769,19 @@ export class PixiDriver {
           style: { fontFamily: "Inter, sans-serif", fontSize: 12 },
         });
         iconT.anchor.set(0.5);
-        iconT.position.set(standPos.x - 11, standPos.y - 10);
+        iconT.position.set(standPos.x + PILL_W / 2 - 3, pillTop - 3);
         this.worldDynamic!.addChild(iconT);
       }
-      // P-ε: hover outline
+      // P-ε: hover outline (forma de pill)
       if (this.f5dHoveredAirplane === ap.instanceId) {
         this.worldDynamic!.addChild(
-          new Graphics().circle(standPos.x, standPos.y, 14).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
+          new Graphics().roundRect(standPos.x - PILL_W / 2 - 3, pillTop - 3, PILL_W + 6, PILL_H + 6, 8).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
         );
       }
       // P-ε: hitbox click — pasa contexto completo para que la UI decida qué modal abrir.
-      const apHit = new Graphics().circle(standPos.x, standPos.y, 14).fill({ color: 0x000000, alpha: 0.001 });
+      // Cubre pill + etiqueta de matrícula; va en worldDynamic (encima del hitbox del stand)
+      // → cuando hay avión, el click va al modal contextual del avión, no a onStandClick.
+      const apHit = new Graphics().rect(standPos.x - PILL_W / 2 - 4, pillTop - 4, PILL_W + 8, PILL_H + 24).fill({ color: 0x000000, alpha: 0.001 });
       apHit.eventMode = "static";
       apHit.cursor = "pointer";
       const apId = ap.instanceId;
@@ -2903,6 +2926,22 @@ export class PixiDriver {
       // Furgo (rect pequeño ámbar)
       this.worldDynamic!.addChild(new Graphics().rect(px - 4, py - 2, 8, 4).fill({ color: m.state === "Returning" ? 0x3d6f9d : 0xf5b945 }).stroke({ width: 0.5, color: 0xa8dafc, alpha: 0.6 }));
     }
+
+    // ── Labels de zona tenues (orientación, world-space → pan/zoom con el mapa) ──
+    const zoneLabel = (text: string, zx: number, zy: number, color: number): void => {
+      const t = new Text({
+        text,
+        style: { fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: "600", fill: color, letterSpacing: 1.5 },
+      });
+      t.anchor.set(0.5);
+      t.alpha = 0.5;
+      t.position.set(zx, zy);
+      this.worldStaticCache!.addChild(t);
+    };
+    // Zona sur de la plataforma reservada a hangares (ámbar, igual familia que los plots ghost).
+    zoneLabel("ESPACIO HANGARES", area.x + area.w * 0.3, area.y + area.h * 0.9, 0xf5b945);
+    // Oficina de mecánicos (origen del furgo; desplazada bajo el terminal para no pisar su label).
+    zoneLabel("OFICINA MEC.", officeX, officeY + 48, 0x5da0e0);
 
     // ── Overlay HUD ──
     // Header esquina sup-izq
