@@ -225,6 +225,144 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .ng-back-btn{padding:.4rem .8rem;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:.85rem}
 .ng-back-btn:hover{color:var(--text);border-color:var(--accent)}
 .newgame-footer{text-align:center;margin-top:1.5rem;display:flex;justify-content:space-between;align-items:center}
+/* ===== Front-of-house (menú + nueva partida) — responsive, 2026-05-30 ===== */
+.foh-root{position:fixed;inset:0;z-index:1000;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 50%,#0a0f17 0%,#04070c 100%);--bg-deep:#070b12;--border-strong:var(--border-s);--accent-hover:#6db5ff}
+.foh-root *{box-sizing:border-box}
+.foh-bg{position:absolute;inset:0;background:radial-gradient(900px 520px at 78% 8%,rgba(77,163,255,.10) 0%,transparent 62%),radial-gradient(700px 600px at 12% 100%,rgba(77,163,255,.06) 0%,transparent 60%),linear-gradient(180deg,#0e141d 0%,#0a0e16 100%)}
+.foh-gridbg{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(58,66,86,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(58,66,86,.10) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(120% 100% at 70% 30%,#000 30%,transparent 85%);mask-image:radial-gradient(120% 100% at 70% 30%,#000 30%,transparent 85%)}
+.foh-svg{position:absolute;left:0;bottom:6%;width:100%;height:42%;opacity:.55;pointer-events:none}
+.foh-radar{position:absolute;width:min(46vw,560px);aspect-ratio:1;right:-6vw;top:-12vh;border-radius:50%;opacity:.5;-webkit-mask-image:radial-gradient(closest-side,#000 60%,transparent 100%);mask-image:radial-gradient(closest-side,#000 60%,transparent 100%);pointer-events:none}
+.foh-radar .ring{position:absolute;inset:0;border:1px solid rgba(77,163,255,.10);border-radius:50%}
+.foh-radar .r2{inset:13%}.foh-radar .r3{inset:28%}.foh-radar .r4{inset:42%}
+.foh-radar .sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(77,163,255,.22) 0deg,rgba(77,163,255,.05) 26deg,transparent 60deg,transparent 360deg);animation:foh-sweep 7s linear infinite}
+@keyframes foh-sweep{to{transform:rotate(360deg)}}
+.foh-blip{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.foh-blip::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(77,163,255,.5);animation:foh-ping 2.6s ease-out infinite}
+.foh-blip.amber{background:var(--warning)}.foh-blip.amber::after{border-color:rgba(210,153,34,.5)}
+.foh-blip.danger{background:var(--aog)}.foh-blip.danger::after{border-color:rgba(248,81,73,.55)}
+@keyframes foh-ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+.foh-mover{position:absolute;bottom:21%;width:9px;height:9px;border-radius:50%;background:#cfe6ff;box-shadow:0 0 10px 2px rgba(77,163,255,.8);animation:foh-taxi 16s linear infinite}
+.foh-mover .trail{position:absolute;right:6px;top:50%;width:60px;height:1.5px;background:linear-gradient(90deg,transparent,rgba(77,163,255,.55));transform:translateY(-50%)}
+@keyframes foh-taxi{0%{left:12%;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:88%;opacity:0}}
+.foh-scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,11,18,.92) 0%,rgba(7,11,18,.55) 42%,rgba(7,11,18,0) 72%),radial-gradient(140% 120% at 50% 50%,transparent 56%,rgba(4,7,12,.7) 100%)}
+.foh-scrim.deep{background:linear-gradient(180deg,rgba(7,11,18,.84) 0%,rgba(7,11,18,.7) 40%,rgba(7,11,18,.86) 100%),radial-gradient(140% 120% at 50% 50%,transparent 50%,rgba(4,7,12,.8) 100%)}
+.foh-scan{position:absolute;inset:0;pointer-events:none;opacity:.5;background:repeating-linear-gradient(180deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+.foh-screen{position:absolute;inset:0;display:flex;flex-direction:column;padding:clamp(20px,3vw,42px) clamp(24px,4.5vw,64px);z-index:5;overflow-y:auto}
+.foh-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-shrink:0}
+.foh-id{display:flex;align-items:center;gap:11px;font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
+.foh-mark{width:20px;height:20px;border:1.6px solid var(--accent);position:relative;flex-shrink:0}
+.foh-mark::before,.foh-mark::after{content:"";position:absolute;background:var(--accent)}
+.foh-mark::before{left:-4px;top:50%;width:7px;height:1.6px;transform:translateY(-50%)}
+.foh-mark::after{right:-4px;top:50%;width:7px;height:1.6px;transform:translateY(-50%)}
+.foh-livetag{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--subtle);text-transform:uppercase}
+.foh-livetag .d{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success);animation:foh-pulse 1.7s infinite}
+@keyframes foh-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.foh-eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:12px}
+.foh-eyebrow::before{content:"";width:26px;height:1px;background:var(--accent)}
+.foh-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font:600 14px var(--sans);letter-spacing:.01em;padding:11px 20px;border:1px solid var(--border-strong);background:var(--panel);color:var(--text);cursor:pointer;border-radius:3px;transition:all .14s;text-decoration:none}
+.foh-btn:hover{border-color:var(--accent);color:var(--accent)}
+.foh-btn.primary{background:var(--accent);border-color:var(--accent);color:#061018}
+.foh-btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);box-shadow:0 0 22px rgba(77,163,255,.35)}
+.foh-btn.ghost{background:transparent}
+.foh-ar{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid currentColor;display:inline-block}
+.foh-btn.back .foh-ar{border-left:none;border-right:7px solid currentColor}
+.foh-steprail{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle)}
+.foh-steprail .s{display:flex;align-items:center;gap:8px}
+.foh-steprail .n{width:20px;height:20px;border:1px solid var(--border-strong);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+.foh-steprail .s.on{color:var(--accent)}.foh-steprail .s.on .n{border-color:var(--accent);color:var(--accent);box-shadow:0 0 10px rgba(77,163,255,.3)}
+.foh-steprail .s.done .n{border-color:var(--success);color:var(--success)}
+.foh-steprail .bar{width:34px;height:1px;background:var(--border-strong)}
+.foh-foot{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--subtle);margin-top:auto;padding-top:1.4rem;flex-shrink:0}
+.foh-foot .chip{display:flex;align-items:center;gap:8px}
+.foh-foot .sq{width:7px;height:7px;border:1px solid var(--accent);transform:rotate(45deg)}
+.foh-foot .right{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.foh-menubody{flex:1;display:flex;align-items:center;gap:clamp(24px,4vw,64px);flex-wrap:wrap;min-height:0;padding:clamp(12px,3vh,40px) 0}
+.foh-hero{flex:1 1 460px;max-width:600px}
+.foh-lockup{display:flex;align-items:center;gap:18px;margin-top:16px}
+.foh-bigmark{width:clamp(40px,4vw,52px);aspect-ratio:1;border:2px solid var(--accent);position:relative;flex-shrink:0}
+.foh-bigmark::before,.foh-bigmark::after{content:"";position:absolute;background:var(--accent)}
+.foh-bigmark::before{left:-9px;top:50%;width:15px;height:2px;transform:translateY(-50%)}
+.foh-bigmark::after{right:-9px;top:50%;width:15px;height:2px;transform:translateY(-50%)}
+.foh-bigmark i{position:absolute;inset:13px;border:1px solid rgba(77,163,255,.5)}
+.foh-wordmark{font-size:clamp(40px,6vw,62px);font-weight:800;letter-spacing:-.02em;line-height:.96;margin:0}
+.foh-wordmark .t{color:var(--accent)}
+.foh-subline{font-family:var(--mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);margin:16px 0 0}
+.foh-nav{margin-top:34px;display:flex;flex-direction:column;gap:2px;max-width:400px}
+.foh-mi{display:flex;align-items:center;gap:16px;padding:13px 16px;cursor:pointer;border-left:2px solid transparent;background:transparent;color:var(--text);transition:background .14s,border-color .14s,padding .14s;position:relative;text-decoration:none}
+.foh-mi .idx{font-family:var(--mono);font-size:11px;color:var(--subtle);letter-spacing:.1em;width:22px;transition:color .14s}
+.foh-mi .label{font-size:17px;font-weight:600}
+.foh-mi .hint{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--subtle);text-transform:uppercase;opacity:0;transition:opacity .14s}
+.foh-mi .arrow{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid var(--accent);opacity:0;transition:opacity .14s}
+.foh-mi:hover,.foh-mi.sel{background:linear-gradient(90deg,rgba(77,163,255,.12),transparent);border-left-color:var(--accent);padding-left:22px}
+.foh-mi:hover .idx,.foh-mi.sel .idx{color:var(--accent)}
+.foh-mi:hover .hint,.foh-mi.sel .hint,.foh-mi:hover .arrow,.foh-mi.sel .arrow{opacity:1}
+.foh-mi.primary::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.foh-mi.disabled{opacity:.38;cursor:not-allowed}
+.foh-mi.disabled:hover{background:transparent;border-left-color:transparent;padding-left:16px}
+.foh-mi.danger:hover{border-left-color:var(--danger);background:linear-gradient(90deg,rgba(248,81,73,.10),transparent)}
+.foh-mi.danger:hover .idx{color:var(--danger)}
+.foh-savecard{flex:0 1 340px;align-self:center;background:linear-gradient(180deg,rgba(27,35,48,.92),rgba(18,23,32,.92));border:1px solid var(--border-strong);box-shadow:0 24px 60px rgba(0,0,0,.55);cursor:pointer;transition:border-color .15s,transform .15s;text-decoration:none;color:var(--text)}
+.foh-savecard:hover{border-color:var(--accent);transform:translateY(-2px)}
+.foh-sc-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.foh-sc-body{padding:18px 16px}
+.foh-sc-icao{font-size:28px;font-weight:800}.foh-sc-icao .x{color:var(--accent)}
+.foh-sc-name{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.foh-sc-cta{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;color:var(--accent)}
+.foh-head{flex-shrink:0;margin-top:6px}
+.foh-head h1{font-size:clamp(26px,3.4vw,36px);font-weight:800;letter-spacing:-.02em;margin:14px 0 0}
+.foh-head h1 .t{color:var(--accent)}
+.foh-head .sub{color:var(--muted);font-size:14px;margin-top:8px;max-width:760px;line-height:1.5}
+.foh-cards{flex:1;display:grid;gap:18px;margin:clamp(16px,3vh,26px) 0;align-content:start;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.foh-cards.ops{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));max-width:1120px}
+.foh-apcard{background:linear-gradient(180deg,rgba(27,35,48,.96),rgba(16,21,30,.96));border:1px solid var(--border-strong);position:relative;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;text-decoration:none;color:var(--text)}
+.foh-apcard:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 26px 60px rgba(0,0,0,.55),0 0 0 1px rgba(77,163,255,.25)}
+.foh-apcard.feat{border-color:var(--accent);box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 0 60px rgba(77,163,255,.05);grid-row:span 2}
+.foh-apcard .ribbon{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);padding:4px 9px}
+.foh-apcard .ah{padding:20px 22px 0}
+.foh-apcard .ah h2{font-size:24px;font-weight:800;margin:0}
+.foh-apcard .code{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-top:6px}
+.foh-apcard .stars{font-size:12px;margin-top:8px;display:inline-flex;gap:8px;align-items:center;color:var(--warning)}
+.foh-apcard .stars .lbl{font-family:var(--mono);font-size:10px;color:var(--success);letter-spacing:.14em;text-transform:uppercase}
+.foh-apcard .desc{padding:14px 22px 0;font-size:13px;line-height:1.55;color:var(--text)}
+.foh-apcard .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:16px 0 0}
+.foh-apcard .metrics .m{background:rgba(13,17,23,.6);padding:11px 14px}
+.foh-apcard .metrics .k{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtle)}
+.foh-apcard .metrics .v{font-size:15px;font-weight:700;margin-top:4px}
+.foh-apcard .metrics .v .u{font-size:11px;color:var(--muted);font-weight:400}
+.foh-apcard .acta{padding:15px 22px;display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:auto}
+.foh-apcard .acta .note{font-family:var(--mono);font-size:10px;color:var(--subtle)}
+.foh-lcard{background:var(--panel);border:1px solid var(--border);padding:16px;position:relative;opacity:.6;cursor:not-allowed;overflow:hidden}
+.foh-lcard::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 9px,rgba(0,0,0,.16) 9px 11px);pointer-events:none}
+.foh-lcard h3{font-size:18px;font-weight:700;margin:0}
+.foh-lcard .code{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--subtle);text-transform:uppercase;margin-top:5px}
+.foh-lcard .lock{margin-top:14px;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.foh-op{background:linear-gradient(180deg,rgba(27,35,48,.95),rgba(16,21,30,.95));border:1px solid var(--border-strong);position:relative;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+.foh-op:hover{transform:translateY(-3px);border-color:var(--oc);box-shadow:0 26px 60px rgba(0,0,0,.55),0 0 0 1px var(--oc)}
+.foh-op.dis{opacity:.5;cursor:not-allowed}
+.foh-op .topbar{height:4px;background:var(--oc)}
+.foh-op.rec::after{content:"Recomendado";position:absolute;top:14px;right:0;font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#061018;background:var(--accent);padding:4px 10px}
+.foh-op .oh{padding:18px 20px 0}
+.foh-op .oh .nm{display:flex;align-items:baseline;gap:9px}
+.foh-op .oh .nm h2{font-size:22px;font-weight:800;color:var(--oc);margin:0}
+.foh-op .oh .nm .iata{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.12em}
+.foh-op .oh .diff{display:flex;align-items:center;gap:9px;margin-top:8px}
+.foh-op .oh .diff .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.foh-op .shortline{padding:13px 20px 0;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle)}
+.foh-op .tagline{padding:8px 20px 0;font-size:13px;line-height:1.5;font-style:italic;color:var(--text)}
+.foh-op .ometrics{margin:16px 0 0;border-top:1px solid var(--border)}
+.foh-op .ometrics .row{display:flex;align-items:center;justify-content:space-between;padding:9px 20px;border-bottom:1px solid var(--border)}
+.foh-op .ometrics .k{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.foh-op .ometrics .v{font-family:var(--mono);font-size:13px;font-weight:600}
+.foh-op .octa{margin-top:auto;padding:16px 20px}
+.foh-op .octa .foh-btn{width:100%;background:transparent;border-color:var(--oc);color:var(--oc)}
+.foh-op:hover .octa .foh-btn{background:var(--oc);color:#07101a}
+.foh-loader{position:absolute;inset:0;z-index:30;background:rgba(4,7,12,.86);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px}
+.foh-loader.on{display:flex}
+.foh-loader .spin{width:38px;height:38px;border:2px solid var(--border-strong);border-top-color:var(--accent);border-radius:50%;animation:foh-spin .8s linear infinite}
+@keyframes foh-spin{to{transform:rotate(360deg)}}
+.foh-loader .txt{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+@media(max-width:880px){.foh-menubody{flex-direction:column;align-items:stretch;justify-content:flex-start}.foh-savecard{align-self:stretch}.foh-radar{display:none}.foh-apcard.feat{grid-row:span 1}}
+@media(prefers-reduced-motion:reduce){.foh-radar .sweep,.foh-mover,.foh-blip::after,.foh-livetag .d{animation:none}}
 .fleet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem;gap:.4rem}
 .fleet-reg{font-family:var(--mono);font-weight:600;color:var(--text);font-size:.85rem}
 .fleet-meta{display:flex;flex-wrap:wrap;gap:.4rem;color:var(--muted)}
@@ -96806,26 +96944,35 @@ const TUT_STEPS = [
     why: "Un MRO de línea reacciona: el trabajo llega cuando el avión llega, no lo programas tú. Esta espera ES el juego real.",
     target: ".speeds", place: "bottom",
     allow: ".speeds",
-    cond: (g) => activeCalloutExists(g) },
+    cond: (g) => activeCalloutExists(g),
+    // Cuando el aviso aparece, pausar el reloj AL INSTANTE (antes del delay cosmético de
+    // avance) para que no siga corriendo a 2×/5× mientras el bocadillo transiciona. El
+    // tutorial toma el mando en el momento exacto de la incidencia.
+    onMet: () => { S.setGameSpeed(game, 0); } },
   { phase: "¡Primer aviso!", title: "Tienes una incidencia",
-    body: "Un avión ha aterrizado con una avería. El botón <strong>🏭 Operaciones</strong> se ha marcado. Haz click en él.",
-    why: "Operaciones es tu centro de control: ahí están todos los avisos y trabajos activos.",
+    body: "Un avión ha aterrizado con una avería. He <strong>pausado el reloj</strong> para que decidas con calma. Fíjate: el botón <strong>🏭 Operaciones</strong> se ha marcado. Haz click en él.",
+    why: "Operaciones es tu centro de control: ahí están todos los avisos y trabajos activos. Con el reloj en pausa, el tiempo no corre en tu contra mientras aprendes.",
     target: ".side button[data-tab=\"operations\"]", place: "right",
+    // Pausar el reloj al saltar la incidencia: el tutorial manda aquí, sin micro-presión de tiempo.
+    onEnter: () => { S.setGameSpeed(game, 0); },
     gate: ".side button[data-tab=\"operations\"]" },
   { phase: "La orden de trabajo", title: "Abre el aviso",
     body: "Haz click en la <strong>tarjeta del aviso</strong>. Verás qué falla (capítulo ATA), qué cualificación necesita el técnico y cuánto tarda.",
     why: "Cada avión y cada avería son distintos. Leer la orden te dice a quién asignar.",
     target: ".wo-card[data-wo]", place: "right",
-    onEnter: () => { if (activeTab !== "operations") { activeTab = "operations"; invalidatePanelCache(); } },
+    // Mantener pausa + asegurar tab Operaciones para que exista la wo-card.
+    onEnter: () => { S.setGameSpeed(game, 0); if (activeTab !== "operations") { activeTab = "operations"; invalidatePanelCache(); } },
     gate: ".wo-card[data-wo]", cond: (g) => selectedWoId !== null },
   { phase: "Asignar", title: "Pon a un mecánico",
     body: "En el detalle, asigna un <strong>mecánico cualificado</strong> al trabajo. Irá al avión y empezará la reparación.",
-    why: "Sin mecánico, la avería no se toca y el reloj corre hacia la hora de salida. Asignar es la decisión clave.",
+    why: "Sin mecánico, la avería no se toca. Sigue en pausa: tómate tu tiempo para asignar bien.",
     target: "#modal-content", place: "left",
+    // Mantener pausa mientras el jugador elige mecánico en el modal.
+    onEnter: () => { S.setGameSpeed(game, 0); },
     allow: "#modal-content",
     cond: (g) => anyWoAssigned(g) },
-  { phase: "En marcha", title: "Acelera y observa el progreso",
-    body: "El mecánico ya trabaja. Pulsa <strong>2×</strong> y verás avanzar la barra de progreso del trabajo.",
+  { phase: "En marcha", title: "Reanuda y observa el progreso",
+    body: "El mecánico ya trabaja. El reloj sigue en pausa — pulsa <strong>2×</strong> para reanudarlo y verás avanzar la barra de progreso del trabajo.",
     why: "Acelerar el tiempo muerto es clave, pero vigila que termine ANTES de la hora de salida del avión.",
     target: ".speeds button[data-speed=\"2\"]", place: "bottom",
     allow: ".speeds",
@@ -96893,6 +97040,9 @@ function tutCheckCond(){
   if (st && st.cond) {
     try {
       if (st.cond(game)) {
+        // onMet: efecto inmediato al cumplirse la condición (p.ej. pausar el reloj en
+        // cuanto salta el aviso), ANTES del breve delay cosmético antes de avanzar.
+        if (st.onMet) { try { st.onMet(); } catch(e){} }
         tutCondPending = true;
         setTimeout(() => { tutCondPending = false; tutAdvance(); }, 600);
       }
@@ -97183,9 +97333,9 @@ document.body.addEventListener("click", (e) => {
   if (e.target.id === "btn-new")  { doNewGame(); return; }
   // Pivot iteración 2026-05-25 — New Game wizard handlers
   // Intro step
-  if (e.target.id === "ng-start") { newGameStep = "airport"; render(); return; }
-  if (e.target.id === "ng-continue") { doContinueFromIntro(); return; }
-  if (e.target.id === "ng-clear-save") {
+  if (e.target.closest("#ng-start")) { newGameStep = "airport"; render(); return; }
+  if (e.target.closest("#ng-continue, #ng-continue-card")) { doContinueFromIntro(); return; }
+  if (e.target.closest("#ng-clear-save")) {
     if (!confirm("¿Borrar partida guardada definitivamente? No se puede deshacer.")) return;
     (async () => {
       await S.getStorage().clear();
@@ -97198,8 +97348,10 @@ document.body.addEventListener("click", (e) => {
   const ngAirport = e.target.closest("[data-newgame-airport]");
   if (ngAirport) { newGameSelectedIcao = ngAirport.dataset.newgameAirport; newGameStep = "operator"; render(); return; }
   const ngPreset = e.target.closest("[data-newgame-preset]");
-  if (ngPreset) { startGameFromPreset(ngPreset.dataset.newgamePreset); return; }
-  if (e.target.id === "ng-back") { newGameStep = "airport"; render(); return; }
+  if (ngPreset) { const L = document.getElementById("foh-loader"); if (L) L.classList.add("on"); startGameFromPreset(ngPreset.dataset.newgamePreset); return; }
+  if (e.target.closest("#ng-back")) { newGameStep = "airport"; render(); return; }
+  if (e.target.closest("#ng-back-menu")) { newGameStep = "intro"; render(); return; }
+  if (e.target.closest("#ng-exit")) { try { const T = window.__TAURI__; if (T && T.window) { (T.window.getCurrentWindow ? T.window.getCurrentWindow() : T.window.appWindow).close(); } else if (T && T.process && T.process.exit) { T.process.exit(0); } } catch (err) {} return; }
   if (e.target.id === "btn-age-fleet") { ageFleet(); return; }
   if (e.target.id === "btn-autopause") { game.autoPauseEnabled = !game.autoPauseEnabled; render(); return; }
   if (e.target.closest("#kpi-compliance")) { complianceModalOpen = true; invalidateModalCache(); render(); return; }
@@ -97540,102 +97692,56 @@ async function startGameFromPreset(presetFile) {
   }
 }
 
-/** Renderiza overlay wizard New Game (full-screen). */
+/** Renderiza overlay wizard New Game (full-screen, front-of-house responsive 2026-05-30). */
 function renderNewGameWizard() {
   if (newGameStep === null) return "";
   const catalog = newGameCatalog ?? S.DATA.airportCatalog;
-  let inner = "";
+  // Fondo atmosférico compartido (CSS/SVG puro, sin assets). deep = scrim más opaco para
+  // pantallas con cartas.
+  const bg = (deep) => `<div class="foh-bg"></div><div class="foh-gridbg"></div><svg class="foh-svg" viewBox="0 0 1280 300" preserveAspectRatio="none" aria-hidden="true"><g opacity="0.6"><rect x="120" y="60" width="1010" height="34" fill="none" stroke="#2f3a4f"/><line x1="140" y1="77" x2="1110" y2="77" stroke="#3d4a63" stroke-width="1.6" stroke-dasharray="20 16"/><line x1="124" y1="60" x2="124" y2="94" stroke="#46d08a" stroke-width="2" opacity="0.7"/><line x1="1126" y1="60" x2="1126" y2="94" stroke="#46d08a" stroke-width="2" opacity="0.7"/><text x="150" y="82" fill="#5d6677" font-family="JetBrains Mono,monospace" font-size="13">11</text><text x="1098" y="82" fill="#5d6677" font-family="JetBrains Mono,monospace" font-size="13" text-anchor="end">29</text></g><line x1="150" y1="150" x2="1108" y2="150" stroke="#283041" stroke-width="1" stroke-dasharray="14 12" opacity="0.6"/></svg><div class="foh-radar"><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div><div class="sweep"></div></div><div class="foh-blip" style="left:64%;top:30%"></div><div class="foh-scrim${deep ? " deep" : ""}"></div><div class="foh-scan"></div>`;
+  let body = "";
   if (newGameStep === "intro") {
-    // Pantalla intro de arranque: title big, subtítulo, 2-3 botones según haya save.
-    const continueBtn = hasSavedSlot
-      ? `<button id="ng-continue" class="ng-select-btn primary" style="font-size:1rem;padding:.85rem 1.6rem">⏩ Continuar partida</button>`
-      : `<button class="ng-select-btn primary" style="font-size:1rem;padding:.85rem 1.6rem;opacity:.4;cursor:not-allowed" disabled>⏩ Continuar partida (sin guardado)</button>`;
-    const clearBtn = hasSavedSlot
-      ? `<button id="ng-clear-save" class="ng-back-btn" style="margin-top:1.5rem;font-size:.78rem">🗑 Borrar partida guardada</button>`
-      : "";
-    inner = `<div class="newgame-intro">
-      <div class="ng-intro-logo">🛬</div>
-      <h1 class="ng-intro-title">MRO Tycoon</h1>
-      <p class="ng-intro-sub">Gestión de mantenimiento aeronáutico</p>
-      <div class="ng-intro-actions">
-        <button id="ng-start" class="ng-select-btn primary" style="font-size:1rem;padding:.85rem 1.6rem">▶ Nueva partida</button>
-        ${continueBtn}
-      </div>
-      ${clearBtn}
-      <p class="ng-intro-foot">v0.6 · línea pura · datos reales AeroDataBox mayo 2026</p>
-    </div>`;
+    const isTauri = typeof window !== "undefined" && !!window.__TAURI__;
+    const continueItem = hasSavedSlot
+      ? `<div class="foh-mi" id="ng-continue"><span class="idx">02</span><span class="label">Continuar partida</span><span class="hint">Reanudar</span><span class="arrow"></span></div>`
+      : `<div class="foh-mi disabled"><span class="idx">02</span><span class="label">Continuar partida</span><span class="hint">Sin guardado</span></div>`;
+    const exitItem = isTauri ? `<div class="foh-mi danger" id="ng-exit"><span class="idx">05</span><span class="label">Salir</span><span class="arrow"></span></div>` : "";
+    const clearItem = hasSavedSlot ? `<div class="foh-mi danger" id="ng-clear-save"><span class="idx">${isTauri ? "06" : "05"}</span><span class="label">Borrar guardado</span><span class="arrow"></span></div>` : "";
+    const saveCard = hasSavedSlot ? `<a class="foh-savecard" id="ng-continue-card"><div class="foh-sc-head"><span>💾 Partida guardada</span></div><div class="foh-sc-body"><div class="foh-sc-icao">LEAS<span class="x"> · OVD</span></div><div class="foh-sc-name">Aeropuerto de Asturias</div></div><div class="foh-sc-cta"><span>Continuar partida</span><span class="foh-ar"></span></div></a>` : "";
+    body = `<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · LEAS / OVD · Asturias</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>${continueItem}<div class="foh-mi disabled"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Próximamente</span></div><div class="foh-mi disabled"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Próximamente</span></div>${exitItem}${clearItem}</nav></div>${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>`;
   } else if (newGameStep === "airport") {
-    const availCount = catalog.airports.filter(a => a.available !== false).length;
-    inner = `<div class="newgame-header">
-      <h1 style="margin:0 0 .3rem 0;font-size:1.8rem">🛬 MRO Tycoon · Nueva Partida</h1>
-      <p class="muted" style="margin:0">Paso 1 de 2 · Elige tu aeropuerto base · ${availCount}/${catalog.airports.length} disponibles</p>
-    </div>
-    <div class="newgame-cards newgame-cards-airports">`;
+    const avail = catalog.airports.filter(a => a.available !== false);
+    const availCount = avail.length;
+    const featIcao = avail.length ? avail.reduce((a, b) => (a.difficultyOverall <= b.difficultyOverall ? a : b)).icao : null;
+    let cards = "";
     for (const ap of catalog.airports) {
-      const stars = "⭐".repeat(ap.difficultyOverall);
-      const isAvailable = ap.available !== false;
-      const disabledCls = isAvailable ? "" : " ng-disabled";
-      const tooltip = isAvailable ? "" : ` title="${esc(ap.comingSoonReason ?? 'Próximamente')}"`;
-      const dataAttr = isAvailable ? `data-newgame-airport="${ap.icao}"` : "";
-      const footer = isAvailable
-        ? `<button class="ng-select-btn">Seleccionar →</button>`
-        : `<div class="ng-coming-soon">⏳ ${esc(ap.comingSoonReason ?? "Próximamente")}</div>`;
-      const meta = isAvailable && ap.operators.length > 0
-        ? `<span><strong>${ap.operators.length}</strong> operador${ap.operators.length === 1 ? "" : "es"} contratable${ap.operators.length === 1 ? "" : "s"}</span>`
-        : `<span class="muted">Próximamente</span>`;
-      inner += `<article class="newgame-card${disabledCls}" ${dataAttr}${tooltip}>
-        <div class="ng-card-head">
-          <h2>✈️ ${esc(ap.name)} <span class="muted" style="font-size:.7rem">(${ap.iata}/${ap.icao} · ${ap.country})</span></h2>
-          <span class="ng-stars">${stars}</span>
-        </div>
-        <p class="ng-desc">${esc(ap.shortDesc)}</p>
-        <div class="ng-meta">${meta}</div>
-        ${footer}
-      </article>`;
+      const isAvail = ap.available !== false;
+      const stars = "★".repeat(ap.difficultyOverall) + "☆".repeat(Math.max(0, 5 - ap.difficultyOverall));
+      if (!isAvail) {
+        cards += `<div class="foh-lcard" title="${esc(ap.comingSoonReason ?? "Próximamente")}"><h3>${esc(ap.name)}</h3><div class="code">${ap.icao} / ${ap.iata} · ${ap.country}</div><div class="lock">⏳ ${esc(ap.comingSoonReason ?? "Próximamente")}</div></div>`;
+        continue;
+      }
+      const isFeat = ap.icao === featIcao;
+      const opCount = ap.operators.filter(o => o.available).length;
+      const model = ap.operators[0]?.metrics?.model ?? "A320";
+      cards += `<a class="foh-apcard${isFeat ? " feat" : ""}" data-newgame-airport="${ap.icao}">${isFeat ? '<span class="ribbon">Recomendado</span>' : ""}<div class="ah"><h2>${esc(ap.name)}</h2><div class="code">${ap.icao} / ${ap.iata} · ${esc(ap.city)}</div><div class="stars">${stars}</div></div><div class="desc">${esc(ap.shortDesc)}</div><div class="metrics"><div class="m"><div class="k">Operadores</div><div class="v">${opCount} <span class="u">contrat.</span></div></div><div class="m"><div class="k">Flota base</div><div class="v" style="font-size:13px">${esc(model)}</div></div><div class="m"><div class="k">Dificultad</div><div class="v">${ap.difficultyOverall}<span class="u">/5</span></div></div></div><div class="acta"><span class="note">LAYOUT OSM REAL · 2026</span><span class="foh-btn primary" style="pointer-events:none">Seleccionar <span class="foh-ar"></span></span></div></a>`;
     }
-    inner += `</div>
-    <div class="newgame-footer">
-      <p class="muted" style="font-size:.78rem;margin:0">Cada aeropuerto trae layout OSM real + schedule AeroDataBox mayo 2026 + operadores físicos saneados. Los grises se irán activando en próximos sprints.</p>
-    </div>`;
+    body = `<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> Nueva partida</div><div class="foh-steprail"><span class="s on"><span class="n">1</span> Aeropuerto</span><span class="bar"></span><span class="s"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 1 de 2 · Base de operaciones</div><h1>Elige tu <span class="t">base</span></h1><p class="sub">Cada aeropuerto trae layout OSM real, schedule de AeroDataBox y operadores físicos saneados. Empieza pequeño: el resto se irá activando.</p></div><div class="foh-cards">${cards}</div><div class="foh-foot"><span class="foh-btn back ghost" id="ng-back-menu"><span class="foh-ar"></span> Menú principal</span><div class="right"><span>${availCount} / ${catalog.airports.length} AEROPUERTOS DISPONIBLES</span></div></div></div>`;
   } else if (newGameStep === "operator") {
     const ap = catalog.airports.find(a => a.icao === newGameSelectedIcao);
     if (!ap) { newGameStep = "airport"; return renderNewGameWizard(); }
-    inner = `<div class="newgame-header">
-      <h1 style="margin:0 0 .3rem 0;font-size:1.8rem">🛬 ${esc(ap.name)} · Elige tu primer cliente</h1>
-      <p class="muted" style="margin:0">Paso 2 de 2 · El operador define tu setup inicial (flota, fees, dificultad)</p>
-    </div>
-    <div class="newgame-cards newgame-cards-3">`;
+    const availOps = ap.operators.filter(o => o.available);
+    const recPreset = availOps.length ? availOps.reduce((a, b) => (a.difficulty <= b.difficulty ? a : b)).presetFile : null;
+    let cards = "";
     for (const op of ap.operators) {
-      const stars = "⭐".repeat(op.difficulty);
-      const disabledCls = op.available ? "" : " ng-disabled";
-      const tooltip = op.available ? "" : ` title="${esc(op.comingSoonReason ?? 'Próximamente')}"`;
-      inner += `<article class="newgame-card${disabledCls}" ${op.available ? `data-newgame-preset="${op.presetFile}"` : ""} ${tooltip}>
-        <div class="ng-card-head">
-          <h2 style="color:${op.color}">${esc(op.operatorName)} <span class="muted" style="font-size:.7rem">${op.operatorIata}</span></h2>
-          <span class="ng-stars">${stars} <span class="muted" style="font-size:.7rem">${esc(op.difficultyLabel)}</span></span>
-        </div>
-        <div class="ng-shortline">${esc(op.shortLine)}</div>
-        <p class="ng-desc">"${esc(op.tagline)}"</p>
-        <div class="ng-metrics">
-          <div><span class="muted">Movs/sem</span> <strong>${op.metrics.movsPerWeek}</strong></div>
-          <div><span class="muted">🌙 Pernoctas/sem</span> <strong>${op.metrics.overnightsPerWeek}</strong></div>
-          <div><span class="muted">Modelo</span> <strong>${esc(op.metrics.model)}</strong></div>
-          <div><span class="muted">💰 Balance</span> <strong>${op.metrics.balance.toLocaleString("es-ES")} €</strong></div>
-          <div><span class="muted">👤 Mecs</span> <strong>${esc(op.metrics.mechs)}</strong></div>
-        </div>
-        ${op.available
-          ? `<button class="ng-select-btn primary">🚀 Empezar con ${esc(op.operatorName)}</button>`
-          : `<div class="ng-coming-soon">⏳ Próximamente: ${esc(op.comingSoonReason ?? "")}</div>`}
-      </article>`;
+      const stars = "★".repeat(op.difficulty) + "☆".repeat(Math.max(0, 5 - op.difficulty));
+      const dis = !op.available;
+      const isRec = op.presetFile === recPreset;
+      cards += `<div class="foh-op${dis ? " dis" : ""}${isRec ? " rec" : ""}" style="--oc:${op.color}" ${op.available ? `data-newgame-preset="${op.presetFile}"` : ""} ${dis ? `title="${esc(op.comingSoonReason ?? "Próximamente")}"` : ""}><div class="topbar"></div><div class="oh"><div class="nm"><h2>${esc(op.operatorName)}</h2><span class="iata">${esc(op.operatorIata)}</span></div><div class="diff"><span class="stars" style="color:${op.color}">${stars}</span><span class="lbl">${esc(op.difficultyLabel)}</span></div></div><div class="shortline">${esc(op.shortLine)}</div><div class="tagline">"${esc(op.tagline)}"</div><div class="ometrics"><div class="row"><span class="k">Movimientos / sem</span><span class="v">${op.metrics.movsPerWeek}</span></div><div class="row"><span class="k">Pernoctas / sem</span><span class="v">${op.metrics.overnightsPerWeek}</span></div><div class="row"><span class="k">Modelo</span><span class="v">${esc(op.metrics.model)}</span></div><div class="row"><span class="k">Balance inicial</span><span class="v" style="color:var(--success)">${op.metrics.balance.toLocaleString("es-ES")} €</span></div><div class="row"><span class="k">Mecánicos</span><span class="v">${esc(op.metrics.mechs)}</span></div></div><div class="octa">${op.available ? `<span class="foh-btn" style="pointer-events:none">Empezar con ${esc(op.operatorName)} <span class="foh-ar"></span></span>` : `<span class="foh-btn ghost" style="pointer-events:none;opacity:.75">⏳ ${esc(op.comingSoonReason ?? "Próximamente")}</span>`}</div></div>`;
     }
-    inner += `</div>
-    <div class="newgame-footer">
-      <button id="ng-back" class="ng-back-btn">← Cambiar aeropuerto</button>
-    </div>`;
+    body = `<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> ${esc(ap.name)} · ${ap.icao} / ${ap.iata}</div><div class="foh-steprail"><span class="s done"><span class="n">✓</span> Aeropuerto</span><span class="bar"></span><span class="s on"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 2 de 2 · Tu primer cliente</div><h1>Elige tu <span class="t">operador</span> de arranque</h1><p class="sub">El primer contrato define tu setup inicial — flota, fees y dificultad. Puedes captar a los demás más adelante subiendo reputación.</p></div><div class="foh-cards ops">${cards}</div><div class="foh-foot"><button class="foh-btn back ghost" id="ng-back"><span class="foh-ar"></span> Cambiar aeropuerto</button><div class="right"><span>SETUP REVERSIBLE · CAPTA AL RESTO IN-GAME</span></div></div></div><div class="foh-loader" id="foh-loader"><div class="spin"></div><div class="txt">Inicializando MRO…</div></div>`;
   }
-  return `<div id="newgame-overlay" class="newgame-overlay">
-    <div class="newgame-panel">${inner}</div>
-  </div>`;
+  return `<div class="foh-root" id="newgame-overlay">${bg(newGameStep !== "intro")}${body}</div>`;
 }
 
 function ageFleet() {
@@ -97669,6 +97775,21 @@ function ageFleet() {
   alert("🛠️ Envejecidos " + bumped + " aviones (debug). Pulsa 5× para ver checks dispararse.");
   render();
 }
+
+// Nav por teclado del Menú Principal (front-of-house): ↑/↓ mueve selección, Enter activa.
+window.addEventListener("keydown", (e) => {
+  if (newGameStep !== "intro") return;
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Enter") return;
+  const items = Array.prototype.slice.call(document.querySelectorAll("#foh-menu .foh-mi:not(.disabled)"));
+  if (!items.length) return;
+  let sel = items.findIndex((x) => x.classList.contains("sel"));
+  if (sel < 0) sel = 0;
+  if (e.key === "Enter") { e.preventDefault(); if (items[sel]) items[sel].click(); return; }
+  e.preventDefault();
+  items.forEach((x) => x.classList.remove("sel"));
+  sel = e.key === "ArrowDown" ? (sel + 1) % items.length : (sel - 1 + items.length) % items.length;
+  items[sel].classList.add("sel");
+});
 
 (async () => { hasSavedSlot = await S.getStorage().hasSave(); render(); })();
 
