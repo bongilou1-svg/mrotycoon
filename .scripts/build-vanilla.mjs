@@ -296,6 +296,15 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .map-info-panel .mip-empty{color:var(--muted);font-style:italic;padding:.15rem 0;font-size:.7rem}
 .map-info-panel .mip-more{color:var(--muted);font-size:.65rem;text-align:center;padding:.15rem 0;font-style:italic}
 .map-info-panel .mip-sep{border-top:1px dashed rgba(120,140,180,.18);margin:.4rem 0 .25rem 0}
+.map-legend{position:absolute;left:12px;bottom:12px;z-index:10;display:flex;gap:.7rem;flex-wrap:wrap;max-width:58%;background:rgba(7,13,24,.82);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:6px;padding:.4rem .62rem;font-family:var(--sans);font-size:.62rem;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.map-legend .lg{display:flex;align-items:center;gap:.32rem;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.map-legend .lg i{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor;flex:none}
+.map-ctrl{position:absolute;top:12px;right:12px;z-index:10;display:flex;flex-direction:column;gap:.4rem;align-items:flex-end}
+.map-ctrl .zoom{display:flex;flex-direction:column;border:1px solid rgba(77,163,255,.25);border-radius:6px;overflow:hidden;background:rgba(7,13,24,.82);backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.map-ctrl .zoom button{width:32px;height:30px;color:var(--text);font-size:1.05rem;line-height:1;background:transparent;border:none;border-bottom:1px solid rgba(77,163,255,.18);cursor:pointer;display:grid;place-items:center;font-family:var(--sans)}
+.map-ctrl .zoom button:last-child{border-bottom:none}
+.map-ctrl .zoom button:hover{background:rgba(77,163,255,.16)}
+.map-ctrl .map-daynight{font-family:var(--sans);font-size:.62rem;font-weight:600;letter-spacing:.04em;color:var(--muted);background:rgba(7,13,24,.82);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:6px;padding:.28rem .5rem;box-shadow:0 4px 16px rgba(0,0,0,.4);white-space:nowrap}
 
 /* Pivot iteración 2026-05-25 — New Game wizard overlay */
 .newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.97);backdrop-filter:blur(10px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
@@ -1020,6 +1029,22 @@ function renderMap(){
   return \`<div class="map-wrapper" style="position:relative;height:calc(100vh - 96px);min-height:480px">
     <div class="pixi-host" id="pixi-host" style="width:100%;height:100%"></div>
     <div id="map-info-panel" class="map-info-panel"></div>
+    <div class="map-ctrl">
+      <div class="zoom">
+        <button data-map-zoom="in" title="Acercar" aria-label="Acercar">+</button>
+        <button data-map-zoom="out" title="Alejar" aria-label="Alejar">−</button>
+        <button data-map-fit title="Encajar todo" aria-label="Encajar todo">⤢</button>
+      </div>
+      <div class="map-daynight" id="map-daynight">— · --:--</div>
+    </div>
+    <div class="map-legend">
+      <span class="lg" style="color:#ff4757"><i></i>AOG</span>
+      <span class="lg" style="color:#f5b945"><i></i>Demora</span>
+      <span class="lg" style="color:#3fb950"><i></i>Trabajando</span>
+      <span class="lg" style="color:#6dc7ff"><i></i>Daily</span>
+      <span class="lg" style="color:#3aa9ff"><i></i>En tierra</span>
+      <span class="lg" style="color:#3d6f9d"><i></i>Libre</span>
+    </div>
   </div>\`;
 }
 
@@ -1124,6 +1149,15 @@ function updateMapInfoPanel(){
         <span class="mip-route">← \${esc(f.remote ?? "?")}</span>
       </div>\`;
     }
+  }
+
+  // Pill día/noche del chrome del mapa: refleja el reloj del juego (mismo umbral que el
+  // fondo Pixi: noche 22:00–05:59). Se actualiza cada tick junto al panel info.
+  const dn = document.getElementById("map-daynight");
+  if (dn) {
+    const hour = Math.floor(dayMinute / 60);
+    const night = hour >= 22 || hour < 6;
+    dn.textContent = (night ? "🌙 Noche" : "☀️ Día") + " · " + hhmm(dayMinute);
   }
 
   el.innerHTML = html;
@@ -3573,40 +3607,50 @@ const TUT_STEPS = [
     why: "Pausar te deja pensar sin prisa. Acelerar hace avanzar la jornada cuando no hay nada urgente.",
     target: ".speeds", place: "bottom", showNext: true },
   // ── Fase 2 · El bucle central ──
+  // NOTA DISENO (2026-05-30): los pasos guiados por evento NO tienen showNext. Esperan
+  // la condicion REAL del sim (cond). Para que no se atasque, al arrancar el reloj
+  // activamos game.forceCalloutOnNextLanding y el proximo Vueling real aterriza con aviso
+  // garantizado. Mientras espera, el campo allow permite tocar velocidad/modal sin avanzar.
   { phase: "Tu primera jornada", title: "Pon el reloj en marcha",
-    body: "Pulsa <strong>1×</strong> para que empiece la jornada. Los aviones comenzarán a llegar.",
-    why: "El tiempo solo corre cuando tú quieres. Empieza despacio para no perderte nada.",
-    target: ".speeds button[data-speed=\\"1\\"]", place: "bottom", gate: ".speeds button[data-speed=\\"1\\"]" },
-  { phase: "Atento", title: "Observa el aeropuerto",
-    body: "Deja correr el tiempo. Cuando un avión aterrice con una avería, aparecerá un <strong>aviso</strong> y el botón 🏭 Operaciones se marcará en rojo.",
-    why: "Los avisos (callouts) son el corazón del juego: cada uno es trabajo y dinero con cuenta atrás.",
-    target: ".side button[data-tab=\\"operations\\"]", place: "right",
-    cond: (g) => activeCalloutExists(g), showNext: true },
-  { phase: "Operaciones", title: "Abre Operaciones",
-    body: "Haz click en <strong>🏭 Operaciones</strong>. Es tu centro de control: todos los avisos y trabajos activos.",
-    why: "Desde aquí gestionas cada orden de trabajo: ver el detalle y asignar mecánicos.",
+    body: "Pulsa <strong>1×</strong> para que empiece la jornada. Vueling tiene vuelos hoy; en cuanto uno aterrice con una incidencia, te avisarán.",
+    why: "El tiempo solo corre cuando tú quieres. Empieza despacio para no perderte el primer aviso.",
+    target: ".speeds button[data-speed=\\"1\\"]", place: "bottom",
+    gate: ".speeds button[data-speed=\\"1\\"]",
+    onEnter: () => { game.forceCalloutOnNextLanding = true; } },
+  { phase: "Esperando el aviso", title: "Observa: está aterrizando tráfico",
+    body: "Deja correr el reloj — puedes <strong>acelerar a 2× o 5×</strong> mientras esperas. En cuanto un Vueling aterrice con avería, saltará el aviso y seguimos.",
+    why: "Un MRO de línea reacciona: el trabajo llega cuando el avión llega, no lo programas tú. Esta espera ES el juego real.",
+    target: ".speeds", place: "bottom",
+    allow: ".speeds",
+    cond: (g) => activeCalloutExists(g) },
+  { phase: "¡Primer aviso!", title: "Tienes una incidencia",
+    body: "Un avión ha aterrizado con una avería. El botón <strong>🏭 Operaciones</strong> se ha marcado. Haz click en él.",
+    why: "Operaciones es tu centro de control: ahí están todos los avisos y trabajos activos.",
     target: ".side button[data-tab=\\"operations\\"]", place: "right",
     gate: ".side button[data-tab=\\"operations\\"]" },
   { phase: "La orden de trabajo", title: "Abre el aviso",
-    body: "Haz click en una <strong>tarjeta de aviso</strong>. Verás qué falla (capítulo ATA), qué cualificación necesita y cuánto tarda.",
+    body: "Haz click en la <strong>tarjeta del aviso</strong>. Verás qué falla (capítulo ATA), qué cualificación necesita el técnico y cuánto tarda.",
     why: "Cada avión y cada avería son distintos. Leer la orden te dice a quién asignar.",
     target: ".wo-card[data-wo]", place: "right",
     onEnter: () => { if (activeTab !== "operations") { activeTab = "operations"; invalidatePanelCache(); } },
-    gate: ".wo-card[data-wo]", cond: (g) => selectedWoId !== null, showNext: true },
+    gate: ".wo-card[data-wo]", cond: (g) => selectedWoId !== null },
   { phase: "Asignar", title: "Pon a un mecánico",
-    body: "Asigna un mecánico cualificado a este trabajo (botón en el detalle). El mecánico irá al avión y empezará.",
-    why: "Sin mecánico asignado, la avería no se toca y el reloj sigue corriendo hacia la salida.",
+    body: "En el detalle, asigna un <strong>mecánico cualificado</strong> al trabajo. Irá al avión y empezará la reparación.",
+    why: "Sin mecánico, la avería no se toca y el reloj corre hacia la hora de salida. Asignar es la decisión clave.",
     target: "#modal-content", place: "left",
-    cond: (g) => anyWoAssigned(g), showNext: true },
-  { phase: "En marcha", title: "Acelera y observa",
-    body: "El mecánico está trabajando. Pulsa <strong>2×</strong> y mira cómo avanza la barra de progreso del trabajo.",
-    why: "Acelerar el tiempo muerto es clave: vigila que termine ANTES de la hora de salida.",
+    allow: "#modal-content",
+    cond: (g) => anyWoAssigned(g) },
+  { phase: "En marcha", title: "Acelera y observa el progreso",
+    body: "El mecánico ya trabaja. Pulsa <strong>2×</strong> y verás avanzar la barra de progreso del trabajo.",
+    why: "Acelerar el tiempo muerto es clave, pero vigila que termine ANTES de la hora de salida del avión.",
     target: ".speeds button[data-speed=\\"2\\"]", place: "bottom",
-    gate: ".speeds button[data-speed=\\"2\\"]", showNext: true },
+    allow: ".speeds",
+    gate: ".speeds button[data-speed=\\"2\\"]" },
   { phase: "¡Cobrado!", title: "Has cerrado tu primer trabajo",
-    body: "Cuando la orden se completa a tiempo, <strong>cobras</strong> y tu reputación con Vueling sube. Mira tu balance arriba (💰).",
-    why: "Ese es el bucle completo. Repetirlo bien, jornada tras jornada, es ganar la partida.",
+    body: "Trabajo completado a tiempo: has <strong>cobrado</strong> y tu reputación con Vueling sube. Míralo en tu balance (💰, arriba).",
+    why: "Ese es el bucle completo: llega → arregla → despega. Repetirlo bien, jornada tras jornada, es ganar la partida.",
     target: "#bal", place: "bottom",
+    allow: ".speeds",
     cond: (g) => anyWoCompleted(g), showNext: true },
   // ── Fase 3 · Sistemas de apoyo ──
   { phase: "Sistemas", title: "Equipo",
@@ -3926,10 +3970,18 @@ document.addEventListener("click", (e) => {
   const st = tutCur();
   const gateEl = st && st.gate ? (e.target.closest && e.target.closest(st.gate)) : null;
   if (gateEl) {
-    // Click correcto: dejar que el handler normal haga la acción, luego avanzar.
-    setTimeout(() => { if (tutActive && tutCur() === st) tutAdvance(); }, 60);
+    // Click correcto sobre el gate: dejar que el handler normal haga la acción.
+    // Si el paso TAMBIÉN tiene cond (espera evento del sim), NO avanzamos por el click —
+    // dejamos que la condición lo haga (p.ej. abrir el aviso → selectedWoId !== null).
+    // Si NO tiene cond, el click ES el criterio de avance.
+    if (!st.cond) setTimeout(() => { if (tutActive && tutCur() === st) tutAdvance(); }, 60);
     return;
   }
+  // El campo allow lista elementos con los que el usuario PUEDE interactuar durante la
+  // espera de un evento (p.ej. botones de velocidad, o el modal para asignar) sin que se
+  // considere click prohibido ni avance el paso. El avance lo da cond cuando el sim cumple.
+  const allowEl = st && st.allow ? (e.target.closest && e.target.closest(st.allow)) : null;
+  if (allowEl) return; // permitir el click; el handler normal lo procesa
   // Cualquier otro click: bloquear (guiado absoluto).
   e.stopPropagation();
   e.preventDefault();
@@ -3988,6 +4040,14 @@ document.body.addEventListener("click", (e) => {
   // Rediseño CIC: click en fila de Schedule → cajón de vuelo
   const flightRow = e.target.closest("[data-flight]");
   if (flightRow) { detailFlightId = flightRow.dataset.flight; invalidateModalCache(); render(); return; }
+  // Controles de zoom del mapa F5D → delegan en la cámara Pixi (no re-render: la cámara
+  // repinta su propio canvas; mapDriver vive en module scope y persiste entre renders).
+  const mapZoomBtn = e.target.closest("[data-map-zoom]");
+  if (mapZoomBtn) {
+    if (mapDriver) { if (mapZoomBtn.dataset.mapZoom === "in") mapDriver.zoomIn(); else mapDriver.zoomOut(); }
+    return;
+  }
+  if (e.target.closest("[data-map-fit]")) { if (mapDriver) mapDriver.fitAll(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
   const tabBtn = e.target.closest(".side > button");

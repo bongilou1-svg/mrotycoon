@@ -141,6 +141,11 @@ export interface GameState {
   /** Si true, eventos críticos (AOG…) pausan automáticamente el reloj. Default true para UI.
    *  Tests headless (auto_playtest) lo ponen a false para que el loop no se atasque. */
   autoPauseEnabled: boolean;
+  /** Tutorial Rookie (2026-05-30): si true, el PRÓXIMO landing genera un callout
+   *  garantizado (salta el dado del 70%) y el flag se auto-consume. Lo activa el
+   *  tutorial para que el primer aviso caiga sobre un avión real sin espera azarosa.
+   *  Runtime, no se serializa. */
+  forceCalloutOnNextLanding?: boolean;
   /** Si true (Fase 4 Q1+Q2), mecánicos fuera de su turno son improductivos y se liberan de WOs
    *  activas al cambiar de turno. Default true. Tests legacy lo ponen a false. No se serializa
    *  (es estado de runtime, no de partida — UI lo podría exponer como toggle). */
@@ -887,8 +892,12 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   let pauseRequested = false;
   for (const p of g.airplanes) {
     if (p.arrivalMinute > now && p.arrivalMinute <= next) {
-      const wo = rollWoOnLanding(g.woRng, p, g.templates, g.balance);
+      // Tutorial Rookie: si el flag está activo, el próximo landing genera callout
+      // garantizado (sobre un avión real contratado — los únicos en g.airplanes).
+      const forceCallout = g.forceCalloutOnNextLanding === true;
+      const wo = rollWoOnLanding(g.woRng, p, g.templates, g.balance, forceCallout);
       if (wo) {
+        if (forceCallout) g.forceCalloutOnNextLanding = false; // consumir el flag una sola vez
         g.workOrders.push(wo);
         const tpl = g.templates.find((t) => t.id === wo.templateId);
         pushNotification(

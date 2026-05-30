@@ -59,8 +59,12 @@ export function rollWoOnLanding(
   airplane: Airplane,
   templates: readonly WorkOrderTemplate[],
   balance: Balance,
+  force = false,
 ): WorkOrderInstance | null {
-  if (!randBool(rng, balance.probabilities.workOrderAtStand)) return null;
+  // Tutorial Rookie (2026-05-30): `force` garantiza un callout sobre este landing
+  // (salta el dado del 70%). Short-circuit: con force NO consume el rng, para no
+  // alterar la cadena determinista del resto de la partida.
+  if (!force && !randBool(rng, balance.probabilities.workOrderAtStand)) return null;
   const callouts = templates.filter((t) => t.kind === "callout");
   const compat = compatibleTemplates(callouts, airplane.model, airplane.engineVariant);
   if (compat.length === 0) return null;
