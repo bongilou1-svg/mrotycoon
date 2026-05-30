@@ -97982,7 +97982,50 @@ function renderSettingsBody(){
 // Placeholder de "Cómo se juega" — se implementa en la siguiente ronda. Si se entra al
 // step sin estar listo, mostramos el menú. (Evita pantalla en blanco.)
 function renderHowtoBody(){
-  return '<div class="foh-screen"><div class="foh-head"><div class="foh-eyebrow">Onboarding</div><h1>Cómo se juega</h1><p class="sub">Próximamente.</p></div><div class="foh-foot"><button class="foh-btn back ghost" id="ng-settings-back"><span class="foh-ar"></span> Menú principal</button></div></div>';
+  var steps = [
+    { n: "01", nm: "El bucle del MRO" },
+    { n: "02", nm: "Operaciones en vivo" },
+    { n: "03", nm: "Tu plantilla" },
+    { n: "04", nm: "Riesgo y supervivencia" },
+  ];
+  var panes = [
+    { kick: "Paso 01 / 04 · El loop", h: "Diriges el taller, no el avión",
+      lead: "No pilotas ni ves aviones despegar. Gestionas el MRO que mantiene la flota. Todo gira en torno a un bucle simple que se vuelve profundo.",
+      li: ["Aceptas <b>contratos</b> de aerolíneas según fee, penalty y reputación.","Cada llegada genera <b>Work Orders</b> que resolver en el turnaround.","Cobras por trabajo cerrado a tiempo. Fallar el SLA cuesta dinero y reputación."],
+      art: '<div class="ht-loop"><div class="ht-node"><div class="ln">01</div><div class="lt">Contrato</div><div class="lc">aerolínea cliente</div></div><div class="ht-node"><div class="ln">02</div><div class="lt">Avión en tierra</div><div class="lc">genera WOs</div></div><div class="ht-node"><div class="ln">04</div><div class="lt">Cobrar</div><div class="lc">cierre semanal</div></div><div class="ht-node"><div class="ln">03</div><div class="lt">Asignar y cerrar</div><div class="lc">mecánicos certificados</div></div><div class="ht-cyc">se repite · crece o cierra</div></div>' },
+    { kick: "Paso 02 / 04 · Operaciones", h: "Tu sala de control en vivo",
+      lead: "El panel de Operaciones es el corazón del juego. Las Work Orders avanzan en tiempo real por sus fases, cada una con su SLA corriendo.",
+      li: ["Controla el tiempo: <b>Pausa / 1× / 2× / 5×</b>. Planifica en pausa.","Cada WO trae su <b>capítulo ATA</b>, severidad y SLA.","Filtra por mecánico certificado y <b>asigna en pocos clicks</b>."],
+      art: '<div class="ht-phrow"><div class="ht-ph done"><div class="bar"></div><div class="phn">Viaje</div></div><div class="ht-ph done"><div class="bar"></div><div class="phn">Diag</div></div><div class="ht-ph now"><div class="bar"></div><div class="phn">Fix</div></div><div class="ht-ph"><div class="bar"></div><div class="phn">Test</div></div><div class="ht-ph"><div class="bar"></div><div class="phn">Cierre</div></div></div><div class="ht-wo"><div class="wt"><span class="reg">EC-NQM · WO-057</span><span class="sla">SLA 24:18</span></div><div class="ht-chips"><span class="ht-chip">ATA 29</span><span class="ht-chip">B1</span><span class="ht-chip crit">Critical</span><span class="ht-chip">Stand 351</span></div></div>' },
+    { kick: "Paso 03 / 04 · Plantilla", h: "Sin certifier, no hay cierre",
+      lead: "Tus mecánicos son personas, no peones. Solo un certifier con type rating válido firma la WO; los demás suman como apoyo.",
+      li: ["Asigna <b>1 certifier + 0-2 helpers</b> por Work Order.","Vigila <b>moral y turnos</b>: un mecánico quemado rinde menos.","Forma juniors o ficha senior para nuevos ratings (CFM56 / V2500)."],
+      art: '<div class="ht-loop" style="grid-template-columns:1fr"><div class="ht-node" style="text-align:left"><div class="lt">Paula Moreno</div><div class="lc">M-001 · B1 · CFM56 · moral 70</div></div><div class="ht-node" style="text-align:left"><div class="lt">Diego Sáez</div><div class="lc">M-002 · B1 · CFM56 · moral 82</div></div><div class="ht-node" style="text-align:left"><div class="lt">Marta Iglesias</div><div class="lc">M-003 · B2 · aviónica · moral 64</div></div></div>' },
+    { kick: "Paso 04 / 04 · Supervivencia", h: "No hay pantalla de victoria",
+      lead: "Es un sandbox con derrota real: creces a tu ritmo… o cierras. La tensión la pone el dominio aeronáutico de verdad.",
+      li: ["<b>AOG</b>: avión en tierra, penalty ×5, no diferible. El reloj corre.","Mantén tu <b>compliance Part-145</b>: auditoría periódica.","Game over por <b>bancarrota</b> o <b>reputación a cero</b>."],
+      art: '<div class="ht-aog"><span class="d"></span><div><div class="at">AOG · EC-NQM</div><div class="ad">PTU contaminada · no diferible · SLA < 45 min</div></div></div><div class="ht-gauge"><div class="gl"><span>Balance</span><span style="color:#3fb950">342k €</span></div><div class="gb"><i style="width:68%;background:#3fb950"></i></div></div><div class="ht-gauge"><div class="gl"><span>Reputación</span><span style="color:#4da3ff">64/100</span></div><div class="gb"><i style="width:64%;background:#4da3ff"></i></div></div><div class="ht-gauge"><div class="gl"><span>Part-145</span><span style="color:#d29922">80/100</span></div><div class="gb"><i style="width:80%;background:#d29922"></i></div></div>' },
+  ];
+  var idx = Math.max(0, Math.min(howtoStep, panes.length - 1));
+  var p = panes[idx];
+  var sidebar = "";
+  for (var i = 0; i < steps.length; i++) sidebar += '<button class="ht-stepbtn' + (idx === i ? " on" : "") + '" data-howto-step="' + i + '"><span class="n">' + steps[i].n + '</span><span class="nm">' + steps[i].nm + '</span></button>';
+  var lis = "";
+  for (var j = 0; j < p.li.length; j++) lis += '<li>' + p.li[j] + '</li>';
+  var dots = "";
+  for (var k = 0; k < panes.length; k++) dots += '<span class="ht-dot' + (idx === k ? " on" : "") + '" data-howto-step="' + k + '"></span>';
+  var prevBtn = idx === 0
+    ? '<button class="foh-btn back ghost" id="ng-howto-back"><span class="foh-ar"></span> Menú</button>'
+    : '<button class="foh-btn back ghost" id="ng-howto-prev"><span class="foh-ar"></span> Anterior</button>';
+  var nextLabel = idx === panes.length - 1 ? "Nueva partida" : "Siguiente";
+  return '<div class="foh-screen">'
+    + '<div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> Manual · primeros pasos</div><div class="foh-livetag"><span class="d"></span> 4 min de lectura</div></div>'
+    + '<div class="foh-head"><div class="foh-eyebrow">Onboarding</div><h1>Cómo se juega</h1></div>'
+    + '<div class="ht-panel"><div class="ht-steps">' + sidebar + '</div>'
+    + '<div class="ht-content"><div class="ht-txt"><div class="ht-kick">' + p.kick + '</div><h2>' + p.h + '</h2><p class="ht-lead">' + p.lead + '</p><ul>' + lis + '</ul></div><div class="ht-art">' + p.art + '</div></div>'
+    + '</div>'
+    + '<div class="foh-foot">' + prevBtn + '<div class="ht-dots">' + dots + '</div><button class="foh-btn primary" id="ng-howto-next">' + nextLabel + ' <span class="foh-ar"></span></button></div>'
+    + '</div>';
 }
 
 // Game Over post-mortem (handoff entrega-menu 3). Escrito con concatenacion de strings
