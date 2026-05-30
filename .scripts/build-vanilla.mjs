@@ -7,7 +7,7 @@
 // Default output: builds/v0.2-fase3-h.html
 
 import { build } from "esbuild";
-import { writeFileSync, mkdirSync, cpSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, cpSync, existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -96,10 +96,18 @@ async function main() {
 // HTML + CSS shell + UI handlers
 // ============================================================================
 
+// Fuentes CIC embebidas en base64 (offline-first: el build no puede depender de Google
+// Fonts en runtime). Generadas por .scripts/gen-fonts.mjs → .scripts/fonts-embedded.css.
+// Si el fichero no existe (no se corrió gen-fonts), cae a los fallbacks del stack (--disp/--mono).
+const FONTS_CSS = (() => {
+  const p = join(root, ".scripts", "fonts-embedded.css");
+  return existsSync(p) ? readFileSync(p, "utf-8") : "";
+})();
+
 function renderHtml(simBundle, renderBundle) {
   return `<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>MRO Tycoon — Fase 3 Bloque H</title>
 <style>
-${CSS}
+${FONTS_CSS}${CSS}
 </style></head><body>
 ${BODY}
 <script>
