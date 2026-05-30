@@ -1,7 +1,8 @@
 <!doctype html><html lang="es"><head><meta charset="UTF-8"><title>MRO Tycoon — Fase 3 Bloque H</title>
 <style>
-:root{--bg:#0d1117;--panel:#161b22;--panel-h:#1f2733;--border:#2a3142;--border-s:#3a4256;--text:#e6e9ef;--muted:#8b95a8;--subtle:#5d6677;--accent:#4da3ff;--accent-d:#2a5a8f;--success:#3fb950;--warning:#d29922;--danger:#f85149;--aog:#ff3b3b;--base:#a78bfa;--base-d:#5b3fbe;--modal:#1a2030;--mono:"JetBrains Mono","Fira Code",Consolas,monospace;--sans:"Inter","Segoe UI",system-ui,sans-serif;--rad:6px;}
-*{box-sizing:border-box}html,body{margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;background:var(--bg);color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+:root{--bg:#090d15;--bg-grid:rgba(120,150,200,.035);--panel:#161b22;--panel-h:#1f2733;--panel-solid:#111925;--panel-2:#151f2d;--raised:#1a2536;--border:#2a3142;--border-s:#3a4256;--line:#212c3e;--line-2:#2e3a4f;--text:#e9edf4;--muted:#8b97ab;--subtle:#5d6677;--dim:#586477;--accent:#4da3ff;--accent-2:#86c5ff;--accent-d:#2a5a8f;--accent-deep:#10314f;--accent-bg:rgba(77,163,255,.12);--cyan:#3ad6c5;--success:#3fb950;--warning:#d29922;--danger:#f85149;--ok:#3fb950;--warn:#e6a93a;--bad:#f85149;--aog:#ff4242;--base:#a78bfa;--base-d:#5b3fbe;--ok-bg:rgba(63,185,80,.13);--warn-bg:rgba(230,169,58,.13);--bad-bg:rgba(248,81,73,.13);--modal:#0f1722;--mono:"JetBrains Mono","Fira Code",Consolas,monospace;--sans:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--disp:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--rad:8px;--rad-s:5px;}
+*{box-sizing:border-box}html,body{margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 700px at 78% -8%,rgba(77,163,255,.07),transparent 60%),linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px),var(--bg);background-size:auto,34px 34px,34px 34px,auto}
 .app{display:flex;flex-direction:column;height:100vh}
 .hud{display:flex;justify-content:space-between;align-items:center;padding:.4rem 1rem;background:var(--panel);border-bottom:1px solid var(--border);height:48px;flex-shrink:0}
 .hud-l,.hud-r{display:flex;gap:.5rem;align-items:center}.hud-c{display:flex;gap:1rem;align-items:center}
@@ -237,10 +238,296 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 #tut-progress .pip{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.15)}
 #tut-progress .pip.done{background:var(--accent)}
 #tut-progress .pip.cur{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+/* ============================================================================
+   REDISEÑO CIC (handoff Design Claude · port 2026-05-30). Componentes nuevos que
+   conviven con el CSS legacy: los tokens success/warning/danger siguen intactos;
+   estos componentes usan --ok/--warn/--bad/--cyan/--disp/--line/--line-2. El cajón
+   lateral es un RESKIN de .modal-back/.modal (no un elemento nuevo). El .kpi del
+   cajón va scoped a .dw-kpis para no chocar con el .kpi del HUD.
+   ========================================================================== */
+/* -- cabecera de panel CIC -- */
+.eyebrow{display:flex;align-items:center;gap:.5rem;font:600 .64rem var(--disp);text-transform:uppercase;letter-spacing:.16em;color:var(--accent);margin-bottom:.15rem}
+.eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 9px var(--accent)}
+.title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:.6rem;flex-wrap:wrap}
+.title-row h1{margin:0;font:600 1.5rem/1 var(--disp);letter-spacing:-.01em;color:var(--text)}
+.title-row .sub{font:.74rem var(--mono);color:var(--dim);margin-top:.3rem}
+/* -- segmented switch -- */
+.vswitch{display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#0c1421}
+.vswitch button{padding:.34rem .7rem;border-radius:6px;font:600 .73rem var(--disp);color:var(--muted);display:flex;align-items:center;gap:.4rem;background:transparent;border:none;transition:.13s}
+.vswitch button .vk{font:700 .62rem var(--mono);opacity:.6}
+.vswitch button:hover{color:var(--text);background:transparent}
+.vswitch button.active{background:var(--raised);color:#fff;box-shadow:0 0 0 1px var(--line-2) inset}
+.vswitch button.active .vk{color:var(--accent);opacity:1}
+/* -- barra de situación -- */
+.sitbar{border:1px solid var(--line);border-radius:var(--rad);background:linear-gradient(180deg,#121b28,#0e1620);overflow:hidden;margin-bottom:.7rem}
+.sit-tiles{display:grid;grid-template-columns:repeat(6,1fr)}
+.tile{position:relative;padding:.6rem .8rem;border-right:1px solid var(--line);cursor:pointer;transition:.14s;display:flex;flex-direction:column;gap:.15rem}
+.tile:last-child{border-right:none}
+.tile:hover{background:#ffffff05}
+.tile.sel{background:#14243a}
+.tile.sel::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent)}
+.tile .tnum{font:700 1.5rem/1 var(--mono);letter-spacing:-.02em;color:var(--text)}
+.tile .tlbl{display:flex;align-items:center;gap:.32rem;font:.6rem/1.1 var(--disp);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.tile.c-aog .tnum{color:var(--aog)}
+.tile.c-unassigned .tnum{color:var(--warn)}
+.tile.c-risk .tnum{color:var(--bad)}
+.tile.c-progress .tnum{color:var(--accent)}
+.tile.c-closed .tnum{color:var(--ok)}
+.led{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:0 0 8px currentColor}
+.led.pulse{animation:cic-pulse 1.25s ease-in-out infinite}
+@keyframes cic-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.sit-summary{display:flex;align-items:center;gap:.6rem;padding:.5rem .85rem;border-top:1px solid var(--line);background:#0d1622;font-size:.82rem;color:var(--muted);flex-wrap:wrap}
+.sit-summary .sig{font:700 .6rem var(--mono);color:var(--bad);border:1px solid var(--bad);border-radius:4px;padding:1px 5px;letter-spacing:.08em;flex:none;background:var(--bad-bg)}
+.sit-summary .sig.acc{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
+.sit-summary b{color:var(--text);font-weight:600}
+.sit-summary .reg{font-family:var(--mono);color:var(--accent-2)}
+/* -- group headers (triage) -- */
+.grp-head{display:flex;align-items:center;gap:.55rem;margin:1rem 0 .5rem;font:600 .66rem var(--disp);text-transform:uppercase;letter-spacing:.13em}
+.grp-head .gline{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.grp-head .gcount{font:700 .64rem var(--mono);color:var(--dim)}
+.grp-head.g-aog{color:var(--aog)}
+.grp-head.g-risk{color:var(--warn)}
+.grp-head.g-progress{color:var(--accent)}
+.grp-head.g-scheduled{color:var(--muted)}
+.grp-head.g-closed{color:var(--dim)}
+.grp-head .gdot{width:8px;height:8px;border-radius:2px;background:currentColor;box-shadow:0 0 8px currentColor}
+/* -- event card (variante A · triaje) -- */
+.feed{display:flex;flex-direction:column;gap:.5rem}
+.evt{position:relative;display:grid;grid-template-columns:4px 1fr auto;background:var(--panel-solid);border:1px solid var(--line);border-radius:var(--rad);overflow:hidden;cursor:pointer;transition:.14s}
+.evt:hover{border-color:var(--line-2);background:var(--panel-2);transform:translateY(-1px)}
+.evt .rail{background:var(--line-2)}
+.evt.sev-aog .rail,.evt.sev-Critical .rail{background:var(--bad);box-shadow:0 0 14px var(--bad)}
+.evt.sev-Major .rail{background:var(--warn)}
+.evt.sev-Minor .rail{background:var(--accent)}
+.evt.st-closed{opacity:.62}
+.evt.st-closed .rail{background:var(--ok)}
+.evt.st-deferred .rail{background:var(--base)}
+.evt-main{padding:.6rem .8rem;min-width:0}
+.evt-top{display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;flex-wrap:wrap}
+.evt-led{width:9px;height:9px;border-radius:50%;flex:none}
+.evt-reg{font:700 .98rem var(--mono);letter-spacing:.02em;color:var(--text)}
+.evt-type{font:.66rem var(--mono);color:var(--muted);background:#0d1622;border:1px solid var(--line);padding:1px 6px;border-radius:4px}
+.al-tab{display:inline-flex;align-items:center;gap:.3rem;font:.66rem var(--disp);color:var(--muted)}
+.al-dot{width:9px;height:9px;border-radius:2px;flex:none}
+.evt-time{margin-left:auto;font:.68rem var(--mono);color:var(--dim)}
+.evt-kind{font-size:.92rem}
+.evt-desc{font-size:.85rem;color:#d6dce6;line-height:1.4;margin-bottom:.45rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.evt-desc .wo-ref{font-family:var(--mono);color:var(--accent-2);font-size:.78rem}
+.evt-tags{display:flex;flex-wrap:wrap;gap:.32rem;align-items:center}
+.tag{font:.64rem var(--mono);padding:1px 6px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.tag.ata{color:var(--accent-2);border-color:#244966}
+.tag.cat{color:var(--cyan);border-color:#1f5650}
+.tag.sev-Major{color:var(--warn);border-color:#5c4a1c;background:var(--warn-bg)}
+.tag.sev-Critical,.tag.sev-aog{color:var(--bad);border-color:#5e2723;background:var(--bad-bg);font-weight:600}
+.tag.stand{color:var(--muted)}
+.tag.stand b{color:var(--text)}
+.tag.mel{color:var(--base);border-color:#42367a}
+/* assignment pill */
+.asg{display:inline-flex;align-items:center;gap:.34rem;font:600 .66rem var(--disp);padding:2px 8px;border-radius:20px;border:1px solid}
+.asg .led{width:7px;height:7px}
+.asg.unassigned{color:var(--warn);border-color:#5c4a1c;background:var(--warn-bg)}
+.asg.unassigned.crit{color:var(--bad);border-color:#5e2723;background:var(--bad-bg)}
+.asg.working{color:var(--accent);border-color:#244966;background:var(--accent-bg)}
+.asg.travel{color:var(--cyan);border-color:#1f5650;background:rgba(58,214,197,.1)}
+.asg.done{color:var(--ok);border-color:#27512f;background:var(--ok-bg)}
+.asg.deferred{color:var(--base);border-color:#42367a;background:rgba(167,139,250,.12)}
+/* SLA ring */
+.evt-side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;padding:.6rem .85rem;border-left:1px solid var(--line);background:#0d1521;min-width:96px}
+.ring{--p:60;--c:var(--warn);width:46px;height:46px;border-radius:50%;position:relative;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.07) 0)}
+.ring::before{content:"";position:absolute;inset:4px;border-radius:50%;background:#0d1521}
+.ring .rv{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .rv b{font:700 .82rem var(--mono);color:var(--c);line-height:1}
+.ring .rv s{font:.5rem var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--dim);text-decoration:none}
+.sla-lbl{font:.54rem var(--disp);text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+.evt-side.overdue .ring .rv b{color:var(--bad)}
+.evt-side.no-sla{color:var(--dim);font:.62rem var(--mono);text-align:center}
+/* -- variante B · telemetría -- */
+.tele{display:flex;flex-direction:column;gap:3px}
+.trow{display:grid;grid-template-columns:10px 50px 92px 1fr 150px 138px 64px;gap:.6rem;align-items:center;padding:.5rem .7rem;background:var(--panel-solid);border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:.78rem;transition:.13s;border-left:3px solid var(--line-2)}
+.trow:hover{background:var(--panel-2);border-color:var(--line-2)}
+.trow.sev-aog,.trow.sev-Critical{border-left-color:var(--bad)}
+.trow.sev-Major{border-left-color:var(--warn)}
+.trow.sev-Minor{border-left-color:var(--accent)}
+.trow.st-closed{opacity:.6;border-left-color:var(--ok)}
+.trow .tled{width:9px;height:9px;border-radius:50%}
+.trow .ttime{font:.7rem var(--mono);color:var(--dim)}
+.trow .treg{font:700 .82rem var(--mono);color:var(--text)}
+.trow .treg small{display:block;font:.6rem var(--mono);color:var(--muted);font-weight:400}
+.trow .tdesc{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#cfd6e1}
+.trow .tdesc .wo-ref{font-family:var(--mono);color:var(--accent-2);margin-right:.4rem}
+.slabar{display:flex;flex-direction:column;gap:3px}
+.slabar .sl-top{display:flex;justify-content:space-between;font:.6rem var(--mono);color:var(--muted)}
+.slabar .sl-track{height:6px;border-radius:4px;background:#1a2433;overflow:hidden}
+.slabar .sl-fill{height:100%;border-radius:4px}
+.tdots{display:flex;gap:2px}
+.tdots i{width:6px;height:6px;border-radius:50%;background:#26344a}
+.tdots i.done{background:var(--ok)}
+.tdots i.active{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+/* -- variante C · tablero -- */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;align-items:start}
+.board .col{background:#0d1420;border:1px solid var(--line);border-radius:var(--rad);min-height:120px}
+.col-head{display:flex;align-items:center;gap:.45rem;padding:.55rem .75rem;border-bottom:1px solid var(--line);font:600 .66rem var(--disp);text-transform:uppercase;letter-spacing:.1em}
+.col-head .cdot{width:8px;height:8px;border-radius:2px;box-shadow:0 0 7px currentColor}
+.col-head .cn{margin-left:auto;font:700 .66rem var(--mono);color:var(--dim)}
+.board .col.unassigned .col-head{color:var(--warn)}
+.board .col.progress .col-head{color:var(--accent)}
+.board .col.closed .col-head{color:var(--ok)}
+.col-body{padding:.55rem;display:flex;flex-direction:column;gap:.5rem}
+.bcard{background:var(--panel-solid);border:1px solid var(--line);border-radius:6px;padding:.55rem .65rem;cursor:pointer;border-top:2px solid var(--line-2);transition:.13s}
+.bcard:hover{background:var(--panel-2);border-color:var(--line-2)}
+.bcard.sev-aog,.bcard.sev-Critical{border-top-color:var(--bad)}
+.bcard.sev-Major{border-top-color:var(--warn)}
+.bcard.sev-Minor{border-top-color:var(--accent)}
+.bc-top{display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem}
+.bc-reg{font:700 .84rem var(--mono);color:var(--text)}
+.bc-time{margin-left:auto;font:.62rem var(--mono);color:var(--dim)}
+.bc-desc{font-size:.74rem;color:#c8d0db;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.4rem}
+.bc-foot{display:flex;align-items:center;gap:.4rem;justify-content:space-between;flex-wrap:wrap}
+/* -- Oficina · mecánicos como tarjetas -- */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.6rem}
+.mcard{background:var(--panel-solid);border:1px solid var(--line);border-radius:var(--rad);padding:.7rem .8rem;cursor:pointer;transition:.14s}
+.mcard:hover{border-color:var(--line-2);background:var(--panel-2);transform:translateY(-1px)}
+.mcard-top{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
+.mc-av{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;font:700 .76rem var(--mono);background:linear-gradient(135deg,#1d4f7e,#0d2236);color:var(--accent-2);border:1px solid #2c5e8e}
+.mc-id{min-width:0;flex:1}
+.mc-name{font:600 .92rem var(--disp);letter-spacing:.01em;color:var(--text)}
+.mc-base{font:.66rem var(--mono);color:var(--dim)}
+.mc-state{display:inline-flex;align-items:center;gap:.35rem;font:600 .62rem var(--disp);padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap}
+.mc-state .led{width:7px;height:7px}
+.mc-task{font-size:.78rem;color:#cbd3df;margin-bottom:.55rem;min-height:1.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-bars{display:flex;align-items:center;gap:1rem;margin-bottom:.5rem}
+.mc-metric{display:flex;align-items:center;gap:.4rem}
+.mc-metric .mk{font:.6rem var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+.mc-metric .mv{font:600 .76rem var(--mono)}
+.mc-bar{width:74px;height:6px;border-radius:4px;background:#1a2433;overflow:hidden}
+.mc-fill{height:100%;border-radius:4px}
+.mc-fill.ok{background:var(--ok)}
+.mc-fill.warn{background:var(--warn)}
+.mc-fill.bad{background:var(--bad)}
+.mc-foot{display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-top:1px solid var(--line);padding-top:.5rem}
+.tag.shift-morning{color:var(--warn);border-color:#5c4a1c}
+.tag.shift-afternoon{color:var(--accent);border-color:#244966}
+.tag.shift-night{color:var(--base);border-color:#42367a}
+.tag.shift-off{color:var(--dim)}
+/* coverage 24h en bandas */
+.cov{margin-top:.3rem;border:1px solid var(--line);border-radius:var(--rad);background:#0d1521;padding:.7rem .8rem}
+.cov-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+.cov-head .ck{font:600 .64rem var(--disp);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.cov-now-lbl{font-size:.64rem;color:var(--accent)}
+.cov-track{position:relative;display:flex;gap:3px;height:46px}
+.cov-band{position:relative;border-radius:6px;overflow:hidden;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex:1}
+.cb-fill{position:absolute;inset:0}
+.cb-l{position:relative;font:600 .72rem var(--disp);color:var(--text);display:flex;align-items:center;gap:.4rem}
+.cb-l b{font:700 .9rem var(--mono);color:var(--text)}
+.cb-l b.zero{color:var(--dim)}
+.cov-now{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--accent);box-shadow:0 0 8px var(--accent);z-index:2}
+.cov-now::before{content:"▾";position:absolute;top:-13px;left:-5px;color:var(--accent);font-size:.7rem}
+.cov-legend{margin-top:.5rem;display:flex;gap:.5rem;align-items:center;font:.66rem var(--disp);color:var(--muted);flex-wrap:wrap}
+.cov-legend b.zero{color:var(--dim);font-family:var(--mono)}
+.cov-legend .dim{color:var(--dim)}
+/* -- Schedule · timeline de filas -- */
+.ftable{display:flex;flex-direction:column;gap:2px}
+.frow{display:grid;grid-template-columns:74px 56px 1fr 188px 148px;gap:.6rem;align-items:center;padding:.5rem .7rem;background:var(--panel-solid);border:1px solid var(--line);border-radius:6px;cursor:pointer;transition:.13s;border-left:3px solid transparent}
+.frow:hover{background:var(--panel-2);border-color:var(--line-2)}
+.frow.handled{border-left-color:var(--accent)}
+.frow.lead{border-left-color:var(--line-2);opacity:.78}
+.frow.past{opacity:.5}
+.frow.next{background:#13243a;border-color:#27557f;border-left-color:var(--accent)}
+.frow.fhead{background:transparent;border:none;cursor:default;padding:.2rem .7rem;font:600 .58rem var(--disp);text-transform:uppercase;letter-spacing:.1em;color:var(--dim)}
+.frow.fhead:hover{background:transparent}
+.ftime{font:600 .82rem var(--mono);display:flex;align-items:center;gap:.3rem;color:var(--text)}
+.fchk{color:var(--ok)}
+.ftype{font:700 .64rem var(--mono);text-align:center;padding:2px 0;border-radius:4px;letter-spacing:.06em}
+.ftype.arr{color:var(--ok);background:var(--ok-bg);border:1px solid #27512f}
+.ftype.dep{color:var(--warn);background:var(--warn-bg);border:1px solid #5c4a1c}
+.fmain{display:flex;align-items:center;gap:.55rem;min-width:0;flex-wrap:wrap}
+.fcs{font:700 .84rem var(--mono);color:var(--text)}
+.froute{font:.74rem var(--mono);color:var(--muted)}
+.fmodel{font:.7rem var(--mono);color:var(--dim)}
+.fov{font:.62rem var(--disp);color:var(--base);border:1px solid #42367a;border-radius:4px;padding:0 5px}
+.fop{display:flex;align-items:center;gap:.4rem;min-width:0}
+.fop .op-h{font:.78rem var(--disp);color:var(--text)}
+.fop .op-l{font:.78rem var(--disp);color:var(--muted)}
+.fop .op-code{font:.66rem var(--mono);color:var(--dim);margin-left:auto}
+.fstatus{text-align:right}
+.st-pill{font:600 .64rem var(--disp);padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap}
+.st-pill.ok{color:var(--accent);border-color:#244966;background:var(--accent-bg)}
+.st-pill.lead{color:var(--dim);border-color:var(--line-2)}
+@media(max-width:1180px){.frow{grid-template-columns:60px 48px 1fr 120px}.frow .fstatus{display:none}}
+/* -- Log de actividad (reskin de .notifs) -- */
+.notifs h3{font:600 .66rem var(--disp);text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.log-live{display:inline-flex;align-items:center;gap:.3rem;font:600 .56rem var(--mono);color:var(--ok);float:right}
+.notif{position:relative;padding-left:.7rem}
+.notif::before{content:"";position:absolute;left:0;top:.4rem;bottom:.4rem;width:3px;border-radius:3px;background:var(--line-2)}
+.notif.success::before{background:var(--ok)}
+.notif.warning::before{background:var(--warn)}
+.notif.danger::before{background:var(--bad)}
+.notif.info::before{background:var(--muted)}
+.notif .reg{font-family:var(--mono);color:var(--accent-2)}
+/* -- Cajón lateral: reskin de .modal-back/.modal -- */
+.modal-back{position:fixed;inset:0;background:rgba(5,8,13,.6);backdrop-filter:blur(3px);display:none;align-items:stretch;justify-content:flex-end;z-index:100}
+.modal-back.open{display:flex}
+.modal{background:linear-gradient(180deg,#0f1722,#0c121c);border:none;border-left:1px solid var(--line-2);border-radius:0;width:min(540px,96vw);max-width:none;height:100vh;max-height:100vh;box-shadow:-24px 0 60px rgba(0,0,0,.5);display:flex;flex-direction:column;animation:drawer-in .26s cubic-bezier(.2,.7,.2,1)}
+@keyframes drawer-in{from{transform:translateX(40px);opacity:.4}to{transform:translateX(0);opacity:1}}
+/* dw-* (fichas reskinneadas a cajón) */
+.dw-head{padding:1rem 1.1rem .8rem;border-bottom:1px solid var(--line);position:relative}
+.dw-head .dw-rail{position:absolute;left:0;top:0;bottom:0;width:4px}
+.dw-eyebrow{display:flex;align-items:center;gap:.5rem;font:600 .62rem var(--disp);text-transform:uppercase;letter-spacing:.13em;color:var(--accent)}
+.dw-close{position:absolute;top:.85rem;right:.9rem;width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:#0e1722;color:var(--muted);font-size:1.1rem;cursor:pointer;z-index:2}
+.dw-close:hover{color:var(--text);border-color:var(--line-2)}
+.dw-title{display:flex;align-items:baseline;gap:.7rem;margin-top:.5rem;flex-wrap:wrap}
+.dw-title .reg{font:700 1.4rem var(--mono);letter-spacing:.01em;color:var(--text)}
+.dw-title .type{font:.74rem var(--mono);color:var(--muted)}
+.dw-sub{margin-top:.45rem;font-size:.86rem;color:#d3dae5;line-height:1.45}
+.dw-body{overflow-y:auto;padding:1rem 1.1rem 2.5rem;flex:1}
+.dw-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1rem}
+.dw-kpis .kpi{background:#0e1622;border:1px solid var(--line);border-radius:7px;padding:.5rem .55rem;text-align:center}
+.dw-kpis .kpi .kl{font:.52rem var(--disp);text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}
+.dw-kpis .kpi .kv{font:700 .98rem var(--mono);margin-top:.18rem;color:var(--text)}
+.dw-kpis .kpi.bad .kv{color:var(--bad)}
+.dw-kpis .kpi.warn .kv{color:var(--warn)}
+.dw-kpis .kpi.ok .kv{color:var(--ok)}
+.dw-kpis .kpi.acc .kv{color:var(--accent)}
+.dw-sec{margin:1.1rem 0 .4rem;font:600 .62rem var(--disp);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);display:flex;align-items:center;gap:.5rem}
+.dw-sec::after{content:"";flex:1;height:1px;background:var(--line)}
+.dw-amm{background:#0c1420;border:1px solid var(--line);border-radius:7px;padding:.7rem .8rem;font-size:.84rem;line-height:1.55;color:#cdd5e0}
+.dw-amm .ammref{font:.7rem var(--mono);color:var(--accent-2);display:inline-block;background:var(--accent-bg);border:1px solid #244966;border-radius:4px;padding:0 5px;margin-top:.3rem}
+.dw-list{list-style:none;margin:.3rem 0 0;padding:0;display:flex;flex-direction:column;gap:.3rem}
+.dw-list li{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#cdd5e0;padding:.34rem .5rem;background:#0d1520;border:1px solid var(--line);border-radius:6px}
+.dw-list li .ico{color:var(--dim)}
+.tl{display:flex;flex-direction:column;gap:0;margin-top:.3rem}
+.tl-step{display:grid;grid-template-columns:24px 1fr auto;gap:.6rem;align-items:center;padding:.4rem 0;position:relative}
+.tl-step::before{content:"";position:absolute;left:11px;top:0;bottom:0;width:2px;background:var(--line)}
+.tl-step:first-child::before{top:50%}
+.tl-step:last-child::before{bottom:50%}
+.tl-node{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;z-index:1;background:#0e1622;border:2px solid var(--line);font:.7rem var(--mono);color:var(--dim)}
+.tl-step.done .tl-node{border-color:var(--ok);color:var(--ok);background:#0e1c14}
+.tl-step.active .tl-node{border-color:var(--accent);color:var(--accent);box-shadow:0 0 10px rgba(77,163,255,.4)}
+.tl-step .tl-name{font-size:.82rem;color:var(--text)}
+.tl-step.pending .tl-name{color:var(--dim)}
+.tl-step .tl-meta{font:.66rem var(--mono);color:var(--dim)}
+.team{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem}
+.mchip{display:flex;align-items:center;gap:.45rem;padding:.32rem .55rem;border:1px solid var(--line);border-radius:20px;background:#0e1622;font-size:.78rem;cursor:pointer;transition:.13s}
+.mchip:hover{border-color:var(--accent);background:var(--accent-bg)}
+.mchip .av{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 .6rem var(--mono);background:linear-gradient(135deg,#1d4f7e,#0d2236);color:var(--accent-2)}
+.mchip .cat{font:.6rem var(--mono);color:var(--cyan)}
+.dw-actions{display:flex;gap:.5rem;margin-top:1.2rem;flex-wrap:wrap}
+.dw-body .btn{flex:1;min-width:120px;padding:.6rem;border-radius:8px;font:600 .82rem var(--disp);border:1px solid var(--line-2);background:#0e1722;color:var(--text);transition:.13s;cursor:pointer}
+.dw-body .btn:hover{border-color:var(--accent);color:#fff;background:#0e1722}
+.dw-body .btn.primary{background:linear-gradient(180deg,#2f6fb0,#234f80);border-color:var(--accent);color:#fff}
+.dw-body .btn.primary:hover{box-shadow:0 0 18px rgba(77,163,255,.3)}
+.dw-body .btn.warn{border-color:#5c4a1c;color:var(--warn)}
+.linkrow{display:flex;gap:.5rem;margin-top:.6rem;flex-wrap:wrap}
+.linkcard{flex:1;min-width:130px;display:flex;align-items:center;gap:.55rem;padding:.55rem .65rem;border:1px solid var(--line);border-radius:8px;background:#0d1520;cursor:pointer;transition:.13s}
+.linkcard:hover{border-color:var(--line-2);background:var(--panel-2)}
+.linkcard .lk-ic{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;flex:none}
+.linkcard .lk-t{font:.6rem var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+.linkcard .lk-v{font:600 .82rem var(--mono);color:var(--text)}
+.linkcard .lk-go{margin-left:auto;color:var(--dim)}
 </style></head><body>
 <div class="app">
   <header class="hud">
-    <div class="hud-l"><span class="brand">MRO Tycoon</span><span class="ver">v0.2-alpha · Fase 3 H+I+J+K+L+M</span></div>
+    <div class="hud-l"><span class="brand">MRO Tycoon</span><span class="ver">v0.7 · CIC UI</span></div>
     <div class="hud-c"><span class="clock" id="clock">Día 1 · 00:00</span><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="kpi" style="display:none;cursor:pointer;margin-left:.5rem" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
     <div class="hud-r">
       <div class="kpi">💰 <strong id="bal">250.000 €</strong></div>
@@ -280,7 +567,7 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
       <button data-tab="economy">💼 Economía</button>
     </aside>
     <main class="panel" id="panel-content"></main>
-    <aside class="notifs"><h3>Notificaciones</h3><div id="notif-list"></div></aside>
+    <aside class="notifs"><h3>Log de actividad <span class="log-live"><span class="led pulse" style="color:var(--ok);background:var(--ok)"></span>LIVE</span></h3><div id="notif-list"></div></aside>
   </div>
   <div class="modal-back" id="modal-back"><div class="modal" id="modal-content"></div></div>
 </div>
@@ -93611,11 +93898,14 @@ let detailFleetReg = null;   // F5B-ε: matrícula seleccionada para modal de av
 let detailMechId = null;     // F5B-ε: id mecánico seleccionado para modal
 let detailCheckId = null;    // F5C extra: instanceId de check A/C/D para modal
 let detailContractId = null; // F5C extra: id de contrato para modal
+let detailFlightId = null;   // Rediseño CIC (2026-05-30): "callsign|type|min" del vuelo para el cajón
 let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
 let detailDailyAirplaneId = null; // Pivot 2026-05-24: instanceId avión para modal daily check detallado
 let detailAirplaneType = null;    // Pivot 2026-05-24: "MODEL/ENGINE" para modal tipo avión
 let scheduleFilter = "all";  // Pivot línea pura · P3: filtro panel schedule "all"|"arrival"|"departure"
 let eventFilter = "open";    // Pivot línea pura · Event Tracking: "open" (activos) | "all"
+let variant = "triage";      // Rediseño CIC (2026-05-30): variante Operaciones "triage"|"tele"|"board"
+let sitFilter = null;        // Rediseño CIC: filtro activo de la barra de situación (null = sin filtro)
 let manualCertId = "";
 let manualHelperIds = [];
 let hasSavedSlot = false;
@@ -94203,8 +94493,84 @@ function buildEventFeed(){
   // Lite: skip — el detalle ya está en el badge HUD Compliance.
 
   // Orden cronológico inverso (más reciente primero).
+  events.forEach(enrichEvent);
   events.sort((a, b) => b.sortMinute - a.sortMinute);
   return events;
+}
+
+// ── Rediseño CIC (2026-05-30): enriquecimiento estructurado para sitbar + evCard.
+// No rompe title/meta (se conservan como fallback). Deriva los campos que el feed
+// nuevo necesita (handoff §2: conservar buildEventFeed como fuente y mapear a evCard).
+function airlineForAirplane(ap){
+  if (!ap) return null;
+  const c = game.contracts.find(cc => cc.id === ap.contractId);
+  if (!c) return null;
+  const a = game.airlines.find(x => x.id === c.airlineId);
+  return a ? { code: a.iataCode, name: a.name, color: a.color || "#5a6577" } : null;
+}
+function airlineByReg(reg){
+  const ap = (game.airplanes || []).find(a => a.registration === reg)
+        || (game.archive?.airplanes || []).find(a => a.registration === reg);
+  return airlineForAirplane(ap);
+}
+function enrichEvent(e){
+  const now = game.clock.minute;
+  if (e.kind === "wo"){
+    const wo = workOrderByInstance(e.clickWoId);
+    if (!wo) return;
+    const tpl = game.templates.find(t => t.id === wo.templateId);
+    const ap = airplaneByInstance(wo.airplaneInstanceId);
+    const al = airlineForAirplane(ap);
+    const closed = wo.phase === "Completed" || wo.phase === "Failed";
+    const deferred = wo.phase === "Deferred";
+    e.reg = wo.airplaneRegistration;
+    e.model = ap?.model; e.eng = ap?.engineVariant;
+    e.alCode = al?.code; e.alName = al?.name; e.alColor = al?.color;
+    e.stand = ap?.standId; e.flight = ap?.nextDepartureCallsign || ap?.arrivalCallsign || null;
+    e.ata = tpl?.ata; e.cat = tpl?.requiredCategory; e.sev = tpl?.severity || "Minor";
+    e.aog = !!tpl?.isAOG;
+    e.slaMin = (closed || deferred) ? null : (wo.slaMinute - now);
+    e.melCategory = melCat(tpl);
+    e.melDays = (deferred && wo.deferralExpiryMinute != null) ? Math.max(0, Math.ceil((wo.deferralExpiryMinute - now)/S.DAY_MINUTES)) : null;
+    e.parts = tpl?.partsRequired || []; e.tools = tpl?.toolsRequired || [];
+    e.descShort = tpl?.description || wo.templateId; e.amm = tpl?.notes || null;
+    e.phasePctVal = phasePct(wo);
+    e.team = wo.assignedMechanicIds.slice();
+    e.assignState = deferred ? "deferred"
+      : closed ? "done"
+      : e.team.length > 0 ? (wo.phase === "ToPlane" ? "travel" : "working")
+      : "unassigned";
+    if (e.assignState === "unassigned") e.hint = inferAssignmentStatus(wo, tpl, ap).replace(/^⚠️\s*/, "");
+  } else if (e.kind === "daily"){
+    const ap = airplaneByInstance(e.clickDailyAirplaneId);
+    const wos = e.subtaskBar || [];
+    const al = airlineForAirplane(ap);
+    const team = [...new Set(wos.flatMap(w => w.assignedMechanicIds))];
+    const anyActive = wos.some(w => ["MainTask","Test","Rework","Inspection"].includes(w.phase));
+    const closed = e.open === false;
+    e.reg = ap?.registration; e.model = ap?.model; e.eng = ap?.engineVariant;
+    e.alCode = al?.code; e.alName = al?.name; e.alColor = al?.color;
+    e.stand = ap?.standId; e.flight = ap?.arrivalCallsign || null;
+    e.ata = 5; e.cat = "B1"; e.sev = "Minor"; e.aog = false;
+    e.slaMin = null; e.team = team;
+    e.assignState = closed ? "done" : anyActive ? "working" : team.length > 0 ? "travel" : "unassigned";
+    if (e.assignState === "unassigned") e.hint = "sin B1 idle";
+    e.descShort = "Daily check pernocta";
+  } else if (e.kind === "check"){
+    const c = game.maintenanceChecks.find(x => x.instanceId === e.clickCheckId);
+    if (!c) return;
+    const al = airlineByReg(c.registration);
+    e.reg = c.registration; e.alCode = al?.code; e.alName = al?.name; e.alColor = al?.color;
+    e.stand = c.standId; e.sev = "base"; e.aog = false; e.cat = "B1/B2";
+    e.team = c.assignedMechanicIds.slice();
+    const closed = !(c.phase === "Scheduled" || c.phase === "InProgress");
+    e.assignState = closed ? "done" : e.team.length > 0 ? "working" : "unassigned";
+    e.slaMin = null; e.descShort = c.type + "-check";
+  } else {
+    // randomEvent / audit: cards de evento (sin SLA, sin asignación)
+    e.sev = e.kind === "randomEvent" ? "Major" : "Minor";
+    e.aog = false; e.slaMin = null; e.assignState = null;
+  }
 }
 
 // Pivot iteración 2026-05-24: stepper de subtareas para daily check (WP que agrupa WOs).
@@ -94288,60 +94654,197 @@ function renderPhaseStepper(wo, tpl){
   return html;
 }
 
-function renderHangarEventTracking(){
+// Rediseño CIC (2026-05-30): el nombre legacy renderHangarEventTracking se conserva
+// (lo llamaba renderOperations) pero ahora delega al feed CIC con sitbar + variantes.
+function renderHangarEventTracking(){ return renderEventFeed(); }
+
+// ── helpers de presentación del feed CIC ──
+const PHASE_LABELS = [["ToPlane","Travel"],["Inspection","T-shoot"],["MainTask","Fix"],["Test","Test"],["Completed","Release"]];
+function groupOf(e){
+  if (!e.open) return "closed";
+  if (e.aog) return "aog";
+  if (e.kind === "randomEvent" || e.kind === "audit" || e.assignState === "deferred") return "scheduled";
+  if (e.assignState === "unassigned") return "risk";
+  return "progress";
+}
+function slaInfo(e){
+  const m = e.slaMin;
+  if (m == null) return { none: true };
+  const pct = Math.max(4, Math.min(100, (m / 120) * 100));
+  let c = "var(--ok)";
+  if (m <= 30) c = "var(--bad)"; else if (m <= 60) c = "var(--warn)"; else if (m <= 90) c = "var(--accent)";
+  return { pct, color: c, mins: m, overdue: m <= 0 };
+}
+function sevClassOf(e){ return e.aog ? "sev-aog" : ("sev-" + (e.sev || "Minor")); }
+function ledColorOf(e){
+  const g = groupOf(e);
+  return g==="aog"?"var(--aog)":g==="risk"?"var(--warn)":g==="progress"?"var(--accent)":g==="closed"?"var(--ok)":"var(--base)";
+}
+function evDataAttr(e){
+  return e.clickWoId ? `data-wo="${esc(e.clickWoId)}"`
+    : e.clickCheckId ? `data-check-id="${esc(e.clickCheckId)}"`
+    : e.clickDailyAirplaneId ? `data-daily-airplane="${esc(e.clickDailyAirplaneId)}"`
+    : "";
+}
+function asgPill(e){
+  const a = e.assignState;
+  if (!a) return "";
+  const names = (e.team || []).map(id => { const m = game.mechanics.find(x => x.id === id); return m ? m.name.split(" ")[0] : id; }).join(", ");
+  if (a === "unassigned"){
+    const crit = e.aog || e.sev === "Critical" || (e.slaMin != null && e.slaMin <= 45);
+    return `<span class="asg unassigned ${crit?'crit':''}"><span class="led" style="background:currentColor"></span>SIN ASIGNAR${e.hint?` · ${esc(e.hint)}`:""}</span>`;
+  }
+  if (a === "working") return `<span class="asg working"><span class="led" style="background:currentColor"></span>EQUIPO · ${esc(names)}</span>`;
+  if (a === "travel")  return `<span class="asg travel"><span class="led" style="background:currentColor"></span>EN TRÁNSITO · ${esc(names)}</span>`;
+  if (a === "done")    return `<span class="asg done"><span class="led" style="background:currentColor"></span>CERRADO${names?` · ${esc(names)}`:""}</span>`;
+  if (a === "deferred")return `<span class="asg deferred"><span class="led" style="background:currentColor"></span>DIFERIDO${e.melCategory?` · MEL ${esc(e.melCategory)}`:""}${e.melDays!=null?` (${e.melDays}d)`:""}</span>`;
+  return "";
+}
+function evStepper(e){
+  if (e.kind === "wo" && e.clickWoId){
+    const w = workOrderByInstance(e.clickWoId);
+    const tpl = w ? game.templates.find(t => t.id === w.templateId) : null;
+    if (w && tpl) return renderPhaseStepper(w, tpl);
+  } else if (e.kind === "daily" && e.subtaskBar){
+    return renderSubtaskStepper(e.subtaskBar);
+  }
+  return "";
+}
+function evRing(e){
+  const sla = slaInfo(e);
+  if (sla.none) return `<div class="evt-side no-sla">SIN<br>SLA</div>`;
+  return `<div class="evt-side ${sla.overdue?'overdue':''}"><div class="ring" style="--p:${sla.pct};--c:${sla.color}"><div class="rv"><b>${sla.overdue?'+':''}${Math.abs(sla.mins)}m</b><s>SLA</s></div></div><div class="sla-lbl">${e.flight?esc(e.flight):"&nbsp;"}</div></div>`;
+}
+function evDesc(e){ return esc(e.descShort || (e.title || "").replace(/<[^>]*>/g, "")); }
+function evCard(e){
+  const head = e.reg
+    ? `<span class="evt-reg">${esc(e.reg)}</span>${e.model?`<span class="evt-type">${esc(e.model)}/${esc(e.eng)}</span>`:""}${e.alName?`<span class="al-tab"><span class="al-dot" style="background:${e.alColor||'#5a6577'}"></span>${esc(e.alName)}</span>`:""}`
+    : `<span class="evt-reg" style="font-family:var(--disp);font-size:.86rem">${evDesc(e).split("—")[0]}</span>`;
+  const tags = [
+    e.ata!=null?`<span class="tag ata">ATA ${e.ata}</span>`:"",
+    e.cat?`<span class="tag cat">${esc(e.cat)}</span>`:"",
+    (e.sev&&e.sev!=="Minor"&&e.sev!=="base")?`<span class="tag sev-${e.sev}">${esc(e.sev)}</span>`:"",
+    e.stand?`<span class="tag stand">Stand <b>${esc(e.stand)}</b></span>`:"",
+    (e.assignState==="deferred"&&e.melCategory)?`<span class="tag mel">MEL ${esc(e.melCategory)}</span>`:"",
+  ].join("");
+  const led = ledColorOf(e);
+  return `<article class="evt ${sevClassOf(e)} st-${groupOf(e)}${e.assignState==='deferred'?' st-deferred':''}" ${evDataAttr(e)}>
+    <div class="rail"></div>
+    <div class="evt-main">
+      <div class="evt-top"><span class="evt-led" style="background:${led};box-shadow:0 0 8px ${led}"></span><span class="evt-kind">${e.icon}</span>${head}<span class="evt-time mono">${fmtClock(e.sortMinute)}</span></div>
+      <div class="evt-desc">${evDesc(e)}</div>
+      <div class="evt-tags">${tags}${asgPill(e)}</div>
+      ${evStepper(e)}
+    </div>
+    ${evRing(e)}
+  </article>`;
+}
+const FEED_GROUPS = [
+  {k:"aog", lbl:"AOG · Atención inmediata", cls:"g-aog"},
+  {k:"risk", lbl:"En riesgo · Sin asignar", cls:"g-risk"},
+  {k:"progress", lbl:"En curso", cls:"g-progress"},
+  {k:"scheduled", lbl:"Programado / diferido", cls:"g-scheduled"},
+  {k:"closed", lbl:"Cerrado hoy", cls:"g-closed"},
+];
+function scopedFeed(){
   const feed = buildEventFeed();
-  const filtered = eventFilter === "open" ? feed.filter(e => e.open) : feed;
-  const openCount = feed.filter(e => e.open).length;
-  const closedCount = feed.length - openCount;
-
-  let h = `<div class="skin-bar" style="margin-bottom:.75rem">
-    <span class="skin-label">Vista:</span>
-    <button class="${eventFilter==='open'?'active':''}" data-event-filter="open" style="padding:.25rem .6rem;font-size:.8rem">Activos (${openCount})</button>
-    <button class="${eventFilter==='all'?'active':''}" data-event-filter="all" style="padding:.25rem .6rem;font-size:.8rem">Todos (${feed.length})</button>
-    <span class="skin-label" style="margin-left:1rem;color:var(--muted)">cerrados: ${closedCount}</span>
+  const todayStart = (currentGameDay() - 1) * S.DAY_MINUTES;
+  return eventFilter === "all" ? feed : feed.filter(e => e.open || e.sortMinute >= todayStart);
+}
+function applySitFilter(list){
+  if (!sitFilter) return list;
+  if (sitFilter === "ground") return list.filter(e => e.open && e.stand);
+  if (sitFilter === "aog") return list.filter(e => e.aog && e.open);
+  if (sitFilter === "unassigned") return list.filter(e => e.assignState === "unassigned");
+  if (sitFilter === "risk") return list.filter(e => e.open && e.slaMin != null && e.slaMin <= 45);
+  if (sitFilter === "progress") return list.filter(e => ["working","travel"].includes(e.assignState));
+  if (sitFilter === "closed") return list.filter(e => !e.open);
+  return list;
+}
+function feedTriage(list){
+  let h = "";
+  for (const g of FEED_GROUPS){
+    const items = list.filter(e => groupOf(e) === g.k);
+    if (!items.length) continue;
+    h += `<div class="grp-head ${g.cls}"><span class="gdot"></span>${g.lbl}<span class="gline"></span><span class="gcount">${items.length}</span></div>`;
+    h += `<div class="feed">${items.map(evCard).join("")}</div>`;
+  }
+  return h || '<div class="empty">Sin eventos en este filtro.</div>';
+}
+function teleRow(e){
+  const sla = slaInfo(e);
+  const slaCell = sla.none
+    ? `<div class="slabar"><div class="sl-top"><span>—</span></div></div>`
+    : `<div class="slabar"><div class="sl-top"><span>SLA</span><span style="color:${sla.color}">${sla.overdue?'+':''}${Math.abs(sla.mins)}m</span></div><div class="sl-track"><div class="sl-fill" style="width:${sla.pct}%;background:${sla.color}"></div></div></div>`;
+  let curIdx = PHASE_LABELS.findIndex(p => p[0] === e.phase); if (e.phase==="Completed") curIdx=4; if (e.phase==="Rework") curIdx=2;
+  const dots = (e.kind==="randomEvent"||e.kind==="audit"||e.assignState==="deferred") ? "" : `<div class="tdots">${PHASE_LABELS.map((p,i)=>`<i class="${i<curIdx?'done':i===curIdx?'active':''}"></i>`).join("")}</div>`;
+  const led = ledColorOf(e);
+  return `<div class="trow ${sevClassOf(e)} st-${groupOf(e)}" ${evDataAttr(e)}>
+    <span class="tled" style="background:${led};box-shadow:0 0 8px ${led}"></span>
+    <span class="ttime">${fmtClock(e.sortMinute)}</span>
+    <span class="treg">${esc(e.reg||"—")}<small>${esc(e.model||e.alCode||"")}</small></span>
+    <span class="tdesc">${evDesc(e)}</span>
+    ${slaCell}
+    <span>${asgPill(e)}</span>
+    ${dots}
   </div>`;
-
-  if (filtered.length === 0) {
-    h += eventFilter === "open"
-      ? '<div class="empty">No hay eventos activos. Pulsa 1× / 2× / 5× para que el reloj avance.</div>'
-      : '<div class="empty">Sin eventos todavía.</div>';
-    return h;
-  }
-
-  h += '<div style="display:flex;flex-direction:column;gap:.5rem">';
-  for (const e of filtered) {
-    const stateBadge = e.open
-      ? `<span class="wo-phase phase-${e.phase}" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">OPEN · ${esc(e.phase)}</span>`
-      : `<span class="wo-phase" style="background:rgba(139,150,180,.15);color:var(--muted);border-color:rgba(139,150,180,.3)">CLOSED · ${esc(e.phase)}</span>`;
-    const dataAttr = e.clickWoId ? `data-wo="${e.clickWoId}"`
-      : e.clickCheckId ? `data-check-id="${e.clickCheckId}"`
-      : e.clickDailyAirplaneId ? `data-daily-airplane="${esc(e.clickDailyAirplaneId)}"`
-      : e.clickFleetReg ? `data-fleet-reg="${esc(e.clickFleetReg)}"` : "";
-    const clickable = dataAttr ? 'style="cursor:pointer"' : '';
-    // Para WO callouts (no daily, no check, no random event), renderizar stepper
-    // visual de fases: Travel → T-shoot → Fix → Test → Release.
-    // Para daily checks, renderizar stepper de SUBTAREAS (N subtareas, cada una un step).
-    let stepper = "";
-    if (e.kind === "wo" && e.clickWoId) {
-      const w = game.workOrders.find(ww => ww.instanceId === e.clickWoId);
-      const tpl = w ? game.templates.find(t => t.id === w.templateId) : null;
-      if (w && tpl) stepper = renderPhaseStepper(w, tpl);
-    } else if (e.kind === "daily" && e.subtaskBar) {
-      stepper = renderSubtaskStepper(e.subtaskBar);
-    }
-    h += `<article class="wo-card${e.open ? '' : ' base'}" ${dataAttr} ${clickable}>
-      <header class="wo-head">
-        <span class="event-kind" style="font-size:1.1rem">${e.icon}</span>
-        <span class="wo-id mono">${fmtClock(e.sortMinute)}</span>
-        <span class="wo-id">${e.id}</span>
-        ${stateBadge}
-      </header>
-      <div class="wo-desc">${e.title}</div>
-      <div class="wo-meta">${e.meta.map(m => `<span>${esc(String(m))}</span>`).join("")}</div>
-      ${stepper}
-    </article>`;
-  }
-  h += '</div>';
+}
+function feedTele(list){
+  const ord = {aog:0,risk:1,progress:2,scheduled:3,closed:4};
+  const sorted = list.slice().sort((a,b)=> (ord[groupOf(a)]-ord[groupOf(b)]) || ((a.slaMin??9999)-(b.slaMin??9999)));
+  return sorted.length ? `<div class="tele">${sorted.map(teleRow).join("")}</div>` : '<div class="empty">Sin eventos en este filtro.</div>';
+}
+function bCard(e){
+  const led = ledColorOf(e);
+  return `<div class="bcard ${sevClassOf(e)}" ${evDataAttr(e)}>
+    <div class="bc-top"><span class="evt-led" style="background:${led};box-shadow:0 0 7px ${led}"></span><span class="bc-reg">${esc(e.reg||"—")}</span>${e.alColor?`<span class="al-dot" style="background:${e.alColor}"></span>`:""}<span class="bc-time">${fmtClock(e.sortMinute)}</span></div>
+    <div class="bc-desc">${evDesc(e)}</div>
+    <div class="bc-foot">${(e.sev&&e.sev!=="Minor"&&e.sev!=="base")?`<span class="tag sev-${e.sev}">${esc(e.sev)}</span>`:`<span class="tag ata">ATA ${e.ata??"—"}</span>`}${asgPill(e)}</div>
+  </div>`;
+}
+function feedBoard(list){
+  const cols = [
+    {cls:"unassigned", lbl:"Sin asignar", color:"var(--warn)", items:list.filter(e=>e.open && e.assignState==="unassigned")},
+    {cls:"progress", lbl:"En curso", color:"var(--accent)", items:list.filter(e=>e.open && ["working","travel","deferred"].includes(e.assignState))},
+    {cls:"closed", lbl:"Cerrado / evento", color:"var(--ok)", items:list.filter(e=>!e.open || e.kind==="randomEvent")},
+  ];
+  return `<div class="board">${cols.map(c=>`<div class="col ${c.cls}"><div class="col-head"><span class="cdot" style="background:${c.color};color:${c.color}"></span>${c.lbl}<span class="cn">${c.items.length}</span></div><div class="col-body">${c.items.map(bCard).join("")||'<div class="empty" style="padding:1rem">—</div>'}</div></div>`).join("")}</div>`;
+}
+function renderSitbar(feed){
+  const open = feed.filter(e => e.open);
+  const todayStart = (currentGameDay()-1)*S.DAY_MINUTES;
+  const ground = new Set(open.filter(e => e.stand).map(e => e.reg).filter(Boolean)).size;
+  const aog = open.filter(e => e.aog).length;
+  const unassigned = feed.filter(e => e.assignState === "unassigned").length;
+  const risk = open.filter(e => e.slaMin != null && e.slaMin <= 45).length;
+  const progress = open.filter(e => ["working","travel"].includes(e.assignState)).length;
+  const closed = feed.filter(e => !e.open && e.sortMinute >= todayStart && e.kind!=="randomEvent" && e.kind!=="audit").length;
+  const tiles = [
+    {k:"ground", cls:"c-ground", num:ground, lbl:"🅿️ En tierra"},
+    {k:"aog", cls:"c-aog", num:aog, lbl:"AOG", led:"var(--aog)", pulse:aog>0},
+    {k:"unassigned", cls:"c-unassigned", num:unassigned, lbl:"Sin asignar", led:"var(--warn)"},
+    {k:"risk", cls:"c-risk", num:risk, lbl:"SLA en riesgo", led:"var(--bad)", pulse:risk>0},
+    {k:"progress", cls:"c-progress", num:progress, lbl:"En curso", led:"var(--accent)"},
+    {k:"closed", cls:"c-closed", num:closed, lbl:"Cerradas hoy", led:"var(--ok)"},
+  ];
+  const tilesHtml = tiles.map(t => `<div class="tile ${t.cls} ${sitFilter===t.k?'sel':''}" data-sit-filter="${t.k}"><div class="tnum">${t.num}</div><div class="tlbl">${t.led?`<span class="led ${t.pulse?'pulse':''}" style="color:${t.led};background:${t.led}"></span>`:""}${t.lbl}</div></div>`).join("");
+  const aogE = feed.find(e => e.aog && e.open);
+  const crit = feed.filter(e => e.assignState==="unassigned" && (e.sev==="Critical"||e.sev==="Major") && e.slaMin!=null && e.slaMin<=45);
+  let sum = "";
+  if (aogE) sum += `<span class="sig">PRIORIDAD</span> <b>AOG</b> en <span class="reg">${esc(aogE.reg||"—")}</span> bloquea <b>${esc(aogE.flight||aogE.descShort||"")}</b>`;
+  if (crit.length) sum += ` ${aogE?'· ':''}<b>${crit.length} callout${crit.length>1?'s':''}</b> sin técnico con SLA &lt;45 min`;
+  return `<div class="sitbar"><div class="sit-tiles">${tilesHtml}</div><div class="sit-summary">${sum||"Operación estable — sin alertas activas."}</div></div>`;
+}
+function renderEventFeed(){
+  const scoped = scopedFeed();
+  const list = applySitFilter(scoped);
+  let h = renderSitbar(scoped);
+  h += `<div class="vswitch" style="margin:.2rem 0 .7rem;width:max-content">
+    <button class="${eventFilter==='open'?'active':''}" data-event-filter="open">Activos</button>
+    <button class="${eventFilter==='all'?'active':''}" data-event-filter="all">Histórico</button>
+    ${sitFilter?`<button data-sit-filter="${sitFilter}" style="color:var(--warn)">✕ filtro: ${sitFilter}</button>`:""}
+  </div>`;
+  h += variant==="tele" ? feedTele(list) : variant==="board" ? feedBoard(list) : feedTriage(list);
   return h;
 }
 
@@ -94355,31 +94858,37 @@ function renderHangarEventTracking(){
 //  - Base Checks: los A/C/D están deshabilitados por ahora (callouts only).
 //    Cuando se reactiven, vivirán como eventos en Event Tracking.
 function renderOperations(){
-  let h = '<h2>📡 Operaciones · Event Tracking</h2>';
-  h += '<p class="muted" style="margin-bottom:.5rem">Feed cronológico unificado: callouts/WO sobre aviones en tierra, daily checks nocturnos, deferrals MEL vivas, eventos (runway closure, SB) y auditorías Part-145. Click en una card para detalle y asignar mecánicos.</p>';
-  h += renderHangarEventTracking();
+  let h = `<div class="eyebrow">Centro de control · Tiempo real</div>
+    <div class="title-row"><div><h1>Operaciones</h1><div class="sub">EVENT TRACKING · feed cronológico unificado — OVD/LEAS</div></div>
+    <div class="vswitch">
+      <button data-variant="triage" class="${variant==='triage'?'active':''}"><span class="vk">A</span>Triaje</button>
+      <button data-variant="tele" class="${variant==='tele'?'active':''}"><span class="vk">B</span>Telemetría</button>
+      <button data-variant="board" class="${variant==='board'?'active':''}"><span class="vk">C</span>Tablero</button>
+    </div></div>`;
+  h += renderEventFeed();
   return h;
 }
 
 function renderCoverageGantt(){
-  // Fase 5B Y3: mini-gantt 24h × 3 shifts mostrando cuántos mecs cubren cada hora.
-  const byShift = { morning: 0, afternoon: 0, night: 0 };
+  // Rediseño CIC (2026-05-30): cobertura 24h como 3 bandas legibles (no "mar de rojo"
+  // de celdas 0/1) con conteo grande, marcador "ahora" y leyenda que explica que la
+  // noche a 0 es normal sin contrato de pernocta. Nominal = plantilla por turno (incl.
+  // OffShift como capacidad del turno, sin TMA).
+  const nominal = { morning: 0, afternoon: 0, night: 0 };
   for (const m of game.mechanics) {
     if (m.isLeadForeman) continue; // TMA no cuenta (no asignable a WOs)
     const s = m.shift ?? "morning";
-    if (s in byShift) byShift[s]++;
+    if (s in nominal) nominal[s]++;
   }
-  let h = '<div class="gantt"><div class="gantt-title">Cobertura 24h (sin TMA)</div><div class="gantt-grid">';
-  for (let hour = 0; hour < 24; hour++) {
-    let shift, count;
-    if (hour >= 6 && hour < 14) { shift = "morning"; count = byShift.morning; }
-    else if (hour >= 14 && hour < 22) { shift = "afternoon"; count = byShift.afternoon; }
-    else { shift = "night"; count = byShift.night; }
-    const cls = count === 0 ? "empty" : count <= 2 ? "low" : count <= 4 ? "mid" : "high";
-    h += `<div class="gantt-cell shift-${shift} cov-${cls}" title="${String(hour).padStart(2,"0")}:00 · ${shift} · ${count} mec${count!==1?"s":""}">${count}</div>`;
-  }
-  h += '</div></div>';
-  return h;
+  const C = { morning: "var(--warn)", afternoon: "var(--accent)", night: "var(--base)" };
+  const minOfDay = game.clock.minute % S.DAY_MINUTES;
+  const nowPct = (minOfDay / 1440) * 100;
+  const band = (k, emoji, lbl) => `<div class="cov-band"><div class="cb-fill" style="background:linear-gradient(180deg,${C[k]}33,${C[k]}11)"></div><span class="cb-l">${emoji} ${lbl} <b class="${nominal[k]===0?'zero':''}">${nominal[k]}</b></span></div>`;
+  return `<div class="cov">
+    <div class="cov-head"><span class="ck">Cobertura 24h</span><span class="cov-now-lbl mono">▾ ahora ${fmtClock(game.clock.minute)}</span></div>
+    <div class="cov-track">${band('morning','☀️','Mañana')}${band('afternoon','🌅','Tarde')}${band('night','🌙','Noche')}<div class="cov-now" style="left:${nowPct}%"></div></div>
+    <div class="cov-legend"><span><b class="zero">0</b> sin cobertura</span><span class="dim">·</span><span>Sin contrato de pernocta nocturna, la noche puede ir a 0 sin penalización</span></div>
+  </div>`;
 }
 
 // ===========================================================================
@@ -94499,69 +95008,57 @@ function renderOffice(){
     h += renderOfficeManagement();
     return h;
   }
-  // === Resto = subseción "Equipo" ===
-  h += '<p class="muted" style="margin-bottom:.5rem">Sede física del MRO. Los mecánicos esperan aquí entre WOs y se desplazan al stand cuando se les asigna trabajo (Travel ~2min). Cap inicial limitado a 5 mecs hasta desbloquear hangares en endgame.</p>';
-  // ===== Bloque detalle de la oficina =====
-  h += '<div class="office-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.6rem;margin-bottom:1rem">';
-  h += `<div class="card-mini"><div class="lbl">🏢 Capacidad</div><div class="big">${capLabel}</div><div class="bar" style="height:5px;margin-top:.3rem"><div class="fill ${capCls}" style="width:${capPct.toFixed(0)}%"></div></div></div>`;
-  h += `<div class="card-mini"><div class="lbl">💼 Salario total</div><div class="big">${fmt(totalSalary)} €/sem</div><div class="muted" style="font-size:.7rem">~${fmt(Math.round(totalSalary*52/12))} €/mes</div></div>`;
-  h += `<div class="card-mini"><div class="lbl">⚙️ Composición</div><div class="big" style="font-size:1rem">B1: <strong>${byBase.B1}</strong> · B2: <strong>${byBase.B2}</strong> · Helper: <strong>${byBase.Helper}</strong>${byBase.TMA>0?` · TMA: <strong>${byBase.TMA}</strong>`:''}</div></div>`;
-  h += `<div class="card-mini"><div class="lbl">📅 Turnos</div><div class="big" style="font-size:1rem">☀️ <strong>${byShift.morning}</strong> · 🌅 <strong>${byShift.afternoon}</strong> · 🌙 <strong>${byShift.night}</strong>${byShift.off>0?` · 💤 <strong>${byShift.off}</strong>`:''}</div></div>`;
-  h += `<div class="card-mini"><div class="lbl">😊 Moral media</div><div class="big ${moralCls==='good'?'pos':moralCls==='bad'?'neg':''}">${avgMoral}/100</div></div>`;
-  h += `<div class="card-mini"><div class="lbl">📍 Estado actual</div><div class="big" style="font-size:.95rem">⚙️ <strong>${workingCount}</strong> wkg · 😎 <strong>${idleCount}</strong> idle${offshiftCount>0?` · 💤 <strong>${offshiftCount}</strong> off`:''}${inTraining>0?` · 🎓 <strong>${inTraining}</strong> train`:''}</div></div>`;
-  h += '</div>';
-  // ===== Cobertura por hora (gantt existente) =====
-  h += '<h3>Cobertura horaria</h3>';
+  // === Resto = subseción "Equipo" === (rediseño CIC 2026-05-30: tiles + bandas + mcards)
+  h += '<p class="muted" style="margin-bottom:.6rem">Sede física del MRO · OVD/LEAS · los técnicos esperan aquí y viajan al stand (~2 min). Click en una tarjeta para detalle, ratings y acciones (formar, turno, despedir).</p>';
+  const transitCount = mechs.filter(m => m.state === "ToPlane" || m.state === "Returning").length;
+  const workingOnly = mechs.filter(m => m.state === "Working").length;
+  const moralLed = avgMoral >= 70 ? "var(--ok)" : avgMoral >= 40 ? "var(--warn)" : "var(--bad)";
+  const offTiles = [
+    {cls:"c-ground", num:capLabel, lbl:"👥 Plantilla"},
+    {cls:"c-progress", num:workingOnly, lbl:"⚙️ En trabajo", led:"var(--accent)"},
+    {cls:"c-unassigned", num:transitCount, lbl:"🚐 En tránsito", led:"var(--cyan)"},
+    {cls:"c-closed", num:idleCount, lbl:"✅ Disponibles", led:"var(--ok)"},
+    {cls:"c-aog", num:avgMoral, lbl:"🙂 Moral media", led:moralLed},
+    {cls:"c-progress", num:`${(totalSalary/1000).toFixed(1)}k`, lbl:"💼 €/sem"},
+  ];
+  h += `<div class="sitbar" style="margin-bottom:.7rem"><div class="sit-tiles">${offTiles.map(t=>`<div class="tile ${t.cls}" style="cursor:default"><div class="tnum" style="${typeof t.num==='string'&&t.num.length>4?'font-size:1.15rem':''}">${t.num}</div><div class="tlbl">${t.led?`<span class="led" style="color:${t.led};background:${t.led}"></span>`:""}${t.lbl}</div></div>`).join("")}</div></div>`;
   h += renderCoverageGantt();
-  // ===== Tabla de mecánicos =====
-  h += `<h3 style="margin-top:1rem">Mecánicos (${mechs.length})</h3>
-  <p class="muted" style="margin-bottom:.5rem">Click en una fila para detalle. Turno: morning 06-14h · afternoon 14-22h · night 22-06h (+50% salario). Moral 0-100 ajusta eficiencia (0.5x–1.2x).</p>
-  <table><thead><tr><th>ID</th><th>Nombre</th><th>Base</th><th>Eff</th><th>Moral</th><th>Turno</th><th>Estado</th><th>Asignado</th><th>Salario</th><th>Train</th><th></th></tr></thead><tbody>`;
-  for (const m of game.mechanics) {
-    const ratings = m.typeRatings.map(r => `${r.model}/${r.engineVariant}/${r.category}`).join(", ") || "—";
-    const assigned = m.assignedCheckInstanceId
-      ? `<span style="color:var(--base)">${m.assignedCheckInstanceId}</span>`
-      : m.activeTrainingUntilMinute && m.activeTrainingUntilMinute > game.clock.minute
-        ? `<span style="color:var(--base)">Training ${Math.max(0, Math.ceil((m.activeTrainingUntilMinute - game.clock.minute) / S.DAY_MINUTES))}d</span>`
-        : (m.assignedWoInstanceId ?? "—");
-    const passive = m.trainingMinutes ?? 0;
-    const passiveDays = (passive / S.DAY_MINUTES).toFixed(1);
-    const passiveCol = m.base === null ? `${passiveDays}/90d` : "—";
-    const canFire = m.state === "Idle" || m.state === "OffShift";
-    const canTrain = m.state === "Idle" && game.economy.balance >= S.ACTIVE_TRAINING_COST_EUR;
-    const sev = S.severanceFor(m);
-    const fireBtn = canFire
-      ? `<button data-fire="${m.id}" title="Despedir (severance ${fmt(sev)} €)" style="padding:.15rem .4rem;font-size:.7rem">👋</button>`
-      : '<span class="mono" title="Ocupado, no se puede despedir">—</span>';
-    const trainBtn = canTrain
-      ? `<button data-train="${m.id}" title="Training activo (5k € · 7d)" style="padding:.15rem .4rem;font-size:.7rem;margin-right:.2rem">🎓</button>`
-      : '';
+  // ===== mecánicos como tarjetas =====
+  const SM = { Idle:{c:"#3fb950",l:"Disponible"}, Working:{c:"#4da3ff",l:"En trabajo"}, ToPlane:{c:"#3ad6c5",l:"En tránsito"}, Returning:{c:"#3ad6c5",l:"Regresando"}, OffShift:{c:"#586477",l:"Fuera de turno"}, Training:{c:"#a78bfa",l:"Formación"} };
+  h += `<div class="grp-head g-progress" style="margin-top:1.1rem"><span class="gdot"></span>Técnicos<span class="gline"></span><span class="gcount">${capLabel}</span></div>`;
+  h += '<div class="mgrid">';
+  for (const m of mechs) {
+    const sm = SM[m.state] || { c:"#8b97ab", l:m.state };
+    const ini = m.name.split(/\s+/).map(w => w[0]).join("").slice(0,2).toUpperCase();
     const moral = m.moral ?? 70;
-    const moralCls = moral >= 70 ? "good" : moral >= 40 ? "warn" : "bad";
+    const mcls = moral >= 70 ? "ok" : moral >= 40 ? "warn" : "bad";
+    const effColor = m.efficiency >= 1.1 ? "var(--ok)" : m.efficiency < 1 ? "var(--warn)" : "var(--text)";
+    let task;
+    if (m.activeTrainingUntilMinute && m.activeTrainingUntilMinute > game.clock.minute)
+      task = `🎓 Formación · ${Math.max(0, Math.ceil((m.activeTrainingUntilMinute - game.clock.minute)/S.DAY_MINUTES))}d restantes`;
+    else if (m.assignedWoInstanceId){ const w = workOrderByInstance(m.assignedWoInstanceId); const tpl = w ? game.templates.find(t=>t.id===w.templateId) : null; task = `<span class="mono" style="color:var(--accent-2)">${esc(m.assignedWoInstanceId)}</span> · ${esc(tpl ? tpl.description.slice(0,38) : (w?w.airplaneRegistration:""))}`; }
+    else if (m.assignedCheckInstanceId) task = `<span class="mono" style="color:var(--base)">${esc(m.assignedCheckInstanceId)}</span> · check`;
+    else task = `<span style="color:var(--dim)">Sin asignación · ${m.shift ?? "morning"}</span>`;
     const canChangeShift = m.state === "Idle" || m.state === "OffShift";
+    const shLbl = s => s==="morning"?"☀️ mañana":s==="afternoon"?"🌅 tarde":s==="night"?"🌙 noche":"💤 libre";
     const shiftHtml = canChangeShift
-      ? `<select class="shift-select" data-shift-mech="${m.id}">
-          <option value="morning"${m.shift==="morning"?" selected":""}>morning</option>
-          <option value="afternoon"${m.shift==="afternoon"?" selected":""}>afternoon</option>
-          <option value="night"${m.shift==="night"?" selected":""}>night</option>
-          <option value="off"${m.shift==="off"?" selected":""}>off</option>
-        </select>`
-      : `<span class="mono">${m.shift ?? "morning"}</span>`;
-    h += `<tr data-mech-id="${m.id}" title="Click para detalle (${ratings})" style="cursor:pointer">
-      <td class="mono">${m.id}</td>
-      <td>${esc(m.name)}</td>
-      <td>${m.base ?? "Helper"}</td>
-      <td class="mono">${m.efficiency}</td>
-      <td><div class="moral-bar"><div class="moral-fill ${moralCls}" style="width:${moral}%"></div></div> <span class="mono" style="font-size:.7rem">${Math.round(moral)}</span></td>
-      <td>${shiftHtml}</td>
-      <td><span class="state state-${m.state}">${m.state}</span></td>
-      <td class="mono">${assigned}</td>
-      <td class="mono">${fmt(S.effectiveWeeklySalary(m))} €/sem${m.shift==="night"?' <span class="mono" style="color:var(--warning)">×1.5</span>':''}</td>
-      <td class="mono">${passiveCol}</td>
-      <td>${trainBtn}${fireBtn}</td>
-    </tr>`;
+      ? `<select class="shift-select" data-shift-mech="${m.id}"><option value="morning"${m.shift==="morning"?" selected":""}>☀️ mañana</option><option value="afternoon"${m.shift==="afternoon"?" selected":""}>🌅 tarde</option><option value="night"${m.shift==="night"?" selected":""}>🌙 noche</option><option value="off"${m.shift==="off"?" selected":""}>💤 libre</option></select>`
+      : `<span class="tag shift-${m.shift==="afternoon"?"afternoon":m.shift==="night"?"night":m.shift==="off"?"off":"morning"}">${shLbl(m.shift ?? "morning")}</span>`;
+    h += `<article class="mcard" data-mech-id="${m.id}" title="Click para detalle">
+      <div class="mcard-top">
+        <span class="mc-av">${ini}</span>
+        <div class="mc-id"><div class="mc-name">${esc(m.name)}</div><div class="mc-base">${m.id} · ${m.base ?? "Helper"}${m.isLeadForeman?" · TMA":""}</div></div>
+        <span class="mc-state" style="color:${sm.c};border-color:${sm.c}55;background:${sm.c}1a"><span class="led" style="background:${sm.c}"></span>${sm.l}</span>
+      </div>
+      <div class="mc-task">${task}</div>
+      <div class="mc-bars">
+        <div class="mc-metric"><span class="mk">Moral</span><div class="mc-bar"><div class="mc-fill ${mcls}" style="width:${moral}%"></div></div><span class="mv mono">${Math.round(moral)}</span></div>
+        <div class="mc-metric"><span class="mk">Eff</span><span class="mv mono" style="color:${effColor}">${Number(m.efficiency).toFixed(2)}×</span></div>
+      </div>
+      <div class="mc-foot">${shiftHtml}<span class="mono" style="color:var(--muted);font-size:.72rem">${fmt(S.effectiveWeeklySalary(m))} €/sem${m.shift==="night"?" ×1.5":""}</span></div>
+    </article>`;
   }
-  return h + '</tbody></table>';
+  return h + '</div>';
 }
 
 function renderMarket(){
@@ -95035,57 +95532,110 @@ function renderSchedule(){
     const al = game.airlines.find(a => a.id === c.airlineId);
     if (al?.iataCode) contractsActive.add(al.iataCode);
   }
-  // Filtro
   const filtered = scheduleFilter === "all" ? flights : flights.filter(f => f.type === scheduleFilter);
-  // Próximos 3 movimientos en la siguiente hora
-  const upcoming = flights
-    .filter(f => f.scheduledMinute >= minOfDay && f.scheduledMinute < minOfDay + 60)
-    .sort((a,b) => a.scheduledMinute - b.scheduledMinute)
-    .slice(0, 3);
-  const upcomingIds = new Set(upcoming.map(f => `${f.callsign}-${f.type}-${f.scheduledMinute}`));
-
+  const nextMov = flights.filter(f => f.scheduledMinute >= minOfDay).sort((a,b) => a.scheduledMinute - b.scheduledMinute)[0] || null;
   const arr = flights.filter(f => f.type === "arrival").length;
   const dep = flights.filter(f => f.type === "departure").length;
   const notHandled = flights.filter(f => f.notHandled).length;
   const handled = flights.length - notHandled;
+  const leads = flights.filter(f => !contractsActive.has(f.airlineCode)).length;
 
-  let h = `<h2>📅 Schedule — Día ${gd} (${dayName(gd)})</h2>
-  <p class="muted" style="margin-bottom:.5rem">Aeropuerto LEAS (OVD) · ${flights.length} movimientos (${arr} ARR / ${dep} DEP) · <strong style="color:var(--success)">${handled} handled</strong> + <strong style="color:var(--muted)">${notHandled} sin habilitación</strong> · ${contractsActive.size} aerolínea(s) contratada(s)</p>`;
+  let h = `<div class="eyebrow">Operación · Programación del día</div>
+    <div class="title-row"><div><h1>Schedule</h1><div class="sub">Asturias (OVD/LEAS) · Día ${gd} · ${dayName(gd)}</div></div>
+    <div class="vswitch">
+      <button data-schedule-filter="all" class="${scheduleFilter==='all'?'active':''}">Todos</button>
+      <button data-schedule-filter="arrival" class="${scheduleFilter==='arrival'?'active':''}">🛬 ARR</button>
+      <button data-schedule-filter="departure" class="${scheduleFilter==='departure'?'active':''}">🛫 DEP</button>
+    </div></div>`;
+  const schTiles = [
+    {cls:"c-ground", num:flights.length, lbl:"✈ Movimientos"},
+    {cls:"c-closed", num:arr, lbl:"🛬 Llegadas", led:"var(--ok)"},
+    {cls:"c-unassigned", num:dep, lbl:"🛫 Salidas", led:"var(--warn)"},
+    {cls:"c-progress", num:handled, lbl:"🟢 Contratados", led:"var(--accent)"},
+    {cls:"c-aog", num:leads, lbl:"○ Leads (sin contrato)", led:"var(--dim)"},
+    {cls:"c-progress", num:nextMov?fmtHHMM(nextMov.scheduledMinute):"—", lbl:"📡 Próximo mov."},
+  ];
+  const schTilesHtml = schTiles.map(t => `<div class="tile ${t.cls}" style="cursor:default"><div class="tnum" style="${typeof t.num==='string'&&t.num.includes(':')?'font-size:1.2rem':''}">${t.num}</div><div class="tlbl">${t.led?`<span class="led" style="color:${t.led};background:${t.led}"></span>`:""}${t.lbl}</div></div>`).join("");
+  const contractChips = [...contractsActive].map(c => `<span class="reg">${esc(c)}</span>`).join(" y ") || "<span class='muted'>ninguno</span>";
+  h += `<div class="sitbar"><div class="sit-tiles">${schTilesHtml}</div><div class="sit-summary"><span class="sig acc">CONTRATADOS</span> ${contractChips} generan trabajo MRO · el resto son <b>leads</b> comerciales (rep para captarlos)</div></div>`;
 
-  // Filtros + leyenda contratos activos
-  const fBtn = (id, label) => `<button class="${scheduleFilter===id?'active':''}" data-schedule-filter="${id}" style="padding:.25rem .6rem;font-size:.8rem">${label}</button>`;
-  h += `<div class="skin-bar" style="margin-bottom:.5rem">
-    <span class="skin-label">Filtro:</span>
-    ${fBtn('all','Todos')} ${fBtn('arrival','ARR')} ${fBtn('departure','DEP')}
-    <span class="skin-label" style="margin-left:1rem">Contratados:</span>
-    ${[...contractsActive].map(code => `<span class="chip" style="background:rgba(63,185,80,.2);color:var(--success);border-color:var(--success)">${code}</span>`).join('') || '<span class="muted">ninguno</span>'}
-  </div>`;
-
-  if (upcoming.length > 0) {
-    h += '<div class="warn-banner" style="background:rgba(77,163,255,.08);border-left-color:var(--accent);color:var(--text);margin-bottom:.75rem">📡 Próximos: ' +
-      upcoming.map(f => `<strong>${S.formatClock((gd-1)*S.DAY_MINUTES + f.scheduledMinute)} ${f.callsign}</strong> ${f.type==='arrival'?'ARR':'DEP'} ${f.remote}`).join(' · ') + '</div>';
-  }
-
-  h += '<table><thead><tr><th>Hora</th><th>Callsign</th><th>Tipo</th><th>Ruta</th><th>Modelo</th><th>Operador</th><th>Estado</th></tr></thead><tbody>';
-  for (const f of filtered.sort((a,b) => a.scheduledMinute - b.scheduledMinute)) {
-    const time = String(Math.floor(f.scheduledMinute / 60)).padStart(2,'0') + ':' + String(f.scheduledMinute % 60).padStart(2,'0');
+  // Timeline de filas CIC (reemplaza la <table>).
+  h += '<div class="ftable"><div class="frow fhead"><div>Hora</div><div>Tipo</div><div>Vuelo · Ruta · Modelo</div><div>Operador</div><div>Estado</div></div>';
+  for (const f of filtered.slice().sort((a,b) => a.scheduledMinute - b.scheduledMinute)) {
+    const time = fmtHHMM(f.scheduledMinute);
     const st = flightStatusFor(f, contractsActive);
-    const isUpcoming = upcomingIds.has(`${f.callsign}-${f.type}-${f.scheduledMinute}`);
-    let rowStyle = isUpcoming ? 'background:rgba(77,163,255,.08)' : '';
-    if (f.notHandled) rowStyle += ';opacity:0.55';
-    const typeBadge = f.type === "arrival"
-      ? '<span class="chip" style="background:rgba(63,185,80,.15);color:var(--success);border-color:rgba(63,185,80,.4)">ARR</span>'
-      : '<span class="chip" style="background:rgba(210,153,34,.15);color:var(--warning);border-color:rgba(210,153,34,.4)">DEP</span>';
-    const operatorBadge = contractsActive.has(f.airlineCode)
-      ? `<span style="color:var(--success)">${esc(f.airlineName)} (${f.airlineCode})</span>`
-      : `<span class="muted">${esc(f.airlineName)} (${f.airlineCode})</span>`;
-    const modelCell = f.notHandled
-      ? `<span class="muted" title="Type rating no habilitado todavía">${esc(f.model)}/${esc(f.engineVariant)}</span>`
-      : `${esc(f.model)}/${esc(f.engineVariant)}`;
-    h += `<tr style="${rowStyle}"><td class="mono">${time}</td><td class="mono">${esc(f.callsign)}</td><td>${typeBadge}</td><td class="mono">${f.type==='arrival'?'← ':'→ '}${esc(f.remote)}</td><td>${modelCell}</td><td>${operatorBadge}</td><td class="${st.cls}">${st.label}</td></tr>`;
+    const key = `${f.callsign}|${f.type}|${f.scheduledMinute}`;
+    const isNext = nextMov && key === `${nextMov.callsign}|${nextMov.type}|${nextMov.scheduledMinute}`;
+    const past = f.scheduledMinute < minOfDay && !isNext;
+    const fhandled = !f.notHandled && contractsActive.has(f.airlineCode);
+    const isArr = f.type === "arrival";
+    const al = game.airlines.find(a => a.iataCode === f.airlineCode);
+    const dot = al?.color || "#5a6577";
+    const pernocta = /Pernocta/.test(st.label);
+    const done = /Departed|Cerrado/.test(st.label);
+    const stPill = f.notHandled
+      ? '<span class="st-pill lead">Lead · sin habilitación</span>'
+      : `<span class="st-pill ${fhandled?'ok':'lead'}">${esc(st.label)}</span>`;
+    h += `<div class="frow ${past?'past':''} ${isNext?'next':''} ${fhandled?'handled':'lead'}" data-flight="${esc(key)}">
+      <div class="ftime mono">${time}${done?' <span class="fchk">✓</span>':''}</div>
+      <div class="ftype ${isArr?'arr':'dep'}">${isArr?'ARR':'DEP'}</div>
+      <div class="fmain"><span class="fcs mono">${esc(f.callsign)}</span><span class="froute mono">${isArr?'←':'→'} ${esc(f.remote)}</span><span class="fmodel mono">${esc(f.model)}</span>${pernocta?'<span class="fov">🌙 pernocta</span>':''}</div>
+      <div class="fop"><span class="al-dot" style="background:${dot}"></span><span class="${fhandled?'op-h':'op-l'}">${esc(f.airlineName)}</span><span class="op-code mono">${esc(f.airlineCode)}</span></div>
+      <div class="fstatus">${stPill}</div>
+    </div>`;
   }
-  h += '</tbody></table>';
+  h += '</div>';
   return h;
+}
+
+// Rediseño CIC (2026-05-30): cajón de vuelo (nuevo — no existía modal de vuelo).
+function fmtHHMM(m){ return String(Math.floor(m / 60)).padStart(2,"0") + ":" + String(m % 60).padStart(2,"0"); }
+function findFlightByKey(key){
+  if (!key) return null;
+  const parts = String(key).split("|");
+  const cs = parts[0], type = parts[1], min = parseInt(parts[2], 10);
+  const flights = S.getFlightsForGameDay(currentGameDay());
+  return flights.find(f => f.callsign === cs && f.type === type && f.scheduledMinute === min) || null;
+}
+function renderFlightDrawer(){
+  const f = findFlightByKey(detailFlightId);
+  if (!f) return '<div class="dw-head"><button class="dw-close" id="modal-close">✕</button><div class="dw-title"><span class="reg">—</span></div></div><div class="dw-body"><div class="empty">Vuelo no encontrado en el día actual.</div></div>';
+  const isArr = f.type === "arrival";
+  const contractsActive = new Set();
+  for (const c of game.contracts){ if (c.status !== "active") continue; const al = game.airlines.find(a => a.id === c.airlineId); if (al?.iataCode) contractsActive.add(al.iataCode); }
+  const handled = !f.notHandled && contractsActive.has(f.airlineCode);
+  const al = game.airlines.find(a => a.iataCode === f.airlineCode);
+  const dot = al?.color || "#5a6577";
+  const st = flightStatusFor(f, contractsActive);
+  const time = fmtHHMM(f.scheduledMinute);
+  const dayStart = (currentGameDay() - 1) * S.DAY_MINUTES;
+  const ap = game.airplanes.find(a => a.registration === f.callsign && Math.abs(a.arrivalMinute - (dayStart + f.scheduledMinute)) < 60)
+        || game.airplanes.find(a => a.arrivalCallsign === f.callsign || a.nextDepartureCallsign === f.callsign);
+  const wo = ap ? game.workOrders.find(w => w.airplaneInstanceId === ap.instanceId && w.phase !== "Completed" && w.phase !== "Failed") : null;
+  const railColor = handled ? "var(--accent)" : "var(--dim)";
+  let body = `<div class="dw-kpis">
+    <div class="kpi acc"><div class="kl">Hora</div><div class="kv">${time}</div></div>
+    <div class="kpi"><div class="kl">Tipo</div><div class="kv" style="font-size:.82rem">${isArr?'ARR':'DEP'}</div></div>
+    <div class="kpi ${handled?'ok':''}"><div class="kl">Operador</div><div class="kv" style="font-size:.82rem">${esc(f.airlineCode)}</div></div>
+    <div class="kpi"><div class="kl">Estado</div><div class="kv" style="font-size:.72rem">${esc(st.label)}</div></div>
+  </div>`;
+  body += `<div class="dw-sec">Estado comercial</div><div class="dw-amm">${handled
+    ? `Operador <b>contratado</b> (${esc(f.airlineName)}). Este movimiento genera trabajo MRO: callouts en el turnaround y, si pernocta, daily check nocturno.`
+    : `<span style="color:var(--warn)">Lead comercial</span> — ${esc(f.airlineName)} opera en OVD pero <b>no tienes contrato${f.notHandled?' / type rating habilitado':''}</b>. Sube reputación para recibir una oferta.`}</div>`;
+  if (ap){
+    body += `<div class="dw-sec">Aeronave</div><div class="linkcard" data-fleet-reg="${esc(ap.registration)}"><div class="lk-ic" style="background:var(--accent-bg);color:var(--accent)">✈</div><div><div class="lk-t">Matrícula</div><div class="lk-v">${esc(ap.registration)} · ${esc(ap.model)}/${esc(ap.engineVariant)}</div></div><span class="lk-go">›</span></div>`;
+  }
+  if (wo){
+    const tpl = game.templates.find(t => t.id === wo.templateId);
+    body += `<div class="dw-sec">Trabajo asociado</div><div class="linkcard" data-wo="${esc(wo.instanceId)}"><div class="lk-ic" style="background:rgba(77,163,255,.12);color:var(--accent)">🔧</div><div><div class="lk-t">${esc(wo.instanceId)}</div><div class="lk-v">${esc(tpl ? tpl.description.slice(0,42) : wo.templateId)}</div></div><span class="lk-go">›</span></div>`;
+  }
+  return `<div class="dw-head"><div class="dw-rail" style="background:${railColor}"></div>
+      <button class="dw-close" id="modal-close">✕</button>
+      <div class="dw-eyebrow">${isArr?'🛬 Llegada':'🛫 Salida'} · ${esc(f.callsign)}</div>
+      <div class="dw-title"><span class="reg">${esc(f.callsign)}</span><span class="type">${esc(f.model)}/${esc(f.engineVariant)} · ${esc(f.airlineName)}</span></div>
+      <div class="dw-sub">${isArr?'Procedente de':'Con destino'} <b>${esc(f.remote)}</b> · ${time} · OVD <span class="al-dot" style="display:inline-block;background:${dot}"></span></div>
+    </div>
+    <div class="dw-body">${body}</div>`;
 }
 
 // ===========================================================================
@@ -95914,6 +96464,16 @@ function renderModal(){
     back.classList.add("open");
     return;
   }
+  // Rediseño CIC (2026-05-30): cajón de vuelo (Schedule). Antes del guard de selectedWoId.
+  if (detailFlightId) {
+    const html = renderFlightDrawer();
+    if (html !== null && html !== lastModalHtml) {
+      document.getElementById("modal-content").innerHTML = html;
+      lastModalHtml = html;
+    }
+    back.classList.add("open");
+    return;
+  }
   if (!selectedWoId) { back.classList.remove("open"); lastModalHtml = ""; return; }
   const wo = workOrderByInstance(selectedWoId); // busca también en archive (histórico WO)
   if (!wo) { back.classList.remove("open"); return; }
@@ -96003,9 +96563,25 @@ function renderModal(){
   const mc = melCat(tpl);
   const melLabel = mc ? `MEL ${mc} (${S.MEL_DEFERRAL_DAYS[mc]}d)` : 'NO diferible';
   const bookHrsModal = (tpl.durationMinutes / 60).toFixed(1);
-  let inner = `<header class="modal-head"><h3>${wo.instanceId} — ${esc(tpl.description)}</h3><button class="close" id="modal-close">×</button></header><div class="modal-body">
-    <div class="kvs"><span>ATA: <strong>${tpl.ata}</strong></span><span>Categoría: <strong>${tpl.requiredCategory}</strong></span><span>Book HH: <strong>${bookHrsModal}h</strong> (${tpl.durationMinutes} min)</span><span>Severidad: <strong>${tpl.severity}</strong></span><span>SLA: <strong>${wo.slaMinute - game.clock.minute}m restantes</strong></span><span>Avión: <strong>${esc(ap.registration)}</strong> (${ap.model}/${ap.engineVariant})${ap.arrivalCallsign ? ' · vuelo <strong class="mono">' + esc(ap.arrivalCallsign) + '</strong>' : ''}</span><span>MEL: <strong>${melLabel}</strong></span></div>
-    <h4 style="margin-top:.75rem;margin-bottom:.3rem">Fase actual</h4>
+  // Rediseño CIC (2026-05-30): cabecera del cajón WO en dw-* (rail por severidad + KPIs).
+  // El cuerpo conserva class modal-body para que el form de asignación (select/labels/helpers)
+  // mantenga su estilo legacy intacto — cero cambios en la lógica de asignar/diferir.
+  const sevColor = tpl.isAOG ? "var(--aog)" : tpl.severity === "Critical" ? "var(--bad)" : tpl.severity === "Major" ? "var(--warn)" : "var(--accent)";
+  const slaLeft = wo.slaMinute - game.clock.minute;
+  let inner = `<div class="dw-head"><div class="dw-rail" style="background:${sevColor};box-shadow:0 0 14px ${sevColor}"></div>
+    <button class="dw-close" id="modal-close">✕</button>
+    <div class="dw-eyebrow">${tpl.isAOG?"🛑 AOG · ":""}Work Order · ${esc(wo.instanceId)}</div>
+    <div class="dw-title"><span class="reg">${esc(ap.registration)}</span><span class="type">${esc(ap.model)}/${esc(ap.engineVariant)}${ap.arrivalCallsign?" · "+esc(ap.arrivalCallsign):""}</span></div>
+    <div class="dw-sub">${esc(tpl.description)}</div>
+  </div>
+  <div class="dw-body modal-body">
+    <div class="dw-kpis">
+      <div class="kpi ${slaLeft<=30?'bad':slaLeft<=60?'warn':'ok'}"><div class="kl">SLA</div><div class="kv">${slaLeft}m</div></div>
+      <div class="kpi ${tpl.severity==='Critical'?'bad':tpl.severity==='Major'?'warn':''}"><div class="kl">Severidad</div><div class="kv" style="font-size:.76rem">${tpl.severity}${tpl.isAOG?' · AOG':''}</div></div>
+      <div class="kpi acc"><div class="kl">Cat</div><div class="kv">${tpl.requiredCategory}</div></div>
+      <div class="kpi"><div class="kl">MEL</div><div class="kv" style="font-size:.78rem">${mc ?? "—"}</div></div>
+    </div>
+    <div class="dw-sec">ATA ${tpl.ata} · Book ${bookHrsModal}h · stand ${esc(ap.standId || "—")}</div>
     ${renderPhaseStepper(wo, tpl)}`;
   if (tpl.isAOG) inner += '<div class="alert aog-alert">🛑 AOG · penalty ×5 · no diferible</div>';
 
@@ -96576,6 +97152,15 @@ document.body.addEventListener("click", (e) => {
   // Event Tracking · filtro Open / All
   const evFilter = e.target.closest("[data-event-filter]");
   if (evFilter) { eventFilter = evFilter.dataset.eventFilter; invalidatePanelCache(); render(); return; }
+  // Rediseño CIC: variante de Operaciones (A·Triaje / B·Telemetría / C·Tablero)
+  const variantBtn = e.target.closest("[data-variant]");
+  if (variantBtn) { variant = variantBtn.dataset.variant; invalidatePanelCache(); render(); return; }
+  // Rediseño CIC: tile de la barra de situación → filtra el feed (toggle)
+  const sitTile = e.target.closest("[data-sit-filter]");
+  if (sitTile) { const k = sitTile.dataset.sitFilter; sitFilter = (sitFilter === k) ? null : k; invalidatePanelCache(); render(); return; }
+  // Rediseño CIC: click en fila de Schedule → cajón de vuelo
+  const flightRow = e.target.closest("[data-flight]");
+  if (flightRow) { detailFlightId = flightRow.dataset.flight; invalidateModalCache(); render(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
   const tabBtn = e.target.closest(".side > button");
@@ -96619,8 +97204,8 @@ document.body.addEventListener("click", (e) => {
   // Pivot iteración 2026-05-25: aceptar cards de WO aunque sean .base (Closed) — el
   // modal detecta phase Completed/Failed y muestra info histórica (sin botones de
   // asignar/defer). data-wo es la condición real, no la clase visual.
-  const woCard = e.target.closest(".wo-card[data-wo]");
-  if (woCard) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; render(); return; }
+  const woCard = e.target.closest("[data-wo]");
+  if (woCard) { selectedWoId = woCard.dataset.wo; manualCertId = ""; manualHelperIds = []; detailFlightId = null; render(); return; }
   const mechRow = e.target.closest("[data-mech-id]");
   if (mechRow && !e.target.closest("button") && !e.target.closest("select")) {
     detailMechId = mechRow.dataset.mechId;
@@ -96654,6 +97239,7 @@ document.body.addEventListener("click", (e) => {
     overnightModalOpen = false;
     detailDailyAirplaneId = null;
     detailAirplaneType = null;
+    detailFlightId = null;
     invalidateModalCache();
     render();
     return;
