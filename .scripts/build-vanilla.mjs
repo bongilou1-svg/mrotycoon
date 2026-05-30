@@ -600,20 +600,6 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .ms-reward .rv .u{font-size:13px;color:var(--muted)}
 .ms-btn{font-family:var(--sans);font-size:15px;font-weight:600;padding:13px 30px;border:1px solid #e6b450;background:#e6b450;color:#1a1206;border-radius:4px;cursor:pointer;transition:all .14s}
 .ms-btn:hover{background:#f0c468;border-color:#f0c468;box-shadow:0 0 22px rgba(230,180,80,.4)}
-/* ===== Barra de situación AHORA (handoff design 4 · Operaciones/Schedule, 2026-05-30) ===== */
-.cmd-now{display:flex;align-items:center;gap:10px;margin:.2rem 0 .8rem;font-family:var(--mono);font-size:12px;letter-spacing:.03em;color:var(--muted)}
-.cmd-now .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse-alert 1.7s infinite;flex-shrink:0}
-.cmd-now b{color:var(--text);font-weight:600}
-.cmd-situ{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:1.1rem}
-.cmd-tile{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:11px 13px;cursor:pointer;transition:all .14s;position:relative;overflow:hidden;text-align:left}
-.cmd-tile:hover{border-color:var(--border-s);transform:translateY(-1px)}
-.cmd-tile.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.cmd-tile .tn{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block}
-.cmd-tile .tv{font-size:24px;font-weight:700;margin-top:6px;font-family:var(--mono);line-height:1}
-.cmd-tile .tc{font-size:10px;margin-top:3px;color:var(--subtle);display:block}
-.cmd-tile.alert .tv{color:var(--danger)}.cmd-tile.warn .tv{color:var(--warning)}.cmd-tile.good .tv{color:var(--success)}
-@media(max-width:900px){.cmd-situ{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:560px){.cmd-situ{grid-template-columns:repeat(2,1fr)}}
 /* Accesibilidad: clases en <html> aplicadas por applySettings() según mro_settings */
 html.reduce-motion *{animation-duration:0s!important;animation-iteration-count:1!important;transition-duration:0s!important}
 html.hi-contrast{--border:#4a5470;--border-s:#5a6480}
