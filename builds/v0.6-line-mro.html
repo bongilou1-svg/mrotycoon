@@ -421,6 +421,52 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .ht-dot{width:8px;height:8px;border-radius:50%;background:var(--border-s);cursor:pointer;transition:all .14s}
 .ht-dot.on{background:var(--accent);width:22px;border-radius:4px}
 @media(max-width:820px){.ht-panel{grid-template-columns:1fr}.ht-steps{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding:8px}.ht-content{grid-template-columns:1fr}.ht-art{display:none}}
+/* ===== Cierre Semanal (handoff entrega-menu 3, 2026-05-30) ===== */
+.wc-root{position:fixed;inset:0;z-index:1080;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 30%,#0a121d 0%,#04070c 100%)}
+.wc-scrim{position:absolute;inset:0;background:rgba(4,7,12,.72)}
+.wc-panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(960px,94vw);max-height:92vh;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(22,27,34,.98),rgba(13,17,24,.98));border:1px solid var(--border-s);box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden}
+.wc-head{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border)}
+.wc-head .wk{font-size:21px;font-weight:800;letter-spacing:-.01em}
+.wc-head .wk .t{color:var(--accent)}
+.wc-head .save{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--success)}
+.wc-main{display:grid;grid-template-columns:1.32fr 1fr;min-height:0;overflow:auto}
+.wc-left{padding:22px 28px;display:flex;flex-direction:column}
+.wc-right{border-left:1px solid var(--border);padding:22px 26px}
+.wc-hero{display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.wc-hero .k{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--subtle)}
+.wc-hero .net .v{font-size:clamp(30px,4.5vw,44px);font-weight:800;letter-spacing:-.02em;line-height:1;margin-top:6px;color:var(--success)}
+.wc-hero .net .v.neg{color:var(--danger)}
+.wc-hero .bal{text-align:right}
+.wc-hero .bal .v{font-family:var(--mono);font-size:22px;font-weight:600;margin-top:4px}
+.wc-pl{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:16px}
+.wc-pl .ct{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+.wc-pl .ct .dot{width:7px;height:7px;border-radius:50%}
+.wc-pl .ing .ct{color:var(--success)}.wc-pl .ing .ct .dot{background:var(--success)}
+.wc-pl .gas .ct{color:var(--danger)}.wc-pl .gas .ct .dot{background:var(--danger)}
+.wc-pl .row{display:flex;align-items:baseline;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(42,49,66,.5)}
+.wc-pl .row .lbl{font-size:13px;color:var(--muted)}
+.wc-pl .row .amt{font-family:var(--mono);font-size:13px;color:var(--text)}
+.wc-pl .sub{display:flex;align-items:baseline;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border-s)}
+.wc-pl .sub .lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.wc-pl .sub .amt{font-family:var(--mono);font-size:17px;font-weight:700}
+.wc-pl .ing .sub .amt{color:var(--success)}.wc-pl .gas .sub .amt{color:var(--danger)}
+.wc-rt-title{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--subtle);margin-bottom:14px}
+.wc-kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wc-kpi{background:var(--panel);border:1px solid var(--border);padding:10px 14px}
+.wc-kpi .k{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle)}
+.wc-kpi .v{font-family:var(--mono);font-size:22px;font-weight:700;margin-top:4px}
+.wc-kpi .d{font-family:var(--mono);font-size:10px;margin-top:2px}
+.wc-kpi .d.up{color:var(--success)}.wc-kpi .d.down{color:var(--danger)}.wc-kpi .d.flat{color:var(--subtle)}
+.wc-trend{margin-top:16px}
+.wc-trend .tl{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.wc-trend .tl .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--subtle)}
+.wc-trend svg{width:100%;height:48px;display:block;background:rgba(10,15,23,.5);border:1px solid var(--border);border-radius:4px}
+.wc-note{display:flex;align-items:flex-start;gap:10px;margin-top:16px;padding:11px 14px;background:rgba(77,163,255,.05);border:1px solid var(--border);border-left:2px solid var(--accent);font-size:12.5px;color:var(--muted);line-height:1.45}
+.wc-foot{border-top:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.wc-foot .hint{font-family:var(--mono);font-size:10px;color:var(--subtle);letter-spacing:.06em}
+.wc-btn{font-family:var(--sans);font-size:15px;font-weight:600;padding:13px 26px;border:1px solid var(--accent);background:var(--accent);color:#061018;border-radius:4px;cursor:pointer;transition:all .14s}
+.wc-btn:hover{background:var(--accent-hover,#6db5ff);box-shadow:0 0 22px rgba(77,163,255,.35)}
+@media(max-width:760px){.wc-main{grid-template-columns:1fr}.wc-right{border-left:none;border-top:1px solid var(--border)}.wc-pl{grid-template-columns:1fr}}
 /* Accesibilidad: clases en <html> aplicadas por applySettings() según mro_settings */
 html.reduce-motion *{animation-duration:0s!important;animation-iteration-count:1!important;transition-duration:0s!important}
 html.hi-contrast{--border:#4a5470;--border-s:#5a6480}
@@ -94194,6 +94240,11 @@ let tutGraduated = false; // true tras completar/saltar — no reaparece en la m
 // guardada hasta que exista sonido/sistema de vídeo. settingsCat = categoría activa.
 let settingsCat = "audio";
 let howtoStep = 0; // Cómo se juega (handoff entrega-menu 3): paso activo 0..3
+// Cierre Semanal (handoff entrega-menu 3): cuando el sim cierra una semana (kpiHistory
+// crece dentro de S.advanceGame), pausamos el reloj y mostramos el modal. weeklyCloseData
+// guarda el snapshot a mostrar (null = sin modal). lastKpiLen detecta el crecimiento.
+let weeklyCloseData = null;
+let lastKpiLen = 0;
 const SETTINGS_DEFAULTS = {
   vol_music: 55, vol_sfx: 80, vol_alert: 90, mute_bg: true,
   fx: true, reduce_motion: false, contrast: false,
@@ -97276,6 +97327,11 @@ function render(){
   let goOverlay = document.getElementById("gameover-overlay-root");
   if (!goOverlay) { goOverlay = document.createElement("div"); goOverlay.id = "gameover-overlay-root"; document.body.appendChild(goOverlay); }
   goOverlay.innerHTML = (game.gameOver && game.gameOver.isOver && newGameStep === null) ? renderGameOver() : "";
+  // Cierre Semanal (2026-05-30): overlay modal si hay datos de cierre pendientes y no hay
+  // wizard ni game over por encima.
+  let wcOverlay = document.getElementById("weekly-close-overlay-root");
+  if (!wcOverlay) { wcOverlay = document.createElement("div"); wcOverlay.id = "weekly-close-overlay-root"; document.body.appendChild(wcOverlay); }
+  wcOverlay.innerHTML = (weeklyCloseData && newGameStep === null && !(game.gameOver && game.gameOver.isOver)) ? renderWeeklyClose() : "";
   document.getElementById("clock").textContent = fmtClock(game.clock.minute);
   document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
   const balEl = document.getElementById("bal");
@@ -97506,6 +97562,8 @@ document.body.addEventListener("click", (e) => {
   // al menú principal. La partida nueva (startGameFromPreset) limpia game.gameOver.isOver.
   if (e.target.closest("#go-retry")) { newGameStep = "airport"; render(); return; }
   if (e.target.closest("#go-menu")) { newGameStep = "intro"; render(); return; }
+  // Cierre Semanal: continuar cierra el modal y reanuda el reloj a 1×.
+  if (e.target.closest("#wc-continue")) { weeklyCloseData = null; S.setGameSpeed(game, 1); render(); return; }
   if (e.target.closest("#ng-continue, #ng-continue-card")) { doContinueFromIntro(); return; }
   if (e.target.closest("#ng-clear-save")) {
     if (!confirm("¿Borrar partida guardada definitivamente? No se puede deshacer.")) return;
@@ -98083,6 +98141,93 @@ function renderGameOver(){
     + '</div></div>';
 }
 
+// Cierre Semanal (handoff entrega-menu 3). Detecta que el sim cerró una semana (kpiHistory
+// creció) y prepara weeklyCloseData con el snapshot + el anterior + el desglose del ledger
+// de esa semana. Concatenación de strings (sin backticks ni interpolación).
+function buildWeeklyCloseData(){
+  const hist = game.kpiHistory || [];
+  if (hist.length === 0) return null;
+  const snap = hist[hist.length - 1];
+  const prev = hist.length >= 2 ? hist[hist.length - 2] : null;
+  // Semana que cerró = snap.week. Su ventana de ledger es [(week-1)*WEEK, week*WEEK).
+  const wkStart = (snap.week - 1) * S.WEEK_MINUTES;
+  const wkEnd = snap.week * S.WEEK_MINUTES;
+  const led = (game.economy.ledger || []).filter(t => t.minute >= wkStart && t.minute < wkEnd);
+  let woPay = 0, penaltySla = 0, penaltyAog = 0, salary = 0, fixed = 0, other = 0;
+  for (const t of led) {
+    if (t.type === "workOrderPayment") woPay += t.amount;
+    else if (t.type === "salary") salary += t.amount;
+    else if (t.type === "weeklyFixedCost") fixed += t.amount;
+    else if (t.type === "penalty") { if ((t.description || "").indexOf("AOG") >= 0) penaltyAog += t.amount; else penaltySla += t.amount; }
+    else other += t.amount;
+  }
+  const ingresos = woPay + (other > 0 ? other : 0);
+  const gastos = salary + fixed + penaltySla + penaltyAog + (other < 0 ? other : 0);
+  const neto = ingresos + gastos; // gastos ya negativos
+  return { snap, prev, woPay, penaltySla, penaltyAog, salary, fixed, ingresos, gastos, neto };
+}
+function fmtSigned(n){ return (n >= 0 ? "+" : "") + fmt(Math.round(n)) + " €"; }
+function renderWeeklyClose(){
+  const d = weeklyCloseData;
+  if (!d) return "";
+  const s = d.snap, p = d.prev;
+  const wkNum = String(s.week).padStart(2, "0");
+  const dayStart = (s.week - 1) * 7 + 1, dayEnd = s.week * 7;
+  const netCls = d.neto < 0 ? " neg" : "";
+  // deltas vs semana previa
+  const dRep = p ? Math.round(s.repAvg - p.repAvg) : 0;
+  const dComp = p ? (s.complianceScore - p.complianceScore) : 0;
+  const dWo = p ? (s.woCompleted - p.woCompleted) : 0;
+  const deltaTag = (n, suf) => {
+    if (!p) return '<div class="d flat">— sem 1</div>';
+    if (n > 0) return '<div class="d up">▲ +' + n + (suf || "") + '</div>';
+    if (n < 0) return '<div class="d down">▼ ' + n + (suf || "") + '</div>';
+    return '<div class="d flat">= igual</div>';
+  };
+  // sparkline balance (últimas 6 semanas)
+  const hist = game.kpiHistory.slice(-6);
+  let spark = "";
+  if (hist.length >= 2) {
+    const vals = hist.map(h => h.balance);
+    const mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    const rng = (mx - mn) || 1, W = 280, H = 48;
+    const pts = vals.map((v, i) => ((i / (vals.length - 1)) * W).toFixed(1) + "," + (H - ((v - mn) / rng) * H).toFixed(1)).join(" ");
+    spark = '<svg viewBox="0 0 280 48" preserveAspectRatio="none"><polyline points="' + pts + '" fill="none" stroke="#4da3ff" stroke-width="2"/></svg>';
+  } else {
+    spark = '<svg viewBox="0 0 280 48"><text x="8" y="28" fill="#5d6677" font-size="11" font-family="monospace">Sin histórico suficiente</text></svg>';
+  }
+  const row = (lbl, amt) => '<div class="row"><span class="lbl">' + lbl + '</span><span class="amt">' + fmt(Math.round(amt)) + ' €</span></div>';
+  return '<div class="wc-root"><div class="wc-scrim"></div><div class="wc-panel">'
+    + '<div class="wc-head"><div class="wk">Cierre · <span class="t">Semana ' + wkNum + '</span></div>'
+    + '<div class="save"><span>✓</span> ' + (gameSettings.autosave ? "Autoguardado" : "Guardado manual") + '</div></div>'
+    + '<div class="wc-main"><div class="wc-left">'
+    +   '<div class="wc-hero"><div class="net"><div class="k">Resultado neto de la semana</div><div class="v' + netCls + '">' + fmtSigned(d.neto) + '</div></div>'
+    +     '<div class="bal"><div class="k">Balance total</div><div class="v">' + fmt(Math.round(s.balance)) + ' €</div></div></div>'
+    +   '<div class="wc-pl"><div class="col ing"><div class="ct"><span class="dot"></span> Ingresos</div>'
+    +     row("Trabajo cerrado (WOs)", d.woPay)
+    +     '<div class="sub"><span class="lbl">Total ingresos</span><span class="amt">' + fmt(Math.round(d.ingresos)) + ' €</span></div></div>'
+    +   '<div class="col gas"><div class="ct"><span class="dot"></span> Gastos</div>'
+    +     row("Salarios", d.salary)
+    +     row("Coste fijo (upkeep)", d.fixed)
+    +     row("Penalties SLA", d.penaltySla)
+    +     (d.penaltyAog < 0 ? row("Penalties AOG", d.penaltyAog) : "")
+    +     '<div class="sub"><span class="lbl">Total gastos</span><span class="amt">' + fmt(Math.round(d.gastos)) + ' €</span></div></div></div>'
+    +   '<div class="wc-note"><span>Semana ' + wkNum + ' cerrada. ' + (d.neto >= 0 ? "En positivo: el margen aguanta crecer." : "En negativo: revisa cobertura y penalties.") + '</span></div>'
+    + '</div>'
+    + '<div class="wc-right"><div class="wc-rt-title">Rendimiento · Semana ' + wkNum + '</div>'
+    +   '<div class="wc-kpis">'
+    +     '<div class="wc-kpi"><div class="k">WOs completadas</div><div class="v">' + s.woCompleted + '</div>' + deltaTag(dWo) + '</div>'
+    +     '<div class="wc-kpi"><div class="k">WOs tarde</div><div class="v" style="color:' + (s.woLate > 0 ? "#d29922" : "#3fb950") + '">' + s.woLate + '</div><div class="d flat">acum.</div></div>'
+    +     '<div class="wc-kpi"><div class="k">Reputación</div><div class="v" style="color:#4da3ff">' + Math.round(s.repAvg) + '</div>' + deltaTag(dRep) + '</div>'
+    +     '<div class="wc-kpi"><div class="k">Part-145</div><div class="v" style="color:#d29922">' + s.complianceScore + '</div>' + deltaTag(dComp) + '</div>'
+    +   '</div>'
+    +   '<div class="wc-trend"><div class="tl"><span class="k">Balance · últimas 6 semanas</span></div>' + spark + '</div>'
+    + '</div></div>'
+    + '<div class="wc-foot"><span class="hint">El reloj se reanuda al continuar</span>'
+    +   '<button class="wc-btn" id="wc-continue">Continuar a Semana ' + String(s.week + 1).padStart(2, "0") + ' →</button></div>'
+    + '</div></div>';
+}
+
 function ageFleet() {
   // DEBUG: bumpea la flota cerca de triggers A/C para poder validar los flujos sin esperar
   // 30 días de juego. Mitad de cada flota a 580 FH (a 20 del A=600).
@@ -98157,6 +98302,21 @@ setInterval(() => {
   S.advanceGame(game, game.clock.speed);
   const _tB = performance.now();
   window.__perf.advance += (_tB - _tA);
+  // Cierre Semanal (2026-05-30): si el sim cerró una semana (kpiHistory creció), pausar el
+  // reloj y preparar el modal. Solo si no hay wizard ni game over por encima.
+  // Auto-resync: si kpiHistory ENCOGIÓ (partida nueva o load), reajustar sin disparar.
+  {
+    const kpiLen = game.kpiHistory?.length ?? 0;
+    if (kpiLen < lastKpiLen) {
+      lastKpiLen = kpiLen;
+    } else if (kpiLen > lastKpiLen) {
+      lastKpiLen = kpiLen;
+      if (newGameStep === null && !(game.gameOver && game.gameOver.isOver)) {
+        weeklyCloseData = buildWeeklyCloseData();
+        S.setGameSpeed(game, 0);
+      }
+    }
+  }
   // Pivot línea pura: notif diaria del paquete de trabajo nocturno (~12:00).
   // Una vez por día, si hay overnighters confirmados en pernocta hoy.
   const gd = Math.floor(game.clock.minute / S.DAY_MINUTES) + 1;
