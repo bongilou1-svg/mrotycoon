@@ -3941,6 +3941,11 @@ function render(){
     document.body.appendChild(ngOverlay);
   }
   ngOverlay.innerHTML = renderNewGameWizard();
+  // Game Over post-mortem (2026-05-30): overlay full-screen por encima de todo. Solo si la
+  // partida ha terminado Y no hay wizard activo (el wizard manda si el jugador fue al menú).
+  let goOverlay = document.getElementById("gameover-overlay-root");
+  if (!goOverlay) { goOverlay = document.createElement("div"); goOverlay.id = "gameover-overlay-root"; document.body.appendChild(goOverlay); }
+  goOverlay.innerHTML = (game.gameOver && game.gameOver.isOver && newGameStep === null) ? renderGameOver() : "";
   document.getElementById("clock").textContent = fmtClock(game.clock.minute);
   document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
   const balEl = document.getElementById("bal");
@@ -4150,6 +4155,10 @@ document.body.addEventListener("click", (e) => {
   // Pivot iteración 2026-05-25 — New Game wizard handlers
   // Intro step
   if (e.target.closest("#ng-start")) { newGameStep = "airport"; render(); return; }
+  // Game Over post-mortem (2026-05-30): Reintentar abre selección de aeropuerto; Menú vuelve
+  // al menú principal. La partida nueva (startGameFromPreset) limpia game.gameOver.isOver.
+  if (e.target.closest("#go-retry")) { newGameStep = "airport"; render(); return; }
+  if (e.target.closest("#go-menu")) { newGameStep = "intro"; render(); return; }
   if (e.target.closest("#ng-continue, #ng-continue-card")) { doContinueFromIntro(); return; }
   if (e.target.closest("#ng-clear-save")) {
     if (!confirm("¿Borrar partida guardada definitivamente? No se puede deshacer.")) return;
@@ -4558,6 +4567,61 @@ function renderNewGameWizard() {
     body = \`<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> \${esc(ap.name)} · \${ap.icao} / \${ap.iata}</div><div class="foh-steprail"><span class="s done"><span class="n">✓</span> Aeropuerto</span><span class="bar"></span><span class="s on"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 2 de 2 · Tu primer cliente</div><h1>Elige tu <span class="t">operador</span> de arranque</h1><p class="sub">El primer contrato define tu setup inicial — flota, fees y dificultad. Puedes captar a los demás más adelante subiendo reputación.</p></div><div class="foh-cards ops">\${cards}</div><div class="foh-foot"><button class="foh-btn back ghost" id="ng-back"><span class="foh-ar"></span> Cambiar aeropuerto</button><div class="right"><span>SETUP REVERSIBLE · CAPTA AL RESTO IN-GAME</span></div></div></div><div class="foh-loader" id="foh-loader"><div class="spin"></div><div class="txt">Inicializando MRO…</div></div>\`;
   }
   return \`<div class="foh-root" id="newgame-overlay">\${bg(newGameStep !== "intro")}\${body}</div>\`;
+}
+
+// Game Over post-mortem (handoff entrega-menu 3). Escrito con concatenación de strings
+// (sin backticks ni ${}) para insertarse seguro dentro del template literal gigante APP_JS.
+function renderGameOver(){
+  var dayN = Math.floor(game.clock.minute / S.DAY_MINUTES) + 1;
+  var wk = S.getWeek(game.clock.minute);
+  var rep = Math.round(S.getAverageRep(game.reputation));
+  var cash = Math.round(game.economy.balance);
+  var reason = game.gameOver.reason;
+  var reasonTxt = reason === "bankruptcy" ? "Bancarrota"
+    : reason === "reputation" ? "Reputación por los suelos"
+    : reason === "compliance" ? "Certificación Part-145 revocada"
+    : "Fin de la partida";
+  var reasonSub = reason === "bankruptcy" ? "Te quedaste sin caja. Los bancos no perdonan a un MRO en números rojos."
+    : reason === "reputation" ? "Ninguna aerolínea confía ya en tu taller."
+    : reason === "compliance" ? "La autoridad aeronáutica te retiró la licencia para firmar trabajos."
+    : "La operación ha terminado.";
+  var hist = game.kpiHistory || [];
+  var woC = hist.reduce(function(s,h){ return s + (h.woCompleted||0); }, 0);
+  var woL = hist.reduce(function(s,h){ return s + (h.woLate||0); }, 0);
+  var woF = hist.reduce(function(s,h){ return s + (h.woFailed||0); }, 0);
+  var spark = "";
+  if (hist.length >= 2) {
+    var vals = hist.map(function(h){ return h.balance||0; });
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    var rng = (mx - mn) || 1, W = 520, H = 120;
+    var pts = vals.map(function(v,i){
+      var x = (i/(vals.length-1))*W;
+      var y = H - ((v-mn)/rng)*H;
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
+    var zeroLine = (mx > 0 && mn < 0) ? '<line x1="0" y1="' + (H-((0-mn)/rng)*H).toFixed(1) + '" x2="520" y2="' + (H-((0-mn)/rng)*H).toFixed(1) + '" stroke="#3a4256" stroke-dasharray="4 4"/>' : "";
+    spark = '<svg viewBox="0 0 520 120" preserveAspectRatio="none" class="go-spark">' + zeroLine + '<polyline points="' + pts + '" fill="none" stroke="#f85149" stroke-width="2"/></svg>';
+  } else {
+    spark = '<div class="go-nospark">Sin histórico semanal suficiente para el gráfico de balance.</div>';
+  }
+  var repColor = rep >= 50 ? "#3fb950" : rep >= 25 ? "#d29922" : "#f85149";
+  var cashColor = cash >= 0 ? "#e6e9ef" : "#f85149";
+  return '<div class="go-root">'
+    + '<div class="go-bg"></div><div class="go-grid"></div><div class="go-scan"></div>'
+    + '<div class="go-screen">'
+    +   '<div class="go-eyebrow">Operación finalizada · Día ' + dayN + '</div>'
+    +   '<h1 class="go-title">FIN DE LA <span>PARTIDA</span></h1>'
+    +   '<div class="go-reason"><div class="rt">' + reasonTxt + '</div><div class="rs">' + reasonSub + '</div></div>'
+    +   '<div class="go-stats">'
+    +     '<div class="go-stat"><div class="k">Días operados</div><div class="v">' + dayN + '</div></div>'
+    +     '<div class="go-stat"><div class="k">Semanas</div><div class="v">' + wk + '</div></div>'
+    +     '<div class="go-stat"><div class="k">Reputación</div><div class="v" style="color:' + repColor + '">' + rep + '<span>/100</span></div></div>'
+    +     '<div class="go-stat"><div class="k">Caja final</div><div class="v" style="color:' + cashColor + '">' + fmt(cash) + '<span> €</span></div></div>'
+    +   '</div>'
+    +   '<div class="go-chart"><div class="go-chart-h">Balance semanal · trayectoria hasta el cierre</div>' + spark + '</div>'
+    +   '<div class="go-wo">Work Orders: <b>' + woC + '</b> completadas · <b style="color:#d29922">' + woL + '</b> tarde · <b style="color:#f85149">' + woF + '</b> falladas</div>'
+    +   '<div class="go-actions"><button class="go-btn primary" id="go-retry">Reintentar</button><button class="go-btn" id="go-menu">Menú principal</button></div>'
+    + '</div></div>';
 }
 
 function ageFleet() {
