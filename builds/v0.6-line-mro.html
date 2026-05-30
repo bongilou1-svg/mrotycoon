@@ -340,6 +340,41 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .go-btn:hover{border-color:var(--accent);color:var(--accent)}
 .go-btn.primary{background:var(--danger);border-color:var(--danger);color:#fff}
 .go-btn.primary:hover{background:#ff6b63;border-color:#ff6b63;color:#fff}
+/* ===== Ajustes (handoff entrega-menu 3, 2026-05-30) ===== */
+.set-panel{flex:1;display:grid;grid-template-columns:clamp(180px,20vw,232px) 1fr;background:linear-gradient(180deg,rgba(22,27,34,.94),rgba(14,18,25,.94));border:1px solid var(--border-s);box-shadow:0 24px 60px rgba(0,0,0,.5);margin:clamp(14px,2.5vh,24px) 0;min-height:0;overflow:hidden}
+.set-cats{border-right:1px solid var(--border);padding:14px 0;overflow-y:auto}
+.set-catbtn{display:flex;align-items:center;gap:12px;width:100%;padding:13px 22px;cursor:pointer;background:transparent;border:none;border-left:2px solid transparent;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:600;text-align:left;transition:all .13s}
+.set-catbtn .ci{width:8px;height:8px;border:1.5px solid currentColor;transform:rotate(45deg);flex-shrink:0}
+.set-catbtn:hover{color:var(--text);background:rgba(77,163,255,.05)}
+.set-catbtn.on{color:var(--accent);border-left-color:var(--accent);background:linear-gradient(90deg,rgba(77,163,255,.12),transparent)}
+.set-content{padding:24px 28px;overflow-y:auto}
+.set-cat{display:none}
+.set-cat.on{display:block}
+.set-ct{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px}
+.set-opt{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:15px 0;border-bottom:1px solid var(--border)}
+.set-opt:last-child{border-bottom:none}
+.set-opt .nm{font-size:15px;font-weight:600}
+.set-opt .ds{font-size:12px;color:var(--muted);margin-top:3px;max-width:440px;line-height:1.45}
+.set-opt .ctrl{flex-shrink:0}
+.set-note{font-size:11px;color:var(--warning);margin-top:4px;font-style:italic}
+.set-seg{display:inline-flex;border:1px solid var(--border-s);border-radius:3px;overflow:hidden}
+.set-seg button{background:transparent;border:none;border-right:1px solid var(--border-s);color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:8px 14px;cursor:pointer;transition:all .12s}
+.set-seg button:last-child{border-right:none}
+.set-seg button:hover{color:var(--text);background:rgba(77,163,255,.06)}
+.set-seg button.on{background:var(--accent);color:#061018}
+.set-sw{width:46px;height:24px;border-radius:13px;background:var(--panel);border:1px solid var(--border-s);position:relative;cursor:pointer;transition:background .15s,border-color .15s}
+.set-sw::after{content:"";position:absolute;left:3px;top:2px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .16s,background .16s}
+.set-sw.on{background:rgba(77,163,255,.25);border-color:var(--accent)}
+.set-sw.on::after{transform:translateX(22px);background:var(--accent)}
+.set-slide{display:flex;align-items:center;gap:14px}
+.set-slide input[type=range]{-webkit-appearance:none;appearance:none;width:clamp(140px,16vw,220px);height:4px;border-radius:2px;background:var(--border-s);outline:none}
+.set-slide input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 10px rgba(77,163,255,.5)}
+.set-slide .val{font-family:var(--mono);font-size:13px;color:var(--accent);width:42px;text-align:right}
+.set-sel{background:var(--panel);border:1px solid var(--border-s);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;border-radius:3px;cursor:pointer}
+/* Accesibilidad: clases en <html> aplicadas por applySettings() según mro_settings */
+html.reduce-motion *{animation-duration:0s!important;animation-iteration-count:1!important;transition-duration:0s!important}
+html.hi-contrast{--border:#4a5470;--border-s:#5a6480}
+html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{border-color:#5a6480}
 .foh-cards{flex:1;display:grid;gap:18px;margin:clamp(16px,3vh,26px) 0;align-content:start;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
 .foh-cards.ops{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));max-width:1120px}
 .foh-apcard{background:linear-gradient(180deg,rgba(27,35,48,.96),rgba(16,21,30,.96));border:1px solid var(--border-strong);position:relative;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;text-decoration:none;color:var(--text)}
@@ -94103,6 +94138,38 @@ let saveIndicator = "";
 let tutActive = false;
 let tutStep = 0;
 let tutGraduated = false; // true tras completar/saltar — no reaparece en la misma partida
+// Ajustes (handoff entrega-menu 3, 2026-05-30). Persistidos en localStorage "mro_settings".
+// Defaults alineados con el mockup. Solo algunos están CABLEADOS a sistemas reales hoy
+// (pause_panels, confirm, fx, reduce_motion, lang); audio/vídeo quedan como preferencia
+// guardada hasta que exista sonido/sistema de vídeo. settingsCat = categoría activa.
+let settingsCat = "audio";
+const SETTINGS_DEFAULTS = {
+  vol_music: 55, vol_sfx: 80, vol_alert: 90, mute_bg: true,
+  fx: true, reduce_motion: false, contrast: false,
+  pause_panels: false, confirm: true, autosave: true,
+  lang: 0, avterms: true, textsize: 0,
+};
+let gameSettings = { ...SETTINGS_DEFAULTS };
+function loadSettings(){
+  try {
+    const raw = (typeof localStorage !== "undefined") ? localStorage.getItem("mro_settings") : null;
+    if (raw) gameSettings = { ...SETTINGS_DEFAULTS, ...JSON.parse(raw) };
+  } catch(e) { gameSettings = { ...SETTINGS_DEFAULTS }; }
+  applySettings();
+}
+function saveSettings(){
+  try { if (typeof localStorage !== "undefined") localStorage.setItem("mro_settings", JSON.stringify(gameSettings)); } catch(e){}
+  applySettings();
+}
+// Aplica al runtime los ajustes que SÍ tienen efecto hoy.
+function applySettings(){
+  // "Reducir movimiento": clase global que apaga animaciones (las usa CSS via :root).
+  try {
+    const root = document.documentElement;
+    if (root) root.classList.toggle("reduce-motion", !!gameSettings.reduce_motion);
+    if (root) root.classList.toggle("hi-contrast", !!gameSettings.contrast);
+  } catch(e){}
+}
 // Render-loop optimizations: evita destruir DOM mientras el usuario clica.
 let lastPanelHtml = "";
 let lastNotifsHtml = "";
@@ -97367,6 +97434,16 @@ document.body.addEventListener("click", (e) => {
   // Pivot iteración 2026-05-25 — New Game wizard handlers
   // Intro step
   if (e.target.closest("#ng-start")) { newGameStep = "airport"; render(); return; }
+  // Ajustes (handoff entrega-menu 3): abrir / volver / reset + categorías + controles.
+  if (e.target.closest("#ng-settings")) { newGameStep = "settings"; settingsCat = "audio"; render(); return; }
+  if (e.target.closest("#ng-settings-back")) { newGameStep = "intro"; render(); return; }
+  if (e.target.closest("#ng-settings-reset")) { gameSettings = { ...SETTINGS_DEFAULTS }; saveSettings(); render(); return; }
+  const setCat = e.target.closest("[data-set-cat]");
+  if (setCat) { settingsCat = setCat.dataset.setCat; render(); return; }
+  const setToggle = e.target.closest("[data-set-toggle]");
+  if (setToggle) { const k = setToggle.dataset.setToggle; gameSettings[k] = !gameSettings[k]; saveSettings(); render(); return; }
+  const setSegBtn = e.target.closest("[data-set-seg] button");
+  if (setSegBtn) { const seg = setSegBtn.closest("[data-set-seg]"); gameSettings[seg.dataset.setSeg] = parseInt(setSegBtn.dataset.i, 10); saveSettings(); render(); return; }
   // Game Over post-mortem (2026-05-30): Reintentar abre selección de aeropuerto; Menú vuelve
   // al menú principal. La partida nueva (startGameFromPreset) limpia game.gameOver.isOver.
   if (e.target.closest("#go-retry")) { newGameStep = "airport"; render(); return; }
@@ -97745,7 +97822,7 @@ function renderNewGameWizard() {
     const exitItem = isTauri ? `<div class="foh-mi danger" id="ng-exit"><span class="idx">05</span><span class="label">Salir</span><span class="arrow"></span></div>` : "";
     const clearItem = hasSavedSlot ? `<div class="foh-mi danger" id="ng-clear-save"><span class="idx">${isTauri ? "06" : "05"}</span><span class="label">Borrar guardado</span><span class="arrow"></span></div>` : "";
     const saveCard = hasSavedSlot ? `<a class="foh-savecard" id="ng-continue-card"><div class="foh-sc-head"><span>💾 Partida guardada</span></div><div class="foh-sc-body"><div class="foh-sc-icao">LEAS<span class="x"> · OVD</span></div><div class="foh-sc-name">Aeropuerto de Asturias</div></div><div class="foh-sc-cta"><span>Continuar partida</span><span class="foh-ar"></span></div></a>` : "";
-    body = `<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · LEAS / OVD · Asturias</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>${continueItem}<div class="foh-mi disabled"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Próximamente</span></div><div class="foh-mi disabled"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Próximamente</span></div>${exitItem}${clearItem}</nav></div>${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>`;
+    body = `<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · LEAS / OVD · Asturias</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>${continueItem}<div class="foh-mi" id="ng-settings"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Audio · juego · A11y</span><span class="arrow"></span></div><div class="foh-mi disabled"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Próximamente</span></div>${exitItem}${clearItem}</nav></div>${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>`;
   } else if (newGameStep === "airport") {
     const avail = catalog.airports.filter(a => a.available !== false);
     const availCount = avail.length;
@@ -97778,7 +97855,76 @@ function renderNewGameWizard() {
     }
     body = `<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> ${esc(ap.name)} · ${ap.icao} / ${ap.iata}</div><div class="foh-steprail"><span class="s done"><span class="n">✓</span> Aeropuerto</span><span class="bar"></span><span class="s on"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 2 de 2 · Tu primer cliente</div><h1>Elige tu <span class="t">operador</span> de arranque</h1><p class="sub">El primer contrato define tu setup inicial — flota, fees y dificultad. Puedes captar a los demás más adelante subiendo reputación.</p></div><div class="foh-cards ops">${cards}</div><div class="foh-foot"><button class="foh-btn back ghost" id="ng-back"><span class="foh-ar"></span> Cambiar aeropuerto</button><div class="right"><span>SETUP REVERSIBLE · CAPTA AL RESTO IN-GAME</span></div></div></div><div class="foh-loader" id="foh-loader"><div class="spin"></div><div class="txt">Inicializando MRO…</div></div>`;
   }
+  if (newGameStep === "settings") {
+    body = renderSettingsBody();
+  } else if (newGameStep === "howto") {
+    body = renderHowtoBody();
+  }
   return `<div class="foh-root" id="newgame-overlay">${bg(newGameStep !== "intro")}${body}</div>`;
+}
+
+// Pantalla Ajustes (handoff entrega-menu 3). Concatenación de strings sin backticks ni
+// interpolación: se inyecta en el template gigante APP_JS sin riesgo de romperlo.
+function settingsCategories(){
+  return [
+    ["audio", "Audio"], ["video", "Vídeo"], ["play", "Jugabilidad"],
+    ["lang", "Idioma"], ["a11y", "Accesibilidad"],
+  ];
+}
+function sw(k){ return '<div class="set-sw' + (gameSettings[k] ? " on" : "") + '" data-set-toggle="' + k + '"></div>'; }
+function seg(k, opts){
+  var h = '<div class="set-seg" data-set-seg="' + k + '">';
+  for (var i = 0; i < opts.length; i++) h += '<button class="' + (gameSettings[k] === i ? "on" : "") + '" data-i="' + i + '">' + opts[i] + '</button>';
+  return h + '</div>';
+}
+function slide(k){
+  return '<div class="set-slide"><input type="range" min="0" max="100" value="' + (gameSettings[k] ?? 50) + '" data-set-slide="' + k + '"><span class="val">' + (gameSettings[k] ?? 50) + '</span></div>';
+}
+function opt(nm, ds, ctrl, note){
+  return '<div class="set-opt"><div class="lab"><div class="nm">' + nm + '</div>'
+    + (ds ? '<div class="ds">' + ds + '</div>' : "")
+    + (note ? '<div class="set-note">' + note + '</div>' : "")
+    + '</div><div class="ctrl">' + ctrl + '</div></div>';
+}
+function renderSettingsBody(){
+  var cats = "";
+  settingsCategories().forEach(function(c){
+    cats += '<button class="set-catbtn' + (settingsCat === c[0] ? " on" : "") + '" data-set-cat="' + c[0] + '"><span class="ci"></span> ' + c[1] + '</button>';
+  });
+  var audio = '<div class="set-cat' + (settingsCat==="audio"?" on":"") + '" data-cat="audio"><div class="set-ct">Audio · mezcla</div>'
+    + opt("Música", "Banda sonora ambiente de la sala de control.", slide("vol_music"), "Sin efecto aún (sonido no implementado)")
+    + opt("Efectos", "Confirmaciones, transiciones, ticks del reloj.", slide("vol_sfx"), "Sin efecto aún")
+    + opt("Alertas", "Avisos de AOG, SLA en riesgo y auditorías.", slide("vol_alert"), "Sin efecto aún")
+    + opt("Silenciar en segundo plano", "Corta el audio cuando la ventana pierde el foco.", sw("mute_bg"))
+    + '</div>';
+  var video = '<div class="set-cat' + (settingsCat==="video"?" on":"") + '" data-cat="video"><div class="set-ct">Vídeo · pantalla</div>'
+    + opt("Efectos del mapa", "Halos, trails y bloom del mapa Pixi. Desactívalo en equipos justos.", sw("fx"))
+    + opt("Escala de la interfaz", "Tamaño de paneles, tablas y HUD.", seg("textsize", ["Normal","Grande","Enorme"]))
+    + '</div>';
+  var play = '<div class="set-cat' + (settingsCat==="play"?" on":"") + '" data-cat="play"><div class="set-ct">Jugabilidad · partida</div>'
+    + opt("Pausar al abrir paneles", "Detiene el reloj al abrir asignación o detalle de WO.", sw("pause_panels"))
+    + opt("Confirmar acciones críticas", "Pide confirmación al diferir, cancelar contrato o forzar mec sin rating.", sw("confirm"))
+    + opt("Autoguardado semanal", "Guarda automáticamente en cada cierre de semana.", sw("autosave"))
+    + '</div>';
+  var lang = '<div class="set-cat' + (settingsCat==="lang"?" on":"") + '" data-cat="lang"><div class="set-ct">Idioma · región</div>'
+    + opt("Idioma del juego", "Español / English (English parcial por ahora).", seg("lang", ["Español","English"]))
+    + opt("Terminología aeronáutica", "Mantén siglas reales (ATA, AOG, MEL) sin traducir.", sw("avterms"))
+    + '</div>';
+  var a11y = '<div class="set-cat' + (settingsCat==="a11y"?" on":"") + '" data-cat="a11y"><div class="set-ct">Accesibilidad</div>'
+    + opt("Reducir movimiento", "Quita barridos, pulsos y animaciones del mapa.", sw("reduce_motion"))
+    + opt("Alto contraste", "Bordes y texto más marcados en paneles densos.", sw("contrast"))
+    + '</div>';
+  return '<div class="foh-screen">'
+    + '<div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO Tycoon · Configuración</div><div class="foh-livetag"><span class="d"></span> v0.6 · cambios en vivo</div></div>'
+    + '<div class="foh-head"><div class="foh-eyebrow">Configuración</div><h1>Ajustes</h1></div>'
+    + '<div class="set-panel"><div class="set-cats">' + cats + '</div><div class="set-content">' + audio + video + play + lang + a11y + '</div></div>'
+    + '<div class="foh-foot"><button class="foh-btn back ghost" id="ng-settings-back"><span class="foh-ar"></span> Menú principal</button><div class="right"><button class="foh-btn ghost" id="ng-settings-reset">Restablecer valores</button></div></div>'
+    + '</div>';
+}
+// Placeholder de "Cómo se juega" — se implementa en la siguiente ronda. Si se entra al
+// step sin estar listo, mostramos el menú. (Evita pantalla en blanco.)
+function renderHowtoBody(){
+  return '<div class="foh-screen"><div class="foh-head"><div class="foh-eyebrow">Onboarding</div><h1>Cómo se juega</h1><p class="sub">Próximamente.</p></div><div class="foh-foot"><button class="foh-btn back ghost" id="ng-settings-back"><span class="foh-ar"></span> Menú principal</button></div></div>';
 }
 
 // Game Over post-mortem (handoff entrega-menu 3). Escrito con concatenacion de strings
@@ -97869,6 +98015,19 @@ function ageFleet() {
 }
 
 // Nav por teclado del Menú Principal (front-of-house): ↑/↓ mueve selección, Enter activa.
+// Ajustes: sliders (input range). Listener "input" aparte del "click" global. NO llama
+// render() — destruiría el <input> mientras el usuario arrastra; solo actualiza el label
+// y persiste en mro_settings.
+document.body.addEventListener("input", (e) => {
+  const sl = e.target.closest && e.target.closest("[data-set-slide]");
+  if (sl && e.target.tagName === "INPUT") {
+    const k = sl.dataset.setSlide;
+    gameSettings[k] = parseInt(e.target.value, 10) || 0;
+    const lab = sl.querySelector(".val");
+    if (lab) lab.textContent = e.target.value;
+    saveSettings();
+  }
+});
 window.addEventListener("keydown", (e) => {
   if (newGameStep !== "intro") return;
   if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Enter") return;
