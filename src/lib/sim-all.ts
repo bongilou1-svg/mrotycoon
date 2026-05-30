@@ -3,6 +3,7 @@ export * from "./sim/rng.ts";
 export * from "./sim/time.ts";
 export * from "./sim/contracts.ts";
 export * from "./sim/airplanes.ts";
+export * from "./sim/ground.ts";
 export * from "./sim/schedule.ts";
 export * from "./sim/fleet.ts";
 export * from "./sim/stands.ts";

@@ -114,8 +114,9 @@ ${APP_JS}
 </body></html>`;
 }
 
-const CSS = `:root{--bg:#0d1117;--panel:#161b22;--panel-h:#1f2733;--border:#2a3142;--border-s:#3a4256;--text:#e6e9ef;--muted:#8b95a8;--subtle:#5d6677;--accent:#4da3ff;--accent-d:#2a5a8f;--success:#3fb950;--warning:#d29922;--danger:#f85149;--aog:#ff3b3b;--base:#a78bfa;--base-d:#5b3fbe;--modal:#1a2030;--mono:"JetBrains Mono","Fira Code",Consolas,monospace;--sans:"Inter","Segoe UI",system-ui,sans-serif;--rad:6px;}
-*{box-sizing:border-box}html,body{margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;background:var(--bg);color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+const CSS = `:root{--bg:#090d15;--bg-grid:rgba(120,150,200,.035);--panel:#161b22;--panel-h:#1f2733;--panel-solid:#111925;--panel-2:#151f2d;--raised:#1a2536;--border:#2a3142;--border-s:#3a4256;--line:#212c3e;--line-2:#2e3a4f;--text:#e9edf4;--muted:#8b97ab;--subtle:#5d6677;--dim:#586477;--accent:#4da3ff;--accent-2:#86c5ff;--accent-d:#2a5a8f;--accent-deep:#10314f;--accent-bg:rgba(77,163,255,.12);--cyan:#3ad6c5;--success:#3fb950;--warning:#d29922;--danger:#f85149;--ok:#3fb950;--warn:#e6a93a;--bad:#f85149;--aog:#ff4242;--base:#a78bfa;--base-d:#5b3fbe;--ok-bg:rgba(63,185,80,.13);--warn-bg:rgba(230,169,58,.13);--bad-bg:rgba(248,81,73,.13);--modal:#0f1722;--mono:"JetBrains Mono","Fira Code",Consolas,monospace;--sans:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--disp:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--rad:8px;--rad-s:5px;}
+*{box-sizing:border-box}html,body{margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 700px at 78% -8%,rgba(77,163,255,.07),transparent 60%),linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px),var(--bg);background-size:auto,34px 34px,34px 34px,auto}
 .app{display:flex;flex-direction:column;height:100vh}
 .hud{display:flex;justify-content:space-between;align-items:center;padding:.4rem 1rem;background:var(--panel);border-bottom:1px solid var(--border);height:48px;flex-shrink:0}
 .hud-l,.hud-r{display:flex;gap:.5rem;align-items:center}.hud-c{display:flex;gap:1rem;align-items:center}
@@ -324,7 +325,33 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .fleet-reg{font-family:var(--mono);font-weight:600;color:var(--text);font-size:.85rem}
 .fleet-meta{display:flex;flex-wrap:wrap;gap:.4rem;color:var(--muted)}
 .game-over{text-align:center;padding:4rem 2rem}.game-over h1{font-size:3rem;color:var(--danger);margin-bottom:1rem}
-.empty{color:var(--muted);font-size:.9rem;padding:2rem 1rem;text-align:center}`;
+.empty{color:var(--muted);font-size:.9rem;padding:2rem 1rem;text-align:center}
+/* ===== Tutorial Rookie guiado (2026-05-30) ===== */
+/* Capa de bloqueo: intercepta TODOS los clicks salvo el target resaltado. El target se
+   "perfora" elevándolo por z-index con position:relative + outline brillante. */
+#tut-block{position:fixed;inset:0;z-index:900;background:transparent;cursor:not-allowed}
+#tut-block.dim{background:rgba(7,13,24,.55);backdrop-filter:saturate(.7) brightness(.9)}
+/* El elemento objetivo se eleva por encima de la capa de bloqueo para ser clicable. */
+.tut-spotlight{position:relative;z-index:910!important;outline:3px solid var(--accent);outline-offset:3px;border-radius:6px;box-shadow:0 0 0 3px rgba(77,163,255,.35),0 0 22px 6px rgba(77,163,255,.45);animation:tut-pulse 1.6s ease-in-out infinite}
+@keyframes tut-pulse{0%,100%{box-shadow:0 0 0 3px rgba(77,163,255,.30),0 0 18px 4px rgba(77,163,255,.35)}50%{box-shadow:0 0 0 4px rgba(77,163,255,.5),0 0 28px 10px rgba(77,163,255,.6)}}
+/* Bocadillo del tutorial. Posicionado por JS (data-pos) o centrado si es contexto. */
+#tut-pop{position:fixed;z-index:930;max-width:380px;background:linear-gradient(160deg,#16243a,#101a2c);border:1px solid var(--accent);border-radius:10px;padding:1rem 1.15rem;box-shadow:0 12px 40px rgba(0,0,0,.55);color:var(--text);font-size:.9rem;line-height:1.5}
+#tut-pop.center{top:50%;left:50%;transform:translate(-50%,-50%);max-width:520px;padding:1.6rem 1.8rem}
+#tut-pop .tut-step{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600;margin-bottom:.4rem}
+#tut-pop h3{margin:0 0 .5rem;font-size:1.05rem;color:#fff}
+#tut-pop.center h3{font-size:1.5rem}
+#tut-pop p{margin:0 0 .6rem;color:var(--text)}
+#tut-pop .tut-why{background:rgba(77,163,255,.1);border-left:3px solid var(--accent);padding:.4rem .6rem;border-radius:0 5px 5px 0;font-size:.82rem;color:#bcd;margin:.5rem 0}
+#tut-pop .tut-cta{display:inline-block;margin-top:.4rem;font-size:.8rem;color:var(--accent);font-weight:600}
+#tut-pop .tut-actions{display:flex;gap:.6rem;justify-content:flex-end;align-items:center;margin-top:.9rem}
+#tut-pop .tut-next{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:.55rem 1.1rem;font-weight:600;cursor:pointer;font-size:.9rem}
+#tut-pop .tut-next:hover{background:#3a8edb}
+#tut-pop .tut-skip{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.76rem;text-decoration:underline}
+#tut-pop .tut-arrow{position:absolute;width:0;height:0}
+#tut-progress{display:flex;gap:3px;margin-top:.8rem}
+#tut-progress .pip{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.15)}
+#tut-progress .pip.done{background:var(--accent)}
+#tut-progress .pip.cur{background:var(--accent);box-shadow:0 0 6px var(--accent)}`;
 
 const BODY = `<div class="app">
   <header class="hud">
@@ -413,6 +440,13 @@ let manualCertId = "";
 let manualHelperIds = [];
 let hasSavedSlot = false;
 let saveIndicator = "";
+// === Tutorial Rookie guiado (2026-05-30) ===
+// tutActive: el overlay de bloqueo + bocadillo están vivos. tutStep: índice en TUT_STEPS.
+// El tutorial fuerza los primeros clicks (guiado absoluto) hasta graduarse el día 3.
+// Por defecto ON en dificultad Rookie; "Saltar" siempre disponible.
+let tutActive = false;
+let tutStep = 0;
+let tutGraduated = false; // true tras completar/saltar — no reaparece en la misma partida
 // Render-loop optimizations: evita destruir DOM mientras el usuario clica.
 let lastPanelHtml = "";
 let lastNotifsHtml = "";
@@ -701,13 +735,20 @@ function updateMapInfoPanel(){
   const dayMinute = now % 1440;
   const currentDay = S.getDay(now);
 
-  const onGround = game.airplanes.filter(a => a.status !== "Departed");
+  // Pivot iteración 2026-05-30 — "aeropuerto vivo, visión general": el panel muestra
+  // TODO el tráfico real en tierra (tus aviones + passthrough del schedule), no solo los
+  // contratados. Fuente única: S.getGroundTraffic (universal, lee el schedule activo).
+  const onGround = (S.getGroundTraffic?.(game) ?? game.airplanes
+    .filter(a => a.status !== "Departed")
+    .map(a => ({ registration: a.registration, standId: a.standId, overnight: a.overnight,
+      departureMinute: a.scheduledDepartureMinute, contracted: true, isReal: true, notHandled: false,
+      airlineCode: "", callsign: a.arrivalCallsign ?? a.registration })));
 
-  // Próx 3 salidas: aviones en tierra ordenados por scheduledDepartureMinute futuro
-  const nextDeps = [...onGround]
-    .filter(a => a.scheduledDepartureMinute >= now)
-    .sort((a, b) => a.scheduledDepartureMinute - b.scheduledDepartureMinute)
-    .slice(0, 3);
+  // Próx 3 salidas: en tierra ahora con salida futura, orden cronológico.
+  const nextDeps = (S.getUpcomingDepartures?.(game, 3) ?? [...onGround]
+    .filter(a => (a.departureMinute ?? 0) >= now)
+    .sort((a, b) => (a.departureMinute ?? 0) - (b.departureMinute ?? 0))
+    .slice(0, 3));
 
   // Próx 3 llegadas: schedule del día filtrado por scheduledMinute > dayMinute y handleable
   const flights = (S.getFlightsForGameDay?.(currentDay) ?? []);
@@ -730,22 +771,33 @@ function updateMapInfoPanel(){
   let html = '';
 
   // ── En tierra ──
-  html += \`<h3>🅿️ En tierra · \${onGround.length}</h3>\`;
+  // Pivot 2026-05-30: cuenta TODO el tráfico (tuyo + aeropuerto). Coloreado:
+  //   • contratado (tu cliente) → punto cyan + matrícula brillante
+  //   • operador sin contrato    → punto violeta (pista "podrías firmarlo")
+  //   • modelo no mantenible      → punto gris (informativo)
+  // Los tuyos primero, luego por salida. La lista es la fuente de verdad del conteo
+  // (el mapa Pixi puede mostrar menos por límite de stands físicos OSM).
+  const contractedCount = onGround.filter(a => a.contracted).length;
+  html += \`<h3>🅿️ En tierra · \${onGround.length}\${contractedCount > 0 && contractedCount < onGround.length ? \` <span class="muted" style="font-weight:400">(\${contractedCount} tuyos)</span>\` : ""}</h3>\`;
   if (onGround.length === 0) {
     html += \`<div class="mip-empty">Sin aviones en stand</div>\`;
   } else {
-    // Ordenamos por scheduledDepartureMinute para mostrar los que salen antes primero
-    const sortedOnGround = [...onGround]
-      .sort((a, b) => a.scheduledDepartureMinute - b.scheduledDepartureMinute);
-    for (const a of sortedOnGround.slice(0, 4)) {
-      const cs = a.nextDepartureCallsign ?? a.arrivalCallsign ?? "";
+    // Orden: primero los tuyos (isReal/contratado), luego por salida más próxima.
+    const sortedOnGround = [...onGround].sort((a, b) => {
+      if (!!b.contracted !== !!a.contracted) return b.contracted ? 1 : -1;
+      return (a.departureMinute ?? Infinity) - (b.departureMinute ?? Infinity);
+    });
+    const dotColor = (a) => a.notHandled ? "#94a4be" : a.contracted ? "#3aa9ff" : "#a78bfa";
+    for (const a of sortedOnGround.slice(0, 6)) {
+      const dot = \`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:\${dotColor(a)};margin-right:5px;vertical-align:middle"></span>\`;
+      const right = a.standId ? esc(a.standId) : (a.notHandled ? esc(a.airlineCode) : "—");
       html += \`<div class="mip-row">
-        <span class="mip-callsign mono">\${esc(a.registration)}</span>
-        <span class="mip-route">\${esc(a.standId)} \${a.overnight ? "🌙" : ""}</span>
+        <span class="mip-callsign mono" style="\${a.contracted ? "" : "opacity:.72"}">\${dot}\${esc(a.registration)}</span>
+        <span class="mip-route">\${right} \${a.overnight ? "🌙" : ""}</span>
       </div>\`;
     }
-    if (sortedOnGround.length > 4) {
-      html += \`<div class="mip-more">+\${sortedOnGround.length - 4} más</div>\`;
+    if (sortedOnGround.length > 6) {
+      html += \`<div class="mip-more">+\${sortedOnGround.length - 6} más</div>\`;
     }
   }
 
@@ -755,10 +807,10 @@ function updateMapInfoPanel(){
     html += \`<div class="mip-empty">Sin salidas programadas</div>\`;
   } else {
     for (const a of nextDeps) {
-      const cs = a.nextDepartureCallsign ?? a.registration;
+      const cs = a.callsign ?? a.registration;
       html += \`<div class="mip-row">
-        <span class="mip-time">\${hhmmRel(a.scheduledDepartureMinute)}</span>
-        <span class="mip-callsign mono">\${esc(cs)}</span>
+        <span class="mip-time">\${hhmmRel(a.departureMinute ?? now)}</span>
+        <span class="mip-callsign mono" style="\${a.contracted ? "" : "opacity:.72"}">\${esc(cs)}</span>
       </div>\`;
     }
   }
@@ -2894,6 +2946,214 @@ function tweenNumber(el, target, duration = 400, formatter = (v) => v.toLocaleSt
   _activeTweens.set(el, requestAnimationFrame(step));
 }
 
+// ===========================================================================
+// Tutorial Rookie guiado (2026-05-30)
+// ===========================================================================
+// Guía paso a paso con bloqueo total de clicks (spotlight). El usuario solo puede
+// interactuar con el elemento resaltado o pulsar Continuar. Cubre: contexto del juego →
+// orientación del mapa → el bucle central (avanzar tiempo, abrir aviso, asignar, cobrar) →
+// sistemas de apoyo → graduación. Cada paso explica el PORQUÉ.
+//
+// Cada paso: { phase, title, body, why?, target?, place?, gate?, cond?, onEnter?, showNext? }
+//   target  = selector CSS a resaltar (null = bocadillo centrado, contexto).
+//   place   = 'center'|'top'|'bottom'|'left'|'right' posición del bocadillo respecto al target.
+//   gate    = selector que el usuario DEBE clicar para avanzar (acción guiada).
+//   cond    = fn(game)->bool: si true, auto-avanza (eventos del sim, p.ej. WO asignada).
+//   onEnter = fn(): efecto al entrar (p.ej. cambiar de tab para que exista el target).
+//   showNext= muestra botón Continuar (siempre en pasos de contexto; fallback anti-softlock).
+const TUT_STEPS = [
+  // ── Fase 0 · Contexto ──
+  { phase: "Bienvenida", title: "Bienvenido a tu MRO",
+    body: "Acabas de fundar una empresa de <strong>mantenimiento aeronáutico</strong> (MRO) en el aeropuerto de Asturias. Tú eres el técnico-jefe y dueño.",
+    why: "Un MRO no vuela aviones: los mantiene en condiciones de volar. Las aerolíneas son tus clientes.",
+    target: null, place: "center", showNext: true },
+  { phase: "El negocio", title: "Cómo ganas dinero",
+    body: "Las aerolíneas te pagan por mantener sus aviones operativos. Cuando uno aterriza con una avería, te llaman: tienes hasta su próxima salida (~55 min) para resolverla.",
+    why: "Es mantenimiento de LÍNEA: turnaround rápido, bajo presión de tiempo. No hangares, no grandes revisiones todavía.",
+    target: null, place: "center", showNext: true },
+  { phase: "El bucle", title: "Llega · Arregla · Despega",
+    body: "Si arreglas a tiempo: <strong>cobras</strong> y tu <strong>reputación sube</strong>. Si no llegas: penalización y la reputación baja.",
+    why: "Toda la partida es este bucle. Domínalo y el negocio crece; descuídalo y quiebras.",
+    target: null, place: "center", showNext: true },
+  { phase: "Tus recursos", title: "Con qué empiezas",
+    body: "💰 200.000 € de caja · 📋 un contrato con <strong>Vueling</strong> · 👤 tu equipo de mecánicos. Suficiente para arrancar.",
+    why: "Vueling hace turnaround corto (sin pernoctas): perfecto para aprender a reaccionar rápido.",
+    target: null, place: "center", showNext: true },
+  // ── Fase 1 · Orientación ──
+  { phase: "El mapa", title: "Tu aeropuerto",
+    body: "Esto es Asturias en tiempo real. Cada avión en tierra aparece aquí. Los puntos <span style=\\"color:#3aa9ff\\">cyan</span> son de tu cliente; los <span style=\\"color:#a78bfa\\">violeta</span> son tráfico que aún no gestionas.",
+    why: "Ver TODO el aeropuerto te ayuda a decidir a qué aerolíneas querrás ofrecer contrato más adelante.",
+    target: "#map-info-panel", place: "right", showNext: true,
+    onEnter: () => { if (activeTab !== "map") { activeTab = "map"; invalidatePanelCache(); } } },
+  { phase: "El tiempo", title: "Control del reloj",
+    body: "Aquí controlas la velocidad del juego. Ahora está en <strong>pausa</strong> (⏸). Puedes ir a 1×, 2× o 5×.",
+    why: "Pausar te deja pensar sin prisa. Acelerar hace avanzar la jornada cuando no hay nada urgente.",
+    target: ".speeds", place: "bottom", showNext: true },
+  // ── Fase 2 · El bucle central ──
+  { phase: "Tu primera jornada", title: "Pon el reloj en marcha",
+    body: "Pulsa <strong>1×</strong> para que empiece la jornada. Los aviones comenzarán a llegar.",
+    why: "El tiempo solo corre cuando tú quieres. Empieza despacio para no perderte nada.",
+    target: ".speeds button[data-speed=\\"1\\"]", place: "bottom", gate: ".speeds button[data-speed=\\"1\\"]" },
+  { phase: "Atento", title: "Observa el aeropuerto",
+    body: "Deja correr el tiempo. Cuando un avión aterrice con una avería, aparecerá un <strong>aviso</strong> y el botón 🏭 Operaciones se marcará en rojo.",
+    why: "Los avisos (callouts) son el corazón del juego: cada uno es trabajo y dinero con cuenta atrás.",
+    target: ".side button[data-tab=\\"operations\\"]", place: "right",
+    cond: (g) => activeCalloutExists(g), showNext: true },
+  { phase: "Operaciones", title: "Abre Operaciones",
+    body: "Haz click en <strong>🏭 Operaciones</strong>. Es tu centro de control: todos los avisos y trabajos activos.",
+    why: "Desde aquí gestionas cada orden de trabajo: ver el detalle y asignar mecánicos.",
+    target: ".side button[data-tab=\\"operations\\"]", place: "right",
+    gate: ".side button[data-tab=\\"operations\\"]" },
+  { phase: "La orden de trabajo", title: "Abre el aviso",
+    body: "Haz click en una <strong>tarjeta de aviso</strong>. Verás qué falla (capítulo ATA), qué cualificación necesita y cuánto tarda.",
+    why: "Cada avión y cada avería son distintos. Leer la orden te dice a quién asignar.",
+    target: ".wo-card[data-wo]", place: "right",
+    onEnter: () => { if (activeTab !== "operations") { activeTab = "operations"; invalidatePanelCache(); } },
+    gate: ".wo-card[data-wo]", cond: (g) => selectedWoId !== null, showNext: true },
+  { phase: "Asignar", title: "Pon a un mecánico",
+    body: "Asigna un mecánico cualificado a este trabajo (botón en el detalle). El mecánico irá al avión y empezará.",
+    why: "Sin mecánico asignado, la avería no se toca y el reloj sigue corriendo hacia la salida.",
+    target: "#modal-content", place: "left",
+    cond: (g) => anyWoAssigned(g), showNext: true },
+  { phase: "En marcha", title: "Acelera y observa",
+    body: "El mecánico está trabajando. Pulsa <strong>2×</strong> y mira cómo avanza la barra de progreso del trabajo.",
+    why: "Acelerar el tiempo muerto es clave: vigila que termine ANTES de la hora de salida.",
+    target: ".speeds button[data-speed=\\"2\\"]", place: "bottom",
+    gate: ".speeds button[data-speed=\\"2\\"]", showNext: true },
+  { phase: "¡Cobrado!", title: "Has cerrado tu primer trabajo",
+    body: "Cuando la orden se completa a tiempo, <strong>cobras</strong> y tu reputación con Vueling sube. Mira tu balance arriba (💰).",
+    why: "Ese es el bucle completo. Repetirlo bien, jornada tras jornada, es ganar la partida.",
+    target: "#bal", place: "bottom",
+    cond: (g) => anyWoCompleted(g), showNext: true },
+  // ── Fase 3 · Sistemas de apoyo ──
+  { phase: "Sistemas", title: "Equipo",
+    body: "En <strong>🏢 Oficina</strong> gestionas a tus mecánicos: turnos, moral y contratación de nuevos.",
+    why: "Tu equipo es tu capacidad. Pocos mecánicos = avisos sin atender = penalizaciones.",
+    target: ".side button[data-tab=\\"office\\"]", place: "right", showNext: true },
+  { phase: "Sistemas", title: "Economía",
+    body: "En <strong>💼 Economía</strong> ves tus finanzas: cobros, salarios y penalizaciones, semana a semana.",
+    why: "Si gastas más de lo que ingresas, quiebras. Vigila el balance al cerrar cada semana.",
+    target: ".side button[data-tab=\\"economy\\"]", place: "right", showNext: true },
+  // ── Fase 4 · Graduación ──
+  { phase: "Listo", title: "A partir de aquí, mandas tú",
+    body: "Ya conoces el bucle: <strong>llega → arregla → despega</strong>. Sigue gestionando avisos, cuida tu equipo y haz crecer tu reputación para firmar más contratos.",
+    why: "Los próximos días son tuyos. Si te atascas, todo lo aprendido sigue aquí. ¡Suerte, jefe!",
+    target: null, place: "center", showNext: true, isLast: true },
+];
+
+function tutCur(){ return TUT_STEPS[tutStep] || null; }
+// ¿Existe un aviso (callout) activo? = WO no-daily abierta.
+function activeCalloutExists(g){
+  return (g.workOrders || []).some(w => !w.templateId?.startsWith?.("DC-") && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred");
+}
+function anyWoAssigned(g){
+  return (g.workOrders || []).some(w => !w.templateId?.startsWith?.("DC-") && (w.assignedMechanicIds?.length || 0) > 0);
+}
+function anyWoCompleted(g){
+  return (g.workOrders || []).some(w => !w.templateId?.startsWith?.("DC-") && w.phase === "Completed");
+}
+
+function startTutorial(){
+  tutActive = true; tutStep = 0; tutGraduated = false;
+  const st = tutCur(); if (st && st.onEnter) { try { st.onEnter(); } catch(e){} }
+  render();
+}
+function tutSkip(){
+  tutActive = false; tutGraduated = true;
+  document.querySelectorAll(".tut-spotlight").forEach(el => el.classList.remove("tut-spotlight"));
+  render();
+}
+function tutAdvance(){
+  if (!tutActive) return;
+  const cur = tutCur();
+  if (cur && cur.isLast) { tutSkip(); return; }
+  tutStep += 1;
+  const st = tutCur();
+  if (!st) { tutSkip(); return; }
+  if (st.onEnter) { try { st.onEnter(); } catch(e){} }
+  render();
+}
+// Auto-avance por condición del sim (llamado desde render cuando el tutorial está vivo).
+// Diferido con setTimeout para no re-entrar en render() de forma recursiva.
+let tutCondPending = false;
+function tutCheckCond(){
+  if (!tutActive || tutCondPending) return;
+  const st = tutCur();
+  if (st && st.cond) {
+    try {
+      if (st.cond(game)) {
+        tutCondPending = true;
+        setTimeout(() => { tutCondPending = false; tutAdvance(); }, 600);
+      }
+    } catch(e){}
+  }
+}
+
+let lastTutRenderedStep = -1;
+function renderTutorial(){
+  let root = document.getElementById("tutorial-root");
+  if (!root) { root = document.createElement("div"); root.id = "tutorial-root"; document.body.appendChild(root); }
+  if (!tutActive) {
+    if (root.innerHTML) root.innerHTML = "";
+    document.querySelectorAll(".tut-spotlight").forEach(el => el.classList.remove("tut-spotlight"));
+    lastTutRenderedStep = -1;
+    return;
+  }
+  const st = tutCur();
+  if (!st) { tutSkip(); return; }
+  const centered = !st.target || st.place === "center";
+  // Reconstruir el bocadillo SOLO al cambiar de paso (evita parpadeo a 2×/5× donde
+  // render() corre cada tick). El spotlight sí se re-aplica siempre (targets dentro de
+  // paneles dinámicos se recrean en cada innerHTML).
+  if (tutStep !== lastTutRenderedStep) {
+    const total = TUT_STEPS.length;
+    let pips = "";
+    for (let i = 0; i < total; i++) pips += \`<span class="pip \${i < tutStep ? "done" : i === tutStep ? "cur" : ""}"></span>\`;
+    const nextLabel = st.isLast ? "Empezar a jugar ✈️" : "Continuar →";
+    const nextBtn = (st.showNext || st.isLast) ? \`<button class="tut-next" id="tut-next">\${nextLabel}</button>\` : "";
+    const cta = st.gate && !st.isLast ? \`<div class="tut-cta">👆 Haz click donde se indica para continuar</div>\` : "";
+    root.innerHTML =
+      \`<div id="tut-block" class="dim"></div>\` +
+      \`<div id="tut-pop" class="\${centered ? "center" : ""}">\` +
+        \`<div class="tut-step">📘 Tutorial · \${esc(st.phase)}</div>\` +
+        \`<h3>\${st.title}</h3>\` +
+        \`<p>\${st.body}</p>\` +
+        (st.why ? \`<div class="tut-why">💡 \${st.why}</div>\` : "") +
+        cta +
+        \`<div class="tut-actions"><button class="tut-skip" id="tut-skip">Saltar tutorial</button>\${nextBtn}</div>\` +
+        \`<div id="tut-progress">\${pips}</div>\` +
+      \`</div>\`;
+    lastTutRenderedStep = tutStep;
+  }
+  // Spotlight: mover al target actual sin reiniciar la animación si ya lo tiene.
+  let targetEl = null;
+  if (st.target) { try { targetEl = document.querySelector(st.target); } catch(e){} }
+  document.querySelectorAll(".tut-spotlight").forEach(el => { if (el !== targetEl) el.classList.remove("tut-spotlight"); });
+  if (targetEl && !targetEl.classList.contains("tut-spotlight")) targetEl.classList.add("tut-spotlight");
+  tutPositionPop(targetEl, st.place);
+}
+
+// Coloca el bocadillo cerca del target (o centrado). Robusto: si no cabe, recae a centrado.
+function tutPositionPop(targetEl, place){
+  const pop = document.getElementById("tut-pop");
+  if (!pop) return;
+  if (!targetEl || place === "center") { pop.classList.add("center"); pop.style.top = ""; pop.style.left = ""; return; }
+  pop.classList.remove("center");
+  const r = targetEl.getBoundingClientRect();
+  const pw = pop.offsetWidth || 360, ph = pop.offsetHeight || 160;
+  const gap = 14, vw = window.innerWidth, vh = window.innerHeight;
+  let top, left;
+  if (place === "right")      { left = r.right + gap; top = r.top + r.height/2 - ph/2; }
+  else if (place === "left")  { left = r.left - gap - pw; top = r.top + r.height/2 - ph/2; }
+  else if (place === "top")   { left = r.left + r.width/2 - pw/2; top = r.top - gap - ph; }
+  else                        { left = r.left + r.width/2 - pw/2; top = r.bottom + gap; } // bottom
+  // Clamp a viewport.
+  left = Math.max(12, Math.min(left, vw - pw - 12));
+  top  = Math.max(12, Math.min(top,  vh - ph - 12));
+  pop.style.left = left + "px";
+  pop.style.top  = top + "px";
+}
+
 function render(){
   // Pivot iteración 2026-05-25: New Game wizard overlay. Si está activo, mostrarlo
   // como overlay full-screen y no renderizar el resto. Se inyecta en un div dedicado.
@@ -3063,9 +3323,42 @@ function render(){
   }
   const btnLoad = document.getElementById("btn-load");
   if (btnLoad) btnLoad.disabled = !hasSavedSlot;
+
+  // Tutorial guiado: aplicar overlay/spotlight al final (tras reconstruir paneles) y
+  // comprobar condiciones de auto-avance del sim.
+  renderTutorial();
+  tutCheckCond();
 }
 
+// === Tutorial: gating de clicks (capture phase, antes que el handler normal) ===
+// Si el tutorial está activo, solo se permite: (a) clicks dentro del bocadillo #tut-pop,
+// (b) el elemento "gate" del paso actual. Todo lo demás se traga. Cuando el usuario clica
+// el gate correcto, dejamos pasar el click (para que el handler normal ejecute la acción)
+// y avanzamos el tutorial justo después.
+document.addEventListener("click", (e) => {
+  if (!tutActive) return;
+  // Clicks en el bocadillo (Continuar / Saltar) siempre permitidos — los gestiona el
+  // handler de burbuja de abajo.
+  if (e.target.closest && e.target.closest("#tut-pop")) return;
+  const st = tutCur();
+  const gateEl = st && st.gate ? (e.target.closest && e.target.closest(st.gate)) : null;
+  if (gateEl) {
+    // Click correcto: dejar que el handler normal haga la acción, luego avanzar.
+    setTimeout(() => { if (tutActive && tutCur() === st) tutAdvance(); }, 60);
+    return;
+  }
+  // Cualquier otro click: bloquear (guiado absoluto).
+  e.stopPropagation();
+  e.preventDefault();
+  // Feedback: parpadeo del bocadillo para indicar "aquí no".
+  const pop = document.getElementById("tut-pop");
+  if (pop) { pop.style.transition = "transform .08s"; pop.style.transform = (pop.classList.contains("center") ? "translate(-50%,-50%) " : "") + "scale(1.03)"; setTimeout(() => { pop.style.transform = pop.classList.contains("center") ? "translate(-50%,-50%)" : ""; }, 120); }
+}, true);
+
 document.body.addEventListener("click", (e) => {
+  // Tutorial: botones del bocadillo (se evalúan primero; van por encima del bloqueo).
+  if (e.target.id === "tut-next") { tutAdvance(); return; }
+  if (e.target.id === "tut-skip") { tutSkip(); return; }
   if (e.target.id === "btn-save") { doSave(); return; }
   if (e.target.id === "btn-load") { doLoad(); return; }
   if (e.target.id === "btn-new")  { doNewGame(); return; }
@@ -3398,7 +3691,16 @@ async function startGameFromPreset(presetFile) {
   selectedWoId = null;
   newGameStep = null;
   newGameSelectedIcao = null;
+  // Tutorial Rookie (2026-05-30): ON por defecto en dificultad 1 (Rookie). El primer paso
+  // ofrece "Saltar tutorial" para quien ya tiene experiencia. activeTab arranca en mapa
+  // para que la orientación tenga el contexto visual delante.
+  tutActive = false; tutGraduated = false; tutStep = 0;
+  activeTab = "map";
   render();
+  if ((preset.difficulty ?? 1) === 1) {
+    // pequeño defer para asegurar que el DOM base está montado antes del overlay.
+    setTimeout(() => startTutorial(), 50);
+  }
 }
 
 /** Renderiza overlay wizard New Game (full-screen). */
