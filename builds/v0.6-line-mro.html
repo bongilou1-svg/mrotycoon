@@ -467,6 +467,26 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .wc-btn{font-family:var(--sans);font-size:15px;font-weight:600;padding:13px 26px;border:1px solid var(--accent);background:var(--accent);color:#061018;border-radius:4px;cursor:pointer;transition:all .14s}
 .wc-btn:hover{background:var(--accent-hover,#6db5ff);box-shadow:0 0 22px rgba(77,163,255,.35)}
 @media(max-width:760px){.wc-main{grid-template-columns:1fr}.wc-right{border-left:none;border-top:1px solid var(--border)}.wc-pl{grid-template-columns:1fr}}
+/* ===== Hito / Milestone (handoff entrega-menu 5, 2026-05-30) ===== */
+.ms-root{position:fixed;inset:0;z-index:1090;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 16%,rgba(230,180,80,.10) 0%,#04070c 60%)}
+.ms-scrim{position:absolute;inset:0;background:radial-gradient(720px 460px at 50% 16%,rgba(230,180,80,.16) 0%,transparent 60%),radial-gradient(140% 120% at 50% 40%,transparent 52%,rgba(6,9,14,.7) 100%)}
+.ms-hero{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;z-index:5;overflow-y:auto}
+.ms-badge{width:118px;height:118px;border-radius:50%;position:relative;margin-bottom:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:radial-gradient(circle at 50% 38%,rgba(230,180,80,.25),rgba(230,180,80,.04) 70%);border:1.5px solid rgba(230,180,80,.5);box-shadow:0 0 60px rgba(230,180,80,.3),inset 0 0 28px rgba(230,180,80,.12)}
+.ms-badge::before{content:"";position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(230,180,80,.28);animation:ms-ring 2.8s ease-out infinite}
+@keyframes ms-ring{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.32);opacity:0}}
+.ms-badge .ic{font-size:54px;filter:drop-shadow(0 4px 14px rgba(230,180,80,.5))}
+.ms-kicker{font-family:var(--mono);font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:#e6b450;margin-bottom:16px}
+.ms-title{font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1.05;max-width:800px;margin-bottom:16px;color:#f3f5f9}
+.ms-title .hl{color:#e6b450}
+.ms-desc{font-size:15px;line-height:1.6;color:var(--muted);max-width:540px;margin-bottom:34px}
+.ms-rewards{display:flex;gap:16px;margin-bottom:38px;flex-wrap:wrap;justify-content:center}
+.ms-reward{background:linear-gradient(180deg,rgba(22,27,34,.92),rgba(14,18,25,.92));border:1px solid var(--border-s);border-radius:4px;padding:16px 24px;min-width:140px;position:relative;overflow:hidden}
+.ms-reward::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#e6b450,transparent)}
+.ms-reward .rl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px}
+.ms-reward .rv{font-size:24px;font-weight:800;color:#e6b450}
+.ms-reward .rv .u{font-size:13px;color:var(--muted)}
+.ms-btn{font-family:var(--sans);font-size:15px;font-weight:600;padding:13px 30px;border:1px solid #e6b450;background:#e6b450;color:#1a1206;border-radius:4px;cursor:pointer;transition:all .14s}
+.ms-btn:hover{background:#f0c468;border-color:#f0c468;box-shadow:0 0 22px rgba(230,180,80,.4)}
 /* Accesibilidad: clases en <html> aplicadas por applySettings() según mro_settings */
 html.reduce-motion *{animation-duration:0s!important;animation-iteration-count:1!important;transition-duration:0s!important}
 html.hi-contrast{--border:#4a5470;--border-s:#5a6480}
@@ -94245,6 +94265,11 @@ let howtoStep = 0; // Cómo se juega (handoff entrega-menu 3): paso activo 0..3
 // guarda el snapshot a mostrar (null = sin modal). lastKpiLen detecta el crecimiento.
 let weeklyCloseData = null;
 let lastKpiLen = 0;
+// Hito / Milestone (handoff entrega-menu 5): cuando crece el nº de contratos ACTIVOS
+// (nuevo cliente firmado), mostramos la pantalla de hito. milestoneData = datos a mostrar
+// (null = sin modal). lastActiveContracts detecta el crecimiento sin tocar el sim.
+let milestoneData = null;
+let lastActiveContracts = 0;
 const SETTINGS_DEFAULTS = {
   vol_music: 55, vol_sfx: 80, vol_alert: 90, mute_bg: true,
   fx: true, reduce_motion: false, contrast: false,
@@ -97332,6 +97357,10 @@ function render(){
   let wcOverlay = document.getElementById("weekly-close-overlay-root");
   if (!wcOverlay) { wcOverlay = document.createElement("div"); wcOverlay.id = "weekly-close-overlay-root"; document.body.appendChild(wcOverlay); }
   wcOverlay.innerHTML = (weeklyCloseData && newGameStep === null && !(game.gameOver && game.gameOver.isOver)) ? renderWeeklyClose() : "";
+  // Hito (2026-05-30): overlay de milestone si hay datos y nada por encima.
+  let msOverlay = document.getElementById("milestone-overlay-root");
+  if (!msOverlay) { msOverlay = document.createElement("div"); msOverlay.id = "milestone-overlay-root"; document.body.appendChild(msOverlay); }
+  msOverlay.innerHTML = (milestoneData && newGameStep === null && !(game.gameOver && game.gameOver.isOver) && !weeklyCloseData) ? renderMilestone() : "";
   document.getElementById("clock").textContent = fmtClock(game.clock.minute);
   document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
   const balEl = document.getElementById("bal");
@@ -97564,6 +97593,8 @@ document.body.addEventListener("click", (e) => {
   if (e.target.closest("#go-menu")) { newGameStep = "intro"; render(); return; }
   // Cierre Semanal: continuar cierra el modal y reanuda el reloj a 1×.
   if (e.target.closest("#wc-continue")) { weeklyCloseData = null; S.setGameSpeed(game, 1); render(); return; }
+  // Hito: continuar cierra el modal y reanuda el reloj a 1×.
+  if (e.target.closest("#ms-continue")) { milestoneData = null; S.setGameSpeed(game, 1); render(); return; }
   if (e.target.closest("#ng-continue, #ng-continue-card")) { doContinueFromIntro(); return; }
   if (e.target.closest("#ng-clear-save")) {
     if (!confirm("¿Borrar partida guardada definitivamente? No se puede deshacer.")) return;
@@ -98228,6 +98259,43 @@ function renderWeeklyClose(){
     + '</div></div>';
 }
 
+// Hito / Milestone (handoff entrega-menu 5). Datos del nuevo contrato firmado (reales del
+// game state, sin recompensas inventadas). Concatenación de strings sin backticks ni interpolación.
+function buildMilestoneData(){
+  const active = (game.contracts || []).filter(c => c.status === "active");
+  if (active.length === 0) return null;
+  // El contrato más reciente = mayor offeredAtMinute (proxy de "recién firmado").
+  const c = active.slice().sort((a, b) => (b.offeredAtMinute ?? 0) - (a.offeredAtMinute ?? 0))[0];
+  const al = game.airlines.find(x => x.id === c.airlineId);
+  const name = al ? al.name : c.airlineId;
+  const rep = game.reputation?.perAirline?.[c.airlineId];
+  return {
+    icon: "🤝",
+    kicker: "Hito alcanzado · Nuevo contrato",
+    titlePre: "",
+    titleHl: name,
+    descPre: " confía en tu MRO y firma contrato. Más movimientos, más Work Orders y un flujo de ingresos recurrente.",
+    rewards: [
+      { l: "Fee base", v: fmt(c.baseFeePerWeek ?? 0), u: " €/sem" },
+      { l: "Pago por trabajo", v: fmt(c.paymentPerWOMinute ?? 0), u: " €/min" },
+    ].concat(rep != null ? [{ l: "Reputación", v: String(Math.round(rep)), u: "/100" }] : []),
+  };
+}
+function renderMilestone(){
+  const d = milestoneData;
+  if (!d) return "";
+  let rewards = "";
+  for (const r of d.rewards) rewards += '<div class="ms-reward"><div class="rl">' + r.l + '</div><div class="rv">' + r.v + '<span class="u">' + (r.u || "") + '</span></div></div>';
+  return '<div class="ms-root"><div class="ms-scrim"></div><div class="ms-hero">'
+    + '<div class="ms-badge"><span class="ic">' + d.icon + '</span></div>'
+    + '<div class="ms-kicker">' + esc(d.kicker) + '</div>'
+    + '<h1 class="ms-title">' + esc(d.titlePre || "") + '<span class="hl">' + esc(d.titleHl) + '</span></h1>'
+    + '<p class="ms-desc"><strong style="color:var(--text)">' + esc(d.titleHl) + '</strong>' + esc(d.descPre || "") + '</p>'
+    + '<div class="ms-rewards">' + rewards + '</div>'
+    + '<button class="ms-btn" id="ms-continue">Seguir construyendo →</button>'
+    + '</div></div>';
+}
+
 function ageFleet() {
   // DEBUG: bumpea la flota cerca de triggers A/C para poder validar los flujos sin esperar
   // 30 días de juego. Mitad de cada flota a 580 FH (a 20 del A=600).
@@ -98314,6 +98382,20 @@ setInterval(() => {
       if (newGameStep === null && !(game.gameOver && game.gameOver.isOver)) {
         weeklyCloseData = buildWeeklyCloseData();
         S.setGameSpeed(game, 0);
+      }
+    }
+  }
+  // Hito (2026-05-30): detectar nuevo contrato activo (nuevo cliente firmado).
+  {
+    const nActive = (game.contracts || []).filter(c => c.status === "active").length;
+    if (nActive < lastActiveContracts) {
+      lastActiveContracts = nActive; // resync (partida nueva / load)
+    } else if (nActive > lastActiveContracts) {
+      const wasInit = lastActiveContracts === 0; // el contrato inicial no dispara hito
+      lastActiveContracts = nActive;
+      if (!wasInit && newGameStep === null && !(game.gameOver && game.gameOver.isOver) && !weeklyCloseData) {
+        milestoneData = buildMilestoneData();
+        if (milestoneData) S.setGameSpeed(game, 0);
       }
     }
   }
