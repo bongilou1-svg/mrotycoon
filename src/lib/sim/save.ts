@@ -98,6 +98,9 @@ export interface GameSavePayload {
   // INC3 (viaje variable): mapa standId→minutos de viaje oficina→stand (derivado del OSM).
   // Opcional: saves antiguos no lo traen → {} → fallback a balance.officeToStandMinutes.
   standTravelMinutes?: Record<string, number>;
+  // Fase C (brief maestro): acumulador WOs de la semana en curso (eventos). Opcional: saves
+  // viejos → defaults a cero (se pierde a lo sumo el conteo parcial de la semana en curso).
+  weeklyWoStats?: { completed: number; late: number; failed: number };
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -146,6 +149,7 @@ export function serializeGame(g: GameState): GameSavePayload {
     airportIcao: g.airportIcao,
     archive: g.archive, // v15: performance archive (Departed + WOs cerradas antiguas)
     standTravelMinutes: g.standTravelMinutes ?? {}, // INC3: viaje variable precomputado
+    weeklyWoStats: g.weeklyWoStats ?? { completed: 0, late: 0, failed: 0 }, // Fase C
   };
 }
 
@@ -221,6 +225,8 @@ export function deserializeGame(
     // INC3 (viaje variable): saves pre-INC3 no lo traen → {} → assignment cae al fijo
     // officeToStandMinutes. No requiere bump: es derivado del mapa, recomputable.
     standTravelMinutes: payload.standTravelMinutes ?? {},
+    // Fase C (KPI semanal por eventos): saves viejos → acumulador a cero.
+    weeklyWoStats: payload.weeklyWoStats ?? { completed: 0, late: 0, failed: 0 },
     // v15 (pivot iteración 2026-05-25 · Performance archive): listas archivadas para
     // que el tick no las itere. Saves pre-v15 no lo traen → empezar vacío (los Departed
     // y WOs cerradas viejas del save siguen en g.airplanes/g.workOrders hasta que

@@ -340,6 +340,7 @@ export function createGame(
     mroStage: 1,
     activeBuild: null,
     kpiHistory: [],
+    weeklyWoStats: { completed: 0, late: 0, failed: 0 }, // Fase C: acumulador semanal por eventos
     randomEvents: [],
     eventsRolledForDay: 0,
     // Línea pura: schedule real OVD activo por default. Legacy: arrivals stocásticos.
@@ -1129,6 +1130,9 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   // 5. Aplicar eventos del state machine
   for (const ev of machineRes.events) {
     if (ev.type === "wo_completed") {
+      // Fase C: KPI semanal por EVENTOS (misma fuente que el revenue). late ⊆ completed.
+      g.weeklyWoStats.completed += 1;
+      if (!ev.onTime) g.weeklyWoStats.late += 1;
       const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
       // Pivot iteración 2026-05-24: el template puede vivir en `templates` (callouts/AOG)
       // o `dailyCheckTemplates` (DC-* subtareas). Antes solo se buscaba en templates → las
@@ -1218,6 +1222,8 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
     const melRes = tickMel(g.workOrders, next);
     g.workOrders = melRes.workOrders;
     for (const ev of melRes.events) {
+      // Fase C: KPI semanal — MEL expirada = WO fallida (único camino de fallo real hoy).
+      g.weeklyWoStats.failed += 1;
       g.economy = addTransaction(
         g.economy,
         createTransaction(
@@ -1340,22 +1346,23 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
     // Fase 5B-δ: snapshot KPI semanal para dashboard.
     const repValues = Object.values(g.reputation.perAirline);
     const repAvg = repValues.length > 0 ? repValues.reduce((s, v) => s + v, 0) / repValues.length : 0;
-    // WOs del cierre semanal: completas/late/failed acumuladas desde semana previa.
-    // Simplificación MVP: usamos contadores absolutos del state actual y derivamos delta vs último snapshot.
-    const woCompletedNow = g.workOrders.filter(w => w.phase === "Completed").length;
-    const woLateNow = g.economy.ledger.filter(t => t.type === "penalty" && t.description.startsWith("Penalty SLA")).length;
-    const woFailedNow = g.workOrders.filter(w => w.phase === "Failed").length;
-    const lastSnap = g.kpiHistory[g.kpiHistory.length - 1];
+    // Fase C (brief maestro): WOs de la semana que cierra, contadas desde los EVENTOS de la
+    // semana (wo_completed / mel_expired), misma fuente y escala que el revenue. Antes esto
+    // mezclaba el array vivo (podado por el archive → ~0 completadas) con el ledger acumulado
+    // (todas las SLA penalties de SIEMPRE → "7 tarde"), produciendo "0 completadas / 37k
+    // cobrados / 7 tarde". Ahora el acumulador semanal es coherente y se resetea al cerrar.
     g.kpiHistory.push({
       week: weekBeforeClose,
       balance: g.economy.balance,
       repAvg,
-      woCompleted: woCompletedNow - (lastSnap?.woCompleted ? 0 : 0) , // absoluto; UI derivará delta si quiere
-      woLate: woLateNow,
-      woFailed: woFailedNow,
+      woCompleted: g.weeklyWoStats.completed,
+      woLate: g.weeklyWoStats.late,
+      woFailed: g.weeklyWoStats.failed,
       complianceScore: g.compliance?.score ?? 80,
       mechanicsCount: g.mechanics.length,
     });
+    // Reset del acumulador para la semana entrante.
+    g.weeklyWoStats = { completed: 0, late: 0, failed: 0 };
     // Capar a 52 semanas (1 año ingame)
     if (g.kpiHistory.length > 52) g.kpiHistory.shift();
     // Autosave fire&forget tras cierre semanal

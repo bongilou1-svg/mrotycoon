@@ -9001,8 +9001,10 @@ var Sim = (() => {
       airportIcao: g.airportIcao,
       archive: g.archive,
       // v15: performance archive (Departed + WOs cerradas antiguas)
-      standTravelMinutes: g.standTravelMinutes ?? {}
+      standTravelMinutes: g.standTravelMinutes ?? {},
       // INC3: viaje variable precomputado
+      weeklyWoStats: g.weeklyWoStats ?? { completed: 0, late: 0, failed: 0 }
+      // Fase C
     };
   }
   function deserializeGame(payload, balance, airlines, templates, checkDefinitions = [], dailyCheckTemplates = []) {
@@ -9059,6 +9061,8 @@ var Sim = (() => {
       // INC3 (viaje variable): saves pre-INC3 no lo traen → {} → assignment cae al fijo
       // officeToStandMinutes. No requiere bump: es derivado del mapa, recomputable.
       standTravelMinutes: payload.standTravelMinutes ?? {},
+      // Fase C (KPI semanal por eventos): saves viejos → acumulador a cero.
+      weeklyWoStats: payload.weeklyWoStats ?? { completed: 0, late: 0, failed: 0 },
       // v15 (pivot iteración 2026-05-25 · Performance archive): listas archivadas para
       // que el tick no las itere. Saves pre-v15 no lo traen → empezar vacío (los Departed
       // y WOs cerradas viejas del save siguen en g.airplanes/g.workOrders hasta que
@@ -9460,6 +9464,8 @@ var Sim = (() => {
       mroStage: 1,
       activeBuild: null,
       kpiHistory: [],
+      weeklyWoStats: { completed: 0, late: 0, failed: 0 },
+      // Fase C: acumulador semanal por eventos
       randomEvents: [],
       eventsRolledForDay: 0,
       // Línea pura: schedule real OVD activo por default. Legacy: arrivals stocásticos.
@@ -10035,6 +10041,8 @@ var Sim = (() => {
     g.workOrders = machineRes.workOrders;
     for (const ev of machineRes.events) {
       if (ev.type === "wo_completed") {
+        g.weeklyWoStats.completed += 1;
+        if (!ev.onTime) g.weeklyWoStats.late += 1;
         const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
         const tpl = g.templates.find((t) => t.id === ev.templateId) || g.dailyCheckTemplates.find((t) => t.id === ev.templateId);
         const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : void 0;
@@ -10095,6 +10103,7 @@ var Sim = (() => {
       const melRes = tickMel(g.workOrders, next);
       g.workOrders = melRes.workOrders;
       for (const ev of melRes.events) {
+        g.weeklyWoStats.failed += 1;
         g.economy = addTransaction(
           g.economy,
           createTransaction(
@@ -10191,21 +10200,17 @@ var Sim = (() => {
       pushNotification(g, `\u{1F4CA} Cierre semanal. Balance: ${g.economy.balance.toLocaleString()} \u20AC`, "info");
       const repValues = Object.values(g.reputation.perAirline);
       const repAvg = repValues.length > 0 ? repValues.reduce((s, v) => s + v, 0) / repValues.length : 0;
-      const woCompletedNow = g.workOrders.filter((w) => w.phase === "Completed").length;
-      const woLateNow = g.economy.ledger.filter((t) => t.type === "penalty" && t.description.startsWith("Penalty SLA")).length;
-      const woFailedNow = g.workOrders.filter((w) => w.phase === "Failed").length;
-      const lastSnap = g.kpiHistory[g.kpiHistory.length - 1];
       g.kpiHistory.push({
         week: weekBeforeClose,
         balance: g.economy.balance,
         repAvg,
-        woCompleted: woCompletedNow - (lastSnap?.woCompleted ? 0 : 0),
-        // absoluto; UI derivará delta si quiere
-        woLate: woLateNow,
-        woFailed: woFailedNow,
+        woCompleted: g.weeklyWoStats.completed,
+        woLate: g.weeklyWoStats.late,
+        woFailed: g.weeklyWoStats.failed,
         complianceScore: g.compliance?.score ?? 80,
         mechanicsCount: g.mechanics.length
       });
+      g.weeklyWoStats = { completed: 0, late: 0, failed: 0 };
       if (g.kpiHistory.length > 52) g.kpiHistory.shift();
       getStorage().save(serializeGame(g)).then(() => pushNotification(g, "\u{1F4BE} Guardado autom\xE1tico", "success")).catch((e) => pushNotification(g, `\u26A0\uFE0F Autosave fall\xF3: ${e.message}`, "warning"));
     }
