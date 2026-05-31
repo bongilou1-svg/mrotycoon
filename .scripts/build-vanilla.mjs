@@ -4220,10 +4220,10 @@ const TUT_STEPS = [
   { phase: "La orden de trabajo", title: "Abre el aviso",
     body: "Haz click en la <strong>tarjeta del aviso</strong>. Verás qué falla (capítulo ATA), qué cualificación necesita el técnico y cuánto tarda.",
     why: "Cada avión y cada avería son distintos. Leer la orden te dice a quién asignar.",
-    target: ".evt-card[data-evt]", place: "right",
+    target: "[data-wo]", place: "right",
     // Mantener pausa + asegurar tab Operaciones para que exista la wo-card.
     onEnter: () => { S.setGameSpeed(game, 0); if (activeTab !== "operations") { activeTab = "operations"; invalidatePanelCache(); } },
-    gate: ".evt-card[data-evt]", cond: (g) => selectedWoId !== null },
+    gate: "[data-wo]", cond: (g) => selectedWoId !== null },
   { phase: "Asignar", title: "Pon a un mecánico",
     body: "En el detalle, asigna un <strong>mecánico cualificado</strong> al trabajo. Irá al avión y empezará la reparación.",
     why: "Sin mecánico, la avería no se toca. Sigue en pausa: tómate tu tiempo para asignar bien.",
