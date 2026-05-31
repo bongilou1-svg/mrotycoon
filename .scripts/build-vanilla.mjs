@@ -126,18 +126,40 @@ const CSS = `:root{--bg:#090d15;--bg-grid:rgba(120,150,200,.035);--panel:#161b22
 *{box-sizing:border-box}html,body{margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
 body{background:radial-gradient(1200px 700px at 78% -8%,rgba(77,163,255,.07),transparent 60%),linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px),var(--bg);background-size:auto,34px 34px,34px 34px,auto}
 .app{display:flex;flex-direction:column;height:100vh}
-.hud{display:flex;justify-content:space-between;align-items:center;padding:.4rem 1rem;background:var(--panel);border-bottom:1px solid var(--border);height:48px;flex-shrink:0}
-.hud-l,.hud-r{display:flex;gap:.5rem;align-items:center}.hud-c{display:flex;gap:1rem;align-items:center}
-.brand{font-weight:600;color:var(--accent)}.ver{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
-.clock{font-family:var(--mono);font-size:1.05rem}.wk{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
-.kpi{font-size:.85rem;color:var(--muted)}.kpi strong{color:var(--text);font-family:var(--mono)}.kpi strong.neg{color:var(--danger)}
-.compliance-kpi{cursor:pointer;padding:.15rem .4rem;border-radius:3px;border:1px solid transparent}
-.compliance-kpi:hover{border-color:var(--border)}
-.compliance-kpi.good strong{color:var(--success)}.compliance-kpi.warn strong{color:var(--warning)}.compliance-kpi.bad strong{color:var(--danger)}
-.speeds{display:flex;gap:.2rem;margin-left:.5rem}
+/* Top-bar — portado del handoff CIC (ops.css .hud*, valores directos sin tokens) */
+.hud{display:flex;justify-content:space-between;align-items:center;gap:.7rem;padding:0 .9rem;background:linear-gradient(180deg,#0e1620,#0b121b);border-bottom:1px solid #1f2a38;height:52px;flex-shrink:0;box-shadow:0 1px 0 rgba(255,255,255,.02) inset}
+.hud-l{display:flex;gap:.55rem;align-items:center;flex:none}
+.hud-c{display:flex;gap:.5rem;align-items:center;padding:.2rem .6rem;border:1px solid #1f2a38;border-radius:8px;background:#0c1420}
+.hud-r{display:flex;gap:.45rem;align-items:center}
+.brand{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;color:#fff;font-size:.82rem;font-weight:400;background:linear-gradient(135deg,#1d4f7e,#0d2236);border:1.5px solid #4da3ff;box-shadow:0 0 12px rgba(77,163,255,.22)}
+.hud-l .name{font:700 .96rem/1 var(--mono,monospace);letter-spacing:.04em;color:#e9edf4}
+.hud-l .name b{color:#4da3ff}
+.ver{font-family:var(--mono,monospace);font-size:.62rem;color:#586477;letter-spacing:.04em}
+.clock{font-family:var(--mono,monospace);font-size:.92rem;font-weight:700;color:#e9edf4}
+.daynight{color:#86c5ff;display:grid;place-items:center;font-size:.82rem}
+.wk{font-family:var(--mono,monospace);font-size:.64rem;color:#586477;padding-left:.5rem;border-left:1px solid #1f2a38}
+.kpi{display:flex;flex-direction:column;justify-content:center;gap:1px;padding:0 .55rem;font-size:inherit;color:inherit}
+.kpi .klbl{font:.55rem/1 var(--mono,monospace);text-transform:uppercase;letter-spacing:.09em;color:#586477}
+.kpi strong{font:700 .92rem var(--mono,monospace);color:#e9edf4;letter-spacing:.01em}
+.kpi strong.neg{color:#f85149}
+.kpi s{font:.62rem var(--mono,monospace);color:#586477;text-decoration:none;margin-left:1px}
+#kpi-rep strong{color:#e6a93a}
+.compliance-kpi{cursor:pointer;border-radius:6px;border:1px solid transparent}
+.compliance-kpi:hover{background:#ffffff06}
+.compliance-kpi.good strong{color:#3fb950}.compliance-kpi.warn strong{color:#e6a93a}.compliance-kpi.bad strong{color:#f85149}
+.hud-tools{display:flex;gap:.25rem;align-items:center}
+.icbtn{width:30px;height:30px;display:grid;place-items:center;padding:0;background:#131c28;border:1px solid #1f2a38;border-radius:7px;color:#8aa0b4;cursor:pointer}
+.icbtn:hover{border-color:#4da3ff;color:#e9edf4;background:#0d2236}
+.hud svg.tic,.speeds button svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;display:block}
+.icbtn svg.tic{width:16px;height:16px}
+.speeds{display:flex;gap:.15rem;margin-left:.35rem;padding:.15rem;border:1px solid #1f2a38;border-radius:8px;background:#0c1420}
+.speeds button{min-width:30px;height:24px;padding:0 .4rem;border:0;background:none;color:#8aa0b4;border-radius:6px;font:600 .72rem var(--mono,monospace);display:grid;place-items:center}
+.speeds button svg{width:14px;height:14px}
+.speeds button.active{background:#10314f;color:#86c5ff;box-shadow:0 0 0 1px #4da3ff inset}
+.speeds button:hover:not(.active){color:#e9edf4}
 button{font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:.4rem .75rem;cursor:pointer}
 button:hover{background:var(--panel-h)}button.active{background:var(--accent-d);border-color:var(--accent)}
-button.primary{background:var(--accent-d);border-color:var(--accent)}.speeds button{padding:.2rem .5rem;font-size:.8rem}
+button.primary{background:var(--accent-d);border-color:var(--accent)}
 .body{display:grid;grid-template-columns:180px 1fr 280px;flex:1;min-height:0}
 /* Sidebar agrupado — portado del handoff CIC (ops.css .nav*, valores directos sin depender de tokens) */
 .side{background:linear-gradient(180deg,#0d141d,#0b1019);border-right:1px solid #1f2a38;padding:.55rem .5rem;display:flex;flex-direction:column;gap:.06rem;overflow-y:auto}
