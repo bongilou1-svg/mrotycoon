@@ -9727,7 +9727,7 @@ var Sim = (() => {
     }
     return "mec_busy";
   }
-  function processDepartures(g, nowMinute) {
+  function processDepartures(g, nowMinute, stepMinutes) {
     for (const a of g.airplanes) {
       if (a.status === "Departed") continue;
       if (nowMinute < a.scheduledDepartureMinute) continue;
@@ -9760,7 +9760,9 @@ var Sim = (() => {
         }
         continue;
       }
-      const delay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
+      const rawDelay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
+      const wasEligibleLastTick = nowMinute - stepMinutes >= a.scheduledDepartureMinute;
+      const delay = wasEligibleLastTick ? rawDelay : 0;
       a.actualDepartureMinute = nowMinute;
       a.delayMinutes = delay;
       a.status = "Departed";
@@ -10178,7 +10180,7 @@ var Sim = (() => {
         }
       }
     }
-    processDepartures(g, next);
+    processDepartures(g, next, stepMinutes);
     reattachDeferralsToActiveLandings(g);
     g.clock = advance(g.clock, stepMinutes);
     if (Math.floor(next / 60) > Math.floor(now / 60)) {

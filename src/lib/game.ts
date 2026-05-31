@@ -707,7 +707,7 @@ function inferDelayRootCause(g: GameState, a: Airplane, nowMinute: number): Dela
   return "mec_busy"; // default — el delay es por falta de capacidad operativa
 }
 
-function processDepartures(g: GameState, nowMinute: number): void {
+function processDepartures(g: GameState, nowMinute: number, stepMinutes: number): void {
   for (const a of g.airplanes) {
     if (a.status === "Departed") continue;
     if (nowMinute < a.scheduledDepartureMinute) continue;
@@ -754,8 +754,18 @@ function processDepartures(g: GameState, nowMinute: number): void {
       continue;
     }
 
-    // Marcar Departed con timing real
-    const delay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
+    // Marcar Departed con timing real.
+    // Fase C#3 (brief maestro): corregir el retraso fantasma de cuantización de tick. El sim
+    // solo observa salidas en límites de tick (cada stepMinutes); un avión cuya hora de salida
+    // programada cae ENTRE dos ticks se detecta en el primer tick posterior, recibiendo un
+    // retraso de hasta ~1 tick aunque NADA lo retuviera. Diagnóstico (2 días sim, step 2):
+    // 22/22 salidas "tarde" tenían el tick ANTERIOR aún por debajo de su hora programada
+    // (prevTick < sched) → eran puntuales en tiempo continuo, el desfase era puro artefacto.
+    // Regla: solo es retraso REAL si el avión YA era elegible en el tick anterior (estuvo
+    // retenido/bloqueado más allá de su hora). Si este es el primer tick elegible, delay = 0.
+    const rawDelay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
+    const wasEligibleLastTick = (nowMinute - stepMinutes) >= a.scheduledDepartureMinute;
+    const delay = wasEligibleLastTick ? rawDelay : 0;
     a.actualDepartureMinute = nowMinute;
     a.delayMinutes = delay;
     a.status = "Departed";
@@ -1305,7 +1315,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   //     pasó y todas sus WOs cerraron → marcar Departed + computar delay + KPI + AOG
   //     escalation si delay ≥ AOG_DELAY_THRESHOLD_MIN (3h). Si tienen WO activa, siguen
   //     ocupando stand (delay acumula).
-  processDepartures(g, next);
+  processDepartures(g, next, stepMinutes);
 
   // 5d. Pivot iteración 2026-05-25: re-attach de MEL deferreds a próximos landings.
   // Tras processDepartures algunos aviones pasan a Departed → sus deferreds quedan
