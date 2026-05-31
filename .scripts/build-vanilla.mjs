@@ -5161,11 +5161,11 @@ function airportThumbSvg(paths){
   };
   var s = '';
   var aero = P.aerodrome || []; for (var a = 0; a < aero.length; a++) s += line(aero[a], 'cat-osm-aero', true);
-  var apr = P.aprons || []; for (var p2 = 0; p2 < apr.length; p2++) s += line(apr[p2], 'cat-osm-apron', true);
+  var apr = P.apron || []; for (var p2 = 0; p2 < apr.length; p2++) s += line(apr[p2], 'cat-osm-apron', true);
   var tax = P.taxiways || []; for (var t = 0; t < tax.length; t++) s += line(tax[t], 'cat-osm-taxi', false);
   var rwy = P.runways || []; for (var r = 0; r < rwy.length; r++) s += line(rwy[r], 'cat-osm-rwy', false);
-  var std = P.stands || [], dots = '';
-  for (var k = 0; k < std.length; k++) { var c0 = std[k].coords && std[k].coords[0]; if (c0) dots += '<circle class="cat-osm-stand" cx="' + px(c0) + '" cy="' + py(c0) + '" r="0.9"/>'; }
+  var std = P.parkingPositions || [], dots = '';
+  for (var k = 0; k < std.length; k++) { var cc = std[k].coords; var c0 = cc && cc.length ? cc[cc.length - 1] : null; if (c0) dots += '<circle class="cat-osm-stand" cx="' + px(c0) + '" cy="' + py(c0) + '" r="0.9"/>'; }
   return '<svg class="cat-osm" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' + s + dots + '</svg>';
 }
 
@@ -5246,7 +5246,7 @@ function renderCatalogBody(){
       var geoLine = "";
       if (hasGeo) {
         var pp = rt.paths.paths;
-        var nRwy = (pp.runways || []).length, nStd = (pp.stands || []).length, nTax = (pp.taxiways || []).length;
+        var nRwy = (pp.runways || []).length, nStd = (pp.parkingPositions || []).length, nTax = (pp.taxiways || []).length;
         geoLine = '<div class="cat-kv"><span>Layout OSM</span><b>' + nRwy + ' pista' + (nRwy === 1 ? '' : 's') + ' · ' + nTax + ' taxi · ' + nStd + ' stands</b></div>';
       }
       apcards += '<div class="cat-card cat-apcard' + (avail ? '' : ' dis') + '" style="--c:' + (avail ? 'var(--accent)' : 'var(--dim)') + '">'
