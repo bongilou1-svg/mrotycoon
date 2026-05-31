@@ -305,6 +305,13 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .map-ctrl .zoom button:last-child{border-bottom:none}
 .map-ctrl .zoom button:hover{background:rgba(77,163,255,.16)}
 .map-ctrl .map-daynight{font-family:var(--sans);font-size:.62rem;font-weight:600;letter-spacing:.04em;color:var(--muted);background:rgba(7,13,24,.82);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:6px;padding:.28rem .5rem;box-shadow:0 4px 16px rgba(0,0,0,.4);white-space:nowrap}
+/* Minimapa overlay (handoff design 6 · Pasada 3). Esquemático: estado de stands ocupados. */
+.map-mini{position:absolute;right:12px;bottom:12px;z-index:10;width:148px;background:rgba(7,13,24,.82);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:6px;padding:.45rem .55rem;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.map-mini .mm-head{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:#7fb3e8;margin-bottom:.35rem;display:flex;justify-content:space-between;align-items:baseline}
+.map-mini .mm-head b{color:var(--text);font-weight:600}
+.map-mini .mm-dots{display:flex;flex-wrap:wrap;gap:5px}
+.map-mini .mm-dot{width:13px;height:13px;border-radius:3px;display:grid;place-items:center;font-family:var(--mono);font-size:.5rem;color:#04070c;font-weight:700;box-shadow:0 0 5px currentColor}
+.map-mini .mm-empty{font-size:.6rem;color:var(--muted);font-style:italic}
 
 /* Pivot iteración 2026-05-25 — New Game wizard overlay */
 .newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.97);backdrop-filter:blur(10px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
@@ -1405,6 +1412,7 @@ function renderMap(){
       <span class="lg" style="color:#3aa9ff"><i></i>En tierra</span>
       <span class="lg" style="color:#3d6f9d"><i></i>Libre</span>
     </div>
+    <div id="map-mini" class="map-mini"></div>
   </div>\`;
 }
 
@@ -1521,6 +1529,46 @@ function updateMapInfoPanel(){
   }
 
   el.innerHTML = html;
+  updateMapMini();
+}
+
+/** Minimapa (handoff design 6 · Pasada 3): cuadrícula esquemática de stands ocupados,
+ *  un chip por avión real en tierra coloreado por su displayState. Universal (no depende
+ *  de la geometría OSM — es un resumen de ocupación, no un plano a escala). Idempotente.
+ *  Las coords reales de cada stand viven en el canvas Pixi; aquí damos la lectura rápida
+ *  "qué stands trabajan y en qué estado" sin tocar WebGL. */
+function updateMapMini(){
+  const el = document.getElementById("map-mini");
+  if (!el) return;
+  const now = game.clock.minute;
+  // displayState por avión presente (mismo criterio cromático que la leyenda).
+  const COLORS = { aog: "#ff4757", delayed: "#f5b945", working: "#3fb950", daily: "#6dc7ff", idle: "#3aa9ff" };
+  const present = game.airplanes.filter(a => a.status !== "Departed" && a.arrivalMinute <= now
+    && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now));
+  // Estado por avión: replica la prioridad aog>delayed>working>daily>idle de sync.ts,
+  // derivado de sus WOs activas (sin depender del render).
+  function stateOf(a){
+    const wos = game.workOrders.filter(w => w.airplaneInstanceId === a.instanceId
+      && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred");
+    const tplAog = wos.some(w => { const t = game.templates.find(x => x.id === w.templateId); return t && t.isAOG; });
+    if (tplAog) return "aog";
+    if (a.scheduledDepartureMinute < now && wos.length > 0) return "delayed";
+    const working = wos.some(w => (w.assignedMechanicIds && w.assignedMechanicIds.length > 0)
+      && (w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework" || w.phase === "Inspection"));
+    if (working) return "working";
+    const daily = wos.some(w => w.templateId && w.templateId.indexOf && w.templateId.indexOf("DC-") === 0);
+    if (daily) return "daily";
+    return "idle";
+  }
+  let dots = "";
+  for (const a of present) {
+    const st = stateOf(a);
+    const col = COLORS[st] || "#3aa9ff";
+    const code = a.standId ? esc(String(a.standId).replace(/^H1-S?/, "")) : "";
+    dots += '<span class="mm-dot" style="background:' + col + ';color:' + col + '" title="' + esc(a.registration) + ' · ' + st + '">' + code + '</span>';
+  }
+  const body = present.length === 0 ? '<div class="mm-empty">Apron despejado</div>' : '<div class="mm-dots">' + dots + '</div>';
+  el.innerHTML = '<div class="mm-head"><span>OVD · apron</span><b>' + present.length + '</b></div>' + body;
 }
 
 // ===========================================================================
