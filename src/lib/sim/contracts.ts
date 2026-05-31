@@ -382,8 +382,14 @@ export const LINE_CANCEL_REP_THRESHOLD = 20;
 // contratos durante 3-4 semanas. Tick semanal alinea con el ciclo natural del juego
 // (cierre weekly cobra fees + paga salarios + evalúa mercado).
 export const LINE_COMPETITION_TICK_DAYS = 7;
-/** Prob máxima de oferta cuando rep=100 (escala lineal desde 70). */
+/** Prob máxima de oferta cuando rep=100 (escala lineal desde el umbral). */
 export const LINE_OFFER_MAX_PROB = 0.6;
+/** Fase C#2 (brief maestro): PISO de probabilidad de oferta JUSTO al cruzar el umbral. Antes
+ *  la prob era (rep-threshold)*slope → 0% exacto en el umbral, así una aerolínea recién cruzada
+ *  casi nunca ofertaba (Volotea +2 sobre umbral ≈ 2%/tick). Con piso 0.4, en el umbral ya hay
+ *  40% por tick semanal → tras ~1 mes de mantener la rep, la oferta es casi segura ("prob que
+ *  sube rápido", no garantía dura — no requiere estado de cruce). Subir = mercado más generoso. */
+export const LINE_OFFER_BASE_PROB = 0.4;
 
 let _contractCounter = 1000; // empezamos en 1000 para no chocar con C-001..C-003 iniciales
 export function _resetContractCounter(v = 1000): void { _contractCounter = v; }
@@ -512,8 +518,11 @@ export function tickLineCompetition(
     // Aerolíneas con threshold bajo (Volotea 55) tienen ventana grande de probabilidad;
     // las exigentes (easyJet 80) solo ofertan con brand muy alto.
     const range = Math.max(1, 100 - threshold);
-    const slope = LINE_OFFER_MAX_PROB / range;
-    const prob = Math.max(0, Math.min(LINE_OFFER_MAX_PROB, (repToEvaluate - threshold) * slope));
+    // Fase C#2: arranca en LINE_OFFER_BASE_PROB en el umbral y sube a MAX en rep=100. El guard
+    // `repToEvaluate < threshold → continue` de arriba sigue impidiendo que una aerolínea por
+    // DEBAJO de su umbral oferte (el piso solo aplica a las que YA cruzaron).
+    const slope = (LINE_OFFER_MAX_PROB - LINE_OFFER_BASE_PROB) / range;
+    const prob = Math.max(0, Math.min(LINE_OFFER_MAX_PROB, LINE_OFFER_BASE_PROB + (repToEvaluate - threshold) * slope));
     if (rng.next() > prob) continue;
     // CONDICIONES DEL CONTRATO escalan con cuánto el brand SUPERE el threshold de
     // esta aerolínea — pasamos repForTerms = 50 (baseline) + qualityFactor·50, donde

@@ -1136,6 +1136,7 @@ var Sim = (() => {
     LEAD_FOREMAN_WEEKLY_SALARY: () => LEAD_FOREMAN_WEEKLY_SALARY,
     LINE_CANCEL_REP_THRESHOLD: () => LINE_CANCEL_REP_THRESHOLD,
     LINE_COMPETITION_TICK_DAYS: () => LINE_COMPETITION_TICK_DAYS,
+    LINE_OFFER_BASE_PROB: () => LINE_OFFER_BASE_PROB,
     LINE_OFFER_MAX_PROB: () => LINE_OFFER_MAX_PROB,
     LINE_OFFER_REP_THRESHOLD: () => LINE_OFFER_REP_THRESHOLD,
     LINE_STAND_IDS: () => LINE_STAND_IDS,
@@ -1732,6 +1733,7 @@ var Sim = (() => {
   var LINE_CANCEL_REP_THRESHOLD = 20;
   var LINE_COMPETITION_TICK_DAYS = 7;
   var LINE_OFFER_MAX_PROB = 0.6;
+  var LINE_OFFER_BASE_PROB = 0.4;
   var _contractCounter = 1e3;
   function _resetContractCounter(v = 1e3) {
     _contractCounter = v;
@@ -1794,8 +1796,8 @@ var Sim = (() => {
       );
       if (alreadyEngaged) continue;
       const range = Math.max(1, 100 - threshold);
-      const slope = LINE_OFFER_MAX_PROB / range;
-      const prob = Math.max(0, Math.min(LINE_OFFER_MAX_PROB, (repToEvaluate - threshold) * slope));
+      const slope = (LINE_OFFER_MAX_PROB - LINE_OFFER_BASE_PROB) / range;
+      const prob = Math.max(0, Math.min(LINE_OFFER_MAX_PROB, LINE_OFFER_BASE_PROB + (repToEvaluate - threshold) * slope));
       if (rng.next() > prob) continue;
       const qualityFactor = Math.min(1, (repToEvaluate - threshold) / range);
       const repForTerms = Math.round(50 + qualityFactor * 50);
