@@ -98145,6 +98145,15 @@ function enrichEvent(e){
     e.melDays = (deferred && wo.deferralExpiryMinute != null) ? Math.max(0, Math.ceil((wo.deferralExpiryMinute - now)/S.DAY_MINUTES)) : null;
     e.parts = tpl?.partsRequired || []; e.tools = tpl?.toolsRequired || [];
     e.descShort = tpl?.description || wo.templateId; e.amm = tpl?.notes || null;
+    // Fase A#1 (reveal escalonado): un evento NO nace diagnosticado. Hasta que el T-shoot
+    // (Inspection) revela el scope, el callout muestra solo el SÍNTOMA; ocultamos descripción
+    // real, P/N, herramientas y AMM. scopeRevealed lo sella la máquina de estados al cerrar
+    // Inspection (INC2). undefined (instancias legacy) = tratado como revelado (no oculta).
+    e.scopeRevealed = wo.scopeRevealed !== false;
+    if (!e.scopeRevealed) {
+      e.descShort = tpl ? S.complaintForTemplate(tpl, S.DATA.ataChapters) : wo.templateId;
+      e.parts = []; e.tools = []; e.amm = null;
+    }
     e.phasePctVal = phasePct(wo);
     e.team = wo.assignedMechanicIds.slice();
     e.assignState = deferred ? "deferred"
