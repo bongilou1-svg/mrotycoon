@@ -2198,7 +2198,7 @@ function teleRow(e){
   const slaCell = sla.none
     ? \`<div class="slabar"><div class="sl-top"><span>—</span></div></div>\`
     : \`<div class="slabar"><div class="sl-top"><span>SLA</span><span style="color:\${sla.color}">\${sla.overdue?'+':''}\${Math.abs(sla.mins)}m</span></div><div class="sl-track"><div class="sl-fill" style="width:\${sla.pct}%;background:\${sla.color}"></div></div></div>\`;
-  let curIdx = PHASE_LABELS.findIndex(p => p[0] === e.phase); if (e.phase==="Completed") curIdx=4; if (e.phase==="Rework") curIdx=2;
+  let curIdx = PHASE_LABELS.findIndex(p => p[0] === e.phase); if (e.phase==="Completed") curIdx=5; if (e.phase==="Rework") curIdx=2;
   const dots = (e.kind==="randomEvent"||e.kind==="audit"||e.assignState==="deferred") ? "" : \`<div class="tdots">\${PHASE_LABELS.map((p,i)=>\`<i class="\${i<curIdx?'done':i===curIdx?'active':''}"></i>\`).join("")}</div>\`;
   const led = ledColorOf(e);
   return \`<div class="trow \${sevClassOf(e)} st-\${groupOf(e)}" \${evDataAttr(e)}>

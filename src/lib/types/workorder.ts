@@ -87,6 +87,7 @@ export type WorkOrderPhase =
   | "MainTask" // 100% de duration (skip si direct dispatch)
   | "Test" // 10% de duration
   | "Rework" // 100% de duration (10% prob tras Test)
+  | "Release" // fase corta de cierre/firma (RTD) tras Test-pass, antes de Completed (v2)
   | "Deferred" // diferida vía MEL — cuenta atrás hasta deferralExpiryMinute (I3+)
   | "Completed"
   | "Failed";

@@ -25,6 +25,8 @@
   "slaMultiplier": 2.50,
   "aogPenaltyMultiplier": 5,
   "officeToStandMinutes": 2,
+  "$comment_releaseMinutes": "v2 ciclo de vida: duración de la fase Release (cierre/firma RTD) tras Test-pass. Corta y fija, no escala con el trabajo. Subir = más fricción al cerrar.",
+  "releaseMinutes": 3,
 
   "reputation": {
     "$comment": "Deltas en puntos sobre escala 0-100.",
