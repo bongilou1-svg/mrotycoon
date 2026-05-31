@@ -45,10 +45,13 @@ expect(ms.find(m => m.id === b1.id).state === "Working", "mecánico Working");
 const machineRng = createRng(7);
 let totalElapsed = 0;
 let lastEvents = [];
+const phasesSeen = new Set([wos[0].phase]); // v2: rastrear todas las fases por las que pasa
 for (let i = 0; i < 100 && wos[0].phase !== "Completed" && wos[0].phase !== "Failed"; i++) {
   const r = tickWorkOrders(wos, ms, templates, balance, 2, machineRng);
   wos = r.workOrders; ms = r.mechanics;
   if (r.events.length > 0) lastEvents = r.events;
+  for (const ev of r.events) if (ev.type === "phase_change") phasesSeen.add(ev.to);
+  phasesSeen.add(wos[0].phase);
   totalElapsed += 2;
 }
 expect(wos[0].phase === "Completed", `tras varios ticks WO Completed (got ${wos[0].phase})`);
