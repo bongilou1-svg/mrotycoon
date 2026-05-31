@@ -113,6 +113,7 @@ export const DATA = {
   maintenanceChecks: maintenanceChecksJson,
   dailyChecks: _dailyChecksWithKind,
   airportCatalog: airportCatalogJson,
+  ataChapters: ataChaptersJson,
   presets: {
     LEAS_volotea: presetVolotea,
     LEAS_vueling: presetVueling,

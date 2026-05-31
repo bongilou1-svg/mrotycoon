@@ -138,6 +138,8 @@ export function isWorkOrderTemplate(x: unknown): x is WorkOrderTemplate {
   const o = x as Record<string, unknown>;
   return (
     typeof o.id === "string" &&
+    (o.ref === undefined || o.ref === null || typeof o.ref === "string") &&
+    (o.name === undefined || typeof o.name === "string") &&
     typeof o.description === "string" &&
     typeof o.ata === "number" &&
     typeof o.requiredCategory === "string" &&

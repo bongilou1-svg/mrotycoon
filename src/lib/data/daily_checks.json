@@ -1,82 +1,142 @@
 [
   {
     "id": "DC-001",
-    "description": "Walkaround externo — fuselaje, alas, estabilizadores, antenas y luces de nav (dents/paneles/fugas/impactos)",
     "ata": 5,
-    "requiredCategory": "B1",
-    "durationMinutes": 20,
-    "aircraftModelsCompatibles": ["A320", "A321"],
-    "engineVariantsCompatibles": ["CFM56", "V2500"],
-    "deferrable": false,
+    "ref": null,
+    "name": "Walkaround externo",
+    "description": "Walkaround externo — fuselaje, alas, estabilizadores, antenas y luces de nav (dents/paneles/fugas/impactos)",
     "severity": "Minor",
     "isAOG": false,
-    "probability": 1.0,
+    "deferrable": false,
+    "requiredCategory": "B1",
+    "aircraftModelsCompatibles": [
+      "A320",
+      "A321"
+    ],
+    "engineVariantsCompatibles": [
+      "CFM56",
+      "V2500"
+    ],
+    "durationMinutes": 20,
+    "probability": 1,
     "partsRequired": [],
-    "toolsRequired": ["Flashlight", "Inspection mirror"],
+    "toolsRequired": [
+      "Flashlight",
+      "Inspection mirror"
+    ],
     "isDailyCheck": true
   },
   {
     "id": "DC-002",
-    "description": "Tren de aterrizaje, neumáticos y frenos — presión, desgaste de banda, discos/wear pins, fugas hidráulicas",
     "ata": 32,
-    "requiredCategory": "B1",
-    "durationMinutes": 30,
-    "aircraftModelsCompatibles": ["A320", "A321"],
-    "engineVariantsCompatibles": ["CFM56", "V2500"],
-    "deferrable": true,
+    "ref": null,
+    "name": "Tren de aterrizaje, neumáticos y frenos",
+    "description": "Tren de aterrizaje, neumáticos y frenos — presión, desgaste de banda, discos/wear pins, fugas hidráulicas",
     "severity": "Minor",
     "isAOG": false,
-    "probability": 1.0,
+    "deferrable": true,
+    "requiredCategory": "B1",
+    "aircraftModelsCompatibles": [
+      "A320",
+      "A321"
+    ],
+    "engineVariantsCompatibles": [
+      "CFM56",
+      "V2500"
+    ],
+    "durationMinutes": 30,
+    "probability": 1,
     "partsRequired": [],
-    "toolsRequired": ["Tyre pressure gauge", "Brake wear gauge", "Flashlight"],
+    "toolsRequired": [
+      "Tyre pressure gauge",
+      "Brake wear gauge",
+      "Flashlight"
+    ],
     "isDailyCheck": true
   },
   {
     "id": "DC-003",
-    "description": "Servicing motores y niveles — aceite motor, hidráulico, APU, álabes del fan y cowlings",
     "ata": 71,
-    "requiredCategory": "B1",
-    "durationMinutes": 40,
-    "aircraftModelsCompatibles": ["A320", "A321"],
-    "engineVariantsCompatibles": ["CFM56", "V2500"],
-    "deferrable": false,
+    "ref": null,
+    "name": "Servicing motores y niveles",
+    "description": "Servicing motores y niveles — aceite motor, hidráulico, APU, álabes del fan y cowlings",
     "severity": "Minor",
     "isAOG": false,
-    "probability": 1.0,
-    "partsRequired": ["Engine oil 1L (refill if low)", "Hydraulic fluid Skydrol 1L (refill if low)"],
-    "toolsRequired": ["Fluid dipstick", "Flashlight", "Borescope mirror"],
+    "deferrable": false,
+    "requiredCategory": "B1",
+    "aircraftModelsCompatibles": [
+      "A320",
+      "A321"
+    ],
+    "engineVariantsCompatibles": [
+      "CFM56",
+      "V2500"
+    ],
+    "durationMinutes": 40,
+    "probability": 1,
+    "partsRequired": [
+      "Engine oil 1L (refill if low)",
+      "Hydraulic fluid Skydrol 1L (refill if low)"
+    ],
+    "toolsRequired": [
+      "Fluid dipstick",
+      "Flashlight",
+      "Borescope mirror"
+    ],
     "isDailyCheck": true
   },
   {
     "id": "DC-004",
-    "description": "Drenaje tanques de combustible (fuel water drain) — purgar condensación nocturna por sump points",
     "ata": 28,
-    "requiredCategory": "B1",
-    "durationMinutes": 15,
-    "aircraftModelsCompatibles": ["A320", "A321"],
-    "engineVariantsCompatibles": ["CFM56", "V2500"],
-    "deferrable": false,
+    "ref": null,
+    "name": "Drenaje tanques de combustible (fuel water drain)",
+    "description": "Drenaje tanques de combustible (fuel water drain) — purgar condensación nocturna por sump points",
     "severity": "Minor",
     "isAOG": false,
-    "probability": 1.0,
+    "deferrable": false,
+    "requiredCategory": "B1",
+    "aircraftModelsCompatibles": [
+      "A320",
+      "A321"
+    ],
+    "engineVariantsCompatibles": [
+      "CFM56",
+      "V2500"
+    ],
+    "durationMinutes": 15,
+    "probability": 1,
     "partsRequired": [],
-    "toolsRequired": ["Fuel sump drain container", "Water detection paste"],
+    "toolsRequired": [
+      "Fuel sump drain container",
+      "Water detection paste"
+    ],
     "isDailyCheck": true
   },
   {
     "id": "DC-005",
-    "description": "Cockpit y equipo de emergencia — self-test CVR, instrumentos, O2, chalecos, extintores, slides armados, tech log",
     "ata": 25,
-    "requiredCategory": "B2",
-    "durationMinutes": 25,
-    "aircraftModelsCompatibles": ["A320", "A321"],
-    "engineVariantsCompatibles": ["CFM56", "V2500"],
-    "deferrable": true,
+    "ref": null,
+    "name": "Cockpit y equipo de emergencia",
+    "description": "Cockpit y equipo de emergencia — self-test CVR, instrumentos, O2, chalecos, extintores, slides armados, tech log",
     "severity": "Minor",
     "isAOG": false,
-    "probability": 1.0,
+    "deferrable": true,
+    "requiredCategory": "B2",
+    "aircraftModelsCompatibles": [
+      "A320",
+      "A321"
+    ],
+    "engineVariantsCompatibles": [
+      "CFM56",
+      "V2500"
+    ],
+    "durationMinutes": 25,
+    "probability": 1,
     "partsRequired": [],
-    "toolsRequired": ["Diagnostic laptop", "O2 pressure gauge"],
+    "toolsRequired": [
+      "Diagnostic laptop",
+      "O2 pressure gauge"
+    ],
     "isDailyCheck": true
   }
 ]

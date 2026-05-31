@@ -660,6 +660,25 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .cat-kv span{color:var(--muted)}.cat-kv b{font-family:var(--mono);color:var(--text);text-align:right}
 .cat-kv b.ok{color:var(--ok)}.cat-kv b.warn{color:var(--warn)}.cat-kv b.bad{color:var(--bad)}
 .cat-sec{font:700 .9rem var(--disp);color:var(--accent-2);margin:6px 0 8px}
+.cat-badge.eng{background:rgba(58,214,197,.15);color:var(--cyan)}
+.cat-badge.call{background:rgba(77,163,255,.14);color:var(--accent-2)}
+.cat-badge.prog{background:rgba(167,139,250,.16);color:var(--base)}
+.cat-manual{display:flex;flex-direction:column;gap:6px}
+.cat-ata{border:1px solid var(--border-s);border-radius:8px;overflow:hidden;background:rgba(16,22,31,.6)}
+.cat-ata-h{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;background:none;border:0;color:var(--text);padding:.6rem .8rem;cursor:pointer;font:inherit}
+.cat-ata-h:hover{background:rgba(77,163,255,.06)}
+.cat-ata.open .cat-ata-h{border-bottom:1px solid var(--border-s);background:rgba(77,163,255,.05)}
+.cat-ata-chev{color:var(--accent);width:14px;flex:none}
+.cat-ata-n{font:600 .76rem var(--mono);color:var(--accent-2);flex:none}
+.cat-ata-name{font:600 .9rem var(--disp);flex:1}
+.cat-ata-cnt{font:600 .7rem var(--mono);color:var(--muted);background:var(--panel-2);padding:.1rem .5rem;border-radius:10px}
+.cat-ata-body{padding:.4rem .8rem .7rem;display:flex;flex-direction:column;gap:.3rem}
+.cat-task{padding:.5rem .2rem;border-bottom:1px dotted var(--line)}
+.cat-task:last-child{border-bottom:none}
+.cat-task-top{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+.cat-task-name{font:600 .84rem var(--disp);color:var(--text)}
+.cat-task-meta{display:flex;gap:.9rem;flex-wrap:wrap;margin-top:.25rem;font-size:.72rem;color:var(--dim)}
+.cat-task-ref{color:var(--muted)}
 .cat-apcards .cat-card{padding:0;overflow:hidden}
 .cat-apcard .cat-card-h,.cat-apcard .cat-kv,.cat-apcard .cat-apdesc{padding-left:1rem;padding-right:1rem}
 .cat-apcard .cat-card-h{margin-top:.7rem}
@@ -1215,7 +1234,8 @@ let tutGraduated = false; // true tras completar/saltar — no reaparece en la m
 // guardada hasta que exista sonido/sistema de vídeo. settingsCat = categoría activa.
 let settingsCat = "audio";
 let howtoStep = 0; // Cómo se juega (handoff entrega-menu 3): paso activo 0..3
-let catalogTab = "aircraft"; // Catálogo: pestaña activa (aircraft|tasks|daily|checks|airlines|economy)
+let catalogTab = "aircraft"; // Catálogo: pestaña activa (aircraft|tasks|daily|checks|airlines|airports|economy)
+let catAtaOpen = {}; // Catálogo·Tareas: capítulos ATA desplegados (manual acordeón)
 // Cierre Semanal (handoff entrega-menu 3): cuando el sim cierra una semana (kpiHistory
 // crece dentro de S.advanceGame), pausamos el reloj y mostramos el modal. weeklyCloseData
 // guarda el snapshot a mostrar (null = sin modal). lastKpiLen detecta el crecimiento.
@@ -4602,6 +4622,8 @@ document.body.addEventListener("click", (e) => {
   if (e.target.closest("#ng-catalog-back")) { newGameStep = "intro"; render(); return; }
   var catTabBtn = e.target.closest("[data-cat-tab]");
   if (catTabBtn) { catalogTab = catTabBtn.dataset.catTab; render(); return; }
+  var catAtaBtn = e.target.closest("[data-cat-ata]");
+  if (catAtaBtn) { var aId = catAtaBtn.dataset.catAta; catAtaOpen[aId] = !catAtaOpen[aId]; render(); return; }
   if (e.target.closest("#ng-settings-back")) { newGameStep = "intro"; render(); return; }
   if (e.target.closest("#ng-settings-reset")) { gameSettings = { ...SETTINGS_DEFAULTS }; saveSettings(); render(); return; }
   const setCat = e.target.closest("[data-set-cat]");
@@ -5263,32 +5285,54 @@ function renderCatalogBody(){
   }
 
   else if (active === "tasks") {
-    var sv = { Minor: 0, Major: 0, Critical: 0 }, b1 = 0, b2 = 0, aog = 0;
-    for (var w3 = 0; w3 < WO.length; w3++) { sv[WO[w3].severity] = (sv[WO[w3].severity] || 0) + 1; if (WO[w3].requiredCategory === "B1") b1++; else b2++; if (WO[w3].isAOG) aog++; }
+    var sv = { Minor: 0, Major: 0, Critical: 0 }, b1 = 0, b2 = 0, aog = 0, nCall = 0, nCfm = 0, nV25 = 0;
+    for (var w3 = 0; w3 < WO.length; w3++) {
+      var wq = WO[w3];
+      sv[wq.severity] = (sv[wq.severity] || 0) + 1;
+      if (wq.requiredCategory === "B1") b1++; else b2++;
+      if (wq.isAOG) aog++;
+      if (wq.kind === "callout") nCall++;
+      var ev = wq.engineVariantsCompatibles || [];
+      if (ev.length === 1 && ev[0] === "CFM56") nCfm++;
+      else if (ev.length === 1 && ev[0] === "V2500") nV25++;
+    }
     var stat = '<div class="cat-stats">'
       + '<div class="cat-stat"><b>' + WO.length + '</b><span>Total</span></div>'
+      + '<div class="cat-stat"><b class="ok">' + nCall + '</b><span>Callout</span></div>'
+      + '<div class="cat-stat"><b>' + (WO.length - nCall) + '</b><span>Programadas</span></div>'
       + '<div class="cat-stat"><b class="ok">' + sv.Minor + '</b><span>Minor</span></div>'
       + '<div class="cat-stat"><b class="warn">' + sv.Major + '</b><span>Major</span></div>'
       + '<div class="cat-stat"><b class="bad">' + sv.Critical + '</b><span>Critical</span></div>'
       + '<div class="cat-stat"><b>' + b1 + ' / ' + b2 + '</b><span>B1 / B2</span></div>'
-      + '<div class="cat-stat"><b class="bad">' + aog + '</b><span>AOG</span></div>'
+      + '<div class="cat-stat"><b>' + nCfm + ' / ' + nV25 + '</b><span>CFM / V2500</span></div>'
       + '</div>';
-    var rows = "";
-    for (var w4 = 0; w4 < WO.length; w4++) {
-      var o = WO[w4];
-      var nm = o.name ? o.name : (o.description ? String(o.description).slice(0, 78) : o.id);
-      rows += '<tr>'
-        + '<td class="mono">' + esc(String(o.id)) + '</td>'
-        + '<td class="mono">' + esc(String(o.ata)) + '</td>'
-        + '<td>' + esc(nm) + '</td>'
-        + '<td>' + sevBadge(o.severity) + '</td>'
-        + '<td class="mono">' + esc(o.requiredCategory) + '</td>'
-        + '<td class="mono">' + o.durationMinutes + '′</td>'
-        + '<td>' + (o.isAOG ? '<span class="cat-dot bad"></span>' : '') + '</td>'
-        + '<td>' + (o.deferrable ? '✓' : '—') + '</td>'
-        + '</tr>';
+    // Manual desplegable por capítulo ATA (como el AMM real). Agrupa las tareas por su ATA.
+    var ataMap = D.ataChapters || {};
+    var byAta = {};
+    for (var wi = 0; wi < WO.length; wi++) { var ak = String(WO[wi].ata); (byAta[ak] = byAta[ak] || []).push(WO[wi]); }
+    var atas = Object.keys(byAta).sort(function(a, b){ return (+a) - (+b); });
+    var engBadge = function(e){ if (!e || e.length !== 1) return ''; return '<span class="cat-badge eng">' + esc(e[0]) + '</span>'; };
+    var kindBadge = function(k){ return k === "callout" ? '<span class="cat-badge call">callout</span>' : '<span class="cat-badge prog">programada</span>'; };
+    var acc = "";
+    for (var ai = 0; ai < atas.length; ai++) {
+      var an = atas[ai], list = byAta[an], open = !!catAtaOpen[an];
+      var cname = ataMap[an] || "Capítulo " + an;
+      acc += '<div class="cat-ata' + (open ? ' open' : '') + '">'
+        + '<button class="cat-ata-h" data-cat-ata="' + an + '"><span class="cat-ata-chev">' + (open ? '▾' : '▸') + '</span><span class="cat-ata-n mono">ATA ' + esc(an) + '</span><span class="cat-ata-name">' + esc(cname) + '</span><span class="cat-ata-cnt">' + list.length + '</span></button>';
+      if (open) {
+        var inner = "";
+        for (var li = 0; li < list.length; li++) {
+          var o = list[li];
+          inner += '<div class="cat-task">'
+            + '<div class="cat-task-top"><span class="cat-task-name">' + esc(o.name || o.id) + '</span>' + sevBadge(o.severity) + (o.isAOG ? '<span class="cat-badge crit">AOG</span>' : '') + engBadge(o.engineVariantsCompatibles) + kindBadge(o.kind) + '</div>'
+            + '<div class="cat-task-meta"><span class="cat-task-ref mono">' + esc(o.ref || "— sin ref AMM") + '</span><span>' + esc(o.requiredCategory) + '</span><span>' + o.durationMinutes + ' min</span><span>' + (o.deferrable ? "diferible" : "no diferible") + '</span></div>'
+            + '</div>';
+        }
+        acc += '<div class="cat-ata-body">' + inner + '</div>';
+      }
+      acc += '</div>';
     }
-    body = stat + '<div class="cat-tablewrap"><table class="cat-table"><thead><tr><th>ID</th><th>ATA</th><th>Tarea (AMM)</th><th>Sev</th><th>Cat</th><th>Dur</th><th>AOG</th><th>Difer</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    body = stat + '<p class="cat-lead" style="margin-top:14px">Manual de tareas por capítulo <b>ATA</b> — como el AMM real. Despliega un capítulo para ver sus tareas, su ref, categoría, motor (si es específico) y si es callout o programada.</p><div class="cat-manual">' + acc + '</div>';
   }
 
   else if (active === "daily") {
