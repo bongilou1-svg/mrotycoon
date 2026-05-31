@@ -547,6 +547,20 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .cat-kv span{color:var(--muted)}.cat-kv b{font-family:var(--mono);color:var(--text);text-align:right}
 .cat-kv b.ok{color:var(--ok)}.cat-kv b.warn{color:var(--warn)}.cat-kv b.bad{color:var(--bad)}
 .cat-sec{font:700 .9rem var(--disp);color:var(--accent-2);margin:6px 0 8px}
+.cat-apcards .cat-card{padding:0;overflow:hidden}
+.cat-apcard .cat-card-h,.cat-apcard .cat-kv,.cat-apcard .cat-apdesc{padding-left:1rem;padding-right:1rem}
+.cat-apcard .cat-card-h{margin-top:.7rem}
+.cat-osm-wrap{position:relative;background:#0a1322;border-bottom:1px solid var(--border-s)}
+.cat-osm{width:100%;height:auto;display:block}
+.cat-osm-aero{fill:none;stroke:#1c2d4a;stroke-width:.5}
+.cat-osm-apron{fill:#10233f;stroke:#1c2d4a;stroke-width:.3}
+.cat-osm-taxi{fill:none;stroke:#2f6da3;stroke-width:.5;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.cat-osm-rwy{fill:none;stroke:#4da3ff;stroke-width:1.7;stroke-linecap:round}
+.cat-osm-stand{fill:#86c5ff}
+.cat-osm-none{display:flex;align-items:center;justify-content:center;height:88px;color:var(--dim);font:.72rem var(--mono);background:repeating-linear-gradient(45deg,#0a1322,#0a1322 8px,#0c1626 8px,#0c1626 16px)}
+.cat-osm-soon{position:absolute;top:8px;right:8px;font:600 .6rem var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--warn);background:var(--warn-bg);padding:.15rem .5rem;border-radius:6px}
+.cat-apcard.dis{opacity:.6}
+.cat-apdesc{font-size:.74rem;color:var(--dim);line-height:1.45;margin:.5rem 0 .9rem}
 /* ===== Cierre Semanal (handoff entrega-menu 3, 2026-05-30) ===== */
 .wc-root{position:fixed;inset:0;z-index:1080;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 30%,#0a121d 0%,#04070c 100%)}
 .wc-scrim{position:absolute;inset:0;background:rgba(4,7,12,.72)}
@@ -98312,6 +98326,33 @@ function renderHowtoBody(){
     + '</div>';
 }
 
+// Mini-mapa OSM de un aeropuerto, generado EN VIVO de la geometría vectorial embebida
+// (S.DATA.airportRuntime[icao].paths). Coords ya normalizadas 0..1; proyección idéntica al
+// mapa Pixi (x*W, y*W/aspectRatio). SVG sin texto → sin esc. Si el OSM cambia, la foto cambia.
+function airportThumbSvg(paths){
+  if (!paths || !paths.paths) return '';
+  var P = paths.paths;
+  var ar = paths.aspectRatio || 1.6;
+  var W = 100, H = Math.round((100 / ar) * 10) / 10;
+  var px = function(c){ return (c[0] * W).toFixed(1); };
+  var py = function(c){ return (c[1] * H).toFixed(1); };
+  var line = function(w, cls, close){
+    if (!w.coords || !w.coords.length) return '';
+    var d = 'M' + px(w.coords[0]) + ',' + py(w.coords[0]);
+    for (var i = 1; i < w.coords.length; i++) d += 'L' + px(w.coords[i]) + ',' + py(w.coords[i]);
+    if (close) d += 'Z';
+    return '<path class="' + cls + '" d="' + d + '"/>';
+  };
+  var s = '';
+  var aero = P.aerodrome || []; for (var a = 0; a < aero.length; a++) s += line(aero[a], 'cat-osm-aero', true);
+  var apr = P.aprons || []; for (var p2 = 0; p2 < apr.length; p2++) s += line(apr[p2], 'cat-osm-apron', true);
+  var tax = P.taxiways || []; for (var t = 0; t < tax.length; t++) s += line(tax[t], 'cat-osm-taxi', false);
+  var rwy = P.runways || []; for (var r = 0; r < rwy.length; r++) s += line(rwy[r], 'cat-osm-rwy', false);
+  var std = P.stands || [], dots = '';
+  for (var k = 0; k < std.length; k++) { var c0 = std[k].coords && std[k].coords[0]; if (c0) dots += '<circle class="cat-osm-stand" cx="' + px(c0) + '" cy="' + py(c0) + '" r="0.9"/>'; }
+  return '<svg class="cat-osm" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' + s + dots + '</svg>';
+}
+
 // Catálogo (pantalla menú) — enciclopedia DINÁMICA leída en vivo de S.DATA (la "ddbb" del
 // juego). Concatenación de strings + esc()/fmt(), sin backticks ni interpolación, para
 // inyectarse en el template gigante APP_JS sin romperlo. Si cambian los JSON, esto cambia solo.
@@ -98321,6 +98362,7 @@ function renderCatalogBody(){
   var DC = D.dailyChecks || [];
   var MC = D.maintenanceChecks || [];
   var AL = D.airlines || [];
+  var AP = (D.airportCatalog && D.airportCatalog.airports) || [];
   var BAL = D.balance || {};
   var active = catalogTab || "aircraft";
 
@@ -98330,6 +98372,7 @@ function renderCatalogBody(){
     { k: "daily", lbl: "Daily checks", n: DC.length },
     { k: "checks", lbl: "A/C/D checks", n: MC.length },
     { k: "airlines", lbl: "Aerolíneas", n: AL.length },
+    { k: "airports", lbl: "Aeropuertos", n: AP.length },
     { k: "economy", lbl: "Economía", n: 0 },
   ];
   var tabNav = "";
@@ -98369,6 +98412,38 @@ function renderCatalogBody(){
         + '</div>';
     }
     body = '<p class="cat-lead">Universo cerrado: familia A320. Cada modelo deriva sus tareas y checks de los datasets reales.</p><div class="cat-cards">' + cards + '</div>';
+  }
+
+  else if (active === "airports") {
+    var rtAll = D.airportRuntime || {};
+    var apcards = "";
+    for (var ap2 = 0; ap2 < AP.length; ap2++) {
+      var apx = AP[ap2];
+      var rt = rtAll[apx.icao];
+      var hasGeo = !!(rt && rt.paths && rt.paths.paths);
+      var avail = apx.available !== false;
+      var ops = 0; for (var oo = 0; oo < (apx.operators || []).length; oo++) if (apx.operators[oo].available) ops++;
+      var dif = apx.difficultyOverall || 0;
+      var stars = "";
+      for (var ds = 0; ds < 5; ds++) stars += ds < dif ? "★" : "☆";
+      var thumb = hasGeo ? airportThumbSvg(rt.paths) : '<div class="cat-osm-none">' + (avail ? "Sin layout OSM" : "Próximamente") + '</div>';
+      var geoLine = "";
+      if (hasGeo) {
+        var pp = rt.paths.paths;
+        var nRwy = (pp.runways || []).length, nStd = (pp.stands || []).length, nTax = (pp.taxiways || []).length;
+        geoLine = '<div class="cat-kv"><span>Layout OSM</span><b>' + nRwy + ' pista' + (nRwy === 1 ? '' : 's') + ' · ' + nTax + ' taxi · ' + nStd + ' stands</b></div>';
+      }
+      apcards += '<div class="cat-card cat-apcard' + (avail ? '' : ' dis') + '" style="--c:' + (avail ? 'var(--accent)' : 'var(--dim)') + '">'
+        + '<div class="cat-osm-wrap">' + thumb + (avail ? '' : '<span class="cat-osm-soon">Próximamente</span>') + '</div>'
+        + '<div class="cat-card-h"><h3>' + esc(apx.name) + '</h3><span class="cat-tag mono">' + esc(apx.icao) + ' / ' + esc(apx.iata) + '</span></div>'
+        + '<div class="cat-kv"><span>Ciudad</span><b>' + esc(apx.city || "—") + '</b></div>'
+        + '<div class="cat-kv"><span>Dificultad</span><b style="color:var(--warn)">' + stars + '</b></div>'
+        + '<div class="cat-kv"><span>Operadores</span><b>' + (avail ? ops : "—") + '</b></div>'
+        + geoLine
+        + '<p class="cat-apdesc">' + esc(apx.shortDesc || apx.comingSoonReason || "") + '</p>'
+        + '</div>';
+    }
+    body = '<p class="cat-lead">Aeropuertos del juego con su <b>layout OSM real</b> — el mismo dato vectorial que dibuja el mapa en partida. La miniatura se genera en vivo de la geometría; solo los disponibles la traen.</p><div class="cat-cards cat-apcards">' + apcards + '</div>';
   }
 
   else if (active === "tasks") {
