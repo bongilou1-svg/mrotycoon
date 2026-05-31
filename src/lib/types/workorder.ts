@@ -135,6 +135,13 @@ export interface WorkOrderInstance {
   etdMinute?: number;
   /** Minutos de viaje oficina→stand usados en esta instancia (para pintar el timeline). */
   travelMinutes?: number;
+  /** INC3: stand físico del avión de esta WO (= airplane.standId). Resuelve la distancia
+   *  oficina→stand para el viaje variable. Sellado al instanciar. */
+  standId?: string;
+  /** INC3: minutos de viaje oficina→stand PLANIFICADOS para esta WO (clamp por distancia OSM),
+   *  sellados al asignar el primer mecánico. Los consume el viaje de ida (ToPlane) y el de
+   *  vuelta (Returning). Fallback a balance.officeToStandMinutes si no hay datos de mapa. */
+  plannedTravelMinutes?: number;
   /** True cuando se reveló el scope (al cerrar Inspection). Antes: solo `complaint`/ATA visible. */
   scopeRevealed?: boolean;
   /** Si la WO ha sido diferida vía MEL — minuto absoluto en el que vence la deferral y la WO

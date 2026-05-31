@@ -73,6 +73,7 @@ import {
 } from "./sim/shifts.ts";
 import { generateInitialMechanics, generateInitialDualCandidates, eligibleCertifiers } from "./sim/mechanics.ts";
 import { assignMechanicsToWo, tickMechanicTravel } from "./sim/assignment.ts";
+import { computeStandTravelMinutes } from "./sim/travel.ts";
 import { tickAutoAssign, hasActiveLead, findHandoffReplacement } from "./sim/foreman.ts";
 import { tickWorkOrders } from "./sim/wo_state_machine.ts";
 import {
@@ -241,6 +242,9 @@ export interface CreateGameOptions {
    *  Cuando esté completo, el UI siempre pasará un preset al iniciar partida desde la
    *  pantalla de selección de aeropuerto. */
   airportPreset?: import("./types/airport-preset").AirportPreset;
+  /** INC3: datos OSM del aeropuerto (el objeto <icao>.paths.json con standMap + parkingPositions +
+   *  terminal + bbox). Si se pasa, createGame precomputa standTravelMinutes (viaje variable). */
+  airportPaths?: unknown;
 }
 
 export function createGame(
@@ -345,6 +349,8 @@ export function createGame(
     hoursKPI: createHoursKPI(),
     lastWeeklyHoursSnapshot: {},
     airportIcao: opts.airportPreset?.icao, // undefined si no se pasó preset (legacy)
+    standTravelMinutes: computeStandTravelMinutes(opts.airportPaths as never, balance), // INC3
+
     archive: { airplanes: [], workOrders: [] }, // perf archive: vacío al inicio
   };
   // Pivot iteración 2026-05-25 — Multi-airport: extender homeBaseAirports de las
@@ -960,7 +966,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
           ev.woInstanceId, g.workOrders, g.mechanics, g.templates, g.airplanes, next, "",
         );
         if (replacement) {
-          const r = assignMechanicsToWo(g.mechanics, g.workOrders, ev.woInstanceId, replacement.id, [], g.balance, next);
+          const r = assignMechanicsToWo(g.mechanics, g.workOrders, ev.woInstanceId, replacement.id, [], g.balance, next, g.standTravelMinutes ?? {});
           if (!r.error) {
             g.mechanics = r.mechanics;
             g.workOrders = r.workOrders;
@@ -1002,7 +1008,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       if (!tpl || !ap) continue;
       const certs = eligibleCertifiers(g.mechanics, tpl, ap.model, ap.engineVariant);
       if (certs.length > 0) {
-        const res = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, certs[0].id, [], g.balance, next);
+        const res = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, certs[0].id, [], g.balance, next, g.standTravelMinutes ?? {});
         if (!res.error) {
           g.mechanics = res.mechanics;
           g.workOrders = res.workOrders;
@@ -1032,7 +1038,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
             }
           }
           pushNotification(g, `⏱️ ${offshiftCert.name} llamado a hora extra para ${wo.airplaneRegistration}`, "warning");
-          const res2 = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, offshiftCert.id, [], g.balance, next);
+          const res2 = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, offshiftCert.id, [], g.balance, next, g.standTravelMinutes ?? {});
           if (!res2.error) {
             g.mechanics = res2.mechanics;
             g.workOrders = res2.workOrders;
@@ -1169,7 +1175,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
                   ? { ...m, state: "Idle" as const, assignedWoInstanceId: null, assignedCheckInstanceId: null, stateRemainingMinutes: 0 }
                   : m,
               );
-              const r = assignMechanicsToWo(g.mechanics, g.workOrders, nextDc.instanceId, certId, [], g.balance, next);
+              const r = assignMechanicsToWo(g.mechanics, g.workOrders, nextDc.instanceId, certId, [], g.balance, next, g.standTravelMinutes ?? {});
               if (!r.error) {
                 g.mechanics = r.mechanics;
                 g.workOrders = r.workOrders;
@@ -1573,7 +1579,7 @@ export function assignMechanicsManually(
   certifierId: string,
   helperIds: string[],
 ): { ok: boolean; error?: string } {
-  const res = assignMechanicsToWo(g.mechanics, g.workOrders, woInstanceId, certifierId, helperIds, g.balance, g.clock.minute);
+  const res = assignMechanicsToWo(g.mechanics, g.workOrders, woInstanceId, certifierId, helperIds, g.balance, g.clock.minute, g.standTravelMinutes ?? {});
   if (res.error) return { ok: false, error: res.error };
   g.mechanics = res.mechanics;
   g.workOrders = res.workOrders;

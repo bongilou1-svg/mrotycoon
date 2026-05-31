@@ -26,6 +26,7 @@ export function assignMechanicsToWo(
   helperIds: readonly string[],
   balance: Balance,
   nowMinute = -1, // v2: si se pasa, sella dispatchMinute (arranque del viaje del mecánico)
+  standTravelMinutes: Record<string, number> = {}, // INC3: viaje oficina→stand por distancia OSM
 ): AssignResult {
   const wo = workOrders.find((w) => w.instanceId === woInstanceId);
   if (!wo) return { mechanics: [...mechanics], workOrders: [...workOrders], error: "WO not found" };
@@ -48,6 +49,10 @@ export function assignMechanicsToWo(
   if (helpers.length > 2)
     return { mechanics: [...mechanics], workOrders: [...workOrders], error: "Max 2 helpers" };
 
+  // INC3: viaje variable oficina→stand. El mapa lo precomputa createGame por distancia OSM real;
+  // si la WO no tiene stand o el mapa no lo cubre, cae al fijo balance.officeToStandMinutes (compat).
+  const travelMin = standTravelMinutes[wo.standId ?? ""] ?? balance.officeToStandMinutes;
+
   const allAssignedIds = [certifierId, ...helperIds];
   const newMechanics = mechanics.map((m) => {
     if (!allAssignedIds.includes(m.id)) return m;
@@ -56,13 +61,15 @@ export function assignMechanicsToWo(
       state: "ToPlane" as const,
       assignedWoInstanceId: woInstanceId,
       assignedCheckInstanceId: null,
-      stateRemainingMinutes: balance.officeToStandMinutes,
+      stateRemainingMinutes: travelMin,
     };
   });
 
   const newWos = workOrders.map((w) =>
     w.instanceId === woInstanceId
       ? { ...w, assignedMechanicIds: [...allAssignedIds],
+          // INC3: sella el viaje planificado (lo reusa el viaje de vuelta en Returning).
+          plannedTravelMinutes: travelMin,
           // v2: sella el despacho (arranque del viaje del mecánico) si se pasó el reloj.
           ...(nowMinute >= 0 ? { dispatchMinute: nowMinute } : {}) }
       : w,

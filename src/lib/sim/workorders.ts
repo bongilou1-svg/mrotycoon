@@ -106,6 +106,8 @@ export function instantiateWorkOrder(
     onBlockMinute,
     etdMinute: slaFromDeparture > 0 ? slaFromDeparture : undefined,
     scopeRevealed: false,
+    // INC3: stand del avión → permite resolver el viaje variable al asignar.
+    standId: airplane.standId ?? undefined,
   };
 }
 

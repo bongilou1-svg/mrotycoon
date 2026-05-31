@@ -95,6 +95,9 @@ export interface GameSavePayload {
   // v15 (pivot iteración 2026-05-25 · Performance archive): Departed + WOs cerradas
   // antiguas movidas aquí para que el tick no las itere. Retención 90 días sim.
   archive?: { airplanes: GameState["airplanes"]; workOrders: GameState["workOrders"] };
+  // INC3 (viaje variable): mapa standId→minutos de viaje oficina→stand (derivado del OSM).
+  // Opcional: saves antiguos no lo traen → {} → fallback a balance.officeToStandMinutes.
+  standTravelMinutes?: Record<string, number>;
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -142,6 +145,7 @@ export function serializeGame(g: GameState): GameSavePayload {
     management: g.management,
     airportIcao: g.airportIcao,
     archive: g.archive, // v15: performance archive (Departed + WOs cerradas antiguas)
+    standTravelMinutes: g.standTravelMinutes ?? {}, // INC3: viaje variable precomputado
   };
 }
 
@@ -214,6 +218,9 @@ export function deserializeGame(
     // v14 (pivot iteración 2026-05-25 · Multi-airport): icao del aeropuerto. Saves
     // pre-v14 no lo tienen → undefined = partida legacy (asume LEAS hardcoded).
     airportIcao: payload.airportIcao,
+    // INC3 (viaje variable): saves pre-INC3 no lo traen → {} → assignment cae al fijo
+    // officeToStandMinutes. No requiere bump: es derivado del mapa, recomputable.
+    standTravelMinutes: payload.standTravelMinutes ?? {},
     // v15 (pivot iteración 2026-05-25 · Performance archive): listas archivadas para
     // que el tick no las itere. Saves pre-v15 no lo traen → empezar vacío (los Departed
     // y WOs cerradas viejas del save siguen en g.airplanes/g.workOrders hasta que

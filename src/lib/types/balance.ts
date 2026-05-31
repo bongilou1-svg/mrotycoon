@@ -27,8 +27,14 @@ export interface Balance {
   slaMultiplier: number;
   /** Multiplicador penalty si WO es AOG. */
   aogPenaltyMultiplier: number;
-  /** Tiempo abstracto de viaje oficina → stand (minutos ingame). */
+  /** Tiempo abstracto de viaje oficina → stand (minutos ingame). Fallback INC3 si no hay mapa. */
   officeToStandMinutes: number;
+  /** INC3 viaje variable: velocidad del furgo en plataforma (m/min). Fallback 80 si falta. */
+  apronSpeedMetersPerMinute?: number;
+  /** INC3: minutos mínimos de viaje oficina→stand (clamp inferior). Fallback 2. */
+  minTravelMinutes?: number;
+  /** INC3: minutos máximos de viaje oficina→stand (clamp superior). Fallback 12. */
+  maxTravelMinutes?: number;
   /** Delta de reputación por evento. */
   reputation: {
     woCompletedOnTime: number;

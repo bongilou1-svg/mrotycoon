@@ -129,10 +129,11 @@ export function tickWorkOrders(
         isAOG: template.isAOG,
       });
 
-      // Liberar mecánicos → Returning (timer = 2 min)
+      // Liberar mecánicos → Returning. INC3: el viaje de vuelta dura lo mismo que la ida
+      // (plannedTravelMinutes sellado al asignar); fallback al fijo si la WO no lo tiene.
       newMechanics = newMechanics.map((m) => {
         if (m.assignedWoInstanceId === wo.instanceId) {
-          return { ...m, state: "Returning" as const, stateRemainingMinutes: balance.officeToStandMinutes };
+          return { ...m, state: "Returning" as const, stateRemainingMinutes: wo.plannedTravelMinutes ?? balance.officeToStandMinutes };
         }
         return m;
       });
