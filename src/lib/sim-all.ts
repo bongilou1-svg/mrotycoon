@@ -77,6 +77,7 @@ const _dailyChecksWithKind = (dailyChecksJson as Array<Record<string, unknown>>)
 // Pivot iteración 2026-05-25 — Catálogo de aeropuertos + presets bundleados para
 // el wizard New Game (selección aeropuerto → operador inicial).
 import airportCatalogJson from "./data/airports/catalog.json";
+import ataChaptersJson from "./data/ata_chapters.json";
 import presetVolotea from "./data/airports/LEAS_volotea.preset.json";
 import presetVueling from "./data/airports/LEAS_vueling.preset.json";
 import presetBioVolotea from "./data/airports/LEBB_volotea.preset.json";

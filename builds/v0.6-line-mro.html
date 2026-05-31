@@ -13947,6 +13947,37 @@ var Sim = (() => {
     ]
   };
 
+  // src/lib/data/ata_chapters.json
+  var ata_chapters_default = {
+    $comment: "Mapa ATA cap\xEDtulo\u2192nombre (est\xE1ndar ATA 100). Usado por el Cat\xE1logo para el manual desplegable. Solo los cap\xEDtulos presentes en workorders/daily_checks + algunos vecinos comunes.",
+    "5": "Inspecciones peri\xF3dicas",
+    "12": "Servicing (fluidos)",
+    "21": "Aire acondicionado",
+    "22": "Vuelo autom\xE1tico",
+    "23": "Comunicaciones",
+    "24": "Energ\xEDa el\xE9ctrica",
+    "25": "Equipamiento / cabina",
+    "26": "Protecci\xF3n contra incendios",
+    "27": "Controles de vuelo",
+    "28": "Combustible",
+    "29": "Sistema hidr\xE1ulico",
+    "30": "Protecci\xF3n hielo/lluvia",
+    "32": "Tren de aterrizaje",
+    "33": "Luces",
+    "34": "Navegaci\xF3n",
+    "35": "Ox\xEDgeno",
+    "36": "Sistema neum\xE1tico",
+    "38": "Agua / residuos",
+    "49": "APU (grupo auxiliar)",
+    "52": "Puertas",
+    "56": "Ventanas",
+    "71": "Planta motriz (motor)",
+    "72": "Motor (turbina)",
+    "73": "Combustible motor",
+    "79": "Aceite motor",
+    "80": "Arranque motor"
+  };
+
   // src/lib/data/airports/LEAS_volotea.preset.json
   var LEAS_volotea_preset_default = {
     icao: "LEAS",
@@ -92048,7 +92079,7 @@ var Sim = (() => {
     maintenanceChecks: maintenance_checks_default,
     dailyChecks: _dailyChecksWithKind,
     airportCatalog: catalog_default,
-    ataChapters: ataChaptersJson,
+    ataChapters: ata_chapters_default,
     presets: {
       LEAS_volotea: LEAS_volotea_preset_default,
       LEAS_vueling: LEAS_vueling_preset_default,
