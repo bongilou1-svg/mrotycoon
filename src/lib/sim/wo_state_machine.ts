@@ -34,6 +34,8 @@ function phaseDuration(template: WorkOrderTemplate, phase: WorkOrderPhase, balan
     case "MainTask":   return Math.round(template.durationMinutes * balance.phaseDurationRatios.mainTask);
     case "Test":       return Math.round(template.durationMinutes * balance.phaseDurationRatios.test);
     case "Rework":     return Math.round(template.durationMinutes * balance.phaseDurationRatios.rework);
+    // v2: Release = cierre/firma RTD, corto y fijo (no escala con la duración del trabajo).
+    case "Release":    return balance.releaseMinutes ?? 3;
     default:           return 0;
   }
 }
@@ -129,7 +131,9 @@ export function tickWorkOrders(
   return { workOrders: newWos, mechanics: newMechanics, events };
 }
 
-/** Decide la siguiente fase tras completar la actual. */
+/** Decide la siguiente fase tras completar la actual.
+ *  v2 ciclo de vida: tras Test-pass (o Rework) NO se va directo a Completed, sino a Release
+ *  (fase corta de cierre/firma = Ready To Dispatch). Release → Completed. */
 function transitionPhase(current: WorkOrderPhase, rng: Rng, balance: Balance): WorkOrderPhase {
   switch (current) {
     case "Inspection":
@@ -138,9 +142,11 @@ function transitionPhase(current: WorkOrderPhase, rng: Rng, balance: Balance): W
     case "MainTask":
       return "Test";
     case "Test":
-      // 10% rework
-      return randBool(rng, balance.probabilities.reworkAfterTest) ? "Rework" : "Completed";
+      // 10% rework; si pasa el test → Release (cierre RTD), no directo a Completed.
+      return randBool(rng, balance.probabilities.reworkAfterTest) ? "Rework" : "Release";
     case "Rework":
+      return "Release";
+    case "Release":
       return "Completed";
     default:
       return current;

@@ -7905,6 +7905,8 @@ var Sim = (() => {
         return Math.round(template.durationMinutes * balance.phaseDurationRatios.test);
       case "Rework":
         return Math.round(template.durationMinutes * balance.phaseDurationRatios.rework);
+      case "Release":
+        return balance.releaseMinutes ?? 3;
       default:
         return 0;
     }
@@ -7975,8 +7977,10 @@ var Sim = (() => {
       case "MainTask":
         return "Test";
       case "Test":
-        return randBool(rng, balance.probabilities.reworkAfterTest) ? "Rework" : "Completed";
+        return randBool(rng, balance.probabilities.reworkAfterTest) ? "Rework" : "Release";
       case "Rework":
+        return "Release";
+      case "Release":
         return "Completed";
       default:
         return current;
@@ -13401,6 +13405,8 @@ var Sim = (() => {
     officeToStandMinutes: 2,
     $comment_releaseMinutes: "v2 ciclo de vida: duraci\xF3n de la fase Release (cierre/firma RTD) tras Test-pass. Corta y fija, no escala con el trabajo. Subir = m\xE1s fricci\xF3n al cerrar.",
     releaseMinutes: 3,
+    $comment_taxiInMinutes: "v2 ciclo de vida: taxi-in del avi\xF3n (landing \u2192 on-block en stand). El s\xEDntoma se ve al on-block, no al tocar tierra. 0 = sin taxi (instant\xE1neo).",
+    taxiInMinutes: 4,
     reputation: {
       $comment: "Deltas en puntos sobre escala 0-100.",
       woCompletedOnTime: 1,

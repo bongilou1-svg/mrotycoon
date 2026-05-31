@@ -52,6 +52,7 @@ for (let i = 0; i < 100 && wos[0].phase !== "Completed" && wos[0].phase !== "Fai
   totalElapsed += 2;
 }
 expect(wos[0].phase === "Completed", `tras varios ticks WO Completed (got ${wos[0].phase})`);
+expect(phasesSeen.has("Release"), `v2: la WO pasó por la fase Release antes de Completed (fases vistas: ${[...phasesSeen].join(",")})`);
 expect(ms.find(m => m.id === b1.id).state === "Returning", "mecánico vuelve (Returning)");
 expect(lastEvents.some(e => e.type === "wo_completed"), "evento wo_completed emitido");
 
