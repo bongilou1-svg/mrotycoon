@@ -25,11 +25,21 @@ console.log("\n=== sim/workorders (gen) ===");
 _resetInstanceCounter();
 const rng = createRng(42);
 
-// Compat: todos los templates aceptan A320/A321 + CFM56/V2500 (dataset)
+// Compat por modelo/motor. Refactor 2026-05-31 (esquema serio): las tareas que nombran su
+// motor son CFM56-only / V2500-only, así que NO todas valen para cualquier combo (objetivo:
+// un V2500 no recibe callouts CFM56-only). Validamos mayoría + sin huérfanas + diferenciación.
 const compatA320CFM = compatibleTemplates(templates, "A320", "CFM56");
-expect(compatA320CFM.length === templates.length, `todos compatibles A320/CFM56 (got ${compatA320CFM.length})`);
 const compatA321V2500 = compatibleTemplates(templates, "A321", "V2500");
-expect(compatA321V2500.length === templates.length, "todos compatibles A321/V2500");
+expect(compatA320CFM.length > templates.length * 0.6, `mayoría compatible A320/CFM56 (got ${compatA320CFM.length}/${templates.length})`);
+expect(compatA321V2500.length > templates.length * 0.6, `mayoría compatible A321/V2500 (got ${compatA321V2500.length}/${templates.length})`);
+const orphan = templates.filter((t) => {
+  for (const m of ["A320", "A321"]) for (const e of ["CFM56", "V2500"]) if (compatibleTemplates([t], m, e).length === 1) return false;
+  return true;
+});
+expect(orphan.length === 0, `ninguna tarea imposible (huérfanas: ${orphan.map((t) => t.id).join(",") || "0"})`);
+const cfmOnly = templates.filter((t) => t.engineVariantsCompatibles.length === 1 && t.engineVariantsCompatibles[0] === "CFM56").length;
+const v25Only = templates.filter((t) => t.engineVariantsCompatibles.length === 1 && t.engineVariantsCompatibles[0] === "V2500").length;
+expect(cfmOnly > 0 && v25Only > 0, `diferenciación de motor real (CFM56-only ${cfmOnly}, V2500-only ${v25Only})`);
 
 // Pick template
 const tpl = pickWeightedTemplate(rng, compatA320CFM);
