@@ -52,20 +52,26 @@ const w = wos[0];
 expect(w.phase === "Completed", `WO Completed (${w.phase})`);
 expect(typeof w.tshootCompleteMinute === "number", `tshootComplete sellado pese a gating off (${w.tshootCompleteMinute})`);
 expect(w.scopeRevealed === true, `scope REVELADO tras Inspection`);
-expect(typeof w.fixCompleteMinute === "number", `fixComplete sellado (${w.fixCompleteMinute})`);
 expect(typeof w.testCompleteMinute === "number", `testComplete sellado (${w.testCompleteMinute})`);
 expect(typeof w.releaseMinute === "number", `releaseMinute sellado (${w.releaseMinute})`);
+// fixComplete es OPCIONAL: con direct dispatch (40% prob) la WO salta MainTask → no hay fix.
+// Si está, debe caer entre tshoot y test (es la fase intermedia).
+if (typeof w.fixCompleteMinute === "number") {
+  expect(w.fixCompleteMinute >= w.tshootCompleteMinute && w.fixCompleteMinute <= w.testCompleteMinute,
+    `fixComplete (${w.fixCompleteMinute}) entre tshoot (${w.tshootCompleteMinute}) y test (${w.testCompleteMinute})`);
+}
 
-console.log("\n=== orden cronológico no decreciente ===");
-const chain = [
+console.log("\n=== orden cronológico no decreciente (solo hitos que ocurrieron, en su secuencia) ===");
+// Orden lógico de la secuencia. fix es opcional (direct dispatch lo salta) → se omite si falta.
+const seq = [
   ["landing", w.landingMinute], ["onBlock", w.onBlockMinute], ["dispatch", w.dispatchMinute],
   ["arrival", w.arrivalAtStandMinute], ["tshoot", w.tshootCompleteMinute],
   ["fix", w.fixCompleteMinute], ["test", w.testCompleteMinute], ["release", w.releaseMinute],
 ].filter(([, v]) => typeof v === "number");
 let ordered = true, prev = -Infinity, desc = [];
-for (const [k, v] of chain) { if (v < prev) ordered = false; desc.push(`${k}:${v}`); prev = v; }
+for (const [k, v] of seq) { if (v < prev) ordered = false; desc.push(`${k}:${v}`); prev = v; }
 expect(ordered, `cadena en orden: ${desc.join(" ≤ ")}`);
-expect(w.releaseMinute >= w.testCompleteMinute, `release tras test`);
+expect(w.releaseMinute >= w.testCompleteMinute, `release (${w.releaseMinute}) tras test (${w.testCompleteMinute})`);
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

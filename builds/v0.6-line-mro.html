@@ -7964,7 +7964,7 @@ var Sim = (() => {
           if (phase === "Inspection") {
             stamps.tshootCompleteMinute = sc;
             stamps.scopeRevealed = true;
-          } else if (phase === "MainTask" || phase === "Rework") stamps.fixCompleteMinute = sc;
+          } else if (phase === "MainTask") stamps.fixCompleteMinute = sc;
           else if (phase === "Test") stamps.testCompleteMinute = sc;
           else if (phase === "Release") stamps.releaseMinute = sc;
         }

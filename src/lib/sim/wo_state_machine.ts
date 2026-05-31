@@ -103,7 +103,10 @@ export function tickWorkOrders(
       const sc = stampClock >= 0 ? stampClock : (nowMinute >= 0 ? nowMinute : -1);
       if (sc >= 0) {
         if (phase === "Inspection") { stamps.tshootCompleteMinute = sc; stamps.scopeRevealed = true; }
-        else if (phase === "MainTask" || phase === "Rework") stamps.fixCompleteMinute = sc;
+        // fixCompleteMinute = fin de MainTask (spec). NO se re-sella en Rework: el rework ocurre
+        // DESPUÉS de Test (Test→Rework→Release) y re-sellarlo dejaría fix>test, rompiendo el orden
+        // cronológico del timeline. El rework queda implícito entre testComplete y release.
+        else if (phase === "MainTask") stamps.fixCompleteMinute = sc;
         else if (phase === "Test") stamps.testCompleteMinute = sc;
         else if (phase === "Release") stamps.releaseMinute = sc;
       }
