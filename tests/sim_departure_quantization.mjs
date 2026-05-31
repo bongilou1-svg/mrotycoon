@@ -92,29 +92,23 @@ console.log("\n=== retraso REAL preservado: avión retenido por WO bloqueante y 
   expect(p.delayMinutes >= 2, `retraso real >= step (no aplastado a 0)`);
 }
 
-console.log("\n=== invariante en simulación natural (lineMode): ningún delay en (0, step) ===");
+console.log("\n=== invariante por inyección múltiple: barrido de offsets, ninguno en (0, step) ===");
 {
-  // Con el schedule real, comprobamos que no aparecen retrasos fantasma sub-tick.
-  const g = createGame(balance, airlines, templates, 42, [], [], { lineMode: true });
-  g.autoPauseEnabled = false;
-  g.autoAssignEnabled = true;
+  // En vez de depender del schedule natural (que no produce salidas en los primeros 2 días),
+  // inyectamos un avión LIBRE por cada offset 1..12 y verificamos que ninguno cae en (0,step).
   const STEP = 2;
-  const seen = new Set(); const delays = [];
-  let steps = 0;
-  while (g.clock.minute < 2 * 24 * 60 && steps < 200000) {
-    advanceGame(g, STEP); steps++;
-    for (const a of [...g.airplanes, ...(g.archive?.airplanes ?? [])]) {
-      if (a.status === "Departed" && !seen.has(a.instanceId)) {
-        seen.add(a.instanceId);
-        if (typeof a.delayMinutes === "number") delays.push(a.delayMinutes);
-      }
-    }
+  const delays = [];
+  for (let off = 1; off <= 12; off++) {
+    const g = freshGame();
+    pushPlane(g, `EC-S${off}`, off);
+    for (let i = 0; i < 10; i++) advanceGame(g, STEP); // base+20 > base+12
+    const p = findP(g, `EC-S${off}`);
+    if (p && p.status === "Departed" && typeof p.delayMinutes === "number") delays.push(p.delayMinutes);
   }
-  expect(delays.length > 5, `hubo salidas en lineMode (${delays.length})`);
+  expect(delays.length === 12, `los 12 aviones libres salieron (${delays.length})`);
   const phantom = delays.filter(d => d > 0 && d < STEP);
   expect(phantom.length === 0, `cero retrasos en (0,${STEP}) [artefacto] — había ${phantom.length}`);
-  const onTime = delays.filter(d => d === 0).length;
-  expect(onTime >= delays.length * 0.5, `≥50% on-time (${onTime}/${delays.length}) — antes el grueso tenía +tick fantasma`);
+  expect(delays.every(d => d === 0), `los 12 libres con delay 0 (got [${delays.join(",")}])`);
 }
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);
