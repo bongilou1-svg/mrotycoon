@@ -1018,25 +1018,25 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 
 const BODY = `<div class="app">
   <header class="hud">
-    <div class="hud-l"><span class="brand">MRO Tycoon</span><span class="ver">v0.7 · CIC UI</span></div>
-    <div class="hud-c"><span class="clock" id="clock">Día 1 · 00:00</span><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="kpi" style="display:none;cursor:pointer;margin-left:.5rem" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
+    <div class="hud-l"><span class="brand">✈</span><span class="name">MRO <b>TYCOON</b></span><span class="ver">v0.7</span></div>
+    <div class="hud-c"><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="clock" id="clock">Día 1 · 00:00</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="kpi" style="display:none;cursor:pointer;margin-left:.5rem" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
     <div class="hud-r">
-      <div class="kpi">💰 <strong id="bal">250.000 €</strong></div>
-      <div class="kpi compliance-kpi" id="kpi-rep" title="Reputación media — click para detalle por aerolínea">⭐ <strong id="rep">50</strong>/100</div>
-      <div class="kpi compliance-kpi" id="kpi-compliance" title="Compliance Part-145 — click para detalle">🛡️ <strong id="compliance-score">80</strong>/100</div>
-      <div style="display:flex;gap:.25rem;margin-right:.5rem">
-        <button id="btn-save" title="Guardar partida" style="padding:.25rem .55rem;font-size:.85rem">💾</button>
-        <button id="btn-load" title="Cargar partida" style="padding:.25rem .55rem;font-size:.85rem">📂</button>
-        <button id="btn-new" title="Nueva partida" style="padding:.25rem .55rem;font-size:.85rem">🆕</button>
-        <button id="btn-age-fleet" title="DEBUG: envejecer flota cerca de triggers A/C" style="padding:.25rem .55rem;font-size:.85rem">🛠️</button>
-        <span id="save-indicator" style="font-size:.7rem;color:var(--success);align-self:center;margin-left:.25rem"></span>
+      <div class="kpi"><span class="klbl">Balance</span><strong id="bal">250.000 €</strong></div>
+      <div class="kpi compliance-kpi" id="kpi-rep" title="Reputación media — click para detalle por aerolínea"><span class="klbl">Reputación</span><span><strong id="rep">50</strong><s>/100</s></span></div>
+      <div class="kpi compliance-kpi" id="kpi-compliance" title="Compliance Part-145 — click para detalle"><span class="klbl">Part-145</span><span><strong id="compliance-score">80</strong><s>/100</s></span></div>
+      <div class="hud-tools">
+        <button class="icbtn" id="btn-save" title="Guardar partida"><svg class="tic" viewBox="0 0 24 24"><path d="M5 4h11l3.2 3.2V20H5Z"/><path d="M8 4v5h6.5V4"/><rect x="8" y="13" width="8" height="6.5"/></svg></button>
+        <button class="icbtn" id="btn-load" title="Cargar partida"><svg class="tic" viewBox="0 0 24 24"><path d="M3.6 7.2A1.6 1.6 0 0 1 5.2 5.6h3.4l2 2.4h7.2a1.6 1.6 0 0 1 1.6 1.6V18a1.6 1.6 0 0 1-1.6 1.6H5.2A1.6 1.6 0 0 1 3.6 18Z"/></svg></button>
+        <button class="icbtn" id="btn-new" title="Nueva partida"><svg class="tic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg></button>
+        <button class="icbtn" id="btn-age-fleet" title="DEBUG: envejecer flota cerca de triggers A/C"><svg class="tic" viewBox="0 0 24 24"><path d="M14.7 6.3a3.6 3.6 0 0 0-4.9 4.2l-5.4 5.4a1.5 1.5 0 0 0 0 2.1l1.6 1.6a1.5 1.5 0 0 0 2.1 0l5.4-5.4a3.6 3.6 0 0 0 4.2-4.9l-2.4 2.4-2.6-.6-.6-2.6Z"/></svg></button>
+        <span id="save-indicator" style="font-size:.7rem;color:#3fb950;align-self:center;margin-left:.25rem"></span>
       </div>
       <div class="speeds">
-        <button id="btn-autopause" title="Auto-pausa en eventos críticos (AOG / Critical)" style="padding:.2rem .45rem;font-size:.85rem;margin-right:.25rem">🔔</button>
-        <button data-speed="0" class="active" title="Pausa">⏸</button>
-        <button data-speed="1">1×</button>
-        <button data-speed="2">2×</button>
-        <button data-speed="5">5×</button>
+        <button id="btn-autopause" title="Auto-pausa en eventos críticos (AOG / Critical)"><svg viewBox="0 0 24 24"><path d="M6 8.5a6 6 0 0 1 12 0c0 6 2.5 4.5 2.5 8.5H3.5c0-4 2.5-2.5 2.5-8.5"/><path d="M10.5 20a1.6 1.6 0 0 0 3 0"/></svg></button>
+        <button data-speed="0" class="active" title="Pausa"><svg viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13"/></svg></button>
+        <button data-speed="1" title="Velocidad normal">1×</button>
+        <button data-speed="2" title="Rápido (2×)">2×</button>
+        <button data-speed="5" title="Muy rápido (5×)">5×</button>
       </div>
     </div>
   </header>
