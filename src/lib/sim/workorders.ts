@@ -21,6 +21,30 @@ export function _resetInstanceCounter(): void {
   _instanceCounter = 0;
 }
 
+/**
+ * Fase A#1 (reveal escalonado): síntoma corto a mostrar en el callout ANTES del T-shoot.
+ * Un evento NO nace diagnosticado: la tripulación reporta un síntoma; el scope real (description,
+ * AMM, P/N, duración) solo se conoce tras la Inspection (scopeRevealed=true).
+ *
+ * Devuelve `template.complaint` si está definido; si no, deriva un squawk genérico del capítulo
+ * ATA (nombre del sistema). El mapa de capítulos es opcional — sin él cae a "ATA NN" a secas.
+ *
+ * PURO: sin efectos. La UI lo llama con S.DATA.ataChapters; los tests con el JSON cargado.
+ */
+export function complaintForTemplate(
+  template: Pick<WorkOrderTemplate, "complaint" | "ataChapter">,
+  ataChapterNames: Readonly<Record<string, string>> = {},
+): string {
+  const c = template.complaint;
+  if (typeof c === "string" && c.trim().length > 0) return c.trim();
+  const chapter = template.ataChapter;
+  const name = ataChapterNames[chapter];
+  if (name && name !== "Reservado" && name !== "Reserved") {
+    return `Reporte de tripulación · ${name} (ATA ${chapter})`;
+  }
+  return `Reporte de tripulación · anomalía ATA ${chapter}`;
+}
+
 /** Filtra templates compatibles con un (model + engineVariant). Vacío en compatibles = todos. */
 export function compatibleTemplates(
   templates: readonly WorkOrderTemplate[],
