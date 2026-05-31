@@ -4033,7 +4033,7 @@ function renderModal(){
     <button class="dw-close" id="modal-close">✕</button>
     <div class="dw-eyebrow">\${tpl.isAOG?"🛑 AOG · ":""}Work Order · \${esc(wo.instanceId)}</div>
     <div class="dw-title"><span class="reg">\${esc(ap.registration)}</span><span class="type">\${esc(ap.model)}/\${esc(ap.engineVariant)}\${ap.arrivalCallsign?" · "+esc(ap.arrivalCallsign):""}</span></div>
-    <div class="dw-sub">\${esc(tpl.description)}</div>
+    <div class="dw-sub">\${wo.scopeRevealed === false ? '🗣️ ' + esc(S.complaintForTemplate(tpl, S.DATA.ataChapters)) + ' <span style="color:var(--muted);font-size:.85em;font-style:normal">🔒 diagnóstico pendiente · se revela tras T-shoot</span>' : esc(tpl.description)}</div>
   </div>
   <div class="dw-body modal-body">
     <div class="dw-kpis">
