@@ -222,36 +222,9 @@ button.primary{background:var(--accent-d);border-color:var(--accent)}
 .lead-row{display:flex;align-items:center;gap:.6rem;padding:.7rem .8rem;border:1px dashed var(--line-2);border-radius:var(--rad);background:#0e1622;flex-wrap:wrap;margin-bottom:.5rem}
 .al-dot{width:10px;height:10px;border-radius:50%}
 .lead-need{font-size:.78rem;color:var(--muted)}
-/* ===== Dashboard ejecutivo — estética CIC (estructura del handoff, CSS propio en estilo CIC) ===== */
+/* Dashboard: reskin de header CIC sobre el dashboard REAL (datos reales preservados) */
 .dash-wrap{padding:1rem 1.5rem 1.5rem}
-.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.8rem}
-.kc{border:1px solid var(--line);border-radius:var(--rad);background:linear-gradient(180deg,#121b28,#0d1520);padding:.8rem .9rem;display:flex;flex-direction:column;gap:.45rem}
-.kc-top{display:flex;align-items:center;justify-content:space-between}
-.kc-ic{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:var(--accent-bg);color:var(--accent)}
-.kc-ic svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.kc-d{font:600 .68rem var(--mono);padding:.1rem .45rem;border-radius:20px}
-.kc-d.up{color:var(--ok);background:var(--ok-bg)} .kc-d.down{color:var(--bad);background:var(--bad-bg)}
-.kc-v{font:700 1.45rem/1 var(--mono);letter-spacing:-.02em;color:var(--text)} .kc-v.neg{color:var(--bad)}
-.kc-l{font:.66rem var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.dash-row2,.dash-row3{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-top:.9rem}
-.chart-card{border:1px solid var(--line);border-radius:var(--rad);background:linear-gradient(180deg,#121b28,#0d1520);padding:.85rem .95rem;min-width:0}
-.chart-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.7rem}
-.ch-t{display:flex;align-items:center;gap:.45rem;font:600 .82rem var(--disp);color:var(--text)}
-.ch-t svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:var(--accent)}
-.ch-s{font-size:.72rem;color:var(--muted)}
-.ch-leg{display:flex;gap:.7rem}
-.sleg{display:flex;align-items:center;gap:.3rem;font:.66rem var(--mono);color:var(--muted)}
-.sleg i{width:9px;height:9px;border-radius:2px;display:inline-block}
-.chart-card .cf,.chart-card .spark{width:100%;height:64px;display:block}
-.chart-card .spark.big{height:90px}
-.cf-x{display:flex;justify-content:space-between;margin-top:.4rem;font-size:.6rem;color:var(--dim)}
-.bars{display:flex;align-items:flex-end;gap:.4rem;height:96px;padding-top:.5rem}
-.bars .bar{flex:1;background:linear-gradient(180deg,var(--accent),var(--accent-deep));border-radius:4px 4px 0 0;position:relative;min-height:4px;display:flex;justify-content:center;align-items:flex-start}
-.bars .bar .bv{font:600 .58rem var(--mono);color:var(--accent-2);margin-top:-1.1rem;position:absolute;top:0}
-.stack{display:flex;height:26px;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
-.stack .seg{height:100%} .stack .seg.crit{background:var(--aog)} .stack .seg.major{background:var(--warn)} .stack .seg.minor{background:var(--accent)} .stack .seg.done{background:var(--ok)}
-.stack-leg{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.6rem}
-.stack-leg .sleg b{color:var(--text);margin-left:.15rem}
+.dash-wrap .dash-grid{margin-top:.2rem}
 .badge{float:right;background:var(--accent);color:#fff;padding:0 6px;border-radius:10px;font-size:.7rem}
 .badge.base{background:var(--base)}.badge.warn{background:var(--warning)}.badge.alert{background:var(--danger);animation:pulse-alert 1.2s ease-in-out infinite}
 @keyframes pulse-alert { 0%,100%{opacity:1} 50%{opacity:.55} }
@@ -2717,7 +2690,7 @@ function renderDashboard(){
         ? \`Necesitas ≥10 departures gestionados para tener fama (\${kpi.totalDepartures}/10).\`
         : "Mejora rep media + on-time + reduce AOG para subir el brand.";
 
-  return \`<h2>📊 Dashboard KPI</h2>
+  return \`<div class="cic-panel"><div class="main-head"><div class="eyebrow">Análisis · Rendimiento del MRO</div><div class="title-row"><div><h1>Dashboard</h1><div class="sub">KPIs reales · TDR · brand · horas-hombre</div></div></div></div><div class="dash-wrap">
   <p class="muted" style="margin-bottom:.75rem">Series semanales (último año ingame, max 52 semanas). Cada punto = cierre de semana.</p>
 
   <h3 style="margin-top:1rem">🌟 Brand Reputation del MRO</h3>
