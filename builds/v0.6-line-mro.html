@@ -512,6 +512,41 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .ht-dot{width:8px;height:8px;border-radius:50%;background:var(--border-s);cursor:pointer;transition:all .14s}
 .ht-dot.on{background:var(--accent);width:22px;border-radius:4px}
 @media(max-width:820px){.ht-panel{grid-template-columns:1fr}.ht-steps{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding:8px}.ht-content{grid-template-columns:1fr}.ht-art{display:none}}
+/* Catálogo (pantalla menú) — enciclopedia dinámica de S.DATA */
+.cat-screen .sub{max-width:none}
+.cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:clamp(10px,2vh,18px) 0 0;flex:none}
+.cat-tab{background:rgba(22,27,34,.6);border:1px solid var(--border-s);color:var(--muted);padding:.45rem .8rem;border-radius:7px;font:600 .8rem var(--disp);cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:all .13s}
+.cat-tab:hover{color:var(--text);border-color:var(--accent)}
+.cat-tab.on{background:var(--accent-deep);border-color:var(--accent);color:#fff}
+.cat-n{font:600 .68rem var(--mono);background:rgba(0,0,0,.25);padding:.05rem .4rem;border-radius:10px}
+.cat-body{flex:1;min-height:0;overflow-y:auto;margin-top:14px;padding-right:6px}
+.cat-lead{font:.86rem var(--disp);color:var(--muted);margin:0 0 14px;max-width:760px}
+.cat-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.cat-stat{background:linear-gradient(180deg,rgba(22,27,34,.9),rgba(14,18,25,.9));border:1px solid var(--border-s);border-radius:8px;padding:.5rem .9rem;text-align:center;min-width:78px}
+.cat-stat b{display:block;font:700 1.3rem var(--mono);color:var(--text)}
+.cat-stat b.ok{color:var(--ok)}.cat-stat b.warn{color:var(--warn)}.cat-stat b.bad{color:var(--bad)}
+.cat-stat span{font:.6rem var(--disp);text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+.cat-tablewrap{border:1px solid var(--border-s);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.cat-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.cat-table thead th{position:sticky;top:0;background:#10161f;color:var(--dim);font:600 .64rem var(--disp);text-transform:uppercase;letter-spacing:.07em;text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--border-s);z-index:1}
+.cat-table td{padding:.5rem .7rem;border-bottom:1px solid var(--line);color:var(--text);vertical-align:top}
+.cat-table tbody tr:hover{background:rgba(77,163,255,.06)}
+.cat-table .mono{font-family:var(--mono);color:var(--muted)}
+.cat-badge{display:inline-block;font:600 .64rem var(--disp);padding:.1rem .5rem;border-radius:10px}
+.cat-badge.minor{background:rgba(77,163,255,.14);color:var(--accent-2)}
+.cat-badge.major{background:var(--warn-bg);color:var(--warn)}
+.cat-badge.crit{background:var(--bad-bg);color:var(--bad)}
+.cat-dot{display:inline-block;width:9px;height:9px;border-radius:50%}.cat-dot.bad{background:var(--bad);box-shadow:0 0 7px var(--bad)}
+.cat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:12px}
+.cat-card{position:relative;background:linear-gradient(180deg,rgba(22,27,34,.92),rgba(14,18,25,.92));border:1px solid var(--border-s);border-radius:9px;padding:.9rem 1rem;overflow:hidden}
+.cat-card-bar{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c,var(--accent))}
+.cat-card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;gap:.5rem}
+.cat-card-h h3{margin:0;font:700 1rem var(--disp);color:var(--text)}
+.cat-tag{font:600 .62rem var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--dim);border:1px solid var(--border-s);padding:.1rem .45rem;border-radius:6px;white-space:nowrap}
+.cat-kv{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;font-size:.8rem;padding:.25rem 0;border-bottom:1px dotted var(--line)}
+.cat-kv span{color:var(--muted)}.cat-kv b{font-family:var(--mono);color:var(--text);text-align:right}
+.cat-kv b.ok{color:var(--ok)}.cat-kv b.warn{color:var(--warn)}.cat-kv b.bad{color:var(--bad)}
+.cat-sec{font:700 .9rem var(--disp);color:var(--accent-2);margin:6px 0 8px}
 /* ===== Cierre Semanal (handoff entrega-menu 3, 2026-05-30) ===== */
 .wc-root{position:fixed;inset:0;z-index:1080;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 30%,#0a121d 0%,#04070c 100%)}
 .wc-scrim{position:absolute;inset:0;background:rgba(4,7,12,.72)}
@@ -94350,6 +94385,7 @@ let tutGraduated = false; // true tras completar/saltar — no reaparece en la m
 // guardada hasta que exista sonido/sistema de vídeo. settingsCat = categoría activa.
 let settingsCat = "audio";
 let howtoStep = 0; // Cómo se juega (handoff entrega-menu 3): paso activo 0..3
+let catalogTab = "aircraft"; // Catálogo: pestaña activa (aircraft|tasks|daily|checks|airlines|economy)
 // Cierre Semanal (handoff entrega-menu 3): cuando el sim cierra una semana (kpiHistory
 // crece dentro de S.advanceGame), pausamos el reloj y mostramos el modal. weeklyCloseData
 // guarda el snapshot a mostrar (null = sin modal). lastKpiLen detecta el crecimiento.
@@ -97732,6 +97768,10 @@ document.body.addEventListener("click", (e) => {
   if (e.target.closest("#ng-howto-next")) { if (howtoStep >= 3) { newGameStep = "airport"; } else { howtoStep += 1; } render(); return; }
   const htStep = e.target.closest("[data-howto-step]");
   if (htStep) { howtoStep = parseInt(htStep.dataset.howtoStep, 10) || 0; render(); return; }
+  if (e.target.closest("#ng-catalog")) { newGameStep = "catalog"; catalogTab = "aircraft"; render(); return; }
+  if (e.target.closest("#ng-catalog-back")) { newGameStep = "intro"; render(); return; }
+  var catTabBtn = e.target.closest("[data-cat-tab]");
+  if (catTabBtn) { catalogTab = catTabBtn.dataset.catTab; render(); return; }
   if (e.target.closest("#ng-settings-back")) { newGameStep = "intro"; render(); return; }
   if (e.target.closest("#ng-settings-reset")) { gameSettings = { ...SETTINGS_DEFAULTS }; saveSettings(); render(); return; }
   const setCat = e.target.closest("[data-set-cat]");
@@ -98122,7 +98162,7 @@ function renderNewGameWizard() {
     const exitItem = isTauri ? `<div class="foh-mi danger" id="ng-exit"><span class="idx">05</span><span class="label">Salir</span><span class="arrow"></span></div>` : "";
     const clearItem = hasSavedSlot ? `<div class="foh-mi danger" id="ng-clear-save"><span class="idx">${isTauri ? "06" : "05"}</span><span class="label">Borrar guardado</span><span class="arrow"></span></div>` : "";
     const saveCard = hasSavedSlot ? `<a class="foh-savecard" id="ng-continue-card"><div class="foh-sc-head"><span>💾 Partida guardada</span></div><div class="foh-sc-body"><div class="foh-sc-icao">LEAS<span class="x"> · OVD</span></div><div class="foh-sc-name">Aeropuerto de Asturias</div></div><div class="foh-sc-cta"><span>Continuar partida</span><span class="foh-ar"></span></div></a>` : "";
-    body = `<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · LEAS / OVD · Asturias</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>${continueItem}<div class="foh-mi" id="ng-settings"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Audio · juego · A11y</span><span class="arrow"></span></div><div class="foh-mi" id="ng-howto"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Manual · 4 pasos</span><span class="arrow"></span></div>${exitItem}${clearItem}</nav></div>${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>`;
+    body = `<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · LEAS / OVD · Asturias</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>${continueItem}<div class="foh-mi" id="ng-settings"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Audio · juego · A11y</span><span class="arrow"></span></div><div class="foh-mi" id="ng-howto"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Manual · 4 pasos</span><span class="arrow"></span></div><div class="foh-mi" id="ng-catalog"><span class="idx">05</span><span class="label">Catálogo</span><span class="hint">Todo el contenido del juego</span><span class="arrow"></span></div>${exitItem}${clearItem}</nav></div>${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>`;
   } else if (newGameStep === "airport") {
     const avail = catalog.airports.filter(a => a.available !== false);
     const availCount = avail.length;
@@ -98159,6 +98199,8 @@ function renderNewGameWizard() {
     body = renderSettingsBody();
   } else if (newGameStep === "howto") {
     body = renderHowtoBody();
+  } else if (newGameStep === "catalog") {
+    body = renderCatalogBody();
   }
   return `<div class="foh-root" id="newgame-overlay">${bg(newGameStep !== "intro")}${body}</div>`;
 }
@@ -98267,6 +98309,187 @@ function renderHowtoBody(){
     + '<div class="ht-content"><div class="ht-txt"><div class="ht-kick">' + p.kick + '</div><h2>' + p.h + '</h2><p class="ht-lead">' + p.lead + '</p><ul>' + lis + '</ul></div><div class="ht-art">' + p.art + '</div></div>'
     + '</div>'
     + '<div class="foh-foot">' + prevBtn + '<div class="ht-dots">' + dots + '</div><button class="foh-btn primary" id="ng-howto-next">' + nextLabel + ' <span class="foh-ar"></span></button></div>'
+    + '</div>';
+}
+
+// Catálogo (pantalla menú) — enciclopedia DINÁMICA leída en vivo de S.DATA (la "ddbb" del
+// juego). Concatenación de strings + esc()/fmt(), sin backticks ni interpolación, para
+// inyectarse en el template gigante APP_JS sin romperlo. Si cambian los JSON, esto cambia solo.
+function renderCatalogBody(){
+  var D = S.DATA || {};
+  var WO = D.workOrders || [];
+  var DC = D.dailyChecks || [];
+  var MC = D.maintenanceChecks || [];
+  var AL = D.airlines || [];
+  var BAL = D.balance || {};
+  var active = catalogTab || "aircraft";
+
+  var tabs = [
+    { k: "aircraft", lbl: "Aviones", n: 0 },
+    { k: "tasks", lbl: "Tareas AMM", n: WO.length },
+    { k: "daily", lbl: "Daily checks", n: DC.length },
+    { k: "checks", lbl: "A/C/D checks", n: MC.length },
+    { k: "airlines", lbl: "Aerolíneas", n: AL.length },
+    { k: "economy", lbl: "Economía", n: 0 },
+  ];
+  var tabNav = "";
+  for (var t = 0; t < tabs.length; t++) {
+    var cnt = tabs[t].n ? ' <span class="cat-n">' + tabs[t].n + '</span>' : '';
+    tabNav += '<button class="cat-tab' + (active === tabs[t].k ? ' on' : '') + '" data-cat-tab="' + tabs[t].k + '">' + tabs[t].lbl + cnt + '</button>';
+  }
+
+  var sevBadge = function(s){
+    var c = s === "Critical" ? "crit" : s === "Major" ? "major" : "minor";
+    return '<span class="cat-badge ' + c + '">' + esc(s) + '</span>';
+  };
+
+  var body = "";
+
+  if (active === "aircraft") {
+    var modelSet = {};
+    for (var a = 0; a < AL.length; a++) for (var f = 0; f < (AL[a].fleet || []).length; f++) modelSet[AL[a].fleet[f].model] = true;
+    for (var w = 0; w < WO.length; w++) for (var m = 0; m < (WO[w].aircraftModelsCompatibles || []).length; m++) modelSet[WO[w].aircraftModelsCompatibles[m]] = true;
+    var models = Object.keys(modelSet).sort();
+    var cards = "";
+    for (var mi = 0; mi < models.length; mi++) {
+      var mdl = models[mi];
+      var engSet = {}, opsCount = 0;
+      for (var a2 = 0; a2 < AL.length; a2++) { var has = false; for (var f2 = 0; f2 < (AL[a2].fleet || []).length; f2++) if (AL[a2].fleet[f2].model === mdl) { engSet[AL[a2].fleet[f2].engineVariant] = true; has = true; } if (has) opsCount++; }
+      var engines = Object.keys(engSet);
+      var woCount = 0; for (var w2 = 0; w2 < WO.length; w2++) if ((WO[w2].aircraftModelsCompatibles || []).indexOf(mdl) >= 0) woCount++;
+      var dcCount = 0; for (var d2 = 0; d2 < DC.length; d2++) if ((DC[d2].aircraftModelsCompatibles || []).indexOf(mdl) >= 0) dcCount++;
+      var mcCount = 0; for (var c2 = 0; c2 < MC.length; c2++) if (MC[c2].model === mdl) mcCount++;
+      cards += '<div class="cat-card">'
+        + '<div class="cat-card-h"><h3>' + esc(mdl) + '</h3><span class="cat-tag">Airbus</span></div>'
+        + '<div class="cat-kv"><span>Motores</span><b>' + esc(engines.join(" · ") || "—") + '</b></div>'
+        + '<div class="cat-kv"><span>Aerolíneas que lo operan</span><b>' + opsCount + '</b></div>'
+        + '<div class="cat-kv"><span>Tareas AMM aplicables</span><b>' + woCount + '</b></div>'
+        + '<div class="cat-kv"><span>Daily checks</span><b>' + dcCount + '</b></div>'
+        + '<div class="cat-kv"><span>Checks A/C/D</span><b>' + mcCount + '</b></div>'
+        + '</div>';
+    }
+    body = '<p class="cat-lead">Universo cerrado: familia A320. Cada modelo deriva sus tareas y checks de los datasets reales.</p><div class="cat-cards">' + cards + '</div>';
+  }
+
+  else if (active === "tasks") {
+    var sv = { Minor: 0, Major: 0, Critical: 0 }, b1 = 0, b2 = 0, aog = 0;
+    for (var w3 = 0; w3 < WO.length; w3++) { sv[WO[w3].severity] = (sv[WO[w3].severity] || 0) + 1; if (WO[w3].requiredCategory === "B1") b1++; else b2++; if (WO[w3].isAOG) aog++; }
+    var stat = '<div class="cat-stats">'
+      + '<div class="cat-stat"><b>' + WO.length + '</b><span>Total</span></div>'
+      + '<div class="cat-stat"><b class="ok">' + sv.Minor + '</b><span>Minor</span></div>'
+      + '<div class="cat-stat"><b class="warn">' + sv.Major + '</b><span>Major</span></div>'
+      + '<div class="cat-stat"><b class="bad">' + sv.Critical + '</b><span>Critical</span></div>'
+      + '<div class="cat-stat"><b>' + b1 + ' / ' + b2 + '</b><span>B1 / B2</span></div>'
+      + '<div class="cat-stat"><b class="bad">' + aog + '</b><span>AOG</span></div>'
+      + '</div>';
+    var rows = "";
+    for (var w4 = 0; w4 < WO.length; w4++) {
+      var o = WO[w4];
+      var nm = o.name ? o.name : (o.description ? String(o.description).slice(0, 78) : o.id);
+      rows += '<tr>'
+        + '<td class="mono">' + esc(String(o.id)) + '</td>'
+        + '<td class="mono">' + esc(String(o.ata)) + '</td>'
+        + '<td>' + esc(nm) + '</td>'
+        + '<td>' + sevBadge(o.severity) + '</td>'
+        + '<td class="mono">' + esc(o.requiredCategory) + '</td>'
+        + '<td class="mono">' + o.durationMinutes + '′</td>'
+        + '<td>' + (o.isAOG ? '<span class="cat-dot bad"></span>' : '') + '</td>'
+        + '<td>' + (o.deferrable ? '✓' : '—') + '</td>'
+        + '</tr>';
+    }
+    body = stat + '<div class="cat-tablewrap"><table class="cat-table"><thead><tr><th>ID</th><th>ATA</th><th>Tarea (AMM)</th><th>Sev</th><th>Cat</th><th>Dur</th><th>AOG</th><th>Difer</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  else if (active === "daily") {
+    var rows2 = "";
+    for (var d3 = 0; d3 < DC.length; d3++) {
+      var dd = DC[d3];
+      rows2 += '<tr>'
+        + '<td class="mono">' + esc(String(dd.id)) + '</td>'
+        + '<td class="mono">' + esc(String(dd.ata)) + '</td>'
+        + '<td>' + esc(dd.description || "") + '</td>'
+        + '<td class="mono">' + esc(dd.requiredCategory) + '</td>'
+        + '<td class="mono">' + dd.durationMinutes + '′</td>'
+        + '<td>' + (dd.deferrable ? '✓' : '—') + '</td>'
+        + '</tr>';
+    }
+    body = '<p class="cat-lead">Inspecciones de tránsito y pernocta (MPD). Se auto-generan cuando un avión pernocta en tu base.</p><div class="cat-tablewrap"><table class="cat-table"><thead><tr><th>ID</th><th>ATA</th><th>Descripción</th><th>Cat</th><th>Dur</th><th>Difer</th></tr></thead><tbody>' + rows2 + '</tbody></table></div>';
+  }
+
+  else if (active === "checks") {
+    var byType = { A: [], C: [], D: [] };
+    for (var c3 = 0; c3 < MC.length; c3++) { var ty = MC[c3].type; if (!byType[ty]) byType[ty] = []; byType[ty].push(MC[c3]); }
+    var typeLabels = { A: "A-check · overnight", C: "C-check · parada pesada", D: "D-check · gran parada" };
+    var order = ["A", "C", "D"], sections = "";
+    for (var oi = 0; oi < order.length; oi++) {
+      var tk = order[oi], list = byType[tk] || [];
+      if (!list.length) continue;
+      var rows3 = "";
+      for (var li2 = 0; li2 < list.length; li2++) {
+        var ck = list[li2];
+        rows3 += '<tr>'
+          + '<td class="mono">' + esc(ck.model) + '</td>'
+          + '<td class="mono">' + fmt(ck.triggerFH) + ' FH</td>'
+          + '<td class="mono">' + fmt(ck.triggerCycles) + '</td>'
+          + '<td class="mono">' + ck.manDays + ' md</td>'
+          + '<td class="mono">' + ck.parkingDays + ' d</td>'
+          + '<td class="mono ok">' + fmt(ck.baseFee) + ' €</td>'
+          + '</tr>';
+      }
+      sections += '<h3 class="cat-sec">' + esc(typeLabels[tk] || tk) + '</h3>'
+        + '<div class="cat-tablewrap"><table class="cat-table"><thead><tr><th>Modelo</th><th>Trigger FH</th><th>Ciclos</th><th>Man-days</th><th>Parking</th><th>Base fee</th></tr></thead><tbody>' + rows3 + '</tbody></table></div>';
+    }
+    body = '<p class="cat-lead">Mantenimiento base programado por horas de vuelo / ciclos. Triggers, man-days y fees salen de maintenance_checks.json.</p>' + sections;
+  }
+
+  else if (active === "airlines") {
+    var cards2 = "";
+    for (var al = 0; al < AL.length; al++) {
+      var Lz = AL[al], mset = {};
+      for (var ff = 0; ff < (Lz.fleet || []).length; ff++) mset[Lz.fleet[ff].model] = true;
+      var mlist = Object.keys(mset).sort();
+      cards2 += '<div class="cat-card" style="--c:' + esc(Lz.color || "#4da3ff") + '">'
+        + '<div class="cat-card-bar"></div>'
+        + '<div class="cat-card-h"><h3>' + esc(Lz.name) + '</h3><span class="cat-tag mono">' + esc(Lz.iataCode) + '</span></div>'
+        + '<div class="cat-kv"><span>Flota base</span><b>' + (Lz.basedAircraftCount || 0) + ' aviones</b></div>'
+        + '<div class="cat-kv"><span>Modelos</span><b>' + esc(mlist.join(" · ") || "—") + '</b></div>'
+        + '<div class="cat-kv"><span>Umbral de marca</span><b>' + (Lz.brandThreshold || 0) + '</b></div>'
+        + '</div>';
+    }
+    body = '<p class="cat-lead">Aerolíneas que pueden operar en tus aeropuertos. Tu reputación de marca desbloquea sus ofertas según el umbral.</p><div class="cat-cards">' + cards2 + '</div>';
+  }
+
+  else if (active === "economy") {
+    var sal = BAL.salaries || {}, rep = BAL.reputation || {};
+    var salRows = "", salKeys = [["helper", "Helper (sin licencia)"], ["b1Junior", "B1 Junior"], ["b1Senior", "B1 Senior"], ["b2Junior", "B2 Junior"], ["b2Senior", "B2 Senior"]];
+    for (var sk = 0; sk < salKeys.length; sk++) if (sal[salKeys[sk][0]] != null) salRows += '<div class="cat-kv"><span>' + salKeys[sk][1] + '</span><b>' + fmt(sal[salKeys[sk][0]]) + ' €/sem</b></div>';
+    body = '<p class="cat-lead">Parámetros económicos del juego (balance.json). Editar el JSON y reconstruir actualiza estos valores aquí automáticamente.</p>'
+      + '<div class="cat-cards">'
+      + '<div class="cat-card"><div class="cat-card-h"><h3>Arranque</h3></div>'
+        + '<div class="cat-kv"><span>Balance inicial</span><b class="ok">' + fmt(BAL.startingBalance) + ' €</b></div>'
+        + '<div class="cat-kv"><span>Reputación inicial</span><b>' + esc(String(BAL.startingReputation)) + '/100</b></div>'
+        + '<div class="cat-kv"><span>Coste fijo semanal</span><b class="bad">' + fmt(BAL.weeklyFixedCost) + ' €</b></div>'
+        + '</div>'
+      + '<div class="cat-card"><div class="cat-card-h"><h3>Salarios</h3></div>' + salRows + '</div>'
+      + '<div class="cat-card"><div class="cat-card-h"><h3>Penalizaciones</h3></div>'
+        + '<div class="cat-kv"><span>Multiplicador SLA</span><b>×' + esc(String(BAL.slaMultiplier)) + '</b></div>'
+        + '<div class="cat-kv"><span>Multiplicador AOG</span><b class="bad">×' + esc(String(BAL.aogPenaltyMultiplier)) + '</b></div>'
+        + '</div>'
+      + '<div class="cat-card"><div class="cat-card-h"><h3>Reputación (Δ por evento)</h3></div>'
+        + '<div class="cat-kv"><span>WO a tiempo</span><b class="ok">+' + (rep.woCompletedOnTime || 0) + '</b></div>'
+        + '<div class="cat-kv"><span>WO tarde</span><b class="warn">' + (rep.woCompletedLate || 0) + '</b></div>'
+        + '<div class="cat-kv"><span>WO fallida</span><b class="bad">' + (rep.woFailed || 0) + '</b></div>'
+        + '<div class="cat-kv"><span>AOG fallido</span><b class="bad">' + (rep.aogFailed || 0) + '</b></div>'
+        + '</div>'
+      + '</div>';
+  }
+
+  return '<div class="foh-screen cat-screen">'
+    + '<div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> Catálogo · base de datos del juego</div><div class="foh-livetag"><span class="d"></span> En vivo · S.DATA</div></div>'
+    + '<div class="foh-head"><div class="foh-eyebrow">Enciclopedia</div><h1>Catálogo</h1><p class="sub">Todo el contenido del juego, leído en tiempo real de la base de datos. Si cambian los datos, esta pantalla cambia con ellos.</p></div>'
+    + '<div class="cat-tabs">' + tabNav + '</div>'
+    + '<div class="cat-body">' + body + '</div>'
+    + '<div class="foh-foot"><button class="foh-btn back ghost" id="ng-catalog-back"><span class="foh-ar"></span> Menú</button><div class="right"><span>FUENTE: workorders · airlines · maintenance_checks · daily_checks · balance</span></div></div>'
     + '</div>';
 }
 
