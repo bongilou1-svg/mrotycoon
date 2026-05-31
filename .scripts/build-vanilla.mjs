@@ -241,6 +241,17 @@ button.primary{background:var(--accent-d);border-color:var(--accent)}
 .wo-card:hover{border-color:var(--accent)}.wo-card.aog{border-color:var(--aog);background:linear-gradient(to bottom,rgba(255,59,59,.08),var(--panel))}
 .wo-card.base{cursor:default;border-color:var(--base-d);background:linear-gradient(to bottom,rgba(167,139,250,.06),var(--panel))}
 .wo-card.base:hover{border-color:var(--base)}
+.wo-tl{margin:.4rem 0 .6rem;border-left:2px solid var(--border);padding-left:.7rem}
+.wo-tl-row{display:flex;align-items:center;gap:.55rem;font-size:.78rem;padding:.18rem 0;position:relative}
+.wo-tl-row .wo-tl-t{color:var(--muted);min-width:3.2rem}
+.wo-tl-row .wo-tl-dot{width:7px;height:7px;border-radius:50%;background:var(--border-s);flex:none;margin-left:-1.05rem;box-shadow:0 0 0 2px var(--panel)}
+.wo-tl-row.ok .wo-tl-dot{background:var(--success)}
+.wo-tl-row.etd .wo-tl-dot{background:var(--accent)}
+.wo-tl-row.etd .wo-tl-l{color:var(--accent);font-weight:600}
+.wo-tl-row .wo-tl-l{color:var(--text)}
+.wo-tl-gap{margin-top:.35rem;font-size:.76rem;font-weight:600;padding:.25rem .5rem;border-radius:4px;display:inline-block}
+.wo-tl-gap.ok{color:var(--success);background:rgba(63,185,80,.12)}
+.wo-tl-gap.bad{color:var(--danger);background:rgba(248,81,73,.12)}
 .wo-head{display:flex;gap:.5rem;align-items:center;margin-bottom:.3rem}
 .wo-id{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
 .wo-phase{font-size:.7rem;padding:1px 6px;border-radius:3px;background:var(--bg);border:1px solid var(--border)}
@@ -3959,7 +3970,7 @@ function renderModal(){
         <span>Severidad: <strong>\${tpl.severity}</strong>\${tpl.isAOG ? ' 🛑 AOG' : ''}</span>
         <span>Book HH: <strong>\${(tpl.durationMinutes/60).toFixed(1)}h</strong></span>
       </div>
-      <h4 style="margin-top:.8rem">Línea de tiempo</h4>
+      <h4 style="margin-top:.8rem">Cronología</h4>\${woTimelineHtml(wo)}<h4 style="margin-top:.8rem;font-size:.8rem;color:var(--muted)">Resumen</h4>
       <div class="kvs">
         <span>Emitida: <strong class="mono">\${fmtClock(wo.emissionMinute)}</strong></span>
         <span>SLA (departure): <strong class="mono">\${fmtClock(wo.slaMinute)}</strong></span>
