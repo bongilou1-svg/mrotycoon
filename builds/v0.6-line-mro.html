@@ -64,6 +64,51 @@ button.primary{background:var(--accent-d);border-color:var(--accent)}
 .side button[data-tab].active .ic{color:#4da3ff;opacity:1}
 .side button[data-tab].active::before{content:"";position:absolute;left:-.5rem;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#4da3ff;border-radius:0 3px 3px 0}
 .side button.nav-dis{opacity:.4;cursor:not-allowed}
+/* ===== Contratos (cartera de clientes) — portado del handoff CIC (ops.css + ops-panels.css) ===== */
+.cic-panel .main-head{padding:1rem 1.5rem .6rem;border-bottom:1px solid var(--line)}
+.cic-panel .eyebrow{display:flex;align-items:center;gap:.5rem;font:600 .64rem var(--disp);text-transform:uppercase;letter-spacing:.16em;color:var(--accent)}
+.cic-panel .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 9px var(--accent)}
+.cic-panel .title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-top:.25rem}
+.cic-panel .title-row h1{margin:0;font:600 1.5rem/1 var(--disp);letter-spacing:-.01em;border:0;padding:0}
+.cic-panel .title-row .sub{font:.74rem var(--mono);color:var(--dim);margin-top:.3rem}
+.office-sit{padding:1rem 1.5rem 0}
+.sitbar{border:1px solid var(--line);border-radius:var(--rad);background:linear-gradient(180deg,#121b28,#0e1620);overflow:hidden}
+.sit-tiles{display:grid;grid-template-columns:repeat(4,1fr)}
+.sit-tiles .tile{position:relative;padding:.7rem .9rem;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:.2rem}
+.sit-tiles .tile:last-child{border-right:none}
+.sit-tiles .tnum{font:700 1.5rem/1 var(--mono);letter-spacing:-.02em;color:var(--text)}
+.sit-tiles .tlbl{display:flex;align-items:center;gap:.35rem;font:.6rem/1.1 var(--disp);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.sit-tiles .tile.c-progress .tnum{color:var(--accent)} .sit-tiles .tile.c-unassigned .tnum{color:var(--warn)} .sit-tiles .tile.c-aog .tnum{color:var(--warn)}
+.sit-tiles .led{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:0 0 8px currentColor}
+.feed-wrap{padding:1rem 1.5rem 1.5rem}
+.grp-head{display:flex;align-items:center;gap:.6rem;margin:1.4rem 0 .7rem;font:600 .82rem var(--disp);color:var(--text)}
+.grp-head .gdot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.grp-head .gline{flex:1;height:1px;background:var(--line)}
+.grp-head .gcount{font:600 .72rem var(--mono);color:var(--muted);background:var(--panel-2);padding:.1rem .5rem;border-radius:10px}
+.g-risk .gdot{background:var(--warn)} .g-scheduled .gdot{background:var(--base)} .g-progress .gdot{background:var(--accent)}
+.ccgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:.9rem}
+.ccard{position:relative;border:1px solid var(--line);border-radius:var(--rad);background:linear-gradient(180deg,#121b28,#0d1520);overflow:hidden}
+.ccard.offer{border-style:dashed;border-color:var(--line-2)}
+.cc-bar{height:3px;background:var(--oc,var(--accent))}
+.cc-head{display:flex;align-items:center;justify-content:space-between;padding:.7rem .8rem .4rem}
+.cc-nm{display:flex;align-items:center;gap:.5rem}
+.cc-nm h3{margin:0;font:600 1rem var(--disp);border:0;padding:0}
+.cc-ia{font:.7rem var(--mono);color:var(--muted);border:1px solid var(--line);padding:.05rem .35rem;border-radius:4px}
+.cc-pill{font:600 .66rem var(--disp);padding:.2rem .5rem;border-radius:20px}
+.cc-pill.ok{background:var(--ok-bg);color:var(--ok)} .cc-pill.warn{background:var(--warn-bg);color:var(--warn)}
+.cc-since{padding:0 .8rem .5rem;font:.68rem var(--mono);color:var(--dim)}
+.cc-terms{display:grid;grid-template-columns:1fr 1fr;gap:.3rem .8rem;padding:.5rem .8rem .7rem}
+.ct-row{display:flex;justify-content:space-between;gap:.5rem;font-size:.78rem;border-bottom:1px dotted var(--line);padding-bottom:.18rem}
+.ct-k{color:var(--muted)} .ct-v{font-family:var(--mono);font-weight:600} .ct-v.ok{color:var(--ok)} .ct-v.warn{color:var(--warn)}
+.cc-foot{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.6rem .8rem;border-top:1px solid var(--line);background:#0d1622}
+.cc-rep{display:flex;align-items:center;gap:.4rem;font-size:.85rem}
+.cc-actions{display:flex;gap:.4rem}
+.cbtn{padding:.35rem .7rem;border:1px solid var(--line-2);border-radius:6px;font:600 .74rem var(--disp);color:var(--text);background:#101a28;cursor:pointer;transition:.13s}
+.cbtn:hover{border-color:var(--accent);color:#fff} .cbtn.warn:hover{border-color:var(--warn);color:var(--warn)} .cbtn.primary{background:linear-gradient(180deg,#2f6fb0,#234f80);border-color:var(--accent);color:#fff}
+.cc-note{font:.66rem var(--mono);color:var(--dim)}
+.lead-row{display:flex;align-items:center;gap:.6rem;padding:.7rem .8rem;border:1px dashed var(--line-2);border-radius:var(--rad);background:#0e1622;flex-wrap:wrap;margin-bottom:.5rem}
+.al-dot{width:10px;height:10px;border-radius:50%}
+.lead-need{font-size:.78rem;color:var(--muted)}
 .badge{float:right;background:var(--accent);color:#fff;padding:0 6px;border-radius:10px;font-size:.7rem}
 .badge.base{background:var(--base)}.badge.warn{background:var(--warning)}.badge.alert{background:var(--danger);animation:pulse-alert 1.2s ease-in-out infinite}
 @keyframes pulse-alert { 0%,100%{opacity:1} 50%{opacity:.55} }
@@ -95594,18 +95639,39 @@ function tierBadge(tier){
 }
 
 function renderContracts(){
-  let h = '<h2>Contratos</h2><h3>Activos</h3>';
+  const airline = id => game.airlines.find(a => a.id === id) || {};
+  const repOf = id => Math.round(game.reputation?.perAirline?.[id] ?? 50);
+  const stars = n => { const f = Math.max(0, Math.min(5, Math.round(n/20))); return '<span style="color:var(--warn)">' + '★★★★★'.slice(0,f) + '</span><span style="color:var(--line-2)">' + '★★★★★'.slice(f) + '</span>'; };
+  const term = (k,v,cls) => `<div class="ct-row"><span class="ct-k">${k}</span><span class="ct-v ${cls||''}">${v}</span></div>`;
   const actives = activeContracts();
-  if (actives.length === 0) h += '<p class="muted">Sin contratos activos.</p>';
-  for (const c of actives) {
-    h += `<article class="contract-card" data-contract-id="${c.id}" style="cursor:pointer" title="Click para detalle"><header><strong>${esc(airlineName(c.airlineId))}</strong> · ${c.id} ${tierBadge(c.tier)}</header><div class="kvs"><span>Cuota semanal: <strong>${fmt(c.baseFeePerWeek)} €</strong></span><span>€/min WO: <strong>${c.paymentPerWOMinute}</strong></span><span>Penalty: <strong>${c.penaltyPerLateMinute} €/min</strong></span><span>Rep. min.: <strong>${c.minReputation}</strong></span><span>Aviones/día: <strong>${c.expectedLandingsPerDay}</strong></span></div></article>`;
-  }
-  h += '<h3>Ofertas</h3>';
   const offers = liveOffers();
+  const feeSum = actives.reduce((s,c) => s + (c.baseFeePerWeek||0), 0);
+  const repList = actives.map(c => repOf(c.airlineId));
+  const repAvg = repList.length ? Math.round(repList.reduce((a,b)=>a+b,0)/repList.length) : 0;
+  let h = '<div class="cic-panel">';
+  h += '<div class="main-head"><div class="eyebrow">Gestión · Cartera de clientes</div><div class="title-row"><div><h1>Contratos</h1><div class="sub">Aerolíneas que sirves · acepta, gestiona o deja caer</div></div></div></div>';
+  h += `<div class="office-sit"><div class="sitbar"><div class="sit-tiles"><div class="tile c-progress"><div class="tnum">${actives.length}</div><div class="tlbl"><span class="led" style="color:var(--accent)"></span>Activos</div></div><div class="tile c-unassigned"><div class="tnum">${offers.length}</div><div class="tlbl"><span class="led" style="color:var(--warn)"></span>Ofertas</div></div><div class="tile c-ground"><div class="tnum" style="font-size:1.3rem">${fmt(feeSum)} €</div><div class="tlbl">BaseFee/sem</div></div><div class="tile c-aog"><div class="tnum">${repAvg||'—'}</div><div class="tlbl"><span class="led" style="color:var(--warn)"></span>Rep media</div></div></div></div></div>`;
+  h += '<div class="feed-wrap">';
+  h += `<div class="grp-head g-progress"><span class="gdot"></span>Contratos activos<span class="gline"></span><span class="gcount">${actives.length}</span></div>`;
+  if (actives.length === 0) h += '<p class="muted">Sin contratos activos.</p>';
+  else {
+    h += '<div class="ccgrid">';
+    for (const c of actives) {
+      const a = airline(c.airlineId), col = a.color || 'var(--accent)', rep = repOf(c.airlineId);
+      h += `<article class="ccard" style="--oc:${col}"><div class="cc-bar"></div><div class="cc-head"><div class="cc-nm"><h3 style="color:${col}">${esc(airlineName(c.airlineId))}</h3><span class="cc-ia mono">${esc(a.iataCode||'')}</span></div><span class="cc-pill ok">● Activo</span></div><div class="cc-since mono">${c.id} · ${tierBadge(c.tier)}</div><div class="cc-terms">${term('BaseFee/sem', fmt(c.baseFeePerWeek)+' €','ok')}${term('Pago/min', c.paymentPerWOMinute+' €')}${term('Penalty', c.penaltyPerLateMinute+' €/min', c.penaltyPerLateMinute>0?'warn':'')}${term('Aviones/día', c.expectedLandingsPerDay)}${term('Rep. mínima', c.minReputation, rep<c.minReputation?'warn':'')}${term('Rep. actual', rep,'ok')}</div><div class="cc-foot"><span class="cc-rep">${stars(rep)} <b class="mono">${rep}</b></span><span class="cc-actions"><button class="cbtn" data-contract-id="${c.id}">Renegociar</button><button class="cbtn warn" disabled title="Rescindir contrato — disponible en futura versión">Rescindir</button></span></div></article>`;
+    }
+    h += '</div>';
+  }
+  h += `<div class="grp-head g-risk" style="margin-top:1.4rem"><span class="gdot"></span>Ofertas pendientes<span class="gline"></span><span class="gcount">${offers.length}</span></div>`;
   if (offers.length === 0) h += '<p class="muted">No hay ofertas pendientes.</p>';
-  for (const c of offers) {
-    const expIn = c.expiresAtMinute ? Math.max(0, c.expiresAtMinute - game.clock.minute) : 0;
-    h += `<article class="contract-card offer" data-contract-id="${c.id}" style="cursor:pointer" title="Click para detalle"><header><strong>${esc(airlineName(c.airlineId))}</strong> · ${c.id} ${tierBadge(c.tier)} · expira en ${expIn}m</header><div class="kvs"><span>Cuota semanal: <strong>${fmt(c.baseFeePerWeek)} €</strong></span><span>€/min WO: <strong>${c.paymentPerWOMinute}</strong></span><span>Penalty: <strong>${c.penaltyPerLateMinute} €/min</strong></span><span>Rep. min.: <strong>${c.minReputation}</strong></span></div><div class="actions"><button class="primary" data-accept="${c.id}">Aceptar</button><button data-reject="${c.id}">Rechazar</button></div></article>`;
+  else {
+    h += '<div class="ccgrid">';
+    for (const c of offers) {
+      const a = airline(c.airlineId), col = a.color || 'var(--warn)', rep = repOf(c.airlineId);
+      const expIn = c.expiresAtMinute ? Math.max(0, c.expiresAtMinute - game.clock.minute) : 0;
+      h += `<article class="ccard offer" style="--oc:${col}"><div class="cc-bar"></div><div class="cc-head"><div class="cc-nm"><h3 style="color:${col}">${esc(airlineName(c.airlineId))}</h3><span class="cc-ia mono">${esc(a.iataCode||'')}</span></div><span class="cc-pill warn">◆ Oferta · ${expIn}m</span></div><div class="cc-since mono">Rep. mínima ${c.minReputation} · tienes ${rep} ${rep>=c.minReputation?'✓':'✗'}</div><div class="cc-terms">${term('BaseFee/sem', fmt(c.baseFeePerWeek)+' €','ok')}${term('Pago/min', c.paymentPerWOMinute+' €')}${term('Penalty', c.penaltyPerLateMinute+' €/min','warn')}${term('Rep. mínima', c.minReputation)}</div><div class="cc-foot"><span class="cc-note mono">${tierBadge(c.tier)}</span><span class="cc-actions"><button class="cbtn" data-reject="${c.id}">Rechazar</button><button class="cbtn primary" data-accept="${c.id}">Aceptar</button></span></div></article>`;
+    }
+    h += '</div>';
   }
 
   // Pivot iteración 2026-05-25 — Sección "Aerolíneas interesadas" (movida del Dashboard).
@@ -95631,7 +95697,7 @@ function renderContracts(){
   const hoursToNext = Math.floor((minsToNextTick % S.DAY_MINUTES) / 60);
   const tickLabel = daysToNext > 0 ? `${daysToNext}d ${hoursToNext}h` : `${hoursToNext}h`;
 
-  h += '<h3 style="margin-top:1.5rem">🌟 Aerolíneas interesadas (pipeline)</h3>';
+  h += '<div class="grp-head g-scheduled" style="margin-top:1.4rem"><span class="gdot"></span>Aerolíneas interesadas (pipeline)<span class="gline"></span></div>';
   h += `<p class="muted" style="margin-bottom:.5rem;font-size:.85rem">Tu <strong>brand del MRO</strong> = <strong style="color:${brand >= 70 ? 'var(--success)' : brand >= 40 ? 'var(--warning)' : 'var(--muted)'}">${brand}/100</strong> (50% rep media contratadas · 30% on-time · 20% (1-AOG)). El mercado se evalúa cada <strong>${S.LINE_COMPETITION_TICK_DAYS ?? 7} días</strong> ingame. <strong>Próxima evaluación en ${tickLabel}</strong>. Si tu brand cruza el umbral de una aerolínea, ese tick puede ofertarte. Las condiciones (fee/payment/penalty) escalan con cuánto excedas su umbral. <strong>Aerolíneas sin overnight</strong> mandan solo callouts cuando un avión aterriza con problema (sin paquete daily).</p>`;
   h += '<table style="font-size:.85rem">';
   h += '<thead><tr><th>Aerolínea</th><th>Arrivals/sem</th><th>🔄 Escalas</th><th>🌙 Pernoctas</th><th>Umbral brand</th><th>Estado</th></tr></thead><tbody>';
@@ -95676,6 +95742,7 @@ function renderContracts(){
     </tr>`;
   }
   h += '</tbody></table>';
+  h += '</div></div>';
   return h;
 }
 
