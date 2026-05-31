@@ -26,8 +26,22 @@ button{font:inherit;color:var(--text);background:var(--panel);border:1px solid v
 button:hover{background:var(--panel-h)}button.active{background:var(--accent-d);border-color:var(--accent)}
 button.primary{background:var(--accent-d);border-color:var(--accent)}.speeds button{padding:.2rem .5rem;font-size:.8rem}
 .body{display:grid;grid-template-columns:180px 1fr 280px;flex:1;min-height:0}
-.side{background:var(--panel);border-right:1px solid var(--border);padding:.5rem;display:flex;flex-direction:column;gap:.25rem}
-.side button{text-align:left;background:transparent;border:1px solid transparent}.side button.active{background:var(--accent-d);border-color:var(--accent)}
+/* Sidebar agrupado — portado del handoff CIC (ops.css .nav*, valores directos sin depender de tokens) */
+.side{background:linear-gradient(180deg,#0d141d,#0b1019);border-right:1px solid #1f2a38;padding:.55rem .5rem;display:flex;flex-direction:column;gap:.06rem;overflow-y:auto}
+.side::-webkit-scrollbar{width:0}
+.side-grp{font:600 .58rem/1 var(--mono,monospace);text-transform:uppercase;letter-spacing:.14em;color:#5a6b7d;padding:.9rem .6rem .35rem}
+.side button[data-tab],.side button.nav-dis{display:flex;align-items:center;gap:.62rem;width:100%;text-align:left;background:none;border:0;color:#8aa0b4;padding:.5rem .6rem;border-radius:8px;cursor:pointer;font-size:.83rem;font-weight:500;position:relative;transition:background .12s,color .12s}
+.side button .ic{width:18px;height:18px;display:grid;place-items:center;opacity:.92;flex:none}
+.side button .ic svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.side button .nt{flex:1}
+.side button .badge{float:none;margin-left:auto;font:600 .68rem var(--mono,monospace);padding:.05rem .42rem;border-radius:999px;background:#2a3848;color:#e6edf5;animation:none}
+.side button .badge.alert{background:#e5534b;color:#fff}
+.side button .badge.warn{background:#d29922;color:#1a1206}
+.side button:hover{background:#ffffff08;color:#e6edf5}
+.side button[data-tab].active{background:#16334f;color:#e6edf5}
+.side button[data-tab].active .ic{color:#4da3ff;opacity:1}
+.side button[data-tab].active::before{content:"";position:absolute;left:-.5rem;top:50%;transform:translateY(-50%);width:3px;height:60%;background:#4da3ff;border-radius:0 3px 3px 0}
+.side button.nav-dis{opacity:.4;cursor:not-allowed}
 .badge{float:right;background:var(--accent);color:#fff;padding:0 6px;border-radius:10px;font-size:.7rem}
 .badge.base{background:var(--base)}.badge.warn{background:var(--warning)}.badge.alert{background:var(--danger);animation:pulse-alert 1.2s ease-in-out infinite}
 @keyframes pulse-alert { 0%,100%{opacity:1} 50%{opacity:.55} }
@@ -893,20 +907,19 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
   </header>
   <div class="body">
     <aside class="side">
-      <button data-tab="map" class="active">🗺️ Mapa</button>
-      <button data-tab="operations">🏭 Operaciones <span class="badge" id="badge-wo">0</span></button>
-      <button data-tab="schedule">📅 Schedule <span class="badge" id="badge-schedule">0</span></button>
-      <button data-tab="planning">📋 Production Planning <span class="badge" id="badge-planning">0</span></button>
-      <button data-tab="office">🏢 Oficina <span class="badge" id="badge-office">0</span></button>
-      <button data-tab="contracts">📋 Contratos <span class="badge" id="badge-offers">2</span></button>
-      <!-- Pivot iteración 2026-05-25: Mercado renombrado a "Contratación" y movido como
-           subsección dentro de Oficina (el reclutamiento es competencia de RRHH del MRO,
-           no una tab top-level). El badge de candidatos se muestra ahora en la sub-tab. -->
-      <!-- <button data-tab="market">🤝 Mercado <span class="badge" id="badge-candidates">5</span></button> -->
+      <div class="side-grp">Operación</div>
+      <button data-tab="map" class="active"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span class="nt">Mapa</span></button>
+      <button data-tab="operations"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.9"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><path d="M12 12 18.2 5.8"/></svg></span><span class="nt">Operaciones</span><span class="badge" id="badge-wo">0</span></button>
+      <button data-tab="schedule"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v3.4M16 3v3.4"/><path d="M7 13h2.2M11 13h2.2M15 13h2.2M7 16.6h2.2M11 16.6h2.2"/></svg></span><span class="nt">Schedule</span><span class="badge" id="badge-schedule">0</span></button>
+      <button data-tab="planning"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="8.5" y="2.4" width="7" height="3.3" rx="1.2"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg></span><span class="nt">Production Planning</span><span class="badge" id="badge-planning">0</span></button>
+      <div class="side-grp">Gestión</div>
+      <button data-tab="office"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17.5" rx="1.3"/><path d="M9 7.5h2M13 7.5h2M9 11.5h2M13 11.5h2M9 15.5h2M13 15.5h2"/></svg></span><span class="nt">Oficina</span><span class="badge" id="badge-office">0</span></button>
+      <button data-tab="contracts"><span class="ic"><svg viewBox="0 0 24 24"><path d="M7 3.2h6.5L17.5 7v13.8H7Z"/><path d="M13.5 3.2v3.9h4"/><path d="M9.5 12h5M9.5 15.5h5"/></svg></span><span class="nt">Contratos</span><span class="badge" id="badge-offers">2</span></button>
       <span style="display:none"><span class="badge" id="badge-candidates">5</span></span>
-      <button disabled title="🏗️ Construcción de hangares — próximamente (sistema de permisos + obra civil en futura fase)" style="opacity:0.4;cursor:not-allowed">🏗️ Hangares <span style="font-size:.7rem">próx.</span></button>
-      <button data-tab="dashboard">📊 Dashboard</button>
-      <button data-tab="economy">💼 Economía</button>
+      <button class="nav-dis" disabled title="🏗️ Construcción de hangares — próximamente (sistema de permisos + obra civil en futura fase)"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3.5 20.5V11a8.5 5.6 0 0 1 17 0v9.5"/><path d="M3 20.5h18M8 20.5V15h8v5.5"/></svg></span><span class="nt">Hangares</span><span class="badge" style="background:transparent;color:#5a6b7d">próx.</span></button>
+      <div class="side-grp">Análisis</div>
+      <button data-tab="dashboard"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><rect x="5.5" y="11.5" width="3.2" height="6.5"/><rect x="10.4" y="7.5" width="3.2" height="10.5"/><rect x="15.3" y="4.5" width="3.2" height="13.5"/></svg></span><span class="nt">Dashboard</span></button>
+      <button data-tab="economy"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="12.5" rx="2.5"/><path d="M3.5 10h17"/><circle cx="16.5" cy="13.5" r="1.25" fill="currentColor" stroke="none"/></svg></span><span class="nt">Economía</span></button>
     </aside>
     <main class="panel" id="panel-content"></main>
     <aside class="notifs"><h3>Log de actividad <span class="log-live"><span class="led pulse" style="color:var(--ok);background:var(--ok)"></span>LIVE</span></h3><div id="notif-list"></div></aside>
@@ -97488,7 +97501,7 @@ function render(){
     }
   }
 
-  document.querySelectorAll(".side > button").forEach(b => {
+  document.querySelectorAll(".side button[data-tab]").forEach(b => {
     b.classList.toggle("active", b.dataset.tab === activeTab);
   });
 
@@ -97695,7 +97708,7 @@ document.body.addEventListener("click", (e) => {
   if (e.target.closest("[data-map-fit]")) { if (mapDriver) mapDriver.fitAll(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
-  const tabBtn = e.target.closest(".side > button");
+  const tabBtn = e.target.closest(".side button[data-tab]");
   if (tabBtn && tabBtn.dataset.tab) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
   // Pivot iteración 2026-05-25: sub-tabs de Oficina (Equipo / Contratación / Management).
   const officeSubBtn = e.target.closest("[data-office-subtab]");
