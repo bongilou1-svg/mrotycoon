@@ -13,7 +13,7 @@ const SLOT_KEY = "mro-tycoon-save-v1";
 // una partida nueva siempre arranque limpia y el save contaminado no recaiga. Mantenerlo
 // como literal independiente de SAVE_VERSION: futuras subidas de versión con migración NO
 // deben invalidar saves automáticamente; solo se sube este corte cuando haya otro break real.
-const MIN_COMPATIBLE_VERSION = 16;
+const MIN_COMPATIBLE_VERSION = 17;
 
 /** True si el payload es de una versión que sabemos cargar sin arrastrar datos corruptos. */
 function isCompatibleSave(payload: GameSavePayload | null | undefined): boolean {

@@ -113,6 +113,30 @@ export interface WorkOrderInstance {
   phaseElapsedMinutes: number;
   /** SLA: minuto absoluto en el que la WO empieza a generar penalty. = emissionMinute + durationMinutes × 1.05. */
   slaMinute: number;
+  // ── Cronología v2 (cada hito sellado en su transición; todos OPCIONALES para retro-compat
+  //    de saves viejos, que se rellenan con undefined en la migración). Minuto ingame absoluto. ──
+  /** Aterrizaje del avión (= airplane.arrivalMinute). */
+  landingMinute?: number;
+  /** On-block: avión calzado en stand = landing + taxiInMinutes. emissionMinute = este valor (v2). */
+  onBlockMinute?: number;
+  /** Despacho: minuto en que se asignó/arrancó el viaje del primer mecánico (inicio de ToPlane). */
+  dispatchMinute?: number;
+  /** Mecánico llegó al stand (fin de ToPlane / inicio de Inspection). */
+  arrivalAtStandMinute?: number;
+  /** Fin de Inspection (T-shoot): aquí se revela el scope real (scopeRevealed=true). */
+  tshootCompleteMinute?: number;
+  /** Fin de MainTask (reparación). */
+  fixCompleteMinute?: number;
+  /** Fin de Test. */
+  testCompleteMinute?: number;
+  /** Fin de Release (RTD / firma) = momento de despacho real del avión. */
+  releaseMinute?: number;
+  /** ETD: salida programada del avión (= airplane.scheduledDepartureMinute). Objetivo del SLA. */
+  etdMinute?: number;
+  /** Minutos de viaje oficina→stand usados en esta instancia (para pintar el timeline). */
+  travelMinutes?: number;
+  /** True cuando se reveló el scope (al cerrar Inspection). Antes: solo `complaint`/ATA visible. */
+  scopeRevealed?: boolean;
   /** Si la WO ha sido diferida vía MEL — minuto absoluto en el que vence la deferral y la WO
    *  pasa a `Failed` con penalty regulatoria. Undefined si nunca se difirió.
    *  Para melCategory='D' (indefinida), se setea a un valor MUY alto (ver `MEL_DEFERRAL_DAYS`). */

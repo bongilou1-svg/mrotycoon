@@ -960,7 +960,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
           ev.woInstanceId, g.workOrders, g.mechanics, g.templates, g.airplanes, next, "",
         );
         if (replacement) {
-          const r = assignMechanicsToWo(g.mechanics, g.workOrders, ev.woInstanceId, replacement.id, [], g.balance);
+          const r = assignMechanicsToWo(g.mechanics, g.workOrders, ev.woInstanceId, replacement.id, [], g.balance, next);
           if (!r.error) {
             g.mechanics = r.mechanics;
             g.workOrders = r.workOrders;
@@ -1002,7 +1002,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       if (!tpl || !ap) continue;
       const certs = eligibleCertifiers(g.mechanics, tpl, ap.model, ap.engineVariant);
       if (certs.length > 0) {
-        const res = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, certs[0].id, [], g.balance);
+        const res = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, certs[0].id, [], g.balance, next);
         if (!res.error) {
           g.mechanics = res.mechanics;
           g.workOrders = res.workOrders;
@@ -1032,7 +1032,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
             }
           }
           pushNotification(g, `⏱️ ${offshiftCert.name} llamado a hora extra para ${wo.airplaneRegistration}`, "warning");
-          const res2 = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, offshiftCert.id, [], g.balance);
+          const res2 = assignMechanicsToWo(g.mechanics, g.workOrders, wo.instanceId, offshiftCert.id, [], g.balance, next);
           if (!res2.error) {
             g.mechanics = res2.mechanics;
             g.workOrders = res2.workOrders;
@@ -1082,7 +1082,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   }
 
   // 3. Tick travel
-  const travelRes = tickMechanicTravel(g.mechanics, g.workOrders, stepMinutes);
+  const travelRes = tickMechanicTravel(g.mechanics, g.workOrders, stepMinutes, next);
   g.mechanics = travelRes.mechanics;
   g.workOrders = travelRes.workOrders;
 
@@ -1115,6 +1115,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
   const machineRes = tickWorkOrders(
     g.workOrders, g.mechanics, allTemplates, g.balance, stepMinutes, g.machineRng,
     g.shiftGatingEnabled ? next : -1,
+    next, // v2: stampClock SIEMPRE = reloj real → los timestamps de cronología se sellan siempre
   );
   g.mechanics = machineRes.mechanics;
   g.workOrders = machineRes.workOrders;
@@ -1168,7 +1169,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
                   ? { ...m, state: "Idle" as const, assignedWoInstanceId: null, assignedCheckInstanceId: null, stateRemainingMinutes: 0 }
                   : m,
               );
-              const r = assignMechanicsToWo(g.mechanics, g.workOrders, nextDc.instanceId, certId, [], g.balance);
+              const r = assignMechanicsToWo(g.mechanics, g.workOrders, nextDc.instanceId, certId, [], g.balance, next);
               if (!r.error) {
                 g.mechanics = r.mechanics;
                 g.workOrders = r.workOrders;
@@ -1572,7 +1573,7 @@ export function assignMechanicsManually(
   certifierId: string,
   helperIds: string[],
 ): { ok: boolean; error?: string } {
-  const res = assignMechanicsToWo(g.mechanics, g.workOrders, woInstanceId, certifierId, helperIds, g.balance);
+  const res = assignMechanicsToWo(g.mechanics, g.workOrders, woInstanceId, certifierId, helperIds, g.balance, g.clock.minute);
   if (res.error) return { ok: false, error: res.error };
   g.mechanics = res.mechanics;
   g.workOrders = res.workOrders;

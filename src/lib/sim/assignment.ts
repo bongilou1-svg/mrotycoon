@@ -25,6 +25,7 @@ export function assignMechanicsToWo(
   certifierId: string,
   helperIds: readonly string[],
   balance: Balance,
+  nowMinute = -1, // v2: si se pasa, sella dispatchMinute (arranque del viaje del mecánico)
 ): AssignResult {
   const wo = workOrders.find((w) => w.instanceId === woInstanceId);
   if (!wo) return { mechanics: [...mechanics], workOrders: [...workOrders], error: "WO not found" };
@@ -60,7 +61,11 @@ export function assignMechanicsToWo(
   });
 
   const newWos = workOrders.map((w) =>
-    w.instanceId === woInstanceId ? { ...w, assignedMechanicIds: [...allAssignedIds] } : w,
+    w.instanceId === woInstanceId
+      ? { ...w, assignedMechanicIds: [...allAssignedIds],
+          // v2: sella el despacho (arranque del viaje del mecánico) si se pasó el reloj.
+          ...(nowMinute >= 0 ? { dispatchMinute: nowMinute } : {}) }
+      : w,
   );
 
   return { mechanics: newMechanics, workOrders: newWos };
@@ -100,6 +105,7 @@ export function tickMechanicTravel(
   mechanics: readonly Mechanic[],
   workOrders: readonly WorkOrderInstance[],
   minutesElapsed: number,
+  nowMinute = -1, // v2: si se pasa, sella arrivalAtStandMinute al promover ToPlane→Inspection
 ): { mechanics: Mechanic[]; workOrders: WorkOrderInstance[] } {
   const newMechanics: Mechanic[] = mechanics.map((m) => {
     if (m.state !== "ToPlane" && m.state !== "Returning") return m;
@@ -122,7 +128,12 @@ export function tickMechanicTravel(
       return m?.state === "Working";
     });
     if (allArrived) {
-      return { ...w, phase: "Inspection" as const, phaseElapsedMinutes: 0 };
+      // v2: el mecánico llegó al stand → sella arrivalAtStand + travelMinutes (dispatch→llegada).
+      const stamp = nowMinute >= 0
+        ? { arrivalAtStandMinute: nowMinute,
+            travelMinutes: w.dispatchMinute !== undefined ? Math.max(0, nowMinute - w.dispatchMinute) : undefined }
+        : {};
+      return { ...w, phase: "Inspection" as const, phaseElapsedMinutes: 0, ...stamp };
     }
     return w;
   });

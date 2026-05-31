@@ -27,6 +27,8 @@
   "officeToStandMinutes": 2,
   "$comment_releaseMinutes": "v2 ciclo de vida: duración de la fase Release (cierre/firma RTD) tras Test-pass. Corta y fija, no escala con el trabajo. Subir = más fricción al cerrar.",
   "releaseMinutes": 3,
+  "$comment_taxiInMinutes": "v2 ciclo de vida: taxi-in del avión (landing → on-block en stand). El síntoma se ve al on-block, no al tocar tierra. emissionMinute = landing + esto. 0 = instantáneo.",
+  "taxiInMinutes": 4,
 
   "reputation": {
     "$comment": "Deltas en puntos sobre escala 0-100.",

@@ -56,6 +56,10 @@ export function tickWorkOrders(
   minutesElapsed: number,
   rng: Rng,
   nowMinute = -1,
+  // v2: reloj para sellar timestamps de la cronología. SEPARADO de nowMinute (que gobierna
+  // shift-gating + onTime y se pasa -1 cuando el gating está off). stampClock se pasa SIEMPRE
+  // = reloj real, para que los hitos se sellen pase lo que pase con el gating. -1 = no sellar.
+  stampClock = -1,
 ): TickWoResult {
   const events: WoEvent[] = [];
   let newMechanics = [...mechanics];
@@ -86,12 +90,23 @@ export function tickWorkOrders(
     let phase: WorkOrderPhase = wo.phase;
     let phaseChanged = false;
 
-    // Loop por si el progreso cruza varias fases en un solo tick (con speed alto)
+    // Loop por si el progreso cruza varias fases en un solo tick (con speed alto).
+    // v2: sella el timestamp del hito que ACABA en cada transición (cronología para el
+    // timeline del detalle). nowMinute es el reloj actual; con tick pequeño la granularidad
+    // basta. Si nowMinute<0 (tests legacy sin reloj), no sella (campos quedan undefined).
     let safety = 0;
+    const stamps: Partial<WorkOrderInstance> = {};
     while (phase !== "Completed" && phase !== "Failed" && elapsed >= phaseDuration(template, phase, balance)) {
       const dur = phaseDuration(template, phase, balance);
       const carryover = elapsed - dur;
       const nextPhase = transitionPhase(phase, rng, balance);
+      const sc = stampClock >= 0 ? stampClock : (nowMinute >= 0 ? nowMinute : -1);
+      if (sc >= 0) {
+        if (phase === "Inspection") { stamps.tshootCompleteMinute = sc; stamps.scopeRevealed = true; }
+        else if (phase === "MainTask" || phase === "Rework") stamps.fixCompleteMinute = sc;
+        else if (phase === "Test") stamps.testCompleteMinute = sc;
+        else if (phase === "Release") stamps.releaseMinute = sc;
+      }
       events.push({ type: "phase_change", woInstanceId: wo.instanceId, from: phase, to: nextPhase });
       phase = nextPhase;
       elapsed = carryover;
@@ -120,7 +135,7 @@ export function tickWorkOrders(
       });
     }
 
-    newWos.push({ ...wo, phase, phaseElapsedMinutes: elapsed });
+    newWos.push({ ...wo, ...stamps, phase, phaseElapsedMinutes: elapsed });
 
     if (phaseChanged && phase === "Inspection") {
       // Primera entrada a Inspection desde ToPlane, emit started

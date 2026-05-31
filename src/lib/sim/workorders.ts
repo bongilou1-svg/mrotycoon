@@ -88,16 +88,24 @@ export function instantiateWorkOrder(
   const slaFromDeparture = airplane.scheduledDepartureMinute;
   const slaLegacy = airplane.arrivalMinute + Math.round(template.durationMinutes * balance.slaMultiplier);
   const slaMinute = slaFromDeparture > 0 ? slaFromDeparture : slaLegacy;
+  // Cronología v2: landing/onBlock/etd se sellan al nacer la WO (vienen del avión/schedule).
+  // El síntoma se "ve" al on-block (avión calzado en stand), no al tocar tierra.
+  const landingMinute = airplane.arrivalMinute;
+  const onBlockMinute = landingMinute + (balance.taxiInMinutes ?? 0);
   return {
     instanceId: `WI-${_instanceCounter.toString().padStart(5, "0")}`,
     templateId: template.id,
     airplaneRegistration: airplane.registration,
     airplaneInstanceId: airplane.instanceId,
-    emissionMinute: airplane.arrivalMinute,
+    emissionMinute: onBlockMinute, // v2: emisión = on-block (antes = arrivalMinute)
     assignedMechanicIds: [],
     phase: "ToPlane", // empieza en ToPlane porque aún no hay mecánicos asignados; pasará a Inspection al asignar
     phaseElapsedMinutes: 0,
     slaMinute,
+    landingMinute,
+    onBlockMinute,
+    etdMinute: slaFromDeparture > 0 ? slaFromDeparture : undefined,
+    scopeRevealed: false,
   };
 }
 

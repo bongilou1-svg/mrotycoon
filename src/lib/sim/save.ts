@@ -32,7 +32,13 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
  *  la lógica previa al fix de `isBased` en seedPreOvernighters (una partida OVD→Vueling
  *  debe arrancar con 0 aviones; los saves viejos mostraban ~19). storage.ts los purga
  *  al leer; deserializeGame solo acepta la versión actual. */
-export const SAVE_VERSION = 16;
+// v17 = ciclo de vida WO v2 (2026-05-31): añade fase "Release" + timestamps de cronología a
+//  WorkOrderInstance (landing/onBlock/dispatch/arrivalAtStand/tshoot/fix/test/release/etd/
+//  travelMinutes/scopeRevealed). TODOS opcionales → migración trivial: instancias v16 quedan
+//  con esos campos undefined (el timeline los omite). No requiere lógica de migración; el
+//  bump invalida saves v16 en storage (MIN_COMPATIBLE_VERSION) por limpieza, no por
+//  incompatibilidad real — un save v16 deserializaría sin problema salvo por la política de purga.
+export const SAVE_VERSION = 17;
 
 export interface GameSavePayload {
   version: number;
