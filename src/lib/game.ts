@@ -8,8 +8,9 @@ import type {
 } from "$lib/types";
 import { STAGE_CONFIG } from "./types/mroStage.ts";
 import {
-  createDepartureKPI, AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
+  createDepartureKPI, createAirlineBucket, AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
   AOG_EVITABLE_PENALTY_MULT, AOG_EVITABLE_REP_MULT, isDelayCauseEvitable,
+  DISPATCH_COTA_15, DISPATCH_COTA_60,
   type DelayRootCause,
 } from "./types/departureKPI.ts";
 import {
@@ -757,31 +758,43 @@ function processDepartures(g: GameState, nowMinute: number): void {
     const rootCause: DelayRootCause | undefined = delay > 0 ? inferDelayRootCause(g, a, nowMinute) : undefined;
     const evitable = a.aogEscalated && isDelayCauseEvitable(rootCause);
 
+    // TDR = Technical Dispatch Reliability (refactor 2026-05-31). Un departure es FALLO
+    // TÉCNICO solo si el retraso es IMPUTABLE (causa raíz evitable: mec_busy/offshift/
+    // no_rated_cert/other) Y ≥15 min. Retraso por causa externa, o <15 min, o avión sin
+    // avería → DISPATCH FIABLE (no penaliza el TDR). "Si no intervenimos, no nos cuenta".
+    const imputable = delay > 0 && isDelayCauseEvitable(rootCause);
+    const impDelay = imputable ? delay : 0;            // minutos que SÍ cuentan contra ti
+    const techFail = impDelay >= DISPATCH_COTA_15;     // fallo de dispatch (cota principal D-15)
+    const techFail60 = impDelay >= DISPATCH_COTA_60;   // fallo serio (D-60)
+
     // KPI acumulador (global + por aerolínea)
     const kpi = g.departureKPI;
     kpi.totalDepartures += 1;
-    kpi.sumDelayMinutes += delay;
-    if (delay === 0) kpi.totalOnTime += 1;
-    else kpi.totalLate += 1;
+    kpi.sumDelayMinutes += impDelay;
+    if (techFail) { kpi.totalTechFail15 += 1; if (techFail60) kpi.totalTechFail60 += 1; }
+    else kpi.totalReliable += 1;
     if (a.aogEscalated) {
       kpi.totalAog += 1;
       if (evitable) kpi.totalAogEvitable += 1;
     }
+    // Legacy mirror (compat UI/saves viejos)
+    if (delay === 0) kpi.totalOnTime += 1; else kpi.totalLate += 1;
     const c = g.contracts.find((cc) => cc.id === a.contractId);
     if (c) {
       let b = kpi.perAirline[c.airlineId];
       if (!b) {
-        b = { departures: 0, onTime: 0, late: 0, aog: 0, aogEvitable: 0, sumDelayMinutes: 0 };
+        b = createAirlineBucket();
         kpi.perAirline[c.airlineId] = b;
       }
       b.departures += 1;
-      b.sumDelayMinutes += delay;
-      if (delay === 0) b.onTime += 1;
-      else b.late += 1;
+      b.sumDelayMinutes += impDelay;
+      if (techFail) { b.techFail15 += 1; if (techFail60) b.techFail60 += 1; }
+      else b.reliable += 1;
       if (a.aogEscalated) {
         b.aog += 1;
         if (evitable) b.aogEvitable += 1;
       }
+      if (delay === 0) b.onTime += 1; else b.late += 1;
     }
 
     // Notifs + AOG escalation. Si ya estaba aogEscalated EN VIVO antes del departure

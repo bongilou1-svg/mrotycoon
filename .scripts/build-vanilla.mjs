@@ -2701,12 +2701,16 @@ function renderDashboard(){
   const compliance = h.map(s => s.complianceScore);
   const mechs = h.map(s => s.mechanicsCount);
 
-  // Pivot línea pura · KPI departures + TDR
+  // KPI principal: TDR = Technical Dispatch Reliability (% de departures despachados sin
+  // fallo técnico ≥15 min imputable). Refactor 2026-05-31. Benchmark real 98.5-99.5%.
   const kpi = game.departureKPI ?? S.createDepartureKPI();
-  const tdr = S.getTdrGlobal(kpi);
-  const onTimePct = kpi.totalDepartures > 0 ? (kpi.totalOnTime / kpi.totalDepartures * 100) : 0;
+  const tdrPct = S.getTdrPct(kpi);                          // % fiabilidad (principal)
+  const tdrMin = S.getTdrGlobal(kpi);                       // min delay imputable medio (secundario)
+  const fail15 = kpi.totalTechFail15 ?? 0;
+  const fail60 = kpi.totalTechFail60 ?? 0;
   const aogPct = kpi.totalDepartures > 0 ? (kpi.totalAog / kpi.totalDepartures * 100) : 0;
-  const tdrColor = tdr < 5 ? "var(--success)" : tdr < 20 ? "var(--warning)" : "var(--danger)";
+  // Colores por benchmark de fiabilidad: ≥98.5% verde, ≥95% ámbar, <95% rojo.
+  const tdrColor = tdrPct >= 98.5 ? "var(--success)" : tdrPct >= 95 ? "var(--warning)" : "var(--danger)";
 
   // Pivot línea pura · Fase A modelo HH
   const hkpi = game.hoursKPI ?? S.createHoursKPI();
@@ -2718,7 +2722,7 @@ function renderDashboard(){
   let perAirlineRows = '';
   const airlineEntries = Object.entries(kpi.perAirline).map(([id, b]) => {
     const al = game.airlines.find(a => a.id === id);
-    const tdrA = b.departures > 0 ? b.sumDelayMinutes / b.departures : 0;
+    const tdrA = S.getTdrPctForAirline(kpi, id);
     return { id, name: al?.name ?? id, color: al?.color ?? "#888", bucket: b, tdr: tdrA };
   });
   airlineEntries.sort((a, b) => b.bucket.departures - a.bucket.departures);
@@ -2726,15 +2730,17 @@ function renderDashboard(){
     perAirlineRows = '<tr><td colspan="6" class="muted" style="text-align:center;padding:1rem">Sin departures registrados todavía.</td></tr>';
   } else {
     for (const e of airlineEntries) {
-      const tdrCol = e.tdr < 5 ? "var(--success)" : e.tdr < 20 ? "var(--warning)" : "var(--danger)";
+      const tdrCol = e.tdr >= 98.5 ? "var(--success)" : e.tdr >= 95 ? "var(--warning)" : "var(--danger)";
       const aogColAg = e.bucket.aog > 0 ? 'var(--danger)' : 'var(--muted)';
+      const rel = e.bucket.reliable ?? e.bucket.departures;
+      const f15 = e.bucket.techFail15 ?? 0;
       perAirlineRows += \`<tr>
         <td><span style="display:inline-block;width:8px;height:8px;background:\${e.color};border-radius:50%;margin-right:.4rem"></span>\${esc(e.name)}</td>
         <td class="mono">\${e.bucket.departures}</td>
-        <td class="mono">\${e.bucket.onTime}</td>
-        <td class="mono">\${e.bucket.late}</td>
+        <td class="mono" style="color:var(--success)">\${rel}</td>
+        <td class="mono" style="color:\${f15>0?'var(--warning)':'var(--muted)'}">\${f15}</td>
         <td class="mono" style="color:\${aogColAg};font-weight:600">\${e.bucket.aog}</td>
-        <td class="mono" style="color:\${tdrCol}"><strong>\${e.tdr.toFixed(1)} min/dep</strong></td>
+        <td class="mono" style="color:\${tdrCol}"><strong>\${e.tdr.toFixed(1)}%</strong></td>
       </tr>\`;
     }
   }
@@ -2774,29 +2780,29 @@ function renderDashboard(){
     </div>
   </div>
 
-  <h3 style="margin-top:1.5rem">📈 TDR — Total Delay Ratio</h3>
-  <p class="muted" style="margin-bottom:.5rem">Minutos medios de retraso por departure. Si una WO bloquea al avión más allá de su hora prevista, acumula delay. Departure con delay ≥ 3h escala a AOG (penalty extra + rep delta).</p>
+  <h3 style="margin-top:1.5rem">📈 TDR — Technical Dispatch Reliability</h3>
+  <p class="muted" style="margin-bottom:.5rem">Tu KPI principal: <strong>% de salidas despachadas sin fallo técnico imputable</strong>. Solo cuenta contra ti un retraso <strong>≥15 min causado por una avería que NO resolviste a tiempo</strong> (mecánico ocupado, sin técnico, sin habilitación). Si el avión no tenía avería, o el retraso es por causa externa, o fue &lt;15 min → dispatch fiable. Cotas: D-15 (fallo) · D-60 (serio) · ≥3h (AOG). Benchmark sector: 98,5-99,5%.</p>
   <div class="dash-grid">
     <div class="dash-card">
       <div class="dash-title">📊 TDR Global</div>
-      <div class="dash-big" style="color:\${tdrColor}">\${tdr.toFixed(1)} <span style="font-size:.85rem;color:var(--muted)">min/dep</span></div>
-      <div class="muted" style="font-size:.75rem">Sobre \${kpi.totalDepartures} departures totales · Σ delay \${fmt(kpi.sumDelayMinutes)} min</div>
+      <div class="dash-big" style="color:\${tdrColor}">\${tdrPct.toFixed(1)}<span style="font-size:.85rem;color:var(--muted)">%</span></div>
+      <div class="muted" style="font-size:.75rem">\${kpi.totalReliable ?? kpi.totalDepartures}/\${kpi.totalDepartures} departures fiables · delay imputable medio \${tdrMin.toFixed(1)} min/dep</div>
     </div>
     <div class="dash-card">
-      <div class="dash-title">✓ On-time ratio</div>
-      <div class="dash-big" style="color:var(--success)">\${onTimePct.toFixed(1)}%</div>
-      <div class="muted" style="font-size:.75rem">\${kpi.totalOnTime} on-time / \${kpi.totalLate} late / \${kpi.totalAog} AOG</div>
+      <div class="dash-title">⚠️ Fallos de dispatch (técnicos)</div>
+      <div class="dash-big" style="color:\${fail15 > 0 ? 'var(--warning)' : 'var(--success)'}">\${fail15}</div>
+      <div class="muted" style="font-size:.75rem">D-15 (≥15m imputable) · de ellos \${fail60} serios (D-60, ≥60m)</div>
     </div>
     <div class="dash-card">
-      <div class="dash-title">🛑 AOG ratio (delay ≥3h)</div>
-      <div class="dash-big" style="color:\${aogPct > 5 ? 'var(--danger)' : 'var(--muted)'}">\${aogPct.toFixed(1)}%</div>
-      <div class="muted" style="font-size:.75rem">\${kpi.totalAog} AOG escalados · penalty €\${S.AOG_ESCALATION_PENALTY_EUR.toLocaleString("es-ES")} c/u</div>
+      <div class="dash-title">🛑 AOG (delay ≥3h)</div>
+      <div class="dash-big" style="color:\${aogPct > 5 ? 'var(--danger)' : 'var(--muted)'}">\${kpi.totalAog}</div>
+      <div class="muted" style="font-size:.75rem">\${aogPct.toFixed(1)}% de departures · penalty €\${S.AOG_ESCALATION_PENALTY_EUR.toLocaleString("es-ES")} c/u</div>
     </div>
   </div>
 
   <h4 style="margin-top:1rem">TDR por aerolínea contratada</h4>
   <table>
-    <thead><tr><th>Aerolínea</th><th>Departures</th><th>On-time</th><th>Late</th><th>AOG</th><th>TDR</th></tr></thead>
+    <thead><tr><th>Aerolínea</th><th>Departures</th><th>Fiables</th><th>Fallos D-15</th><th>AOG</th><th>TDR%</th></tr></thead>
     <tbody>\${perAirlineRows}</tbody>
   </table>
 

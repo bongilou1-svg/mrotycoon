@@ -42,6 +42,8 @@ export type {
 export type { DepartureAirlineBucket, DepartureKPI } from "./departureKPI";
 export {
   createDepartureKPI, getTdrGlobal, getTdrForAirline,
+  getTdrPct, getTdrPctForAirline, createAirlineBucket,
+  DISPATCH_COTA_15, DISPATCH_COTA_60,
   AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR,
   AOG_EVITABLE_PENALTY_MULT, AOG_EVITABLE_REP_MULT, isDelayCauseEvitable,
 } from "./departureKPI";

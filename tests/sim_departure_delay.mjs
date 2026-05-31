@@ -7,7 +7,7 @@
 //  - AOG escalation: delay ≥ 180 min marca aogEscalated + cobra penalty + rep delta.
 
 import { createGame, advanceGame } from "../src/lib/game.ts";
-import { AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR, getTdrGlobal, getTdrForAirline } from "../src/lib/types/departureKPI.ts";
+import { AOG_DELAY_THRESHOLD_MIN, AOG_ESCALATION_PENALTY_EUR, getTdrGlobal, getTdrForAirline, getTdrPct, getTdrPctForAirline, DISPATCH_COTA_15 } from "../src/lib/types/departureKPI.ts";
 import { DAY_MINUTES } from "../src/lib/sim/time.ts";
 import { readFileSync } from "node:fs";
 import { loadWorkOrdersWithKind, loadDailyChecksWithKind } from "./helpers/loadTemplates.mjs";
@@ -66,9 +66,10 @@ console.log("\n=== Departure on-time (sin WO bloqueante) ===");
   expect(ap.actualDepartureMinute !== undefined, `actualDeparture set (got ${ap.actualDepartureMinute})`);
   expect(ap.delayMinutes === 0, `delay = 0 on-time (got ${ap.delayMinutes})`);
   expect(g.departureKPI.totalDepartures === 1, `KPI departures = 1`);
-  expect(g.departureKPI.totalOnTime === 1, `KPI on-time = 1`);
-  expect(g.departureKPI.totalLate === 0, `KPI late = 0`);
+  expect(g.departureKPI.totalReliable === 1, `KPI fiable = 1 (dispatch sin fallo técnico)`);
+  expect(g.departureKPI.totalTechFail15 === 0, `KPI fallos D-15 = 0`);
   expect(g.departureKPI.totalAog === 0, `KPI AOG = 0`);
+  expect(getTdrPct(g.departureKPI) === 100, `TDR = 100% (1/1 fiable)`);
 }
 
 console.log("\n=== Departure con delay (WO bloqueante) ===");
@@ -115,12 +116,16 @@ console.log("\n=== Departure con delay (WO bloqueante) ===");
   const ap2 = g.airplanes.find(a => a.instanceId === "ALI-TEST-LATE");
   expect(ap2.status === "Departed", `tras WO Completed → Departed (got ${ap2.status})`);
   expect(ap2.delayMinutes !== undefined && ap2.delayMinutes > 0, `delay > 0 (got ${ap2.delayMinutes})`);
-  expect(g.departureKPI.totalLate === 1, `KPI late = 1`);
-  expect(g.departureKPI.sumDelayMinutes > 0, `KPI sumDelay > 0 (got ${g.departureKPI.sumDelayMinutes})`);
+  // Delay ~30min imputable (WO bloqueó al avión) → fallo de dispatch D-15. La WO de este test
+  // no tiene mecánico asignado, así que la causa raíz es evitable → cuenta contra el TDR.
+  expect(g.departureKPI.totalTechFail15 === 1, `KPI fallo D-15 = 1 (retraso técnico imputable ≥15m)`);
+  expect(g.departureKPI.totalReliable === 0, `KPI fiable = 0 (el único departure falló)`);
+  expect(g.departureKPI.sumDelayMinutes > 0, `KPI sumDelay imputable > 0 (got ${g.departureKPI.sumDelayMinutes})`);
+  expect(getTdrPct(g.departureKPI) === 0, `TDR = 0% (0/1 fiable)`);
   // Per airline bucket
   const bucket = g.departureKPI.perAirline[g.contracts[0].airlineId];
   expect(bucket !== undefined, "bucket aerolínea creado");
-  expect(bucket.late === 1, "bucket late = 1");
+  expect(bucket.techFail15 === 1, "bucket fallo D-15 = 1");
 }
 
 console.log("\n=== AOG escalation (delay >= 180 min) ===");
@@ -175,21 +180,25 @@ console.log("\n=== AOG escalation (delay >= 180 min) ===");
   expect(g.reputation.perAirline[g.contracts[0].airlineId] < repBefore, `rep aerolínea bajó`);
 }
 
-console.log("\n=== TDR helpers ===");
+console.log("\n=== TDR% helpers (Technical Dispatch Reliability) ===");
 {
   const g = createGame(balance, airlines, templates, 42, defs, dailyChecks);
-  // Simular 4 departures: 2 on-time, 1 late 30min, 1 AOG 400min
+  // 4 departures: 3 fiables (sin fallo ≥15m imputable) + 1 fallo D-15. 1 de los fiables
+  // igualmente escaló a AOG por causa NO imputable (no rompe TDR pero sí es AOG).
   g.departureKPI.totalDepartures = 4;
-  g.departureKPI.totalOnTime = 2;
-  g.departureKPI.totalLate = 1;
+  g.departureKPI.totalReliable = 3;
+  g.departureKPI.totalTechFail15 = 1;
+  g.departureKPI.totalTechFail60 = 0;
   g.departureKPI.totalAog = 1;
-  g.departureKPI.sumDelayMinutes = 0 + 0 + 30 + 400;
-  g.departureKPI.perAirline["AL-001"] = { departures: 3, onTime: 2, late: 1, aog: 0, aogEvitable: 0, sumDelayMinutes: 30 };
-  g.departureKPI.perAirline["AL-002"] = { departures: 1, onTime: 0, late: 0, aog: 1, aogEvitable: 1, sumDelayMinutes: 400 };
-  expect(Math.round(getTdrGlobal(g.departureKPI)) === 108, `TDR global = (30+400)/4 = 107.5 (got ${getTdrGlobal(g.departureKPI)})`);
-  expect(Math.round(getTdrForAirline(g.departureKPI, "AL-001")) === 10, `TDR AL-001 = 30/3 = 10 (got ${getTdrForAirline(g.departureKPI, "AL-001")})`);
-  expect(getTdrForAirline(g.departureKPI, "AL-002") === 400, `TDR AL-002 = 400/1 = 400`);
-  expect(getTdrForAirline(g.departureKPI, "AL-NONE") === 0, `TDR aerolínea inexistente = 0`);
+  g.departureKPI.sumDelayMinutes = 30; // solo el imputable
+  g.departureKPI.perAirline["AL-001"] = { departures: 3, reliable: 2, techFail15: 1, techFail60: 0, aog: 0, aogEvitable: 0, sumDelayMinutes: 30, onTime: 0, late: 0 };
+  g.departureKPI.perAirline["AL-002"] = { departures: 1, reliable: 1, techFail15: 0, techFail60: 0, aog: 1, aogEvitable: 0, sumDelayMinutes: 0, onTime: 0, late: 0 };
+  expect(getTdrPct(g.departureKPI) === 75, `TDR% global = 3/4 = 75% (got ${getTdrPct(g.departureKPI)})`);
+  expect(Math.round(getTdrPctForAirline(g.departureKPI, "AL-001") * 10) / 10 === 66.7, `TDR% AL-001 = 2/3 = 66.7% (got ${getTdrPctForAirline(g.departureKPI, "AL-001")})`);
+  expect(getTdrPctForAirline(g.departureKPI, "AL-002") === 100, `TDR% AL-002 = 1/1 = 100%`);
+  expect(getTdrPctForAirline(g.departureKPI, "AL-NONE") === 100, `TDR% aerolínea inexistente = 100 (sin datos = fiable)`);
+  // delay medio imputable (secundario) sigue disponible
+  expect(Math.round(getTdrGlobal(g.departureKPI) * 10) / 10 === 7.5, `delay medio imputable = 30/4 = 7.5 (got ${getTdrGlobal(g.departureKPI)})`);
 }
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);
