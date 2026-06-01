@@ -1,0 +1,55 @@
+{
+  "_meta": {
+    "name": "MRO Tycoon — UI tokens (rediseño CIC)",
+    "author": "Design Claude",
+    "base": "Enraizado en los tokens del build v0.6-line-mro. Conserva accent/semánticos y profundiza el navy + añade textura de datos.",
+    "fonts": {
+      "display": "Space Grotesk (Google) — títulos, labels, UI",
+      "mono": "JetBrains Mono (Google) — datos, telemetría, matrículas, horas, ATA"
+    }
+  },
+  "color": {
+    "bg":          "#090d15",
+    "bg-grid":     "rgba(120,150,200,.035)",
+    "panel":       "#10172170",
+    "panel-solid": "#111925",
+    "panel-2":     "#151f2d",
+    "raised":      "#1a2536",
+    "line":        "#212c3e",
+    "line-2":      "#2e3a4f",
+    "text":        "#e9edf4",
+    "muted":       "#8b97ab",
+    "dim":         "#586477",
+    "accent":      "#4da3ff",
+    "accent-2":    "#86c5ff",
+    "accent-deep": "#10314f",
+    "accent-bg":   "rgba(77,163,255,.12)",
+    "cyan":        "#3ad6c5",
+    "ok":          "#3fb950",
+    "warn":        "#e6a93a",
+    "bad":         "#f85149",
+    "aog":         "#ff4242",
+    "base":        "#a78bfa",
+    "ok-bg":       "rgba(63,185,80,.13)",
+    "warn-bg":     "rgba(230,169,58,.13)",
+    "bad-bg":      "rgba(248,81,73,.13)"
+  },
+  "radius": { "rad": "8px", "rad-s": "5px" },
+  "semantica_estado": {
+    "aog/critical":  "raíl + texto var(--bad)/var(--aog) con glow",
+    "major":         "var(--warn)",
+    "minor":         "var(--accent)",
+    "en-curso":      "var(--accent)",
+    "en-transito":   "var(--cyan)",
+    "disponible/ok": "var(--ok)",
+    "diferido/MEL":  "var(--base)",
+    "cerrado":       "var(--ok) atenuado"
+  },
+  "notas_uso": [
+    "Todo dato numérico/identificador (matrícula, hora, ATA, SLA, €) va en --mono.",
+    "Labels y títulos en --display, en mayúsculas con letter-spacing para el aire CIC.",
+    "Fondo con rejilla sutil (--bg-grid) 34px + glow radial superior-derecho.",
+    "LEDs = punto con box-shadow del propio color; .pulse para alertas vivas.",
+    "Raíl izquierdo de color por severidad/estado en cada tarjeta/fila."
+  ]
+}

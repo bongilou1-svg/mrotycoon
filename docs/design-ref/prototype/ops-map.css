@@ -1,0 +1,96 @@
+/* ============================================================================
+   MRO TYCOON — Mapa (overlay universal sobre OSM real) · tras ops.css/ops-panels.css
+   El OSM real va de fondo; TODO lo de encima (HUD, marcadores, leyenda) es
+   independiente del aeropuerto → cambia solo la imagen/geometría de fondo.
+   ========================================================================== */
+.map-stage{position:relative;flex:1;min-height:0;overflow:hidden;background:#070b12}
+.map-canvas{position:absolute;inset:0;width:100%;height:100%;
+  background:#070b12 url("assets/ovd-map.png") center 38% / cover no-repeat}
+.map-canvas::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(5,8,14,.55) 100%)}
+.map-scrim-grid{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px);
+  background-size:40px 40px;opacity:.6}
+
+/* ---- marcadores de stand ---- */
+.mk{position:absolute;transform:translate(-50%,-50%);z-index:5}
+.stand{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.stand .pad{min-width:42px;padding:3px 7px;border-radius:7px;border:1.5px solid var(--c);
+  background:rgba(10,16,24,.78);backdrop-filter:blur(3px);display:flex;align-items:center;gap:5px;
+  transition:.13s}
+.stand:hover .pad{background:rgba(18,28,42,.92);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 30%,transparent)}
+.stand .led{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);flex:none}
+.stand.aog .led{animation:pulse 1.1s infinite}
+.stand .code{font:700 .74rem var(--mono);color:var(--text);letter-spacing:.04em}
+.stand .occ{font:.62rem var(--mono);color:var(--c);background:rgba(10,16,24,.7);
+  padding:0 5px;border-radius:4px;border:1px solid color-mix(in srgb,var(--c) 35%,transparent);white-space:nowrap}
+.stand .occ.free{color:var(--dim);border-color:var(--line)}
+/* colores estado (variable --c por estado) */
+.st-aog{--c:var(--aog)} .st-unassigned{--c:var(--warn)} .st-working{--c:var(--accent)}
+.st-closing{--c:var(--cyan)} .st-free{--c:var(--dim)}
+
+/* ---- aviones / furgo en movimiento ---- */
+.mover{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.6))}
+.mover .glyph{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  border:1.5px solid var(--mc,var(--accent-2));background:rgba(10,16,24,.85);font-size:.9rem;transition:.13s}
+.mover:hover .glyph{box-shadow:0 0 0 4px color-mix(in srgb,var(--mc) 30%,transparent)}
+.mover .tag{font:.6rem var(--mono);color:var(--text);background:rgba(8,12,20,.8);
+  padding:0 5px;border-radius:4px;border:1px solid var(--line);white-space:nowrap}
+.mover .tag small{color:var(--muted)}
+.mover .al-stripe{width:18px;height:3px;border-radius:2px;margin-top:1px}
+.mover.van .glyph{border-color:var(--cyan)}
+
+/* ---- HUD overlay (top-left) ---- */
+.mapov{position:absolute;top:14px;left:14px;z-index:12;width:288px;
+  background:linear-gradient(180deg,rgba(15,23,34,.92),rgba(11,17,26,.92));backdrop-filter:blur(10px);
+  border:1px solid var(--line-2);border-radius:10px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.mapov-head{display:flex;align-items:center;gap:.5rem;padding:.5rem .7rem;border-bottom:1px solid var(--line);
+  background:rgba(8,12,20,.5)}
+.mapov-head .apt{font:700 .82rem var(--mono);color:var(--text);letter-spacing:.03em}
+.mapov-head .apt small{color:var(--muted);font-weight:400}
+.mapov-head .dn{margin-left:auto;font-size:1rem}
+.mapov-sum{padding:.45rem .7rem;font-size:.74rem;color:var(--muted);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:.4rem;line-height:1.35}
+.mapov-sum .sig{font:700 .56rem var(--mono);color:var(--aog);border:1px solid var(--aog);background:var(--bad-bg);
+  border-radius:3px;padding:1px 4px;flex:none}
+.mapov-sum b{color:var(--text)} .mapov-sum .reg{font-family:var(--mono);color:var(--accent-2)}
+.mapov-sec{padding:.4rem .7rem .5rem}
+.mapov-sec h4{margin:0 0 .25rem;font:600 .58rem var(--disp);text-transform:uppercase;letter-spacing:.1em;color:var(--dim);
+  display:flex;align-items:center;gap:.35rem}
+.mapov-row{display:flex;align-items:center;gap:.5rem;padding:.22rem .35rem;border-radius:5px;cursor:pointer;
+  font-size:.74rem;transition:.1s}
+.mapov-row:hover{background:rgba(77,163,255,.12)}
+.mapov-row .t{font:.7rem var(--mono);color:var(--accent-2);min-width:38px}
+.mapov-row .cs{font:.72rem var(--mono);color:var(--text);flex:1}
+.mapov-row .rt{font:.66rem var(--mono);color:var(--muted)}
+.mapov-row .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.mapov-empty{font-size:.72rem;color:var(--dim);font-style:italic;padding:.15rem .35rem}
+.mapov-sep{height:1px;background:var(--line);margin:.1rem .35rem}
+
+/* ---- leyenda ---- */
+.map-legend{position:absolute;left:14px;bottom:14px;z-index:11;display:flex;gap:.7rem;flex-wrap:nowrap;white-space:nowrap;
+  background:rgba(11,17,26,.86);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:9px;
+  padding:.45rem .7rem}
+.map-legend .lg{display:flex;align-items:center;gap:.35rem;font:.66rem var(--disp);color:var(--muted)}
+.map-legend .lg .led{width:8px;height:8px;border-radius:50%;box-shadow:0 0 6px currentColor}
+
+/* ---- controles (zoom + día/noche) ---- */
+.map-ctrl{position:absolute;top:14px;right:14px;z-index:11;display:flex;flex-direction:column;gap:.4rem;align-items:flex-end}
+.map-ctrl .zoom{display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;
+  background:rgba(11,17,26,.86);backdrop-filter:blur(8px)}
+.map-ctrl .zoom button{width:34px;height:32px;color:var(--text);font-size:1.1rem;border-bottom:1px solid var(--line)}
+.map-ctrl .zoom button:last-child{border-bottom:none}
+.map-ctrl .zoom button:hover{background:var(--raised)}
+.map-ctrl .pill{font:600 .64rem var(--disp);color:var(--muted);background:rgba(11,17,26,.86);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:7px;padding:.3rem .55rem;display:flex;align-items:center;gap:.4rem}
+
+/* ---- minimapa ---- */
+.map-mini{position:absolute;right:14px;bottom:14px;z-index:11;width:172px;height:104px;border-radius:8px;
+  overflow:hidden;border:1px solid var(--line-2);background:rgba(8,12,20,.7);box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.map-mini .mm-bg{position:absolute;inset:0;background:url("assets/ovd-map.png") center 38%/200% no-repeat;opacity:.5;filter:saturate(.6)}
+.map-mini .mm-label{position:absolute;top:4px;left:6px;font:700 .56rem var(--mono);color:var(--accent-2);letter-spacing:.06em;z-index:2}
+.map-mini .mm-view{position:absolute;border:1.5px solid var(--accent);border-radius:3px;box-shadow:0 0 8px rgba(77,163,255,.5);
+  left:30%;top:34%;width:42%;height:40%}
+.map-mini .mm-dot{position:absolute;width:5px;height:5px;border-radius:50%;z-index:2}

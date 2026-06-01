@@ -97431,6 +97431,7 @@ let detailMechId = null;     // F5B-ε: id mecánico seleccionado para modal
 let detailCheckId = null;    // F5C extra: instanceId de check A/C/D para modal
 let detailContractId = null; // F5C extra: id de contrato para modal
 let detailFlightId = null;   // Rediseño CIC (2026-05-30): "callsign|type|min" del vuelo para el cajón
+let detailStandId = null;    // Handoff mapa (2026-06-01): simId del stand para la ficha de stand
 let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
 let detailDailyAirplaneId = null; // Pivot 2026-05-24: instanceId avión para modal daily check detallado
 let detailAirplaneType = null;    // Pivot 2026-05-24: "MODEL/ENGINE" para modal tipo avión
@@ -97557,14 +97558,11 @@ function syncMapRender(){
       },
       // F5D P-ε: click sobre stand → si tiene avión, abrir modal del avión;
       // si está libre, push notif informativa.
-      onStandClick: (_simId, hasAirplane, registration) => {
-        if (hasAirplane && registration) {
-          detailFleetReg = registration;
-          invalidateModalCache();
-        } else {
-          game.notifCounter += 1;
-          game.notifications.push({ id: game.notifCounter, minute: game.clock.minute, text: `Stand libre`, type: "info" });
-        }
+      onStandClick: (simId, _hasAirplane, _registration) => {
+        // Handoff mapa (2026-06-01): click en stand → ficha de stand (ocupación + trabajo +
+        // estado), tanto si está ocupado como libre. Antes: ocupado abría ficha de avión,
+        // libre solo lanzaba una notif. La ficha enlaza al avión y a la WO con sus linkcards.
+        if (simId) { detailStandId = simId; invalidateModalCache(); }
         render();
       },
     });
@@ -99319,6 +99317,45 @@ function renderFlightDrawer(){
     <div class="dw-body">${body}</div>`;
 }
 
+// Handoff mapa (2026-06-01): ficha de stand. Click en un stand del mapa Pixi → este cajón
+// con ocupación (→ avión), trabajo en curso (→ WO) y estado. Reusa el patrón del flight drawer
+// y los datos REALES del game (no la foto de la maqueta). Portado de design-ref ops-map.js
+// renderStandDrawer, conectado a onStandClick (que pasa el simId del stand).
+function renderStandDetailModal(){
+  const simId = detailStandId;
+  if (!simId) return null;
+  const ap = game.airplanes.find(a => a.standId === simId && a.status !== "Departed");
+  const wo = ap ? game.workOrders.find(w => w.airplaneInstanceId === ap.instanceId && w.phase !== "Completed" && w.phase !== "Failed") : null;
+  const tpl = wo ? game.templates.find(t => t.id === wo.templateId) : null;
+  const tplAog = !!(tpl && tpl.isAOG);
+  // Estado del stand por lo que ocurre encima (mismo vocabulario que el mapa/leyenda).
+  let stateKey, stateLbl, c;
+  if (!ap) { stateKey = "free"; stateLbl = "Libre"; c = "var(--dim)"; }
+  else if (tplAog) { stateKey = "aog"; stateLbl = "AOG"; c = "var(--aog)"; }
+  else if (wo && wo.assignedMechanicIds.length === 0) { stateKey = "unassigned"; stateLbl = "Sin asignar"; c = "var(--warn)"; }
+  else if (wo) { stateKey = "working"; stateLbl = "Trabajando"; c = "var(--accent)"; }
+  else { stateKey = "occupied"; stateLbl = "En tierra"; c = "var(--accent)"; }
+  const al = ap ? game.airlines.find(a => a.iataCode === (ap.arrivalCallsign||"").slice(0,2)) : null;
+  const alColor = al?.color || "var(--accent-2)";
+  const occBlock = !ap
+    ? `<div class="dw-amm" style="color:var(--dim)">Stand <b>libre</b> — listo para recibir un avión o un A-check en plataforma (stage 2+).</div>`
+    : `<div class="linkcard" data-fleet-reg="${esc(ap.registration)}"><div class="lk-ic" style="background:var(--accent-bg);color:var(--accent)">✈</div><div><div class="lk-t">Ocupado por</div><div class="lk-v">${esc(ap.registration)} · ${esc(ap.model)}/${esc(ap.engineVariant)}</div></div><span class="lk-go">›</span></div>`;
+  const workBlock = wo
+    ? `<div class="dw-sec">Trabajo en curso</div><div class="linkcard" data-wo="${esc(wo.instanceId)}"><div class="lk-ic" style="background:rgba(77,163,255,.12);color:var(--accent)">${tplAog?'🛑':'🔧'}</div><div><div class="lk-t">${esc(wo.instanceId)}</div><div class="lk-v">${esc(tpl ? tpl.description.slice(0,42) : wo.templateId)}</div></div><span class="lk-go">›</span></div>`
+    : "";
+  return `<div class="dw-head"><div class="dw-rail" style="background:${c};box-shadow:0 0 14px ${c}"></div>
+      <button class="dw-close" id="modal-close">✕</button>
+      <div class="dw-eyebrow">▣ Stand · plataforma OVD</div>
+      <div class="dw-title"><span class="reg">${esc(simId)}</span><span class="type">${stateLbl}</span></div>
+      <div class="dw-sub"><span class="mc-state" style="color:${c};border-color:${c}55;background:${c}1a"><span class="led" style="background:${c}"></span>${stateLbl}</span></div>
+    </div>
+    <div class="dw-body">
+      <div class="dw-sec">Ocupación</div>
+      ${occBlock}
+      ${workBlock}
+    </div>`;
+}
+
 // ===========================================================================
 // Pivot línea pura · iteración 2026-05-24 — Production Planning nocturno
 // ===========================================================================
@@ -100108,6 +100145,16 @@ function renderModal(){
   // F5C: modal detalle contrato
   if (detailContractId) {
     const html = renderContractDetailModal();
+    if (html !== null && html !== lastModalHtml) {
+      document.getElementById("modal-content").innerHTML = html;
+      lastModalHtml = html;
+    }
+    back.classList.add("open");
+    return;
+  }
+  // Handoff mapa (2026-06-01): ficha de stand
+  if (detailStandId) {
+    const html = renderStandDetailModal();
     if (html !== null && html !== lastModalHtml) {
       document.getElementById("modal-content").innerHTML = html;
       lastModalHtml = html;
@@ -101126,6 +101173,7 @@ document.body.addEventListener("click", (e) => {
     detailDailyAirplaneId = null;
     detailAirplaneType = null;
     detailFlightId = null;
+    detailStandId = null;
     invalidateModalCache();
     render();
     return;

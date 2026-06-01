@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MRO Tycoon · Operaciones — Rediseño</title>
+<link rel="stylesheet" href="ops.css">
+<link rel="stylesheet" href="ops-panels.css">
+<link rel="stylesheet" href="ops-map.css">
+</head>
+<body>
+<div class="app">
+  <header class="hud" id="hud"></header>
+  <div class="body">
+    <nav class="nav" id="nav"></nav>
+    <main class="main" id="main"></main>
+    <aside class="log">
+      <div class="log-head"><h3>Log de actividad</h3><span class="live"><span class="led pulse" style="color:var(--ok);background:var(--ok);width:7px;height:7px;border-radius:50%"></span>LIVE</span></div>
+      <div class="log-list scroll" id="log-list"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="ops-data.js"></script>
+<script src="ops-data2.js"></script>
+<script src="ops-panels.js"></script>
+<script src="ops-map.js"></script>
+<script src="ops-app.js"></script>
+</body>
+</html>
