@@ -6027,23 +6027,52 @@ window.__mroDebug = {
     // worldRoot.position = camera*zoom (ver línea ~651). Para centrar: camera = (screen/2)/zoom - world
     mapDriver.camera.x = (W / 2) / z - wx;
     mapDriver.camera.y = (H / 2) / z - wy;
-    if (mapDriver.lastState) mapDriver.apply(mapDriver.lastState);
-    // renderF5DScaffold NO re-aplica la cámara (solo initF5DCamera la 1ª vez), así que forzamos
-    // la transform del worldRoot a mano tras redibujar (worldRoot.pos = camera*zoom, scale=zoom).
+    // Solo mover la transform de la cámara (NO re-aplicar lastState, que estaría obsoleto).
     if (mapDriver.worldRoot){ mapDriver.worldRoot.scale.set(z); mapDriver.worldRoot.position.set(mapDriver.camera.x*z, mapDriver.camera.y*z); }
     return { z, wx: Math.round(wx), wy: Math.round(wy) };
   },
   // Siembra un mecánico viajando a un stand ocupado para VER el furgo en el mapa.
   seedVan(simStandId){
     try {
-      const sid = simStandId || (game.airplanes.find(a=>a.standId)?.standId) || "H1-S1";
-      // asegura un avión en ese stand
+      // Pausa el reloj: si no, el tick (advanceGame) devuelve el mecánico a Idle y borra el
+      // avión/WO sintéticos antes de la captura. Pausado, el furgo sembrado persiste.
+      try { S.setGameSpeed(game, 0); } catch(e){}
+      if (game.clock) game.clock.speed = 0;
+      const sid = simStandId || "H1-S2";
+      // sync.ts deriva destStandId del furgo desde m.assignedWoInstanceId → WO → airplane.standId
+      // (NO de m.destStandId). Así que para VER el furgo hay que crear esa cadena real:
+      // 1) un avión EN ese stand, 2) una WO sobre ese avión, 3) el mec asignado a la WO en ToPlane.
       let ap = game.airplanes.find(a=>a.standId===sid && a.status!=="Departed");
-      if (!ap && game.airplanes[0]) { ap = game.airplanes[0]; ap.standId = sid; }
+      if (!ap) { ap = game.airplanes.find(a=>a.status!=="Departed"); if (ap) ap.standId = sid; }
+      if (!ap) {
+        // No hay aviones (partida recién creada 06:00) → fabricamos uno sintético en el stand.
+        ap = { instanceId: "DBG-AP-1", registration: "EC-DBG", model: "A320", engineVariant: "CFM56",
+          contractId: (game.contracts[0] && game.contracts[0].id) || "C-1", standId: sid,
+          arrivalMinute: game.clock.minute, scheduledDepartureMinute: game.clock.minute+600,
+          status: "OnGround", flightHoursThisLeg: 2 };
+        game.airplanes.push(ap);
+      }
+      // WO sobre ese avión (reusa una existente o fabrica una mínima coherente)
+      let wo = game.workOrders.find(w=>w.airplaneInstanceId===ap.instanceId && w.phase!=="Completed" && w.phase!=="Failed");
+      if (!wo) {
+        const tpl = game.templates[0];
+        wo = { instanceId: "DBG-WO-1", templateId: tpl.id, airplaneInstanceId: ap.instanceId,
+          airplaneRegistration: ap.registration, emissionMinute: game.clock.minute, slaMinute: game.clock.minute+9999,
+          phase: "ToPlane", phaseElapsedMinutes: 0, assignedMechanicIds: [], scopeRevealed: true };
+        game.workOrders.push(wo);
+      }
+      // Mecánico asignado a esa WO, viajando a media (progress 0.5 → stateRemainingMinutes = travel/2).
       const m = game.mechanics.find(x=>!x.isLeadForeman) || game.mechanics[0];
-      if (m){ m.state = "ToPlane"; m.destStandId = sid; m.progress = 0.5; }
+      if (m){
+        m.state = "ToPlane";
+        m.assignedWoInstanceId = wo.instanceId;
+        m.assignedCheckInstanceId = null;
+        const travel = (g => g && g[sid] ? g[sid] : (game.balance.officeToStandMinutes||2))(game.standTravelMinutes);
+        m.stateRemainingMinutes = travel * 0.5; // mitad del camino
+        if (!wo.assignedMechanicIds.includes(m.id)) wo.assignedMechanicIds.push(m.id);
+      }
       newGameStep = null; activeTab = "map"; invalidatePanelCache?.(); render();
-      return { seeded: true, stand: sid, mech: m?.id };
+      return { seeded: true, stand: sid, mech: m?.id, wo: wo.instanceId, apReg: ap.registration };
     } catch(e){ return { error: String(e) }; }
   },
   // Centra la cámara en la posición REAL del furgo (la que pintó renderF5DScaffold), con zoom
@@ -6056,7 +6085,8 @@ window.__mroDebug = {
     mapDriver.camera.zoom = z;
     mapDriver.camera.x = (W / 2) / z - w.x;
     mapDriver.camera.y = (H / 2) / z - w.y;
-    if (mapDriver.lastState) mapDriver.apply(mapDriver.lastState);
+    // NO re-aplicar lastState (estaría obsoleto y borraría el furgo recién sembrado). Solo
+    // movemos la transform de la cámara; el contenido ya está dibujado por el render del seedVan.
     if (mapDriver.worldRoot){ mapDriver.worldRoot.scale.set(z); mapDriver.worldRoot.position.set(mapDriver.camera.x*z, mapDriver.camera.y*z); }
     return { z, van: { x: Math.round(w.x), y: Math.round(w.y) } };
   },
