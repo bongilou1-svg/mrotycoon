@@ -6028,6 +6028,9 @@ window.__mroDebug = {
     mapDriver.camera.x = (W / 2) / z - wx;
     mapDriver.camera.y = (H / 2) / z - wy;
     if (mapDriver.lastState) mapDriver.apply(mapDriver.lastState);
+    // renderF5DScaffold NO re-aplica la cámara (solo initF5DCamera la 1ª vez), así que forzamos
+    // la transform del worldRoot a mano tras redibujar (worldRoot.pos = camera*zoom, scale=zoom).
+    if (mapDriver.worldRoot){ mapDriver.worldRoot.scale.set(z); mapDriver.worldRoot.position.set(mapDriver.camera.x*z, mapDriver.camera.y*z); }
     return { z, wx: Math.round(wx), wy: Math.round(wy) };
   },
   // Siembra un mecánico viajando a un stand ocupado para VER el furgo en el mapa.
@@ -6042,6 +6045,20 @@ window.__mroDebug = {
       newGameStep = null; activeTab = "map"; invalidatePanelCache?.(); render();
       return { seeded: true, stand: sid, mech: m?.id };
     } catch(e){ return { error: String(e) }; }
+  },
+  // Centra la cámara en la posición REAL del furgo (la que pintó renderF5DScaffold), con zoom
+  // dado. Así no hay que adivinar coords: enfoca exactamente donde está el furgo.
+  focusVan(zoom){
+    const w = mapDriver && mapDriver._lastVanWorld;
+    if (!w || !mapDriver.app) return "no van rendered";
+    const z = Math.max(0.2, Math.min(8, zoom || 4));
+    const W = mapDriver.app.screen.width, H = mapDriver.app.screen.height;
+    mapDriver.camera.zoom = z;
+    mapDriver.camera.x = (W / 2) / z - w.x;
+    mapDriver.camera.y = (H / 2) / z - w.y;
+    if (mapDriver.lastState) mapDriver.apply(mapDriver.lastState);
+    if (mapDriver.worldRoot){ mapDriver.worldRoot.scale.set(z); mapDriver.worldRoot.position.set(mapDriver.camera.x*z, mapDriver.camera.y*z); }
+    return { z, van: { x: Math.round(w.x), y: Math.round(w.y) } };
   },
 };`;
 

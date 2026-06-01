@@ -3032,28 +3032,37 @@ export class PixiDriver {
       const tForward = returning ? (1 - m.progress) : m.progress;
       const at = vanPathPos(code, tForward);
       const px = at.x, py = at.y;
+      // Guarda la pos WORLD del último furgo (para que el debug pueda centrar la cámara en él).
+      (this as { _lastVanWorld?: { x: number; y: number } })._lastVanWorld = { x: px, y: py };
       const vanCol = returning ? 0x3d6f9d : 0xf5b945;
       const ang = returning ? at.ang + Math.PI : at.ang;
-      // Glow del furgo (vidilla + legible con zoom out).
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 12).fill({ color: vanCol, alpha: 0.16 }));
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 7).fill({ color: vanCol, alpha: 0.30 }));
-      // Furgo vectorial (sin emoji): carrocería + parabrisas + ruedas, orientado en marcha.
+      // Contra-escalado: worldRoot escala con el zoom, así que el furgo se haría gigante al
+      // acercar y diminuto al alejar. Multiplicamos su tamaño por ~1/zoom (clamp 0.7–3.2) para
+      // que se vea GUAY y legible a CASI cualquier zoom. base = furgo a tamaño de diseño.
+      const z = this.camera?.zoom || 1;
+      const s = Math.max(0.7, Math.min(3.2, 1 / z)) * 1.5; // 1.5 = tamaño base más generoso
+      // Glow del furgo (escala con el furgo).
+      this.worldDynamic!.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: vanCol, alpha: 0.16 }));
+      this.worldDynamic!.addChild(new Graphics().circle(px, py, 7.5 * s).fill({ color: vanCol, alpha: 0.30 }));
+      // Furgo vectorial (sin emoji): carrocería + cristales + ruedas + faro, orientado en marcha.
       const van = new Container();
-      van.addChild(new Graphics().roundRect(-8, -5, 16, 10, 2.5).fill({ color: vanCol }).stroke({ width: 1, color: 0xa8dafc, alpha: 0.9 }));
-      van.addChild(new Graphics().roundRect(2.5, -3.5, 4.5, 7, 1).fill({ color: 0x0a1428, alpha: 0.85 }));
-      van.addChild(new Graphics().rect(-4.5, -3.5, 4, 3).fill({ color: 0xa8dafc, alpha: 0.5 }));
-      van.addChild(new Graphics().circle(-4, 6, 2).fill(0x0a1428).stroke({ width: 1, color: vanCol }));
-      van.addChild(new Graphics().circle(5, 6, 2).fill(0x0a1428).stroke({ width: 1, color: vanCol }));
+      van.addChild(new Graphics().roundRect(-9, -5.5, 18, 11, 3).fill({ color: vanCol }).stroke({ width: 1.2, color: 0xa8dafc, alpha: 0.95 }));
+      van.addChild(new Graphics().roundRect(3, -4, 5, 8, 1.2).fill({ color: 0x0a1428, alpha: 0.9 }));   // parabrisas
+      van.addChild(new Graphics().rect(-5.5, -4, 5, 3.5).fill({ color: 0xa8dafc, alpha: 0.55 }));        // ventana lateral
+      van.addChild(new Graphics().circle(8.5, -1, 1.4).fill({ color: 0xfff2c4, alpha: 0.95 }));          // faro
+      van.addChild(new Graphics().circle(-4.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol })); // rueda
+      van.addChild(new Graphics().circle(5.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol }));  // rueda
       van.position.set(px, py);
       const flip = Math.abs(ang) > Math.PI / 2;
       van.rotation = flip ? ang + Math.PI : ang;
-      van.scale.x = flip ? -1 : 1;
+      van.scale.set(flip ? -s : s, s); // contra-escalado + flip horizontal si va hacia la izq
       this.worldDynamic!.addChild(van);
+      // Etiqueta destino: tamaño de fuente también contra-escalado para que se lea siempre.
       const vlbl = new Text({
         text: returning ? "a ofi" : ("a " + code),
-        style: { fontFamily: "JetBrains Mono, monospace", fontSize: 9, fontWeight: "600", fill: vanCol },
+        style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } },
       });
-      vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 11);
+      vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 9 * s + 3);
       this.worldDynamic!.addChild(vlbl);
     }
 
