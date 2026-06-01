@@ -2922,98 +2922,122 @@ export class PixiDriver {
     //    una flecha donde el furgo "entra" al stand.
     //  · El furgo sigue office → entrada espina → por la espina → ramal → stand (no recta).
     // OVD primero; el resto de aeropuertos reusan esta lógica (las coords salen de cada OSM).
-    // Oficina por aeropuerto (coord OSM normalizada que marcó Dani). OVD primero; otros aeros
-    // se añaden aquí a medida que los hagamos. Fallback al centro-izq del apron.
-    const OFFICE_NORM: Record<string, [number, number]> = { OVD: [0.486, 0.628] };
-    const offNorm = OFFICE_NORM[(activeAirportPaths as { icao?: string }).icao ?? ""] ?? [0.305, 0.665];
-    const officePt = this.f5dProject(offNorm, area);
-    const officeX = officePt.x, officeY = officePt.y;
-    const officeW = 46, officeH = 30;
-    // Edificio de la oficina (caja + tejado ámbar + ventanas) — ancla del furgo, sin emoji.
-    this.worldStaticCache!.addChild(
-      new Graphics().roundRect(officeX - officeW / 2, officeY - officeH / 2, officeW, officeH, 4)
-        .fill({ color: 0x16273f, alpha: 0.96 }).stroke({ width: 1.5, color: 0xf5b945, alpha: 0.8 }),
-    );
-    this.worldStaticCache!.addChild(new Graphics().rect(officeX - officeW / 2 + 3, officeY - officeH / 2 + 3, officeW - 6, 6).fill({ color: 0xf5b945, alpha: 0.75 }));
-    this.worldStaticCache!.addChild(new Graphics().rect(officeX - 14, officeY, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
-    this.worldStaticCache!.addChild(new Graphics().rect(officeX + 4, officeY, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
+    // 2026-06-01 (Dani v2): red CUADRICULADA respecto al eje de la TERMINAL (que está inclinada
+    // ~50°), no respecto a pantalla. Oficina AL LADO de la terminal (en un extremo de su eje
+    // largo), alineada. Espina = recta paralela a la terminal por el lado de los stands; ramal
+    // perpendicular de cada stand a la espina (ángulos rectos, sin que el furgo se pase de largo).
+    // Calculamos el eje de la terminal por PCA del polígono.
+    const term = (P.terminal && P.terminal[0]) ? P.terminal[0].coords : null;
+    let uX = 1, uY = 0, nX = 0, nY = 1, tcx = 0.517, tcy = 0.660; // defaults
+    if (term && term.length >= 3) {
+      let cx = 0, cy = 0; for (const c of term) { cx += c[0]; cy += c[1]; } cx /= term.length; cy /= term.length;
+      let sxx = 0, syy = 0, sxy = 0; for (const c of term) { const dx = c[0]-cx, dy = c[1]-cy; sxx += dx*dx; syy += dy*dy; sxy += dx*dy; }
+      const ang = 0.5 * Math.atan2(2*sxy, sxx - syy);
+      uX = Math.cos(ang); uY = Math.sin(ang); nX = -uY; nY = uX; tcx = cx; tcy = cy;
+    }
+    // En WORLD: ejes u (largo terminal) y n (perpendicular), proyectados.
+    const oW = this.f5dProject([tcx, tcy], area); // centro terminal en world
+    const pU = this.f5dProject([tcx + uX*0.01, tcy + uY*0.01], area);
+    const pN = this.f5dProject([tcx + nX*0.01, tcy + nY*0.01], area);
+    let wuX = pU.x - oW.x, wuY = pU.y - oW.y; const wuL = Math.hypot(wuX, wuY)||1; wuX/=wuL; wuY/=wuL; // u en world (unit)
+    let wnX = pN.x - oW.x, wnY = pN.y - oW.y; const wnL = Math.hypot(wnX, wnY)||1; wnX/=wnL; wnY/=wnL; // n en world (unit)
 
-    // Posiciones (world) de los 7 stands del juego, en el orden del código (351,451,551,651,751,352,452).
+    // Posiciones (world) de los 7 stands del juego.
     const gameStands: Array<{ code: string; x: number; y: number }> = [];
     for (const [simId, code] of Object.entries(PixiDriver.F5D_STAND_CODE)) {
       const r = standMap[simId];
       const sp = r ? standPositions.get(r) : undefined;
       if (sp) gameStands.push({ code, x: sp.x, y: sp.y });
     }
-    // Construir la espina: una polilínea que sigue la fila de stands pero desplazada ~46px hacia
-    // el lado de la oficina (perpendicular a la dirección general de la fila). Ordenamos los
-    // stands por proyección sobre el eje de la fila para que la espina no se cruce.
-    let roadColor = 0x5a4a2a; // asfalto ámbar apagado (la "carretera" del path rojo de la foto)
-    const ramals: Array<{ sx: number; sy: number; ex: number; ey: number }> = []; // spine→stand por stand
-    let spine: Array<{ x: number; y: number }> = [];
-    const branchOf: Record<string, { sx: number; sy: number; ex: number; ey: number }> = {};
-    if (gameStands.length >= 2) {
-      // dirección principal de la fila (primer→último stand)
-      const a0 = gameStands[0], aN = gameStands[gameStands.length - 1];
-      const dirx = aN.x - a0.x, diry = aN.y - a0.y;
-      const dlen = Math.hypot(dirx, diry) || 1;
-      const ux = dirx / dlen, uy = diry / dlen;     // a lo largo de la fila
-      let nx = -uy, ny = ux;                          // perpendicular
-      // que la normal apunte HACIA la oficina (para que la espina quede del lado de la ofi)
-      const midX = (a0.x + aN.x) / 2, midY = (a0.y + aN.y) / 2;
-      if ((officeX - midX) * nx + (officeY - midY) * ny < 0) { nx = -nx; ny = -ny; }
-      const OFFSET = 52;
-      // ordenar stands por su proyección sobre el eje de la fila
-      const ordered = gameStands.slice().sort((s1, s2) => ((s1.x - a0.x) * ux + (s1.y - a0.y) * uy) - ((s2.x - a0.x) * ux + (s2.y - a0.y) * uy));
-      spine = ordered.map(s => ({ x: s.x + nx * OFFSET, y: s.y + ny * OFFSET }));
-      for (let i = 0; i < ordered.length; i++) {
-        branchOf[ordered[i].code] = { sx: spine[i].x, sy: spine[i].y, ex: ordered[i].x, ey: ordered[i].y };
-        ramals.push(branchOf[ordered[i].code]);
+    // Lado de los stands respecto a la terminal (signo en n): la espina va a ese lado.
+    let standN = 0; for (const s of gameStands) standN += ((s.x-oW.x)*wnX + (s.y-oW.y)*wnY);
+    standN = gameStands.length ? standN/gameStands.length : -1;
+    const nSign = standN >= 0 ? 1 : -1; // dirección n hacia los stands
+
+    const roadColor = 0x5a4a2a;
+    const ramals: Array<{ sx: number; sy: number; ex: number; ey: number }> = [];
+    let spineA = { x: 0, y: 0 }, spineB = { x: 0, y: 0 }; // extremos de la espina (recta)
+    const branchOf: Record<string, { sx: number; sy: number; ex: number; ey: number; t: number }> = {};
+    let officeX = oW.x, officeY = oW.y; // se recalcula abajo
+    if (gameStands.length >= 1) {
+      // proyección de cada stand sobre u (a lo largo de la terminal) y n (distancia perpendicular)
+      const projU = gameStands.map(s => (s.x-oW.x)*wuX + (s.y-oW.y)*wuY);
+      const minU = Math.min(...projU), maxU = Math.max(...projU);
+      // distancia n de la fila de stands (media) → la espina va un poco MÁS CERCA de la terminal
+      let standDistN = 0; for (const s of gameStands) standDistN += Math.abs((s.x-oW.x)*wnX + (s.y-oW.y)*wnY);
+      standDistN = standDistN/gameStands.length;
+      const spineN = (standDistN - 28) * nSign; // espina 28px antes de los stands (lado terminal)
+      // extremos de la espina (recta paralela a la terminal, cubriendo el rango de stands + margen)
+      const padU = 26;
+      spineA = { x: oW.x + wuX*(minU-padU) + wnX*spineN, y: oW.y + wuY*(minU-padU) + wnY*spineN };
+      spineB = { x: oW.x + wuX*(maxU+padU) + wnX*spineN, y: oW.y + wuY*(maxU+padU) + wnY*spineN };
+      // OFICINA: al lado de la terminal, en el extremo minU del eje, alineada (borde terminal).
+      const officeU = minU - padU - 30;
+      const officeN = (standDistN - 28) * nSign * 0.5; // entre la terminal y la espina
+      officeX = oW.x + wuX*officeU + wnX*officeN;
+      officeY = oW.y + wuY*officeU + wnY*officeN;
+      // ramal de cada stand: perpendicular (en n) desde el stand hasta la espina. t = pos sobre la espina [0..1].
+      const spanU = (maxU + padU) - (minU - padU) || 1;
+      for (const s of gameStands) {
+        const su = (s.x-oW.x)*wuX + (s.y-oW.y)*wuY;
+        const footX = oW.x + wuX*su + wnX*spineN, footY = oW.y + wuY*su + wnY*spineN; // pie en la espina
+        const t = ((su) - (minU-padU)) / spanU;
+        branchOf[s.code] = { sx: footX, sy: footY, ex: s.x, ey: s.y, t };
+        ramals.push(branchOf[s.code]);
       }
     }
-    // Dibujar carretera: tramo oficina→inicio espina + espina + ramales (estáticos, world-space).
-    if (spine.length >= 1) {
+    // Dibujar carretera CUADRICULADA: oficina→espina (perpendicular) + espina (recta) + ramales.
+    {
+      // tramo oficina→espina (entra perpendicular a la espina, en su extremo A)
       const road = new Graphics();
-      road.moveTo(officeX, officeY).lineTo(spine[0].x, spine[0].y);
-      for (let i = 1; i < spine.length; i++) road.lineTo(spine[i].x, spine[i].y);
-      road.stroke({ width: 5, color: roadColor, alpha: 0.55 });
+      road.moveTo(officeX, officeY).lineTo(spineA.x, spineA.y).lineTo(spineB.x, spineB.y);
+      road.stroke({ width: 5, color: roadColor, alpha: 0.6 });
       this.worldStaticCache!.addChild(road);
-      // línea central discontinua sutil
       const rc = new Graphics();
-      rc.moveTo(officeX, officeY).lineTo(spine[0].x, spine[0].y);
-      for (let i = 1; i < spine.length; i++) rc.lineTo(spine[i].x, spine[i].y);
+      rc.moveTo(officeX, officeY).lineTo(spineA.x, spineA.y).lineTo(spineB.x, spineB.y);
       rc.stroke({ width: 1, color: 0xf5b945, alpha: 0.3 });
       this.worldStaticCache!.addChild(rc);
-      // ramales + flecha de entrada a cada stand
       for (const b of ramals) {
         this.worldStaticCache!.addChild(new Graphics().moveTo(b.sx, b.sy).lineTo(b.ex, b.ey).stroke({ width: 3, color: roadColor, alpha: 0.5 }));
-        // flecha (punta) cerca del stand
         const adx = b.ex - b.sx, ady = b.ey - b.sy, al = Math.hypot(adx, ady) || 1;
-        const aux = adx / al, auy = ady / al;
-        const tipX = b.ex - aux * 9, tipY = b.ey - auy * 9; // punta un poco antes del centro del stand
+        const aux = adx/al, auy = ady/al;
+        const tipX = b.ex - aux*9, tipY = b.ey - auy*9;
         const apx = -auy, apy = aux;
         this.worldStaticCache!.addChild(
-          new Graphics().poly([tipX + aux * 6, tipY + auy * 6, tipX - aux * 3 + apx * 4, tipY - auy * 3 + apy * 4, tipX - aux * 3 - apx * 4, tipY - auy * 3 - apy * 4])
+          new Graphics().poly([tipX + aux*6, tipY + auy*6, tipX - aux*3 + apx*4, tipY - auy*3 + apy*4, tipX - aux*3 - apx*4, tipY - auy*3 - apy*4])
             .fill({ color: 0xf5b945, alpha: 0.65 }),
         );
       }
     }
+    // Edificio de la oficina (caja + tejado + ventanas), ROTADO al eje de la terminal (alineada).
+    {
+      const ob = new Container();
+      const officeW = 46, officeH = 28;
+      ob.addChild(new Graphics().roundRect(-officeW/2, -officeH/2, officeW, officeH, 4).fill({ color: 0x16273f, alpha: 0.96 }).stroke({ width: 1.5, color: 0xf5b945, alpha: 0.85 }));
+      ob.addChild(new Graphics().rect(-officeW/2 + 3, -officeH/2 + 3, officeW - 6, 6).fill({ color: 0xf5b945, alpha: 0.75 }));
+      ob.addChild(new Graphics().rect(-14, -1, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
+      ob.addChild(new Graphics().rect(4, -1, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
+      ob.position.set(officeX, officeY);
+      ob.rotation = Math.atan2(wuY, wuX); // alineado al eje largo de la terminal
+      this.worldStaticCache!.addChild(ob);
+    }
 
-    // Helper: posición del furgo a lo largo del path office→spine[0..k]→ramal→stand, según t∈[0,1].
+    // Helper: posición del furgo por el path CUADRICULADO office→spineA→pie(en espina)→stand.
+    // Ruta en ángulos rectos, sin pasarse: entra a la espina por A, recorre la espina hasta el
+    // pie del ramal del stand, y sube perpendicular al stand. t∈[0,1].
     const vanPathPos = (code: string, t: number): { x: number; y: number; ang: number } => {
       const b = branchOf[code];
-      if (!b || spine.length === 0) {
-        // fallback recto si no hay red (otros aeropuertos sin spine aún)
+      if (!b) {
         const sp = gameStands.find(s => s.code === code);
         const ex = sp ? sp.x : officeX, ey = sp ? sp.y : officeY;
         return { x: officeX + (ex - officeX) * t, y: officeY + (ey - officeY) * t, ang: Math.atan2(ey - officeY, ex - officeX) };
       }
-      // segmentos: oficina→spine[0], spine[0..idx], spine[idx]→stand
-      const idx = spine.findIndex(p => Math.abs(p.x - b.sx) < 0.5 && Math.abs(p.y - b.sy) < 0.5);
-      const pts: Array<{ x: number; y: number }> = [{ x: officeX, y: officeY }];
-      for (let i = 0; i <= (idx < 0 ? 0 : idx); i++) pts.push(spine[i]);
-      pts.push({ x: b.ex, y: b.ey });
-      // longitud total y punto interpolado
+      const pts: Array<{ x: number; y: number }> = [
+        { x: officeX, y: officeY },     // oficina
+        { x: spineA.x, y: spineA.y },   // entrada a la espina (extremo A)
+        { x: b.sx, y: b.sy },           // pie del ramal del stand (sobre la espina)
+        { x: b.ex, y: b.ey },           // stand
+      ];
       let total = 0; const seg: number[] = [];
       for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y); seg.push(d); total += d; }
       let want = t * total, i = 0;
