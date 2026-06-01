@@ -2971,9 +2971,24 @@ export class PixiDriver {
       const padU = 26;
       spineA = { x: oW.x + wuX*(minU-padU) + wnX*spineN, y: oW.y + wuY*(minU-padU) + wnY*spineN };
       spineB = { x: oW.x + wuX*(maxU+padU) + wnX*spineN, y: oW.y + wuY*(maxU+padU) + wnY*spineN };
-      // OFICINA: al lado de la terminal, en el extremo minU del eje, alineada (borde terminal).
-      const officeU = minU - padU - 30;
-      const officeN = (standDistN - 28) * nSign * 0.5; // entre la terminal y la espina
+      // OFICINA: pegada a la TERMINAL (oW = centro terminal), en su esquina del lado de los
+      // stands. NO a media distancia hacia los stands (eso la dejaba flotando arriba). Va en el
+      // borde de la terminal (semi-ancho en n) + un poco más hacia los stands, en el extremo
+      // minU del eje largo de la terminal → "al lado y alineada".
+      // semi-ancho de la terminal en n (mitad de su lado corto, en world).
+      let termHalfN = 0;
+      if (term && term.length >= 3) {
+        for (const c of term) { const wp = this.f5dProject(c, area); const dn = Math.abs((wp.x-oW.x)*wnX + (wp.y-oW.y)*wnY); termHalfN = Math.max(termHalfN, dn); }
+      }
+      let termHalfU = 0;
+      if (term && term.length >= 3) {
+        for (const c of term) { const wp = this.f5dProject(c, area); const du = Math.abs((wp.x-oW.x)*wuX + (wp.y-oW.y)*wuY); termHalfU = Math.max(termHalfU, du); }
+      }
+      // Lado OPUESTO a los stands (-nSign): los stands tocan el borde superior de la terminal,
+      // así que la oficina va en el borde INFERIOR/lateral, pegada a la terminal pero sin pisar
+      // ni stands ni apron. En el extremo minU del eje (junto a la cabecera de la fila).
+      const officeU = -termHalfU * 0.55;               // hacia el extremo del eje largo, no el centro
+      const officeN = (termHalfN + 20) * (-nSign);     // borde de la terminal OPUESTO a los stands
       officeX = oW.x + wuX*officeU + wnX*officeN;
       officeY = oW.y + wuY*officeU + wnY*officeN;
       // ramal de cada stand: perpendicular (en n) desde el stand hasta la espina. t = pos sobre la espina [0..1].
