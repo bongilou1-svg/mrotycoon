@@ -19,20 +19,21 @@ expect(complaintForTemplate({ complaint: "Cabina no enfría", ataChapter: "21" }
 expect(complaintForTemplate({ complaint: "  Olor a quemado en cabina  ", ataChapter: "26" }, ataChapters) === "Olor a quemado en cabina",
   "trima espacios del complaint");
 
-console.log("\n=== fallback derivado del nombre del capítulo ATA ===");
+console.log("\n=== fallback derivado del nombre del capítulo ATA (ata_chapters.json está en ESPAÑOL) ===");
 const c21 = complaintForTemplate({ ataChapter: "21" }, ataChapters);
-expect(c21.includes("Air Conditioning") && c21.includes("ATA 21"), `ATA 21 → menciona Air Conditioning + código (${c21})`);
+expect(c21.includes("Aire acondicionado") && c21.includes("ATA 21"), `ATA 21 → menciona Aire acondicionado + código (${c21})`);
 const c32 = complaintForTemplate({ ataChapter: "32" }, ataChapters);
-expect(c32.includes("Landing Gear") && c32.includes("ATA 32"), `ATA 32 → Landing Gear (${c32})`);
+expect(c32.includes("Tren de aterrizaje") && c32.includes("ATA 32"), `ATA 32 → Tren de aterrizaje (${c32})`);
 
 console.log("\n=== complaint vacío/whitespace → trata como ausente y deriva del ATA ===");
 const cEmpty = complaintForTemplate({ complaint: "   ", ataChapter: "32" }, ataChapters);
-expect(cEmpty.includes("Landing Gear"), `complaint en blanco → fallback ATA (${cEmpty})`);
+expect(cEmpty.includes("Tren de aterrizaje"), `complaint en blanco → fallback ATA (${cEmpty})`);
 
-console.log("\n=== capítulo reservado o desconocido → genérico, sin nombre feo ===");
-const cReserved = complaintForTemplate({ ataChapter: "58" }, ataChapters); // 58 = "Reserved"
-expect(!cReserved.includes("Reserved") && !cReserved.includes("Reservado") && cReserved.includes("ATA 58"),
-  `capítulo reservado → genérico sin 'Reserved' (${cReserved})`);
+console.log("\n=== capítulo NO presente en el mapa → genérico con código, sin nombre ===");
+// 58 no está en ata_chapters.json → el helper cae al genérico 'anomalía ATA 58'.
+const cReserved = complaintForTemplate({ ataChapter: "58" }, ataChapters);
+expect(cReserved.includes("anomalía ATA 58") && cReserved.includes("ATA 58"),
+  `capítulo ausente → genérico 'anomalía ATA 58' (${cReserved})`);
 const cUnknown = complaintForTemplate({ ataChapter: "ZZ" }, ataChapters);
 expect(cUnknown.includes("ATA ZZ"), `capítulo desconocido → genérico con código (${cUnknown})`);
 const cNoMap = complaintForTemplate({ ataChapter: "21" }); // sin mapa
