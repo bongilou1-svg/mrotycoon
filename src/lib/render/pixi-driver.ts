@@ -2512,19 +2512,23 @@ export class PixiDriver {
     }
 
     // ── Apron polígono (fondo del area de operaciones) ──
+    // Contraste 2026-06-01 (autorizado por Dani, rollback tag pre-map-contrast): el apron
+    // iba casi al color del fondo (0x0d1c33 ≈ bg 0x0e1a30) → invisible. Subido a un navy
+    // claramente más claro + borde cian tenue para que la plataforma "despegue" del fondo.
     for (const w of P.apron) {
       const g = new Graphics();
       this.f5dDrawPath(g, w.coords, area, true);
-      g.fill({ color: 0x0d1c33, alpha: 1 }).stroke({ width: 1.5, color: 0x1c2d4a });
+      g.fill({ color: 0x16273f, alpha: 1 }).stroke({ width: 1.5, color: 0x2c4870 });
       this.worldStaticCache!.addChild(g);
     }
 
     // ── Runway 11/29 — banda gruesa cyan + highlight central + threshold marks ──
     for (const w of P.runways) {
-      // Base stroke ancho
+      // Base stroke ancho. Contraste 2026-06-01: alpha 0.45→0.8 para que la pista 11/29
+      // se lea como banda brillante (era el "nivel objetivo" del handoff), no línea fantasma.
       const base = new Graphics();
       this.f5dDrawPath(base, w.coords, area, false);
-      base.stroke({ width: 9, color: 0x3aa9ff, alpha: 0.45, cap: "butt" });
+      base.stroke({ width: 10, color: 0x3aa9ff, alpha: 0.8, cap: "butt" });
       this.worldStaticCache!.addChild(base);
       // Highlight central
       const hl = new Graphics();
@@ -2578,13 +2582,15 @@ export class PixiDriver {
     }
 
     // ── Taxiways (líneas dashed cyan finas) ──
+    // Contraste 2026-06-01: alpha 0.6→0.85 y ancho 2.2→2.6 para que la red de rodaje sea
+    // legible (conecta visualmente la plataforma con la pista).
     for (const w of P.taxiways) {
       if (w.coords.length < 2) continue;
       const g = new Graphics();
       for (let i = 0; i < w.coords.length - 1; i++) {
         const a = this.f5dProject(w.coords[i], area);
         const b = this.f5dProject(w.coords[i + 1], area);
-        strokeDashed(g, a.x, a.y, b.x, b.y, 3, 5, 2.2, 0x3aa9ff, 0.6);
+        strokeDashed(g, a.x, a.y, b.x, b.y, 3, 5, 2.6, 0x3aa9ff, 0.85);
       }
       this.worldStaticCache!.addChild(g);
     }
@@ -2642,6 +2648,10 @@ export class PixiDriver {
     for (const [ref, pos] of standPositions) {
       // Mapping sim a OSM ref (usa standMap del aeropuerto activo)
       const simId = Object.entries(standMap).find(([_k, v]) => v === ref)?.[0];
+      // 2026-06-01 (Dani): SOLO pintar los stands del juego (los 7 con código airport en
+      // F5D_STAND_CODE: 351/451/551/651/751 + 352 + 452). Los refs OSM extra (08/08A/09/vp-*)
+      // no son stands jugables → fuera del mapa.
+      if (!simId || !PixiDriver.F5D_STAND_CODE[simId]) continue;
       const ap = simId ? apByStand.get(simId) : undefined;
       const active = ap !== undefined;
       // Color por estado del ocupante (coherente con el avión); libre → azul apagado.
@@ -2902,29 +2912,149 @@ export class PixiDriver {
       this.worldStaticCache!.addChild(gHit);
     }
 
-    // ── Furgo mecánicos (línea recta MVP — OSM no marca service roads en LEAS) ──
-    // Origen aproximado: centro del terminal
-    let officeX = area.x + area.w * 0.45, officeY = area.y + area.h * 0.78;
-    if (P.terminal.length > 0) {
-      let cx = 0, cy = 0;
-      for (const c of P.terminal[0].coords) { const p = this.f5dProject(c, area); cx += p.x; cy += p.y; }
-      officeX = cx / P.terminal[0].coords.length;
-      officeY = cy / P.terminal[0].coords.length;
+    // ── OFICINA MEC. + carretera (spine + ramales) + furgo siguiendo el path ──
+    // 2026-06-01 (Dani): el OSM de OVD NO trae service roads ni edificio de oficina, así que
+    // construimos la red por geometría sobre las posiciones REALES de los 7 stands del juego:
+    //  · Oficina = punto fijo en la coord OSM que Dani marcó (esquina izq del terminal).
+    //  · Espina (spine) = polilínea que corre paralela a la fila de stands, desplazada hacia
+    //    el lado de la oficina (la "carretera" troncal).
+    //  · Ramal = de cada stand baja perpendicular a su punto más cercano de la espina, con
+    //    una flecha donde el furgo "entra" al stand.
+    //  · El furgo sigue office → entrada espina → por la espina → ramal → stand (no recta).
+    // OVD primero; el resto de aeropuertos reusan esta lógica (las coords salen de cada OSM).
+    // Oficina por aeropuerto (coord OSM normalizada que marcó Dani). OVD primero; otros aeros
+    // se añaden aquí a medida que los hagamos. Fallback al centro-izq del apron.
+    const OFFICE_NORM: Record<string, [number, number]> = { OVD: [0.486, 0.628] };
+    const offNorm = OFFICE_NORM[(activeAirportPaths as { icao?: string }).icao ?? ""] ?? [0.305, 0.665];
+    const officePt = this.f5dProject(offNorm, area);
+    const officeX = officePt.x, officeY = officePt.y;
+    const officeW = 46, officeH = 30;
+    // Edificio de la oficina (caja + tejado ámbar + ventanas) — ancla del furgo, sin emoji.
+    this.worldStaticCache!.addChild(
+      new Graphics().roundRect(officeX - officeW / 2, officeY - officeH / 2, officeW, officeH, 4)
+        .fill({ color: 0x16273f, alpha: 0.96 }).stroke({ width: 1.5, color: 0xf5b945, alpha: 0.8 }),
+    );
+    this.worldStaticCache!.addChild(new Graphics().rect(officeX - officeW / 2 + 3, officeY - officeH / 2 + 3, officeW - 6, 6).fill({ color: 0xf5b945, alpha: 0.75 }));
+    this.worldStaticCache!.addChild(new Graphics().rect(officeX - 14, officeY, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
+    this.worldStaticCache!.addChild(new Graphics().rect(officeX + 4, officeY, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
+
+    // Posiciones (world) de los 7 stands del juego, en el orden del código (351,451,551,651,751,352,452).
+    const gameStands: Array<{ code: string; x: number; y: number }> = [];
+    for (const [simId, code] of Object.entries(PixiDriver.F5D_STAND_CODE)) {
+      const r = standMap[simId];
+      const sp = r ? standPositions.get(r) : undefined;
+      if (sp) gameStands.push({ code, x: sp.x, y: sp.y });
     }
+    // Construir la espina: una polilínea que sigue la fila de stands pero desplazada ~46px hacia
+    // el lado de la oficina (perpendicular a la dirección general de la fila). Ordenamos los
+    // stands por proyección sobre el eje de la fila para que la espina no se cruce.
+    let roadColor = 0x5a4a2a; // asfalto ámbar apagado (la "carretera" del path rojo de la foto)
+    const ramals: Array<{ sx: number; sy: number; ex: number; ey: number }> = []; // spine→stand por stand
+    let spine: Array<{ x: number; y: number }> = [];
+    const branchOf: Record<string, { sx: number; sy: number; ex: number; ey: number }> = {};
+    if (gameStands.length >= 2) {
+      // dirección principal de la fila (primer→último stand)
+      const a0 = gameStands[0], aN = gameStands[gameStands.length - 1];
+      const dirx = aN.x - a0.x, diry = aN.y - a0.y;
+      const dlen = Math.hypot(dirx, diry) || 1;
+      const ux = dirx / dlen, uy = diry / dlen;     // a lo largo de la fila
+      let nx = -uy, ny = ux;                          // perpendicular
+      // que la normal apunte HACIA la oficina (para que la espina quede del lado de la ofi)
+      const midX = (a0.x + aN.x) / 2, midY = (a0.y + aN.y) / 2;
+      if ((officeX - midX) * nx + (officeY - midY) * ny < 0) { nx = -nx; ny = -ny; }
+      const OFFSET = 52;
+      // ordenar stands por su proyección sobre el eje de la fila
+      const ordered = gameStands.slice().sort((s1, s2) => ((s1.x - a0.x) * ux + (s1.y - a0.y) * uy) - ((s2.x - a0.x) * ux + (s2.y - a0.y) * uy));
+      spine = ordered.map(s => ({ x: s.x + nx * OFFSET, y: s.y + ny * OFFSET }));
+      for (let i = 0; i < ordered.length; i++) {
+        branchOf[ordered[i].code] = { sx: spine[i].x, sy: spine[i].y, ex: ordered[i].x, ey: ordered[i].y };
+        ramals.push(branchOf[ordered[i].code]);
+      }
+    }
+    // Dibujar carretera: tramo oficina→inicio espina + espina + ramales (estáticos, world-space).
+    if (spine.length >= 1) {
+      const road = new Graphics();
+      road.moveTo(officeX, officeY).lineTo(spine[0].x, spine[0].y);
+      for (let i = 1; i < spine.length; i++) road.lineTo(spine[i].x, spine[i].y);
+      road.stroke({ width: 5, color: roadColor, alpha: 0.55 });
+      this.worldStaticCache!.addChild(road);
+      // línea central discontinua sutil
+      const rc = new Graphics();
+      rc.moveTo(officeX, officeY).lineTo(spine[0].x, spine[0].y);
+      for (let i = 1; i < spine.length; i++) rc.lineTo(spine[i].x, spine[i].y);
+      rc.stroke({ width: 1, color: 0xf5b945, alpha: 0.3 });
+      this.worldStaticCache!.addChild(rc);
+      // ramales + flecha de entrada a cada stand
+      for (const b of ramals) {
+        this.worldStaticCache!.addChild(new Graphics().moveTo(b.sx, b.sy).lineTo(b.ex, b.ey).stroke({ width: 3, color: roadColor, alpha: 0.5 }));
+        // flecha (punta) cerca del stand
+        const adx = b.ex - b.sx, ady = b.ey - b.sy, al = Math.hypot(adx, ady) || 1;
+        const aux = adx / al, auy = ady / al;
+        const tipX = b.ex - aux * 9, tipY = b.ey - auy * 9; // punta un poco antes del centro del stand
+        const apx = -auy, apy = aux;
+        this.worldStaticCache!.addChild(
+          new Graphics().poly([tipX + aux * 6, tipY + auy * 6, tipX - aux * 3 + apx * 4, tipY - auy * 3 + apy * 4, tipX - aux * 3 - apx * 4, tipY - auy * 3 - apy * 4])
+            .fill({ color: 0xf5b945, alpha: 0.65 }),
+        );
+      }
+    }
+
+    // Helper: posición del furgo a lo largo del path office→spine[0..k]→ramal→stand, según t∈[0,1].
+    const vanPathPos = (code: string, t: number): { x: number; y: number; ang: number } => {
+      const b = branchOf[code];
+      if (!b || spine.length === 0) {
+        // fallback recto si no hay red (otros aeropuertos sin spine aún)
+        const sp = gameStands.find(s => s.code === code);
+        const ex = sp ? sp.x : officeX, ey = sp ? sp.y : officeY;
+        return { x: officeX + (ex - officeX) * t, y: officeY + (ey - officeY) * t, ang: Math.atan2(ey - officeY, ex - officeX) };
+      }
+      // segmentos: oficina→spine[0], spine[0..idx], spine[idx]→stand
+      const idx = spine.findIndex(p => Math.abs(p.x - b.sx) < 0.5 && Math.abs(p.y - b.sy) < 0.5);
+      const pts: Array<{ x: number; y: number }> = [{ x: officeX, y: officeY }];
+      for (let i = 0; i <= (idx < 0 ? 0 : idx); i++) pts.push(spine[i]);
+      pts.push({ x: b.ex, y: b.ey });
+      // longitud total y punto interpolado
+      let total = 0; const seg: number[] = [];
+      for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y); seg.push(d); total += d; }
+      let want = t * total, i = 0;
+      while (i < seg.length && want > seg[i]) { want -= seg[i]; i++; }
+      if (i >= seg.length) { const p = pts[pts.length-1], q = pts[pts.length-2]; return { x: p.x, y: p.y, ang: Math.atan2(p.y-q.y, p.x-q.x) }; }
+      const a = pts[i], bb = pts[i+1], f = seg[i] ? want / seg[i] : 0;
+      return { x: a.x + (bb.x - a.x) * f, y: a.y + (bb.y - a.y) * f, ang: Math.atan2(bb.y - a.y, bb.x - a.x) };
+    };
+
     for (const m of state.mechanics) {
       if (!m.destStandId) continue;
       if (m.state !== "ToPlane" && m.state !== "Returning") continue;
-      const ref = this.getStandMap()[m.destStandId];
-      if (!ref) continue;
-      const standPos = standPositions.get(ref);
-      if (!standPos) continue;
-      const tForward = m.state === "ToPlane" ? m.progress : (1 - m.progress);
-      const px = officeX + (standPos.x - officeX) * tForward;
-      const py = officeY + (standPos.y - officeY) * tForward;
-      // Trail oficina→stand
-      this.worldDynamic!.addChild(new Graphics().moveTo(officeX, officeY).lineTo(px, py).stroke({ width: 0.8, color: 0xf5b945, alpha: 0.35 }));
-      // Furgo (rect pequeño ámbar)
-      this.worldDynamic!.addChild(new Graphics().rect(px - 4, py - 2, 8, 4).fill({ color: m.state === "Returning" ? 0x3d6f9d : 0xf5b945 }).stroke({ width: 0.5, color: 0xa8dafc, alpha: 0.6 }));
+      const code = PixiDriver.F5D_STAND_CODE[m.destStandId];
+      if (!code) continue;
+      const returning = m.state === "Returning";
+      const tForward = returning ? (1 - m.progress) : m.progress;
+      const at = vanPathPos(code, tForward);
+      const px = at.x, py = at.y;
+      const vanCol = returning ? 0x3d6f9d : 0xf5b945;
+      const ang = returning ? at.ang + Math.PI : at.ang;
+      // Glow del furgo (vidilla + legible con zoom out).
+      this.worldDynamic!.addChild(new Graphics().circle(px, py, 12).fill({ color: vanCol, alpha: 0.16 }));
+      this.worldDynamic!.addChild(new Graphics().circle(px, py, 7).fill({ color: vanCol, alpha: 0.30 }));
+      // Furgo vectorial (sin emoji): carrocería + parabrisas + ruedas, orientado en marcha.
+      const van = new Container();
+      van.addChild(new Graphics().roundRect(-8, -5, 16, 10, 2.5).fill({ color: vanCol }).stroke({ width: 1, color: 0xa8dafc, alpha: 0.9 }));
+      van.addChild(new Graphics().roundRect(2.5, -3.5, 4.5, 7, 1).fill({ color: 0x0a1428, alpha: 0.85 }));
+      van.addChild(new Graphics().rect(-4.5, -3.5, 4, 3).fill({ color: 0xa8dafc, alpha: 0.5 }));
+      van.addChild(new Graphics().circle(-4, 6, 2).fill(0x0a1428).stroke({ width: 1, color: vanCol }));
+      van.addChild(new Graphics().circle(5, 6, 2).fill(0x0a1428).stroke({ width: 1, color: vanCol }));
+      van.position.set(px, py);
+      const flip = Math.abs(ang) > Math.PI / 2;
+      van.rotation = flip ? ang + Math.PI : ang;
+      van.scale.x = flip ? -1 : 1;
+      this.worldDynamic!.addChild(van);
+      const vlbl = new Text({
+        text: returning ? "a ofi" : ("a " + code),
+        style: { fontFamily: "JetBrains Mono, monospace", fontSize: 9, fontWeight: "600", fill: vanCol },
+      });
+      vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 11);
+      this.worldDynamic!.addChild(vlbl);
     }
 
     // ── Labels de zona tenues (orientación, world-space → pan/zoom con el mapa) ──
@@ -2940,8 +3070,8 @@ export class PixiDriver {
     };
     // Zona sur de la plataforma reservada a hangares (ámbar, igual familia que los plots ghost).
     zoneLabel("ESPACIO HANGARES", area.x + area.w * 0.3, area.y + area.h * 0.9, 0xf5b945);
-    // Oficina de mecánicos (origen del furgo; desplazada bajo el terminal para no pisar su label).
-    zoneLabel("OFICINA MEC.", officeX, officeY + 48, 0x5da0e0);
+    // Oficina de mecánicos: etiqueta justo bajo el edificio propio (no el terminal).
+    zoneLabel("OFICINA MEC.", officeX, officeY + officeH / 2 + 10, 0xf5b945);
 
     // ── Overlay HUD ──
     // Header esquina sup-izq

@@ -5997,6 +5997,35 @@ setInterval(() => {
     window.__perf = { advance: 0, mapSync: 0, panelRender: 0, mapInfo: 0, ticks: 0, slowest: 0, slowestWhat: "" };
     _lastPerfReport = _tD;
   }
-}, 100);`;
+}, 100);
+
+// ── Hook de debug para el plugin de captura (claude-render) ──────────────────
+// Aislado, solo para herramientas de desarrollo/captura. Expone control mínimo del
+// estado de UI para poder rasterizar vistas concretas en headless (saltar wizard, ir
+// a una tab, sembrar un mecánico viajando para ver el furgo, leer coords del mapa).
+// NO afecta a la jugabilidad: nadie lo llama salvo el screenshotter.
+window.__mroDebug = {
+  ready: true,
+  skipWizard(){ newGameStep = null; invalidatePanelCache?.(); render(); return "wizard skipped"; },
+  goView(tab){ newGameStep = null; activeTab = tab; invalidatePanelCache?.(); render(); return "view=" + tab; },
+  state(){ return { activeTab, newGameStep, day: game?.clock?.minute, airplanes: game?.airplanes?.length, mechanics: game?.mechanics?.length, zoom: mapDriver?.camera?.zoom }; },
+  // Control de cámara del mapa (para que el screenshotter acerque al apron y vea detalle).
+  zoomIn(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomIn?.(); return mapDriver?.camera?.zoom; },
+  zoomOut(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomOut?.(); return mapDriver?.camera?.zoom; },
+  fitAll(){ mapDriver?.fitAll?.(); return mapDriver?.camera?.zoom; },
+  // Siembra un mecánico viajando a un stand ocupado para VER el furgo en el mapa.
+  seedVan(simStandId){
+    try {
+      const sid = simStandId || (game.airplanes.find(a=>a.standId)?.standId) || "H1-S1";
+      // asegura un avión en ese stand
+      let ap = game.airplanes.find(a=>a.standId===sid && a.status!=="Departed");
+      if (!ap && game.airplanes[0]) { ap = game.airplanes[0]; ap.standId = sid; }
+      const m = game.mechanics.find(x=>!x.isLeadForeman) || game.mechanics[0];
+      if (m){ m.state = "ToPlane"; m.destStandId = sid; m.progress = 0.5; }
+      newGameStep = null; activeTab = "map"; invalidatePanelCache?.(); render();
+      return { seeded: true, stand: sid, mech: m?.id };
+    } catch(e){ return { error: String(e) }; }
+  },
+};`;
 
 await main();
