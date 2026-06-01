@@ -102191,6 +102191,23 @@ window.__mroDebug = {
   zoomIn(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomIn?.(); return mapDriver?.camera?.zoom; },
   zoomOut(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomOut?.(); return mapDriver?.camera?.zoom; },
   fitAll(){ mapDriver?.fitAll?.(); return mapDriver?.camera?.zoom; },
+  // Centra la cámara en una coord normalizada [nx,ny] del OSM con zoom dado (inspección).
+  // Usa la MISMA proyección que f5dProject (area = pad 400 sobre F5D_WORLD) y la convención de
+  // cámara del driver (worldRoot.scale=zoom; pos = -camera*zoom). Centrar el punto = camera tal
+  // que el punto caiga en el centro de pantalla.
+  focusNorm(nx, ny, zoom){
+    if (!mapDriver || mapDriver.theme !== "f5d" || !mapDriver.app) return "no f5d driver";
+    const z = Math.max(0.2, Math.min(8, zoom || 3));
+    const W = mapDriver.app.screen.width, H = mapDriver.app.screen.height;
+    const FW = 6000, FH = 4800, pad = 400;
+    const wx = pad + nx * (FW - pad*2), wy = pad + ny * (FH - pad*2);
+    mapDriver.camera.zoom = z;
+    // worldRoot.position = camera*zoom (ver línea ~651). Para centrar: camera = (screen/2)/zoom - world
+    mapDriver.camera.x = (W / 2) / z - wx;
+    mapDriver.camera.y = (H / 2) / z - wy;
+    if (mapDriver.lastState) mapDriver.apply(mapDriver.lastState);
+    return { z, wx: Math.round(wx), wy: Math.round(wy) };
+  },
   // Siembra un mecánico viajando a un stand ocupado para VER el furgo en el mapa.
   seedVan(simStandId){
     try {
