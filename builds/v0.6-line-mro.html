@@ -983,6 +983,24 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 .notif.t-noise{color:var(--subtle);font-size:.72rem;opacity:.65}
 .notif.t-noise::before{background:var(--line-2)}
 .notif.t-noise.grouped{font-style:italic;opacity:.8}
+/* Fase B2: pop-out del callout (toast no bloqueante, esquina inf-derecha, apilado). */
+#callout-toast-root{position:fixed;right:1rem;bottom:1rem;z-index:200;display:flex;flex-direction:column;gap:.55rem;max-width:22rem;pointer-events:none}
+.callout-toast{position:relative;pointer-events:auto;cursor:pointer;background:var(--panel);border:1px solid var(--border-s);border-radius:10px;padding:.6rem .8rem .6rem 1rem;box-shadow:0 8px 28px rgba(0,0,0,.45);overflow:hidden;animation:ct-in .32s cubic-bezier(.2,.7,.2,1)}
+.callout-toast.leaving{animation:ct-out .3s ease forwards}
+.callout-toast .ct-rail{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
+.callout-toast.sev-aog .ct-rail,.callout-toast.sev-Critical .ct-rail{background:var(--bad);box-shadow:0 0 12px var(--bad)}
+.callout-toast.sev-Major .ct-rail{background:var(--warn)}
+.callout-toast.big{border-color:var(--bad);box-shadow:0 10px 34px rgba(248,81,73,.32)}
+.callout-toast .ct-x{position:absolute;right:.35rem;top:.3rem;background:none;border:none;color:var(--subtle);cursor:pointer;font-size:.85rem;line-height:1;padding:.15rem .3rem}
+.callout-toast .ct-x:hover{color:var(--text)}
+.callout-toast .ct-eyebrow{font:600 .58rem var(--disp,var(--mono));text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:.18rem}
+.callout-toast.big .ct-eyebrow{color:var(--bad)}
+.callout-toast .ct-symptom{font-size:.86rem;font-weight:600;color:var(--text);margin-bottom:.15rem;padding-right:1rem}
+.callout-toast .ct-meta{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.callout-toast .ct-cta{margin-top:.3rem;font-size:.72rem;color:var(--accent);font-weight:600}
+@keyframes ct-in{from{opacity:0;transform:translateX(30px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes ct-out{to{opacity:0;transform:translateX(30px) scale(.96)}}
+:root.reduce-motion .callout-toast{animation:none}
 /* -- Cajón lateral: reskin de .modal-back/.modal -- */
 .modal-back{position:fixed;inset:0;background:rgba(5,8,13,.6);backdrop-filter:blur(3px);display:none;align-items:stretch;justify-content:flex-end;z-index:100}
 .modal-back.open{display:flex}
@@ -97454,6 +97472,7 @@ const SETTINGS_DEFAULTS = {
   fx: true, reduce_motion: false, contrast: false,
   pause_panels: false, confirm: true, autosave: true,
   lang: 0, avterms: true, textsize: 0,
+  callout_popup: true, // Fase B2: pop-out automático del callout al aparecer (toggle "no abrir auto")
 };
 let gameSettings = { ...SETTINGS_DEFAULTS };
 function loadSettings(){
@@ -100594,6 +100613,89 @@ function tutPositionPop(targetEl, place){
   pop.style.top  = top + "px";
 }
 
+// Fase B2 (brief maestro): pop-out del callout. Cuando aparece una WO nueva (callout sin asignar)
+// salta un toast NO bloqueante con sintoma + matricula + ATA + stand + severidad, clicable al
+// detalle, auto-cierre escalado por severidad (AOG/Critical mas grande y persistente, Minor sutil).
+// Es la entrada al timeline: callout salta -> abres -> ves como evoluciona. Toggle en Ajustes.
+// Concatenacion pura (sin template literals) para no chocar con el escaping de APP_JS.
+let popoutSeenWoIds = null; // Set; null = primera pasada (sembrar sin disparar, evita avalancha al cargar)
+function popoutToastRoot(){
+  let r = document.getElementById("callout-toast-root");
+  if (!r) { r = document.createElement("div"); r.id = "callout-toast-root"; document.body.appendChild(r); }
+  return r;
+}
+function dismissCalloutToast(el){
+  if (!el) return;
+  el.classList.add("leaving");
+  setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 320);
+}
+function spawnCalloutToast(wo, tpl, ap){
+  const root = popoutToastRoot();
+  const sev = tpl && tpl.isAOG ? "aog" : (tpl ? tpl.severity : "Minor");
+  const sevBig = sev === "aog" || sev === "Critical";
+  const symptom = tpl ? S.complaintForTemplate(tpl, S.DATA.ataChapters) : (wo.templateId || "Callout");
+  const reg = wo.airplaneRegistration || (ap && ap.registration) || "?";
+  const ata = tpl ? ("ATA " + tpl.ata) : "";
+  const stand = (ap && ap.standId) ? ("stand " + ap.standId) : "";
+  const sevLbl = sev === "aog" ? "🛑 AOG" : sev;
+  const el = document.createElement("div");
+  el.className = "callout-toast sev-" + (sev === "aog" ? "aog" : sev) + (sevBig ? " big" : "");
+  el.setAttribute("data-wo", wo.instanceId);
+  const meta = [reg, ata, stand].filter(Boolean).join(" · ");
+  el.innerHTML =
+    '<div class="ct-rail"></div>' +
+    '<button class="ct-x" data-ct-close="1" title="Cerrar">✕</button>' +
+    '<div class="ct-eyebrow">📣 Nuevo aviso · ' + esc(sevLbl) + '</div>' +
+    '<div class="ct-symptom">🗣️ ' + esc(symptom) + '</div>' +
+    '<div class="ct-meta">' + esc(meta) + '</div>' +
+    '<div class="ct-cta">Abrir ›</div>';
+  root.appendChild(el);
+  // Auto-cierre: AOG/Critical persisten mas (12s); Minor/Major sutiles (6s). reduce-motion no afecta.
+  const ttl = sevBig ? 12000 : 6000;
+  const timer = setTimeout(function(){ dismissCalloutToast(el); }, ttl);
+  el.addEventListener("click", function(ev){
+    clearTimeout(timer);
+    if (ev.target && ev.target.getAttribute && ev.target.getAttribute("data-ct-close")) { dismissCalloutToast(el); return; }
+    selectedWoId = wo.instanceId; manualCertId = ""; manualHelperIds = []; detailFlightId = null;
+    dismissCalloutToast(el);
+    render();
+  });
+}
+function maybePopoutCallouts(){
+  try {
+    if (!game || !game.workOrders) return;
+    // WOs "callout vivo": sin asignar y en fase temprana (ToPlane/Inspection), no cerradas.
+    const live = game.workOrders.filter(function(w){
+      return w.assignedMechanicIds && w.assignedMechanicIds.length === 0 &&
+             (w.phase === "ToPlane" || w.phase === "Inspection");
+    });
+    if (popoutSeenWoIds === null) { // primera pasada: sembrar lo existente sin disparar toasts
+      popoutSeenWoIds = new Set(game.workOrders.map(function(w){ return w.instanceId; }));
+      return;
+    }
+    if (!gameSettings.callout_popup) { // toggle off: marcar como vistos para no acumular
+      for (const w of live) popoutSeenWoIds.add(w.instanceId);
+      return;
+    }
+    let shown = 0;
+    for (const w of live) {
+      if (popoutSeenWoIds.has(w.instanceId)) continue;
+      popoutSeenWoIds.add(w.instanceId);
+      if (shown >= 3) continue; // no avalanchar: max 3 toasts por pasada (resto ya en el feed)
+      const tpl = game.templates.find(function(t){ return t.id === w.templateId; })
+        || (game.dailyCheckTemplates && game.dailyCheckTemplates.find && game.dailyCheckTemplates.find(function(t){ return t.id === w.templateId; }));
+      const ap = airplaneByInstance(w.airplaneInstanceId);
+      if (!tpl || !ap) continue;
+      spawnCalloutToast(w, tpl, ap);
+      shown++;
+    }
+    // Poda del set para que no crezca sin limite (mantener solo las vivas + un margen).
+    if (popoutSeenWoIds.size > 400) {
+      const keep = new Set(game.workOrders.map(function(w){ return w.instanceId; }));
+      popoutSeenWoIds = keep;
+    }
+  } catch(e) { /* nunca romper el render por el toast */ }
+}
 function render(){
   // Pivot iteración 2026-05-25: New Game wizard overlay. Si está activo, mostrarlo
   // como overlay full-screen y no renderizar el resto. Se inyecta en un div dedicado.
@@ -100817,6 +100919,8 @@ function render(){
   // comprobar condiciones de auto-avance del sim.
   renderTutorial();
   tutCheckCond();
+  // Fase B2: tras reconstruir paneles, evaluar si saltan pop-outs de callouts nuevos.
+  maybePopoutCallouts();
 }
 
 // === Tutorial: gating de clicks (capture phase, antes que el handler normal) ===
@@ -101352,6 +101456,7 @@ function renderSettingsBody(){
     + opt("Pausar al abrir paneles", "Detiene el reloj al abrir asignación o detalle de WO.", sw("pause_panels"))
     + opt("Confirmar acciones críticas", "Pide confirmación al diferir, cancelar contrato o forzar mec sin rating.", sw("confirm"))
     + opt("Autoguardado semanal", "Guarda automáticamente en cada cierre de semana.", sw("autosave"))
+    + opt("Aviso emergente de callouts", "Salta un pop-out al aparecer un evento nuevo (síntoma + matrícula + stand). Desactívalo para verlos solo en el log.", sw("callout_popup"))
     + '</div>';
   var lang = '<div class="set-cat' + (settingsCat==="lang"?" on":"") + '" data-cat="lang"><div class="set-ct">Idioma · región</div>'
     + opt("Idioma del juego", "Español / English (English parcial por ahora).", seg("lang", ["Español","English"]))
