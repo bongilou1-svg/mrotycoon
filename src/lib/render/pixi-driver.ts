@@ -2912,80 +2912,113 @@ export class PixiDriver {
       this.worldStaticCache!.addChild(gHit);
     }
 
-    // ── FURGO de mecánicos (2026-06-02, Dani v3) ──
-    // QUITADOS: el edificio "oficina" y la carretera ámbar (spine+ramales) — no quedaban bien.
-    // Modelo nuevo PENDIENTE de dibujo de Dani: 3 estados del furgo →
-    //   (1) punto OFICINA (parado), (2) punto TRÁNSITO (mientras hay traslados en curso),
-    //   (3) PEGADO al stand cuando trabaja ahí (avión centrado en el stand + furgo al lado,
-    //       sin solaparse, mismo tamaño, en el lado CONTRARIO a la pista).
-    // Dani marcará los puntos oficina/tránsito + pasará dibujo. Hasta entonces: furgo en recta
-    // simple oficina-temporal→stand (sin carretera), solo para no romper seedVan/_lastVanWorld.
-    // Punto oficina TEMPORAL (placeholder hasta el dibujo): centro de la terminal.
-    const term = (P.terminal && P.terminal[0]) ? P.terminal[0].coords : null;
-    let tcx = 0.517, tcy = 0.660;
-    if (term && term.length >= 3) {
-      let cx = 0, cy = 0; for (const c of term) { cx += c[0]; cy += c[1]; } cx /= term.length; cy /= term.length;
-      tcx = cx; tcy = cy;
-    }
-    const oW = this.f5dProject([tcx, tcy], area);
-    const officeX = oW.x, officeY = oW.y;
+    // ── FURGO de mecánicos · modelo de 3 estados (2026-06-02, Dani v4) ──
+    // Puntos OFICINA y TRÁNSITO triangulados de la foto de Dani (coords OSM normalizadas, error
+    // 0.0002). Tres estados:
+    //   (1) OFICINA: mec Idle/OffShift → furgo parado en el punto oficina.
+    //   (2) TRÁNSITO: mec ToPlane/Returning → furgo interpola oficina↔stand pasando por el punto
+    //       tránsito (mientras dura el traslado).
+    //   (3) PEGADO AL STAND: mec Working → furgo al lado del avión, sin solaparse, mismo tamaño,
+    //       en el lado CONTRARIO a la pista (la pista está al lado +n del apron; el furgo va a -n).
+    // Por aeropuerto: OVD primero. Otros aeros añaden sus puntos aquí.
+    const VAN_PTS: Record<string, { office: [number, number]; transit: [number, number] }> = {
+      OVD: { office: [0.491, 0.595], transit: [0.490, 0.605] },
+    };
+    const icaoKey = (activeAirportPaths as { icao?: string }).icao ?? "";
+    const pts = VAN_PTS[icaoKey] ?? VAN_PTS.OVD;
+    const officeW = this.f5dProject(pts.office, area);
+    const transitW = this.f5dProject(pts.transit, area);
+    const officeX = officeW.x, officeY = officeW.y;
 
-    // Posiciones (world) de los 7 stands del juego (para el furgo).
-    const gameStands: Array<{ code: string; x: number; y: number }> = [];
-    for (const [simId, code] of Object.entries(PixiDriver.F5D_STAND_CODE)) {
-      const r = standMap[simId];
-      const sp = r ? standPositions.get(r) : undefined;
-      if (sp) gameStands.push({ code, x: sp.x, y: sp.y });
+    // Dirección "hacia la pista" para saber el lado CONTRARIO (donde va el furgo en el stand).
+    // La pista (runway) media nos da el lado; el furgo se pega al avión en -esa dirección.
+    let runwayMid: { x: number; y: number } | null = null;
+    if (P.runways && P.runways[0] && P.runways[0].coords.length) {
+      const rc = P.runways[0].coords;
+      const a0 = this.f5dProject(rc[0], area), aN = this.f5dProject(rc[rc.length - 1], area);
+      runwayMid = { x: (a0.x + aN.x) / 2, y: (a0.y + aN.y) / 2 };
     }
-    // Furgo en RECTA simple oficina(temporal)→stand (sin carretera ni oficina, quitadas v3).
-    // PENDIENTE dibujo de Dani para el modelo de 3 estados (oficina/tránsito/pegado al stand).
-    const vanPathPos = (code: string, t: number): { x: number; y: number; ang: number } => {
-      const sp = gameStands.find(s => s.code === code);
-      const ex = sp ? sp.x : officeX, ey = sp ? sp.y : officeY;
-      return { x: officeX + (ex - officeX) * t, y: officeY + (ey - officeY) * t, ang: Math.atan2(ey - officeY, ex - officeX) };
+
+    // Posición world de un stand por su código.
+    const standWorld = (code: string): { x: number; y: number } | null => {
+      for (const [simId, c] of Object.entries(PixiDriver.F5D_STAND_CODE)) {
+        if (c !== code) continue;
+        const r = standMap[simId]; const sp = r ? standPositions.get(r) : undefined;
+        return sp ? { x: sp.x, y: sp.y } : null;
+      }
+      return null;
     };
 
-    for (const m of state.mechanics) {
-      if (!m.destStandId) continue;
-      if (m.state !== "ToPlane" && m.state !== "Returning") continue;
-      const code = PixiDriver.F5D_STAND_CODE[m.destStandId];
-      if (!code) continue;
-      const returning = m.state === "Returning";
-      const tForward = returning ? (1 - m.progress) : m.progress;
-      const at = vanPathPos(code, tForward);
-      const px = at.x, py = at.y;
-      // Guarda la pos WORLD del último furgo (para que el debug pueda centrar la cámara en él).
+    // Dibuja el furgo vectorial (sin emoji) en (px,py), orientado a `ang`, con contra-escalado.
+    const drawVan = (px: number, py: number, ang: number, vanCol: number, label: string | null) => {
       (this as { _lastVanWorld?: { x: number; y: number } })._lastVanWorld = { x: px, y: py };
-      const vanCol = returning ? 0x3d6f9d : 0xf5b945;
-      const ang = returning ? at.ang + Math.PI : at.ang;
-      // Contra-escalado: worldRoot escala con el zoom, así que el furgo se haría gigante al
-      // acercar y diminuto al alejar. Multiplicamos su tamaño por ~1/zoom (clamp 0.7–3.2) para
-      // que se vea GUAY y legible a CASI cualquier zoom. base = furgo a tamaño de diseño.
       const z = this.camera?.zoom || 1;
-      const s = Math.max(0.7, Math.min(3.2, 1 / z)) * 1.5; // 1.5 = tamaño base más generoso
-      // Glow del furgo (escala con el furgo).
+      const s = Math.max(0.7, Math.min(3.2, 1 / z)) * 1.5; // legible a casi cualquier zoom
       this.worldDynamic!.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: vanCol, alpha: 0.16 }));
       this.worldDynamic!.addChild(new Graphics().circle(px, py, 7.5 * s).fill({ color: vanCol, alpha: 0.30 }));
-      // Furgo vectorial (sin emoji): carrocería + cristales + ruedas + faro, orientado en marcha.
       const van = new Container();
       van.addChild(new Graphics().roundRect(-9, -5.5, 18, 11, 3).fill({ color: vanCol }).stroke({ width: 1.2, color: 0xa8dafc, alpha: 0.95 }));
-      van.addChild(new Graphics().roundRect(3, -4, 5, 8, 1.2).fill({ color: 0x0a1428, alpha: 0.9 }));   // parabrisas
-      van.addChild(new Graphics().rect(-5.5, -4, 5, 3.5).fill({ color: 0xa8dafc, alpha: 0.55 }));        // ventana lateral
-      van.addChild(new Graphics().circle(8.5, -1, 1.4).fill({ color: 0xfff2c4, alpha: 0.95 }));          // faro
-      van.addChild(new Graphics().circle(-4.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol })); // rueda
-      van.addChild(new Graphics().circle(5.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol }));  // rueda
+      van.addChild(new Graphics().roundRect(3, -4, 5, 8, 1.2).fill({ color: 0x0a1428, alpha: 0.9 }));
+      van.addChild(new Graphics().rect(-5.5, -4, 5, 3.5).fill({ color: 0xa8dafc, alpha: 0.55 }));
+      van.addChild(new Graphics().circle(8.5, -1, 1.4).fill({ color: 0xfff2c4, alpha: 0.95 }));
+      van.addChild(new Graphics().circle(-4.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol }));
+      van.addChild(new Graphics().circle(5.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol }));
       van.position.set(px, py);
       const flip = Math.abs(ang) > Math.PI / 2;
       van.rotation = flip ? ang + Math.PI : ang;
-      van.scale.set(flip ? -s : s, s); // contra-escalado + flip horizontal si va hacia la izq
+      van.scale.set(flip ? -s : s, s);
       this.worldDynamic!.addChild(van);
-      // Etiqueta destino: tamaño de fuente también contra-escalado para que se lea siempre.
-      const vlbl = new Text({
-        text: returning ? "a ofi" : ("a " + code),
-        style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } },
-      });
-      vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 9 * s + 3);
-      this.worldDynamic!.addChild(vlbl);
+      if (label) {
+        const vlbl = new Text({ text: label, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } } });
+        vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 9 * s + 3);
+        this.worldDynamic!.addChild(vlbl);
+      }
+    };
+
+    for (const m of state.mechanics) {
+      const st = m.state;
+      if (st === "ToPlane" || st === "Returning") {
+        // (2) TRÁNSITO: oficina ↔ stand pasando por el punto tránsito. progress 0..1.
+        const code = m.destStandId ? PixiDriver.F5D_STAND_CODE[m.destStandId] : null;
+        const sw = code ? standWorld(code) : null;
+        if (!sw) continue;
+        const returning = st === "Returning";
+        const t = returning ? (1 - m.progress) : m.progress; // 0=oficina, 1=stand
+        // path: oficina → tránsito → stand (2 tramos). t<0.5 primer tramo, t>=0.5 segundo.
+        let px, py, ang;
+        if (t < 0.5) {
+          const f = t / 0.5;
+          px = officeW.x + (transitW.x - officeW.x) * f; py = officeW.y + (transitW.y - officeW.y) * f;
+          ang = Math.atan2(transitW.y - officeW.y, transitW.x - officeW.x);
+        } else {
+          const f = (t - 0.5) / 0.5;
+          px = transitW.x + (sw.x - transitW.x) * f; py = transitW.y + (sw.y - transitW.y) * f;
+          ang = Math.atan2(sw.y - transitW.y, sw.x - transitW.x);
+        }
+        if (returning) ang += Math.PI;
+        drawVan(px, py, ang, returning ? 0x3d6f9d : 0xf5b945, returning ? "a ofi" : ("a " + code));
+      } else if (st === "Working" && m.destStandId) {
+        // (3) PEGADO AL STAND: al lado del avión, sin solaparse, lado contrario a la pista.
+        const code = PixiDriver.F5D_STAND_CODE[m.destStandId];
+        const sw = code ? standWorld(code) : null;
+        if (!sw) continue;
+        // vector stand→pista; el furgo va al OPUESTO, a una distancia fija (sin solapar el avión).
+        let dx = 0, dy = 1;
+        if (runwayMid) { dx = sw.x - runwayMid.x; dy = sw.y - runwayMid.y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l; }
+        const OFF = 26; // separación furgo↔centro stand (avión ocupa el centro)
+        const px = sw.x + dx * OFF, py = sw.y + dy * OFF;
+        const ang = Math.atan2(-dy, -dx); // mirando hacia el avión
+        drawVan(px, py, ang, 0xf5b945, null);
+      }
+      // (1) OFICINA: Idle/OffShift → no dibujamos N furgos amontonados; un solo furgo "flota"
+      // en la oficina solo si NADIE está en tránsito/working (se gestiona abajo).
+    }
+    // (1) OFICINA: si no hay ningún mec en tránsito/working, un furgo en reposo en la oficina.
+    {
+      const busy = state.mechanics.some(m => m.state === "ToPlane" || m.state === "Returning" || (m.state === "Working" && m.destStandId));
+      if (!busy && state.mechanics.length > 0) {
+        drawVan(officeX, officeY, 0, 0x3d6f9d, null);
+      }
     }
 
     // ── Labels de zona tenues (orientación, world-space → pan/zoom con el mapa) ──

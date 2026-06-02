@@ -6032,13 +6032,14 @@ window.__mroDebug = {
     return { z, wx: Math.round(wx), wy: Math.round(wy) };
   },
   // Siembra un mecánico viajando a un stand ocupado para VER el furgo en el mapa.
-  seedVan(simStandId){
+  seedVan(simStandId, mode){
     try {
       // Pausa el reloj: si no, el tick (advanceGame) devuelve el mecánico a Idle y borra el
       // avión/WO sintéticos antes de la captura. Pausado, el furgo sembrado persiste.
       try { S.setGameSpeed(game, 0); } catch(e){}
       if (game.clock) game.clock.speed = 0;
       const sid = simStandId || "H1-S2";
+      const vanMode = mode || "transit"; // "transit" (ToPlane) | "working" (pegado al stand)
       // sync.ts deriva destStandId del furgo desde m.assignedWoInstanceId → WO → airplane.standId
       // (NO de m.destStandId). Así que para VER el furgo hay que crear esa cadena real:
       // 1) un avión EN ese stand, 2) una WO sobre ese avión, 3) el mec asignado a la WO en ToPlane.
@@ -6064,11 +6065,11 @@ window.__mroDebug = {
       // Mecánico asignado a esa WO, viajando a media (progress 0.5 → stateRemainingMinutes = travel/2).
       const m = game.mechanics.find(x=>!x.isLeadForeman) || game.mechanics[0];
       if (m){
-        m.state = "ToPlane";
+        m.state = vanMode === "working" ? "Working" : "ToPlane";
         m.assignedWoInstanceId = wo.instanceId;
         m.assignedCheckInstanceId = null;
         const travel = (g => g && g[sid] ? g[sid] : (game.balance.officeToStandMinutes||2))(game.standTravelMinutes);
-        m.stateRemainingMinutes = travel * 0.5; // mitad del camino
+        m.stateRemainingMinutes = vanMode === "working" ? 0 : travel * 0.5;
         if (!wo.assignedMechanicIds.includes(m.id)) wo.assignedMechanicIds.push(m.id);
       }
       newGameStep = null; activeTab = "map"; invalidatePanelCache?.(); render();
