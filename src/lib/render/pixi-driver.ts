@@ -2912,154 +2912,37 @@ export class PixiDriver {
       this.worldStaticCache!.addChild(gHit);
     }
 
-    // ── OFICINA MEC. + carretera (spine + ramales) + furgo siguiendo el path ──
-    // 2026-06-01 (Dani): el OSM de OVD NO trae service roads ni edificio de oficina, así que
-    // construimos la red por geometría sobre las posiciones REALES de los 7 stands del juego:
-    //  · Oficina = punto fijo en la coord OSM que Dani marcó (esquina izq del terminal).
-    //  · Espina (spine) = polilínea que corre paralela a la fila de stands, desplazada hacia
-    //    el lado de la oficina (la "carretera" troncal).
-    //  · Ramal = de cada stand baja perpendicular a su punto más cercano de la espina, con
-    //    una flecha donde el furgo "entra" al stand.
-    //  · El furgo sigue office → entrada espina → por la espina → ramal → stand (no recta).
-    // OVD primero; el resto de aeropuertos reusan esta lógica (las coords salen de cada OSM).
-    // 2026-06-01 (Dani v2): red CUADRICULADA respecto al eje de la TERMINAL (que está inclinada
-    // ~50°), no respecto a pantalla. Oficina AL LADO de la terminal (en un extremo de su eje
-    // largo), alineada. Espina = recta paralela a la terminal por el lado de los stands; ramal
-    // perpendicular de cada stand a la espina (ángulos rectos, sin que el furgo se pase de largo).
-    // Calculamos el eje de la terminal por PCA del polígono.
+    // ── FURGO de mecánicos (2026-06-02, Dani v3) ──
+    // QUITADOS: el edificio "oficina" y la carretera ámbar (spine+ramales) — no quedaban bien.
+    // Modelo nuevo PENDIENTE de dibujo de Dani: 3 estados del furgo →
+    //   (1) punto OFICINA (parado), (2) punto TRÁNSITO (mientras hay traslados en curso),
+    //   (3) PEGADO al stand cuando trabaja ahí (avión centrado en el stand + furgo al lado,
+    //       sin solaparse, mismo tamaño, en el lado CONTRARIO a la pista).
+    // Dani marcará los puntos oficina/tránsito + pasará dibujo. Hasta entonces: furgo en recta
+    // simple oficina-temporal→stand (sin carretera), solo para no romper seedVan/_lastVanWorld.
+    // Punto oficina TEMPORAL (placeholder hasta el dibujo): centro de la terminal.
     const term = (P.terminal && P.terminal[0]) ? P.terminal[0].coords : null;
-    let uX = 1, uY = 0, nX = 0, nY = 1, tcx = 0.517, tcy = 0.660; // defaults
+    let tcx = 0.517, tcy = 0.660;
     if (term && term.length >= 3) {
       let cx = 0, cy = 0; for (const c of term) { cx += c[0]; cy += c[1]; } cx /= term.length; cy /= term.length;
-      let sxx = 0, syy = 0, sxy = 0; for (const c of term) { const dx = c[0]-cx, dy = c[1]-cy; sxx += dx*dx; syy += dy*dy; sxy += dx*dy; }
-      const ang = 0.5 * Math.atan2(2*sxy, sxx - syy);
-      uX = Math.cos(ang); uY = Math.sin(ang); nX = -uY; nY = uX; tcx = cx; tcy = cy;
+      tcx = cx; tcy = cy;
     }
-    // En WORLD: ejes u (largo terminal) y n (perpendicular), proyectados.
-    const oW = this.f5dProject([tcx, tcy], area); // centro terminal en world
-    const pU = this.f5dProject([tcx + uX*0.01, tcy + uY*0.01], area);
-    const pN = this.f5dProject([tcx + nX*0.01, tcy + nY*0.01], area);
-    let wuX = pU.x - oW.x, wuY = pU.y - oW.y; const wuL = Math.hypot(wuX, wuY)||1; wuX/=wuL; wuY/=wuL; // u en world (unit)
-    let wnX = pN.x - oW.x, wnY = pN.y - oW.y; const wnL = Math.hypot(wnX, wnY)||1; wnX/=wnL; wnY/=wnL; // n en world (unit)
+    const oW = this.f5dProject([tcx, tcy], area);
+    const officeX = oW.x, officeY = oW.y;
 
-    // Posiciones (world) de los 7 stands del juego.
+    // Posiciones (world) de los 7 stands del juego (para el furgo).
     const gameStands: Array<{ code: string; x: number; y: number }> = [];
     for (const [simId, code] of Object.entries(PixiDriver.F5D_STAND_CODE)) {
       const r = standMap[simId];
       const sp = r ? standPositions.get(r) : undefined;
       if (sp) gameStands.push({ code, x: sp.x, y: sp.y });
     }
-    // Lado de los stands respecto a la terminal (signo en n): la espina va a ese lado.
-    let standN = 0; for (const s of gameStands) standN += ((s.x-oW.x)*wnX + (s.y-oW.y)*wnY);
-    standN = gameStands.length ? standN/gameStands.length : -1;
-    const nSign = standN >= 0 ? 1 : -1; // dirección n hacia los stands
-
-    const roadColor = 0x5a4a2a;
-    const ramals: Array<{ sx: number; sy: number; ex: number; ey: number }> = [];
-    let spineA = { x: 0, y: 0 }, spineB = { x: 0, y: 0 }; // extremos de la espina (recta)
-    const branchOf: Record<string, { sx: number; sy: number; ex: number; ey: number; t: number }> = {};
-    let officeX = oW.x, officeY = oW.y; // se recalcula abajo
-    if (gameStands.length >= 1) {
-      // proyección de cada stand sobre u (a lo largo de la terminal) y n (distancia perpendicular)
-      const projU = gameStands.map(s => (s.x-oW.x)*wuX + (s.y-oW.y)*wuY);
-      const minU = Math.min(...projU), maxU = Math.max(...projU);
-      // distancia n de la fila de stands (media) → la espina va un poco MÁS CERCA de la terminal
-      let standDistN = 0; for (const s of gameStands) standDistN += Math.abs((s.x-oW.x)*wnX + (s.y-oW.y)*wnY);
-      standDistN = standDistN/gameStands.length;
-      const spineN = (standDistN - 28) * nSign; // espina 28px antes de los stands (lado terminal)
-      // extremos de la espina (recta paralela a la terminal, cubriendo el rango de stands + margen)
-      const padU = 26;
-      spineA = { x: oW.x + wuX*(minU-padU) + wnX*spineN, y: oW.y + wuY*(minU-padU) + wnY*spineN };
-      spineB = { x: oW.x + wuX*(maxU+padU) + wnX*spineN, y: oW.y + wuY*(maxU+padU) + wnY*spineN };
-      // OFICINA: pegada a la TERMINAL (oW = centro terminal), en su esquina del lado de los
-      // stands. NO a media distancia hacia los stands (eso la dejaba flotando arriba). Va en el
-      // borde de la terminal (semi-ancho en n) + un poco más hacia los stands, en el extremo
-      // minU del eje largo de la terminal → "al lado y alineada".
-      // semi-ancho de la terminal en n (mitad de su lado corto, en world).
-      let termHalfN = 0;
-      if (term && term.length >= 3) {
-        for (const c of term) { const wp = this.f5dProject(c, area); const dn = Math.abs((wp.x-oW.x)*wnX + (wp.y-oW.y)*wnY); termHalfN = Math.max(termHalfN, dn); }
-      }
-      let termHalfU = 0;
-      if (term && term.length >= 3) {
-        for (const c of term) { const wp = this.f5dProject(c, area); const du = Math.abs((wp.x-oW.x)*wuX + (wp.y-oW.y)*wuY); termHalfU = Math.max(termHalfU, du); }
-      }
-      // Lado OPUESTO a los stands (-nSign): los stands tocan el borde superior de la terminal,
-      // así que la oficina va en el borde INFERIOR/lateral, pegada a la terminal pero sin pisar
-      // ni stands ni apron. En el extremo minU del eje (junto a la cabecera de la fila).
-      const officeU = -termHalfU * 0.55;               // hacia el extremo del eje largo, no el centro
-      const officeN = (termHalfN + 20) * (-nSign);     // borde de la terminal OPUESTO a los stands
-      officeX = oW.x + wuX*officeU + wnX*officeN;
-      officeY = oW.y + wuY*officeU + wnY*officeN;
-      // ramal de cada stand: perpendicular (en n) desde el stand hasta la espina. t = pos sobre la espina [0..1].
-      const spanU = (maxU + padU) - (minU - padU) || 1;
-      for (const s of gameStands) {
-        const su = (s.x-oW.x)*wuX + (s.y-oW.y)*wuY;
-        const footX = oW.x + wuX*su + wnX*spineN, footY = oW.y + wuY*su + wnY*spineN; // pie en la espina
-        const t = ((su) - (minU-padU)) / spanU;
-        branchOf[s.code] = { sx: footX, sy: footY, ex: s.x, ey: s.y, t };
-        ramals.push(branchOf[s.code]);
-      }
-    }
-    // Dibujar carretera CUADRICULADA: oficina→espina (perpendicular) + espina (recta) + ramales.
-    {
-      // tramo oficina→espina (entra perpendicular a la espina, en su extremo A)
-      const road = new Graphics();
-      road.moveTo(officeX, officeY).lineTo(spineA.x, spineA.y).lineTo(spineB.x, spineB.y);
-      road.stroke({ width: 5, color: roadColor, alpha: 0.6 });
-      this.worldStaticCache!.addChild(road);
-      const rc = new Graphics();
-      rc.moveTo(officeX, officeY).lineTo(spineA.x, spineA.y).lineTo(spineB.x, spineB.y);
-      rc.stroke({ width: 1, color: 0xf5b945, alpha: 0.3 });
-      this.worldStaticCache!.addChild(rc);
-      for (const b of ramals) {
-        this.worldStaticCache!.addChild(new Graphics().moveTo(b.sx, b.sy).lineTo(b.ex, b.ey).stroke({ width: 3, color: roadColor, alpha: 0.5 }));
-        const adx = b.ex - b.sx, ady = b.ey - b.sy, al = Math.hypot(adx, ady) || 1;
-        const aux = adx/al, auy = ady/al;
-        const tipX = b.ex - aux*9, tipY = b.ey - auy*9;
-        const apx = -auy, apy = aux;
-        this.worldStaticCache!.addChild(
-          new Graphics().poly([tipX + aux*6, tipY + auy*6, tipX - aux*3 + apx*4, tipY - auy*3 + apy*4, tipX - aux*3 - apx*4, tipY - auy*3 - apy*4])
-            .fill({ color: 0xf5b945, alpha: 0.65 }),
-        );
-      }
-    }
-    // Edificio de la oficina (caja + tejado + ventanas), ROTADO al eje de la terminal (alineada).
-    {
-      const ob = new Container();
-      const officeW = 46, officeH = 28;
-      ob.addChild(new Graphics().roundRect(-officeW/2, -officeH/2, officeW, officeH, 4).fill({ color: 0x16273f, alpha: 0.96 }).stroke({ width: 1.5, color: 0xf5b945, alpha: 0.85 }));
-      ob.addChild(new Graphics().rect(-officeW/2 + 3, -officeH/2 + 3, officeW - 6, 6).fill({ color: 0xf5b945, alpha: 0.75 }));
-      ob.addChild(new Graphics().rect(-14, -1, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
-      ob.addChild(new Graphics().rect(4, -1, 10, 9).fill({ color: 0xf5b945, alpha: 0.5 }));
-      ob.position.set(officeX, officeY);
-      ob.rotation = Math.atan2(wuY, wuX); // alineado al eje largo de la terminal
-      this.worldStaticCache!.addChild(ob);
-    }
-
-    // Helper: posición del furgo por el path CUADRICULADO office→spineA→pie(en espina)→stand.
-    // Ruta en ángulos rectos, sin pasarse: entra a la espina por A, recorre la espina hasta el
-    // pie del ramal del stand, y sube perpendicular al stand. t∈[0,1].
+    // Furgo en RECTA simple oficina(temporal)→stand (sin carretera ni oficina, quitadas v3).
+    // PENDIENTE dibujo de Dani para el modelo de 3 estados (oficina/tránsito/pegado al stand).
     const vanPathPos = (code: string, t: number): { x: number; y: number; ang: number } => {
-      const b = branchOf[code];
-      if (!b) {
-        const sp = gameStands.find(s => s.code === code);
-        const ex = sp ? sp.x : officeX, ey = sp ? sp.y : officeY;
-        return { x: officeX + (ex - officeX) * t, y: officeY + (ey - officeY) * t, ang: Math.atan2(ey - officeY, ex - officeX) };
-      }
-      const pts: Array<{ x: number; y: number }> = [
-        { x: officeX, y: officeY },     // oficina
-        { x: spineA.x, y: spineA.y },   // entrada a la espina (extremo A)
-        { x: b.sx, y: b.sy },           // pie del ramal del stand (sobre la espina)
-        { x: b.ex, y: b.ey },           // stand
-      ];
-      let total = 0; const seg: number[] = [];
-      for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y); seg.push(d); total += d; }
-      let want = t * total, i = 0;
-      while (i < seg.length && want > seg[i]) { want -= seg[i]; i++; }
-      if (i >= seg.length) { const p = pts[pts.length-1], q = pts[pts.length-2]; return { x: p.x, y: p.y, ang: Math.atan2(p.y-q.y, p.x-q.x) }; }
-      const a = pts[i], bb = pts[i+1], f = seg[i] ? want / seg[i] : 0;
-      return { x: a.x + (bb.x - a.x) * f, y: a.y + (bb.y - a.y) * f, ang: Math.atan2(bb.y - a.y, bb.x - a.x) };
+      const sp = gameStands.find(s => s.code === code);
+      const ex = sp ? sp.x : officeX, ey = sp ? sp.y : officeY;
+      return { x: officeX + (ex - officeX) * t, y: officeY + (ey - officeY) * t, ang: Math.atan2(ey - officeY, ex - officeX) };
     };
 
     for (const m of state.mechanics) {
@@ -3118,8 +3001,7 @@ export class PixiDriver {
     };
     // Zona sur de la plataforma reservada a hangares (ámbar, igual familia que los plots ghost).
     zoneLabel("ESPACIO HANGARES", area.x + area.w * 0.3, area.y + area.h * 0.9, 0xf5b945);
-    // Oficina de mecánicos: etiqueta justo bajo el edificio propio (no el terminal).
-    zoneLabel("OFICINA MEC.", officeX, officeY + officeH / 2 + 10, 0xf5b945);
+    // (Etiqueta "OFICINA MEC." quitada v3 — sin edificio oficina hasta el dibujo de Dani.)
 
     // ── Overlay HUD ──
     // Header esquina sup-izq
