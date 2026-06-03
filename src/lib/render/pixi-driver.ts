@@ -2922,7 +2922,7 @@ export class PixiDriver {
     //       en el lado CONTRARIO a la pista (la pista está al lado +n del apron; el furgo va a -n).
     // Por aeropuerto: OVD primero. Otros aeros añaden sus puntos aquí.
     const VAN_PTS: Record<string, { office: [number, number]; transit: [number, number] }> = {
-      OVD: { office: [0.491, 0.595], transit: [0.490, 0.605] },
+      OVD: { office: [0.475, 0.636], transit: [0.481, 0.613] }, // marcados por Dani con el modo M
     };
     const icaoKey = (activeAirportPaths as { icao?: string }).icao ?? "";
     const pts = VAN_PTS[icaoKey] ?? VAN_PTS.OVD;
