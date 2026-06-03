@@ -102059,6 +102059,14 @@ document.body.addEventListener("input", (e) => {
     saveSettings();
   }
 });
+// Tecla M → modo marcador de puntos del mapa (debug, para que Dani marque coords clicando).
+window.addEventListener("keydown", (e) => {
+  if (e.key === "m" || e.key === "M") {
+    const tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA") return; // no robar la M al escribir
+    if (activeTab === "map" && window.__mroDebug) { e.preventDefault(); window.__mroDebug.toggleMark(); }
+  }
+});
 window.addEventListener("keydown", (e) => {
   if (newGameStep !== "intro") return;
   if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Enter") return;
@@ -102269,6 +102277,53 @@ window.__mroDebug = {
     if (mapDriver.worldRoot){ mapDriver.worldRoot.scale.set(z); mapDriver.worldRoot.position.set(mapDriver.camera.x*z, mapDriver.camera.y*z); }
     return { z, van: { x: Math.round(w.x), y: Math.round(w.y) } };
   },
+  // ── MODO MARCADOR (2026-06-02): Dani abre el mapa, pulsa M, y CLICA puntos. Cada click
+  // muestra su coord OSM normalizada [0..1] (la que usa el código), la copia al portapapeles y
+  // la acumula. Así Dani marca oficina/tránsito/lo-que-sea sin que yo adivine ni triangule.
+  _markPts: [],
+  _markOn: false,
+  toggleMark(){
+    this._markOn = !this._markOn;
+    let hud = document.getElementById("mark-hud");
+    if (this._markOn) {
+      if (!hud) {
+        hud = document.createElement("div"); hud.id = "mark-hud";
+        hud.style.cssText = "position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:99999;background:#0a1428;color:#f5b945;border:1px solid #f5b945;border-radius:8px;padding:.5rem .9rem;font:13px JetBrains Mono,monospace;white-space:pre;box-shadow:0 6px 24px rgba(0,0,0,.6);pointer-events:none;text-align:center";
+        document.body.appendChild(hud);
+      }
+      hud.textContent = "📍 MODO MARCADOR ON — clica en el mapa. (M para salir)";
+      // listener de captura sobre el canvas del mapa
+      const host = document.getElementById("pixi-host");
+      const canvas = host && host.querySelector("canvas");
+      if (canvas && !this._markHandler) {
+        this._markHandler = (ev) => {
+          if (!this._markOn || !mapDriver || !mapDriver.app) return;
+          const rect = mapDriver.app.canvas.getBoundingClientRect();
+          const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+          // screen → world (inversa de applyCamera) → OSM normalizado (inversa de f5dProject)
+          const wx = mx / mapDriver.camera.zoom - mapDriver.camera.x;
+          const wy = my / mapDriver.camera.zoom - mapDriver.camera.y;
+          const FW = 6000, FH = 4800, pad = 400; // F5D_WORLD + f5dArea pad
+          const nx = (wx - pad) / (FW - pad*2), ny = (wy - pad) / (FH - pad*2);
+          const pt = [Math.round(nx*1000)/1000, Math.round(ny*1000)/1000];
+          this._markPts.push(pt);
+          const line = "punto " + this._markPts.length + ": [" + pt[0] + ", " + pt[1] + "]";
+          try { navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(this._markPts)); } catch(e){}
+          const h = document.getElementById("mark-hud");
+          if (h) h.textContent = "📍 " + line + "  (copiado)\nTodos: " + JSON.stringify(this._markPts) + "\n(M para salir)";
+          console.log("[MARK] " + line, this._markPts);
+        };
+        canvas.addEventListener("pointerdown", this._markHandler, true);
+        this._markCanvas = canvas;
+      }
+      return "marcador ON — clica puntos en el mapa";
+    } else {
+      if (hud) hud.textContent = "📍 MARCADOR OFF · puntos: " + JSON.stringify(this._markPts);
+      return { off: true, points: this._markPts };
+    }
+  },
+  markClear(){ this._markPts = []; const h=document.getElementById("mark-hud"); if(h)h.textContent="📍 limpiado"; return "limpio"; },
+  markPoints(){ return this._markPts; },
 };
 </script>
 </body></html>
