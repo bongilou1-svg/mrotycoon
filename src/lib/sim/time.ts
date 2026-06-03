@@ -82,16 +82,18 @@ export function isWeekStart(prevMinute: number, newMinute: number): boolean {
  * Por simplicidad MVP usamos "Día N · HH:MM" — sin pretender simular calendario gregoriano.
  */
 export function formatClock(minute: number): string {
-  const day = getDay(minute);
-  const h = getHour(minute);
-  const m = getMinuteOfHour(minute);
+  const mi = Math.floor(minute); // el reloj puede ser fraccionario (1x = 1 min/s, tick 100ms)
+  const day = getDay(mi);
+  const h = getHour(mi);
+  const m = getMinuteOfHour(mi);
   return `Día ${day} · ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
 /** Formato corto para tabla/widget: "D4 14:23". */
 export function formatClockShort(minute: number): string {
-  const day = getDay(minute);
-  const h = getHour(minute);
-  const m = getMinuteOfHour(minute);
+  const mi = Math.floor(minute); // ídem: redondeo del reloj fraccionario para display
+  const day = getDay(mi);
+  const h = getHour(mi);
+  const m = getMinuteOfHour(mi);
   return `D${day} ${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }

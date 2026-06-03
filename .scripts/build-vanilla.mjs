@@ -1644,7 +1644,8 @@ function updateMapInfoPanel(){
 
   // Helper: HH:MM a partir de minuto de día (0-1439).
   const hhmm = (m) => {
-    const mod = ((m % 1440) + 1440) % 1440;
+    // floor: el reloj es fraccionario a 1x (1 min = 1 s real, tick 100ms) → evitar "06:3.6".
+    const mod = ((Math.floor(m) % 1440) + 1440) % 1440;
     return String(Math.floor(mod / 60)).padStart(2, "0") + ":" + String(mod % 60).padStart(2, "0");
   };
   // Helper: HH:MM con "+1" si es mañana.
@@ -5913,10 +5914,15 @@ window.addEventListener("keydown", (e) => {
 window.__perf = { advance: 0, mapSync: 0, panelRender: 0, mapInfo: 0, ticks: 0, slowest: 0, slowestWhat: "" };
 let _lastPerfReport = performance.now();
 
+// Velocidad real (Dani 2026-06-03): a 1x, 1 minuto de juego = 1 segundo real. El tick corre
+// cada 100ms (10/s) → cada tick avanza speed*0.1 min: 1x=1min/s · 2x=2min/s · 5x=5min/s. Antes
+// avanzaba speed*1 (10x más rápido), por eso aterrizajes/taxis pasaban en un parpadeo. El reloj
+// queda fraccionario (formatClock lo redondea); todo el sim es delta-based sobre stepMinutes.
+const MIN_PER_TICK_AT_1X = 0.1;
 setInterval(() => {
   if (game.clock.speed === 0) return;
   const _tA = performance.now();
-  S.advanceGame(game, game.clock.speed);
+  S.advanceGame(game, game.clock.speed * MIN_PER_TICK_AT_1X);
   const _tB = performance.now();
   window.__perf.advance += (_tB - _tA);
   // Cierre Semanal (2026-05-30): si el sim cerró una semana (kpiHistory creció), pausar el

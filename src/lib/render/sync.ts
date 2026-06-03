@@ -46,10 +46,13 @@ export function timeOfDayFor(minute: number): TimeOfDay {
   return hourOfDay >= 6 && hourOfDay < 22 ? "day" : "night";
 }
 
-/** P-γ: cuánto dura visualmente el taxi (pista → stand) tras el arrival. No tiene
- *  efecto en el sim — solo controla cuándo el driver muestra el avión "taxiándose" en
- *  motion path frente a "parado en stand". */
-export const TAXIING_DURATION_MIN = 4;
+/** Cuánto dura VISUALMENTE el tránsito de un avión recién llegado. No afecta al sim — solo
+ *  controla cuándo el driver lo muestra moviéndose (pista→taxi→stand) frente a "parado". Se
+ *  divide en dos fases: ATERRIZAJE (recorre la pista) + TAXI (pista→stand). A 1x (1 min = 1 s
+ *  real) son segundos: 2 de aterrizaje + 5 de taxi en OVD (Dani 2026-06-03). TODO: por aero. */
+export const LANDING_DURATION_MIN = 2;
+export const TAXI_DURATION_MIN = 5;
+export const TAXIING_DURATION_MIN = LANDING_DURATION_MIN + TAXI_DURATION_MIN; // 7
 
 export function buildRenderState(g: GameState): RenderState {
   const stage = g.mroStage;

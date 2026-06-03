@@ -14,6 +14,9 @@ import { Application, Container, Graphics, Sprite, Text, FederatedPointerEvent }
 import type { RenderMechanic, RenderState } from "./types.ts";
 import { bakeJetSprite } from "./sprite-bakery.ts";
 import { loadAssets, getTexture } from "./assets.ts";
+// Duraciones del tránsito (aterrizaje + taxi) para repartir el movimiento por TIEMPO, no por
+// longitud de la ruta. Fuente única en sync.ts (mismo bundle Render).
+import { TAXIING_DURATION_MIN, LANDING_DURATION_MIN } from "./sync.ts";
 // F5D · datos OSM del aeropuerto OVD (LEAS) — © OpenStreetMap contributors (ODbL).
 // Generado offline por .scripts/osm_to_pixi.mjs (proyección equirectangular normalizada).
 // Pivot iteración 2026-05-25 — multi-airport: OVD se mantiene como default cargado
@@ -2561,6 +2564,15 @@ export class PixiDriver {
       }
       return { p: pts[pts.length - 1], ang: 0 };
     };
+    // Posición durante el TRÁNSITO con dos fases por TIEMPO (no por longitud de ruta): el primer
+    // LANDING_FRAC del progreso recorre la PISTA (aterrizaje), el resto recorre taxi → stand. Así
+    // el aterrizaje dura LANDING_DURATION_MIN y el taxi el resto, aunque la pista sea más larga.
+    const LANDING_FRAC = TAXIING_DURATION_MIN > 0 ? LANDING_DURATION_MIN / TAXIING_DURATION_MIN : 0.3;
+    const transitAt = (progress: number, endPos: { x: number; y: number }): { p: { x: number; y: number }; ang: number } => {
+      if (progress < LANDING_FRAC) return ptAlong(transitRwy, LANDING_FRAC > 0 ? progress / LANDING_FRAC : 1);
+      const taxiRoute = [transitRwy[transitRwy.length - 1], ...transitTaxi, endPos];
+      return ptAlong(taxiRoute, (progress - LANDING_FRAC) / (1 - LANDING_FRAC));
+    };
 
     // ── Aerodrome boundary (perímetro tenue) ──
     for (const w of P.aerodrome) {
@@ -2806,10 +2818,9 @@ export class PixiDriver {
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
       if (!PixiDriver.F5D_STAND_CODE[ap.standId]) continue;
-      const route = [...transitRwy, ...transitTaxi, standPos];
-      // Avión a lo largo de la ruta, nariz en la dirección de avance. Sin línea per-plane: con
-      // todo el tráfico visible serían demasiadas; el propio movimiento traza el recorrido.
-      const at = ptAlong(route, ap.taxiProgress);
+      // Avión por la ruta en dos fases (aterrizaje pista → taxi → stand), nariz en avance. Sin
+      // línea per-plane: con todo el tráfico serían demasiadas; el movimiento ya traza el camino.
+      const at = transitAt(ap.taxiProgress, standPos);
       const col = PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
       drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, col, ap.registration);
     }
@@ -2881,8 +2892,7 @@ export class PixiDriver {
       if (!pos) continue;
       const col = PixiDriver.F5D_STAND_STATE_COL.idle; // todos igual (sin distinguir contrato)
       if (pt.taxiing) {
-        const route = [...transitRwy, ...transitTaxi, pos];
-        const at = ptAlong(route, pt.taxiProgress);
+        const at = transitAt(pt.taxiProgress, pos);
         drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, col, pt.callsign);
       } else {
         const ang = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - pos.y, f5dRunwayMid.x - pos.x) + Math.PI / 2 : 0;
