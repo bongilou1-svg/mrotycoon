@@ -6063,9 +6063,11 @@ window.__mroDebug = {
           status: "OnGround", flightHoursThisLeg: 2 };
         game.airplanes.push(ap);
       }
-      // Forzar "ya aparcado" (no taxiing): sync.ts marca taxiing si arrivalMinute cae dentro de
-      // TAXIING_DURATION_MIN. Restamos 120 min para que se pinte el avioncito EN el stand.
-      ap.arrivalMinute = game.clock.minute - 120; ap.status = "OnGround";
+      // sync.ts marca taxiing si arrivalMinute cae dentro de TAXIING_DURATION_MIN (=4). Modo
+      // "transit" → arrival hace 2 min → taxiing a mitad de ruta (ver el TRÁNSITO por los puntos
+      // de Dani). Resto → arrival hace 120 min → ya aparcado (avioncito en el stand).
+      ap.arrivalMinute = (vanMode === "transit") ? (game.clock.minute - 2) : (game.clock.minute - 120);
+      ap.status = "OnGround";
       // WO sobre ese avión (reusa una existente o fabrica una mínima coherente)
       let wo = game.workOrders.find(w=>w.airplaneInstanceId===ap.instanceId && w.phase!=="Completed" && w.phase!=="Failed");
       if (!wo) {
