@@ -2807,13 +2807,8 @@ export class PixiDriver {
       if (!standPos) continue;
       if (!PixiDriver.F5D_STAND_CODE[ap.standId]) continue;
       const route = [...transitRwy, ...transitTaxi, standPos];
-      // Ruta tenue completa (sitúa visualmente el tránsito).
-      const rg = new Graphics();
-      rg.moveTo(route[0].x, route[0].y);
-      for (let i = 1; i < route.length; i++) rg.lineTo(route[i].x, route[i].y);
-      rg.stroke({ width: 1.2, color: 0x3aa9ff, alpha: 0.22 });
-      this.worldDynamic!.addChild(rg);
-      // Avión a lo largo de la ruta, nariz en la dirección de avance.
+      // Avión a lo largo de la ruta, nariz en la dirección de avance. Sin línea per-plane: con
+      // todo el tráfico visible serían demasiadas; el propio movimiento traza el recorrido.
       const at = ptAlong(route, ap.taxiProgress);
       const col = PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
       drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, col, ap.registration);
@@ -2874,43 +2869,24 @@ export class PixiDriver {
       this.worldDynamic!.addChild(apHit);
     }
 
-    // ── Pivot línea pura · aeropuerto vivo: passthrough traffic ──
-    // Aviones del schedule en stand AHORA mismo que NO son trabajables (no contratados
-    // o type rating no habilitado). Halo cyan tenue para sensación de aeropuerto vivo
-    // sin competir visualmente con los aviones "reales" que sí son trabajo MRO.
+    // ── Aeropuerto vivo · TODO el tráfico se ve IGUAL (Dani 2026-06-03) ──
+    // "los aviones quiero que se vean todos igual, estén con contrato o no o sin habilitación,
+    // q se vea todo el tráfico real". El tráfico passthrough (no contratado / sin type rating) se
+    // pintaba como punto tenue con color según contrato. Ahora se dibuja con el MISMO avioncito
+    // vectorial (drawPlane), mismo tamaño y color idle, con su callsign — indistinguible de un
+    // avión contratado parado. Va sobre su posición OSM real (standPositions tiene todas, no solo
+    // los 7 stands del juego), así que se ve todo el tráfico repartido por la plataforma.
     for (const pt of state.passthroughTraffic) {
       const pos = standPositions.get(pt.standOsmRef);
       if (!pos) continue;
-      // Pivot iteración 2026-05-25 · paleta passthrough con visibilidad mejorada
-      // (el gris anterior era casi invisible). Ahora:
-      //   notHandled (Embraer/CRJ/ATR/B737/A321neo) → gris claro azulado (#94a4be).
-      //   handled SIN contrato (operadores como Vueling/easyJet/Volotea con vuelos OVD)
-      //     → violeta suave (#a78bfa) — pista visual "podrías firmar este operador".
-      //   handled CON contrato (futuro: callsigns extra fuera de cap) → cyan tenue.
-      const baseColor = pt.notHandled ? 0x94a4be : pt.contracted ? 0x3aa9ff : 0xa78bfa;
-      const haloAlpha = pt.notHandled ? 0.16 : 0.18;
-      const dotAlpha = pt.notHandled ? 0.85 : 0.9;
+      const col = PixiDriver.F5D_STAND_STATE_COL.idle; // todos igual (sin distinguir contrato)
       if (pt.taxiing) {
-        const entryX = area.x + area.w * 0.3, entryY = area.y + area.h * 0.65;
-        const px = entryX + (pos.x - entryX) * pt.taxiProgress;
-        const py = entryY + (pos.y - entryY) * pt.taxiProgress;
-        this.worldDynamic!.addChild(new Graphics().moveTo(entryX, entryY).lineTo(px, py).stroke({ width: 0.8, color: baseColor, alpha: 0.2 }));
-        this.worldDynamic!.addChild(new Graphics().circle(px, py, 10).fill({ color: baseColor, alpha: haloAlpha }));
-        this.worldDynamic!.addChild(new Graphics().circle(px, py, 6).fill({ color: baseColor, alpha: haloAlpha * 1.5 }));
-        this.worldDynamic!.addChild(new Graphics().circle(px, py, 2).fill({ color: baseColor, alpha: dotAlpha }));
+        const route = [...transitRwy, ...transitTaxi, pos];
+        const at = ptAlong(route, pt.taxiProgress);
+        drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, col, pt.callsign);
       } else {
-        // Parado en stand
-        this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 14).fill({ color: baseColor, alpha: haloAlpha * 0.6 }));
-        this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 8).fill({ color: baseColor, alpha: haloAlpha }));
-        this.worldDynamic!.addChild(new Graphics().circle(pos.x, pos.y, 2).fill({ color: baseColor, alpha: dotAlpha }));
-        // Label callsign tenue
-        const lbl = new Text({
-          text: pt.callsign,
-          style: { fontFamily: "Inter, sans-serif", fontSize: 9, fill: baseColor },
-        });
-        lbl.alpha = pt.notHandled ? 0.45 : 0.65;
-        lbl.position.set(pos.x + 8, pos.y - 3);
-        this.worldDynamic!.addChild(lbl);
+        const ang = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - pos.y, f5dRunwayMid.x - pos.x) + Math.PI / 2 : 0;
+        drawPlane(pos.x, pos.y, ang, col, pt.callsign);
       }
     }
 

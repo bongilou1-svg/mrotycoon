@@ -6023,6 +6023,9 @@ window.__mroDebug = {
   zoomIn(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomIn?.(); return mapDriver?.camera?.zoom; },
   zoomOut(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomOut?.(); return mapDriver?.camera?.zoom; },
   fitAll(){ mapDriver?.fitAll?.(); return mapDriver?.camera?.zoom; },
+  // Activa el tráfico de línea (schedule real OVD) para VER el passthrough en el mapa. El arg
+  // minute (opcional) salta el reloj a una hora con tráfico (p.ej. 780 = 13:00). Devuelve cuántos.
+  lineTraffic(minute){ try{ game.useScheduleArrivals=true; game.lineModeEnabled=true; if(typeof minute==="number" && game.clock) game.clock.minute=minute; if(game.clock) game.clock.speed=0; newGameStep=null; activeTab="map"; invalidatePanelCache?.(); render(); var ls=mapDriver&&mapDriver.lastState; return {line:true, min:game.clock&&game.clock.minute, passthrough:(ls&&ls.passthroughTraffic||[]).length, airplanes:(ls&&ls.airplanes||[]).length}; }catch(e){return {error:String(e)}} },
   // Centra la cámara en una coord normalizada [nx,ny] del OSM con zoom dado (inspección).
   // Usa la MISMA proyección que f5dProject (area = pad 400 sobre F5D_WORLD) y la convención de
   // cámara del driver (worldRoot.scale=zoom; pos = -camera*zoom). Centrar el punto = camera tal
