@@ -2503,6 +2503,32 @@ export class PixiDriver {
     const area = this.f5dArea();
     const P = activeAirportPaths.paths;
 
+    // ── Geometría marcada por Dani (modo M · coords OSM normalizadas · 2026-06-03) ──
+    // Override de OSM: pista y taxiway se dibujan a través de los puntos que Dani marcó en el
+    // juego vivo (re-marcar = mover; ver memo project_mrotycoon_f5d_map_osm). Si se vaciaran,
+    // caería a la geometría OSM (P.runways / P.taxiways).
+    const f5dKey = (activeAirportPaths as { icao?: string }).icao ?? "";
+    const RUNWAY_PTS: Record<string, number[][]> = {
+      OVD: [[0.398, 0.328], [0.618, 0.458], [0.806, 0.568]],
+      LEAS: [[0.398, 0.328], [0.618, 0.458], [0.806, 0.568]],
+    };
+    const TAXI_PTS: Record<string, number[][]> = {
+      OVD: [[0.6, 0.562], [0.571, 0.547], [0.544, 0.53]],
+      LEAS: [[0.6, 0.562], [0.571, 0.547], [0.544, 0.53]],
+    };
+    const rwPts = RUNWAY_PTS[f5dKey] ?? RUNWAY_PTS.OVD;
+    const txPts = TAXI_PTS[f5dKey] ?? TAXI_PTS.OVD;
+    const f5dRunways = rwPts ? [{ coords: rwPts, ref: "11/29" }] : P.runways;
+    const f5dTaxiways = txPts ? [{ coords: txPts }] : P.taxiways;
+    // Medio de la pista (en world) → sirve para orientar aviones y poner el furgo en el lado
+    // CONTRARIO a la pista. Se calcula una vez aquí y se reusa abajo.
+    let f5dRunwayMid: { x: number; y: number } | null = null;
+    if (f5dRunways[0] && f5dRunways[0].coords.length) {
+      const rc0 = this.f5dProject(f5dRunways[0].coords[0], area);
+      const rcN = this.f5dProject(f5dRunways[0].coords[f5dRunways[0].coords.length - 1], area);
+      f5dRunwayMid = { x: (rc0.x + rcN.x) / 2, y: (rc0.y + rcN.y) / 2 };
+    }
+
     // ── Aerodrome boundary (perímetro tenue) ──
     for (const w of P.aerodrome) {
       const g = new Graphics();
@@ -2523,7 +2549,7 @@ export class PixiDriver {
     }
 
     // ── Runway 11/29 — banda gruesa cyan + highlight central + threshold marks ──
-    for (const w of P.runways) {
+    for (const w of f5dRunways) {
       // Base stroke ancho. Contraste 2026-06-01: alpha 0.45→0.8 para que la pista 11/29
       // se lea como banda brillante (era el "nivel objetivo" del handoff), no línea fantasma.
       const base = new Graphics();
@@ -2584,7 +2610,7 @@ export class PixiDriver {
     // ── Taxiways (líneas dashed cyan finas) ──
     // Contraste 2026-06-01: alpha 0.6→0.85 y ancho 2.2→2.6 para que la red de rodaje sea
     // legible (conecta visualmente la plataforma con la pista).
-    for (const w of P.taxiways) {
+    for (const w of f5dTaxiways) {
       if (w.coords.length < 2) continue;
       const g = new Graphics();
       for (let i = 0; i < w.coords.length - 1; i++) {
@@ -2677,8 +2703,11 @@ export class PixiDriver {
         this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, haloR).fill({ color: stCol, alpha: 0.12 + pulseT * 0.06 }));
       }
 
-      // Pill: fondo oscuro + borde de color de estado
-      const pillX = pos.x - PILL_W / 2, pillY = pos.y - PILL_H / 2;
+      // Pill: fondo oscuro + borde de color de estado. Cuando el stand está OCUPADO, el avión
+      // se dibuja CENTRADO en el stand (abajo), así que el placard (pill) se eleva para flotar
+      // encima del avión y no taparlo. Libre → placard al centro como siempre.
+      const pillCY = active ? pos.y - 36 : pos.y;
+      const pillX = pos.x - PILL_W / 2, pillY = pillCY - PILL_H / 2;
       this.worldStaticCache!.addChild(
         new Graphics()
           .roundRect(pillX, pillY, PILL_W, PILL_H, 6)
@@ -2687,26 +2716,29 @@ export class PixiDriver {
       );
       // LED (glow + core)
       const ledX = pillX + 10;
-      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pos.y, 5.5).fill({ color: stCol, alpha: 0.32 }));
-      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pos.y, 3).fill(stCol));
+      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pillCY, 5.5).fill({ color: stCol, alpha: 0.32 }));
+      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pillCY, 3).fill(stCol));
       // Código airport-style (grande, legible)
       const codeLbl = new Text({
         text: code,
         style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: "700", fill: 0xe6f0fb },
       });
       codeLbl.anchor.set(0, 0.5);
-      codeLbl.position.set(ledX + 9, pos.y + 0.5);
+      codeLbl.position.set(ledX + 9, pillCY + 0.5);
       this.worldStaticCache!.addChild(codeLbl);
 
-      // Etiqueta de matrícula del ocupante (o "libre") debajo de la pill
-      const occLbl = new Text({
-        text: active ? ap!.registration : "libre",
-        style: { fontFamily: "JetBrains Mono, monospace", fontSize: 9.5, fontWeight: active ? "600" : "400", fill: stCol },
-      });
-      occLbl.anchor.set(0.5, 0);
-      occLbl.position.set(pos.x, pillY + PILL_H + 3);
-      if (!active) occLbl.alpha = 0.7;
-      this.worldStaticCache!.addChild(occLbl);
+      // Stand libre → "libre" bajo el placard. Ocupado → la matrícula va PEGADA al avión
+      // (la dibuja drawPlane abajo), no aquí, para que sea "el avioncito con su matrícula".
+      if (!active) {
+        const occLbl = new Text({
+          text: "libre",
+          style: { fontFamily: "JetBrains Mono, monospace", fontSize: 9.5, fontWeight: "400", fill: stCol },
+        });
+        occLbl.anchor.set(0.5, 0);
+        occLbl.position.set(pos.x, pillY + PILL_H + 3);
+        occLbl.alpha = 0.7;
+        this.worldStaticCache!.addChild(occLbl);
+      }
 
       // P-ε: hover outline si está hovered (forma de pill)
       if (this.f5dHoveredStand === ref) {
@@ -2756,42 +2788,61 @@ export class PixiDriver {
       this.worldDynamic!.addChild(new Graphics().circle(px, py, 3.5).fill(0xa8dafc));
     }
 
-    // ── Aviones parados en stand ──
-    // La pill del stand (arriba) ya comunica estado (LED + color por displayState) y la
-    // matrícula del ocupante. Aquí solo añadimos el icono de tarea activa sobre la pill y
-    // el hover/hitbox que abre el modal contextual del avión (check > callout > daily > fleet).
+    // ── Aviones parados en stand · avioncito vectorial tamaño furgo + matrícula ──
+    // Dani 2026-06-03: "asegura que se ve un avioncito tamaño furgoneta con su matrícula".
+    // Antes el avión era un punto (casi invisible). Ahora se dibuja un avión vectorial (sin
+    // emoji → no tofu) CENTRADO en el stand, con la matrícula pegada y nariz hacia la pista.
     // displayState: idle→cyan · daily→cyan claro · working→verde · delayed→ámbar · aog→rojo.
+    const vanScale = () => Math.max(0.7, Math.min(3.2, 1 / (this.camera?.zoom || 1))) * 1.5;
+    const drawPlane = (px: number, py: number, ang: number, col: number, reg: string | null) => {
+      const s = vanScale();
+      this.worldDynamic!.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: col, alpha: 0.12 }));
+      const pl = new Container();
+      pl.addChild(new Graphics().poly([-11, 2.5, 11, 2.5, 5.5, -1.5, -5.5, -1.5]).fill({ color: col, alpha: 0.95 })); // alas swept
+      pl.addChild(new Graphics().poly([-5, 8, 5, 8, 3, 5.5, -3, 5.5]).fill({ color: col, alpha: 0.95 }));            // estabilizador cola
+      pl.addChild(new Graphics().roundRect(-2.2, -9, 4.4, 17, 2.2).fill({ color: 0xe6f0fb }).stroke({ width: 1, color: col })); // fuselaje
+      pl.addChild(new Graphics().poly([-2.2, -8.5, 2.2, -8.5, 0, -11.5]).fill({ color: 0xe6f0fb }));                  // morro
+      pl.addChild(new Graphics().circle(0, -6.5, 1).fill({ color: 0x0a1428, alpha: 0.85 }));                         // cockpit
+      pl.position.set(px, py); pl.rotation = ang; pl.scale.set(s);
+      this.worldDynamic!.addChild(pl);
+      if (reg) {
+        const t = new Text({ text: reg, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(8.5 * s), fontWeight: "700", fill: 0xe6f0fb, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } } });
+        t.anchor.set(0.5, 0); t.position.set(px, py + 13 * s + 1);
+        this.worldDynamic!.addChild(t);
+      }
+    };
     for (const ap of state.airplanes) {
       if (ap.taxiing || !ap.standId) continue;
       const ref = this.getStandMap()[ap.standId];
       if (!ref) continue;
       const standPos = standPositions.get(ref);
       if (!standPos) continue;
-      const pillTop = standPos.y - PILL_H / 2;
-      // Iconito de tarea activa: prioridad check > callout > daily. Esquina sup-dcha de la pill.
-      let taskIcon = "";
-      if (ap.activeCheckInstanceId) taskIcon = "🛠️";
-      else if (ap.activeWoInstanceId) taskIcon = "🔧";
-      else if (ap.hasOpenDaily) taskIcon = "🌙";
-      if (taskIcon) {
-        const iconT = new Text({
-          text: taskIcon,
-          style: { fontFamily: "Inter, sans-serif", fontSize: 12 },
-        });
-        iconT.anchor.set(0.5);
-        iconT.position.set(standPos.x + PILL_W / 2 - 3, pillTop - 3);
-        this.worldDynamic!.addChild(iconT);
+      // Solo los 7 stands del juego (coherente con la pill); otros refs OSM no pintan avión.
+      if (!PixiDriver.F5D_STAND_CODE[ap.standId]) continue;
+
+      const planeCol = PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
+      const planeAng = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - standPos.y, f5dRunwayMid.x - standPos.x) + Math.PI / 2 : 0;
+      drawPlane(standPos.x, standPos.y, planeAng, planeCol, ap.registration);
+
+      // Badge de tarea activa (vector, sin emoji): check > WO > daily. Esquina sup-dcha del avión.
+      let badgeCol = 0;
+      if (ap.activeCheckInstanceId) badgeCol = 0xa8dafc;
+      else if (ap.activeWoInstanceId) badgeCol = 0x3fb950;
+      else if (ap.hasOpenDaily) badgeCol = 0x6dc7ff;
+      if (badgeCol) {
+        const bs = vanScale();
+        this.worldDynamic!.addChild(new Graphics().circle(standPos.x + 10 * bs, standPos.y - 11 * bs, 3.4 * bs).fill({ color: badgeCol }).stroke({ width: Math.max(1, 1 * bs), color: 0x0a1428 }));
       }
-      // P-ε: hover outline (forma de pill)
+
+      // Hover + hitbox centrados en el avión (abre el modal contextual del avión).
+      const hbS = vanScale();
+      const hbW = 26 * hbS, hbH = 32 * hbS;
       if (this.f5dHoveredAirplane === ap.instanceId) {
         this.worldDynamic!.addChild(
-          new Graphics().roundRect(standPos.x - PILL_W / 2 - 3, pillTop - 3, PILL_W + 6, PILL_H + 6, 8).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
+          new Graphics().roundRect(standPos.x - hbW / 2, standPos.y - hbH / 2, hbW, hbH, 6).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
         );
       }
-      // P-ε: hitbox click — pasa contexto completo para que la UI decida qué modal abrir.
-      // Cubre pill + etiqueta de matrícula; va en worldDynamic (encima del hitbox del stand)
-      // → cuando hay avión, el click va al modal contextual del avión, no a onStandClick.
-      const apHit = new Graphics().rect(standPos.x - PILL_W / 2 - 4, pillTop - 4, PILL_W + 8, PILL_H + 24).fill({ color: 0x000000, alpha: 0.001 });
+      const apHit = new Graphics().rect(standPos.x - hbW / 2, standPos.y - hbH / 2, hbW, hbH).fill({ color: 0x000000, alpha: 0.001 });
       apHit.eventMode = "static";
       apHit.cursor = "pointer";
       const apId = ap.instanceId;
@@ -2930,14 +2981,9 @@ export class PixiDriver {
     const transitW = this.f5dProject(pts.transit, area);
     const officeX = officeW.x, officeY = officeW.y;
 
-    // Dirección "hacia la pista" para saber el lado CONTRARIO (donde va el furgo en el stand).
-    // La pista (runway) media nos da el lado; el furgo se pega al avión en -esa dirección.
-    let runwayMid: { x: number; y: number } | null = null;
-    if (P.runways && P.runways[0] && P.runways[0].coords.length) {
-      const rc = P.runways[0].coords;
-      const a0 = this.f5dProject(rc[0], area), aN = this.f5dProject(rc[rc.length - 1], area);
-      runwayMid = { x: (a0.x + aN.x) / 2, y: (a0.y + aN.y) / 2 };
-    }
+    // Dirección "hacia la pista" para el lado CONTRARIO (donde va el furgo). Reusa f5dRunwayMid,
+    // calculado arriba desde la geometría marcada por Dani.
+    const runwayMid = f5dRunwayMid;
 
     // Posición world de un stand por su código.
     const standWorld = (code: string): { x: number; y: number } | null => {
@@ -3005,7 +3051,7 @@ export class PixiDriver {
         // vector stand→pista; el furgo va al OPUESTO, a una distancia fija (sin solapar el avión).
         let dx = 0, dy = 1;
         if (runwayMid) { dx = sw.x - runwayMid.x; dy = sw.y - runwayMid.y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l; }
-        const OFF = 26; // separación furgo↔centro stand (avión ocupa el centro)
+        const OFF = 42; // separación furgo↔centro stand (el avión + matrícula ocupan el centro)
         const px = sw.x + dx * OFF, py = sw.y + dy * OFF;
         const ang = Math.atan2(-dy, -dx); // mirando hacia el avión
         drawVan(px, py, ang, 0xf5b945, null);

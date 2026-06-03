@@ -6063,6 +6063,9 @@ window.__mroDebug = {
           status: "OnGround", flightHoursThisLeg: 2 };
         game.airplanes.push(ap);
       }
+      // Forzar "ya aparcado" (no taxiing): sync.ts marca taxiing si arrivalMinute cae dentro de
+      // TAXIING_DURATION_MIN. Restamos 120 min para que se pinte el avioncito EN el stand.
+      ap.arrivalMinute = game.clock.minute - 120; ap.status = "OnGround";
       // WO sobre ese avión (reusa una existente o fabrica una mínima coherente)
       let wo = game.workOrders.find(w=>w.airplaneInstanceId===ap.instanceId && w.phase!=="Completed" && w.phase!=="Failed");
       if (!wo) {
@@ -6072,6 +6075,9 @@ window.__mroDebug = {
           phase: "ToPlane", phaseElapsedMinutes: 0, assignedMechanicIds: [], scopeRevealed: true };
         game.workOrders.push(wo);
       }
+      // En modo "working" la WO pasa a MainTask → sync deriva displayState=working (avión verde)
+      // y hasMechWorking=true; así el avioncito sale con el color de estado correcto.
+      if (vanMode === "working") wo.phase = "MainTask";
       // Mecánico asignado a esa WO, viajando a media (progress 0.5 → stateRemainingMinutes = travel/2).
       const m = game.mechanics.find(x=>!x.isLeadForeman) || game.mechanics[0];
       if (m){
