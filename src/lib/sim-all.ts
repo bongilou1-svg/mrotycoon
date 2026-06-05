@@ -9,6 +9,7 @@ export * from "./sim/fleet.ts";
 export * from "./sim/stands.ts";
 export * from "./sim/workorders.ts";
 export * from "./sim/mechanics.ts";
+export * from "./sim/crews.ts";
 export * from "./sim/assignment.ts";
 export * from "./sim/wo_state_machine.ts";
 export * from "./sim/economy.ts";

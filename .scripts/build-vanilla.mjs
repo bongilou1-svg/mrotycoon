@@ -2435,6 +2435,54 @@ function renderOfficeManagement(){
   return h;
 }
 
+function renderCrews(){
+  var crews = game.crews || [];
+  var mechs = game.mechanics;
+  var mById = function(id){ return mechs.find(function(m){ return m.id===id; }); };
+  var inCrew = {};
+  crews.forEach(function(c){ c.officerIds.concat(c.helperIds).forEach(function(id){ inCrew[id]=true; }); });
+  var freeOfficers = mechs.filter(function(m){ return (m.base==="B1"||m.base==="B2") && !m.isLeadForeman && !inCrew[m.id]; });
+  var freeHelpers = mechs.filter(function(m){ return m.base===null && !m.isLeadForeman && !inCrew[m.id]; });
+  var h = '<h3 style="margin-top:0">🚐 Cuadrillas</h3>';
+  h += '<p class="muted" style="margin-bottom:.6rem;font-size:.88rem">Compón tus cuadrillas: cada una lleva uno o dos oficiales (B1/B2) y uno o dos helpers, y viaja en su propia furgoneta. Mandas la cuadrilla entera a un avión y se desplazan juntos.</p>';
+  h += '<button class="primary" data-crew-new="1" style="margin-bottom:.8rem">＋ Nueva cuadrilla</button>';
+  if (crews.length===0) h += '<div class="empty">Sin cuadrillas. Crea una y añádele un oficial + helpers.</div>';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:.8rem">';
+  for (var i=0;i<crews.length;i++){
+    var c = crews[i];
+    var colorHex = '#' + (c.color>>>0).toString(16).padStart(6,'0');
+    var memberMechs = c.officerIds.concat(c.helperIds).map(mById).filter(Boolean);
+    var busy = memberMechs.some(function(m){ return m.state==="Working"||m.state==="ToPlane"||m.state==="Returning"; });
+    var salary = memberMechs.reduce(function(s,m){ return s + S.effectiveWeeklySalary(m); }, 0);
+    var chip = function(id, role){
+      var m = mById(id); if(!m) return '';
+      var lbl = role==="officer" ? (m.base||"?") : "H";
+      return '<span style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:.15rem .5rem;margin:.15rem">'+esc(m.name)+' <span class="muted" style="font-size:.7rem">'+lbl+'</span> <button data-crew-remove="'+c.id+':'+m.id+'" title="Quitar" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700;padding:0 .1rem">×</button></span>';
+    };
+    var officersHtml = c.officerIds.map(function(id){ return chip(id,"officer"); }).join('') || '<span class="muted" style="font-size:.8rem">—</span>';
+    var helpersHtml = c.helperIds.map(function(id){ return chip(id,"helper"); }).join('') || '<span class="muted" style="font-size:.8rem">—</span>';
+    var warn = c.officerIds.length===0 ? '<div style="color:var(--warn);font-size:.78rem;margin-top:.3rem">⚠️ Sin oficial: no puede certificar trabajos.</div>' : '';
+    var addOfficer = (c.officerIds.length<2 && freeOfficers.length>0) ? '<select data-crew-add="'+c.id+':officer" style="flex:1;min-width:120px"><option value="">＋ oficial…</option>'+freeOfficers.map(function(m){ return '<option value="'+m.id+'">'+esc(m.name)+' ('+m.base+')</option>'; }).join('')+'</select>' : '';
+    var addHelper = (c.helperIds.length<2 && freeHelpers.length>0) ? '<select data-crew-add="'+c.id+':helper" style="flex:1;min-width:120px"><option value="">＋ helper…</option>'+freeHelpers.map(function(m){ return '<option value="'+m.id+'">'+esc(m.name)+'</option>'; }).join('')+'</select>' : '';
+    h += '<div style="border:1px solid var(--border);border-left:4px solid '+colorHex+';border-radius:8px;padding:.7rem;background:var(--panel)">'
+      + '<header style="display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.4rem">'
+      +   '<span style="display:flex;align-items:center;gap:.4rem"><span style="width:14px;height:14px;border-radius:3px;background:'+colorHex+';display:inline-block"></span><strong>'+esc(c.name)+'</strong></span>'
+      +   '<span style="display:flex;align-items:center;gap:.5rem"><span class="'+(busy?'':'muted')+'" style="font-size:.75rem">'+(busy?'🚐 en ruta/trabajo':'en oficina')+'</span><button data-crew-delete="'+c.id+'" title="Eliminar cuadrilla" style="background:none;border:none;color:var(--bad);cursor:pointer">🗑</button></span>'
+      + '</header>'
+      + '<div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Oficiales</div><div style="min-height:1.7rem">'+officersHtml+'</div>'
+      + '<div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:.3rem">Helpers</div><div style="min-height:1.7rem">'+helpersHtml+'</div>'
+      + warn
+      + '<div style="display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap">'+addOfficer+addHelper+'</div>'
+      + '<div class="muted" style="font-size:.75rem;margin-top:.4rem">'+memberMechs.length+' pers · '+(salary/1000).toFixed(1)+'k €/sem</div>'
+      + '</div>';
+  }
+  h += '</div>';
+  if (freeOfficers.length || freeHelpers.length){
+    h += '<div class="muted" style="margin-top:.8rem;font-size:.82rem">Sin asignar: '+freeOfficers.length+' oficial(es) · '+freeHelpers.length+' helper(s). Añádelos a una cuadrilla.</div>';
+  }
+  return h;
+}
+
 function renderOffice(){
   const mechs = game.mechanics;
   const cap = S.MECHANIC_CAP_INITIAL ?? 5;
@@ -2470,6 +2518,7 @@ function renderOffice(){
   const candCount = (game.candidates ?? []).length;
   h += \`<div class="subtabs" style="display:flex;gap:.5rem;margin-bottom:.75rem;border-bottom:1px solid var(--border);padding-bottom:.4rem">
     <button class="subtab\${officeSubtab === 'team' ? ' active' : ''}" data-office-subtab="team" style="padding:.3rem .8rem;background:\${officeSubtab === 'team' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'team' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">👷 Equipo</button>
+    <button class="subtab\${officeSubtab === 'crews' ? ' active' : ''}" data-office-subtab="crews" style="padding:.3rem .8rem;background:\${officeSubtab === 'crews' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'crews' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">🚐 Cuadrillas <span class="badge" style="margin-left:.3rem">\${(game.crews||[]).length}</span></button>
     <button class="subtab\${officeSubtab === 'hiring' ? ' active' : ''}" data-office-subtab="hiring" style="padding:.3rem .8rem;background:\${officeSubtab === 'hiring' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'hiring' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">🤝 Contratación <span class="badge" style="margin-left:.3rem">\${candCount}</span></button>
     <button class="subtab\${officeSubtab === 'management' ? ' active' : ''}" data-office-subtab="management" style="padding:.3rem .8rem;background:\${officeSubtab === 'management' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'management' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">⚙️ Management</button>
   </div>\`;
@@ -2481,6 +2530,11 @@ function renderOffice(){
   // Subseción "Management" = normas operativas de la oficina
   if (officeSubtab === "management") {
     h += renderOfficeManagement();
+    return h;
+  }
+  // Subseción "Cuadrillas" = composición manual de equipos (oficial + helpers, una furgo c/u)
+  if (officeSubtab === "crews") {
+    h += renderCrews();
     return h;
   }
   // === Resto = subseción "Equipo" === (rediseño CIC 2026-05-30: tiles + bandas + mcards)
@@ -5096,6 +5150,19 @@ document.body.addEventListener("click", (e) => {
     render();
     return;
   }
+  if (e.target.dataset.crewNew) {
+    const rc = S.createCrew(game.crews); game.crews = rc.crews;
+    invalidatePanelCache(); render(); return;
+  }
+  if (e.target.dataset.crewDelete) {
+    game.crews = S.deleteCrew(game.crews, e.target.dataset.crewDelete);
+    invalidatePanelCache(); render(); return;
+  }
+  if (e.target.dataset.crewRemove) {
+    const prt = e.target.dataset.crewRemove.split(":");
+    game.crews = S.removeCrewMember(game.crews, prt[0], prt[1]);
+    invalidatePanelCache(); render(); return;
+  }
 });
 
 document.body.addEventListener("change", (e) => {
@@ -5104,6 +5171,16 @@ document.body.addEventListener("change", (e) => {
     if (!r.ok) alert("No se puede cambiar turno: " + (r.error ?? ""));
     invalidatePanelCache();
     render();
+    return;
+  }
+  if (e.target.dataset.crewAdd) {
+    const mid = e.target.value;
+    if (mid) {
+      const pa = e.target.dataset.crewAdd.split(":");
+      const ra = S.addCrewMember(game.crews, game.mechanics, pa[0], mid, pa[1]);
+      if (ra.error) alert(ra.error); else game.crews = ra.crews;
+      invalidatePanelCache(); render();
+    }
     return;
   }
   if (e.target.id === "sel-cert") { manualCertId = e.target.value; invalidateModalCache(); render(); }

@@ -63,3 +63,55 @@ export function buildDefaultCrews(mechanics: Mechanic[]): Crew[] {
   }
   return crews;
 }
+
+// ── Mutaciones puras (la UI hace game.crews = resultado) ──────────────────────────────
+
+/** Crea una cuadrilla nueva vacía. Devuelve el array nuevo + el id creado. */
+export function createCrew(crews: Crew[]): { crews: Crew[]; crewId: string } {
+  const id = nextCrewId(crews);
+  const crew: Crew = { id, name: defaultCrewName(crews.length), officerIds: [], helperIds: [], color: CREW_COLORS[crews.length % CREW_COLORS.length] };
+  return { crews: [...crews, crew], crewId: id };
+}
+
+/** Elimina una cuadrilla (sus miembros quedan libres). */
+export function deleteCrew(crews: Crew[], crewId: string): Crew[] {
+  return crews.filter((c) => c.id !== crewId);
+}
+
+/** Renombra una cuadrilla (máx 40 chars). */
+export function renameCrew(crews: Crew[], crewId: string, name: string): Crew[] {
+  return crews.map((c) => (c.id === crewId ? { ...c, name: name.slice(0, 40) } : c));
+}
+
+/** Añade un mecánico como oficial o helper. Valida: no en otra cuadrilla, oficial = base B1/B2,
+ *  máx 2 oficiales + 2 helpers, lead foreman no asignable. Devuelve {crews, error?}. */
+export function addCrewMember(
+  crews: Crew[],
+  mechanics: Mechanic[],
+  crewId: string,
+  mechanicId: string,
+  role: "officer" | "helper",
+): { crews: Crew[]; error?: string } {
+  const crew = crews.find((c) => c.id === crewId);
+  if (!crew) return { crews, error: "Cuadrilla no encontrada" };
+  const mech = mechanics.find((m) => m.id === mechanicId);
+  if (!mech) return { crews, error: "Mecánico no encontrado" };
+  if (mech.isLeadForeman) return { crews, error: "El Lead Foreman no se asigna a cuadrillas" };
+  if (findCrewOfMechanic(crews, mechanicId)) return { crews, error: "Ese mecánico ya está en una cuadrilla" };
+  if (role === "officer") {
+    if (mech.base !== "B1" && mech.base !== "B2") return { crews, error: "El oficial debe ser B1 o B2" };
+    if (crew.officerIds.length >= 2) return { crews, error: "Máximo 2 oficiales por cuadrilla" };
+    return { crews: crews.map((c) => (c.id === crewId ? { ...c, officerIds: [...c.officerIds, mechanicId] } : c)) };
+  }
+  if (crew.helperIds.length >= 2) return { crews, error: "Máximo 2 helpers por cuadrilla" };
+  return { crews: crews.map((c) => (c.id === crewId ? { ...c, helperIds: [...c.helperIds, mechanicId] } : c)) };
+}
+
+/** Quita un mecánico de una cuadrilla (de oficiales o helpers). */
+export function removeCrewMember(crews: Crew[], crewId: string, mechanicId: string): Crew[] {
+  return crews.map((c) =>
+    c.id === crewId
+      ? { ...c, officerIds: c.officerIds.filter((x) => x !== mechanicId), helperIds: c.helperIds.filter((x) => x !== mechanicId) }
+      : c,
+  );
+}
