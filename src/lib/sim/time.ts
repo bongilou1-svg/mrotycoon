@@ -5,7 +5,8 @@
 // El tick lo dispara el caller (UI con setInterval o test con loop manual).
 // Cada tick avanza N minutos según el speed.
 
-export type Speed = 0 | 1 | 2 | 5;
+// Speed 12 (Dani 2026-06-03): "ultrarrápido", 1 hora de juego ≈ 5 s reales (12 min/s a tick 100ms).
+export type Speed = 0 | 1 | 2 | 5 | 12;
 
 export interface ClockState {
   /** Minutos absolutos desde inicio de partida (0 = 01/01 06:00 de arranque). */
