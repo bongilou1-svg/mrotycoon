@@ -1,12 +1,13 @@
 // Motor de tiempo del juego. Funciones puras + estado serializable.
 // El "minuto" es la unidad temporal. Día = 1440 min. Semana = 10080 min.
-// Speed: 0 (pause), 1 (1 min real = 1 min ingame), 2, 5.
+// Speed: 0 (pausa), 1, 5, 10, 25. A 1x, 1 min de juego = 1 segundo real.
 //
 // El tick lo dispara el caller (UI con setInterval o test con loop manual).
 // Cada tick avanza N minutos según el speed.
 
-// Speed 12 (Dani 2026-06-03): "ultrarrápido", 1 hora de juego ≈ 5 s reales (12 min/s a tick 100ms).
-export type Speed = 0 | 1 | 2 | 5 | 12;
+// Velocidades (Dani 2026-06-03): a 1x, 1 min de juego = 1 s real (tick 100ms · ver build-vanilla).
+// 1x=1min/s · 5x=12s/hora · 10x=6s/hora · 25x≈2,4s/hora.
+export type Speed = 0 | 1 | 5 | 10 | 25;
 
 export interface ClockState {
   /** Minutos absolutos desde inicio de partida (0 = 01/01 06:00 de arranque). */

@@ -1585,7 +1585,7 @@ export function rejectContractOffer(g: GameState, contractId: string): void {
   g.contracts = rejectOffer(g.contracts, contractId);
 }
 
-export function setGameSpeed(g: GameState, speed: 0 | 1 | 2 | 5 | 12): void {
+export function setGameSpeed(g: GameState, speed: 0 | 1 | 5 | 10 | 25): void {
   g.clock = { ...g.clock, speed };
 }
 

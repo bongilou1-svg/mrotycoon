@@ -1194,9 +1194,9 @@ const BODY = `<div class="app">
         <button id="btn-autopause" title="Auto-pausa en eventos críticos (AOG / Critical)"><svg viewBox="0 0 24 24"><path d="M6 8.5a6 6 0 0 1 12 0c0 6 2.5 4.5 2.5 8.5H3.5c0-4 2.5-2.5 2.5-8.5"/><path d="M10.5 20a1.6 1.6 0 0 0 3 0"/></svg></button>
         <button data-speed="0" class="active" title="Pausa"><svg viewBox="0 0 24 24"><path d="M8.5 5.5v13M15.5 5.5v13"/></svg></button>
         <button data-speed="1" title="Velocidad normal (1 min = 1 s)">1×</button>
-        <button data-speed="2" title="Rápido (2×)">2×</button>
-        <button data-speed="5" title="Muy rápido (5×)">5×</button>
-        <button data-speed="12" title="Ultrarrápido (12× · 1 hora ≈ 5 s)">12×</button>
+        <button data-speed="5" title="Rápido (5× · 1 hora = 12 s)">5×</button>
+        <button data-speed="10" title="Muy rápido (10× · 1 hora = 6 s)">10×</button>
+        <button data-speed="25" title="Ultrarrápido (25× · 1 hora ≈ 2,4 s)">25×</button>
       </div>
     </div>
   </header>
@@ -4341,11 +4341,11 @@ const TUT_STEPS = [
     allow: "#modal-content",
     cond: (g) => anyWoAssigned(g) },
   { phase: "En marcha", title: "Reanuda y observa el progreso",
-    body: "El mecánico ya trabaja. El reloj sigue en pausa — pulsa <strong>2×</strong> para reanudarlo y verás avanzar la barra de progreso del trabajo.",
+    body: "El mecánico ya trabaja. El reloj sigue en pausa — pulsa <strong>5×</strong> para reanudarlo y verás avanzar la barra de progreso del trabajo.",
     why: "Acelerar el tiempo muerto es clave, pero vigila que termine ANTES de la hora de salida del avión.",
-    target: ".speeds button[data-speed=\\"2\\"]", place: "bottom",
+    target: ".speeds button[data-speed=\\"5\\"]", place: "bottom",
     allow: ".speeds",
-    gate: ".speeds button[data-speed=\\"2\\"]" },
+    gate: ".speeds button[data-speed=\\"5\\"]" },
   { phase: "¡Cobrado!", title: "Has cerrado tu primer trabajo",
     body: "Trabajo completado a tiempo: has <strong>cobrado</strong> y tu reputación con Vueling sube. Míralo en tu balance (💰, arriba).",
     why: "Ese es el bucle completo: llega → arregla → despega. Repetirlo bien, jornada tras jornada, es ganar la partida.",
