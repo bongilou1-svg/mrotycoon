@@ -25,7 +25,7 @@ g1.autoPauseEnabled = false;
 for (let i = 0; i < 50; i++) advanceGame(g1, 30);
 
 const payload = serializeGame(g1);
-expect(payload.version === 17, "version=17 (ciclo de vida WO v2: fase Release + timestamps)");
+expect(payload.version === 18, "version=18 (cuadrillas)");
 expect(typeof payload.savedAt === "string", "savedAt presente");
 expect(payload.clock.minute === g1.clock.minute, `minuto guardado coincide (${payload.clock.minute})`);
 expect(payload.contracts.length === g1.contracts.length, "contratos guardados");
@@ -145,7 +145,7 @@ expect(gV7.useScheduleArrivals === false, `v7 sin flag → default false en v8 (
 const gWithSchedule = createGame(balance, airlines, templates, 42);
 gWithSchedule.useScheduleArrivals = true;
 const v8Payload = serializeGame(gWithSchedule);
-expect(v8Payload.version === 17, "v17 al serializar (ciclo de vida WO v2)");
+expect(v8Payload.version === 18, "v18 al serializar (cuadrillas)");
 expect(v8Payload.useScheduleArrivals === true, "v8 preserva flag true");
 const gV8 = deserializeGame(v8Payload, balance, airlines, templates);
 expect(gV8.useScheduleArrivals === true, "v8 round-trip preserva flag");
@@ -154,6 +154,18 @@ expect(gV8.useScheduleArrivals === true, "v8 round-trip preserva flag");
 const v7WithFlag = { ...payload, version: 7, useScheduleArrivals: true };
 const gV7WithFlag = deserializeGame(v7WithFlag, balance, airlines, templates);
 expect(gV7WithFlag.useScheduleArrivals === true, "v7 con flag → respetar (forward-compat reading)");
+
+// 6b. Cuadrillas (v18): round-trip + migración de saves sin crews.
+console.log("\n=== cuadrillas (v18) ===");
+expect(Array.isArray(g1.crews) && g1.crews.length > 0, `createGame crea cuadrillas por defecto (${g1.crews.length})`);
+expect(g1.crews.every((c) => c.officerIds.length >= 1), "cada cuadrilla tiene >=1 oficial");
+const gCrew = deserializeGame(serializeGame(g1), balance, airlines, templates);
+expect(gCrew.crews.length === g1.crews.length, "round-trip preserva nº de cuadrillas");
+expect(gCrew.crews[0].officerIds[0] === g1.crews[0].officerIds[0], "round-trip preserva composición");
+const noCrewPayload = { ...serializeGame(g1) };
+delete noCrewPayload.crews;
+const gMig = deserializeGame(noCrewPayload, balance, airlines, templates);
+expect(Array.isArray(gMig.crews) && gMig.crews.length > 0, `save sin crews → buildDefaultCrews (${gMig.crews.length})`);
 
 // 7. Corte v16: storage descarta saves contaminados pre-fix seeding (overnighters fantasma).
 //    El corte vive en la capa storage (load/hasSave), NO en deserializeGame (que sigue

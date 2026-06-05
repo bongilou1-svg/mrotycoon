@@ -2,7 +2,7 @@
 // Mantengo lógica pura aquí; la reactividad Svelte la lleva stores/game.ts.
 
 import type {
-  Airplane, Airline, Contract, Mechanic, WorkOrderInstance, WorkOrderTemplate, Balance, FleetAircraft,
+  Airplane, Airline, Contract, Mechanic, Crew, WorkOrderInstance, WorkOrderTemplate, Balance, FleetAircraft,
   CheckDefinition, MaintenanceCheckInstance, ComplianceState, Candidate, MroStage, ActiveBuild,
   RandomEvent, DepartureKPI, HoursKPI,
 } from "$lib/types";
@@ -72,6 +72,7 @@ import {
   ACTIVE_TRAINING_COST_EUR, tickShiftTransitions,
 } from "./sim/shifts.ts";
 import { generateInitialMechanics, generateInitialDualCandidates, eligibleCertifiers } from "./sim/mechanics.ts";
+import { buildDefaultCrews } from "./sim/crews.ts";
 import { assignMechanicsToWo, tickMechanicTravel } from "./sim/assignment.ts";
 import { computeStandTravelMinutes } from "./sim/travel.ts";
 import { tickAutoAssign, hasActiveLead, findHandoffReplacement } from "./sim/foreman.ts";
@@ -98,6 +99,8 @@ export interface GameState {
   contracts: Contract[];
   airlines: Airline[]; // referencia estática del data
   mechanics: Mechanic[];
+  /** Cuadrillas (crews) — oficial(es) + helpers, compuestas en la Oficina. Una furgo por cuadrilla. */
+  crews: Crew[];
   /** Flota persistente — matrículas vivas que acumulan FH+cycles. Sujeto de los A/C/D checks. */
   fleet: FleetAircraft[];
   airplanes: Airplane[];
@@ -280,6 +283,10 @@ export function createGame(
   const baseFleet = generateInitialFleet(rng, activeAirlines);
   const marketRng = createRng(seed + 3);
   const fleet = ageInitialFleet(marketRng, baseFleet);
+  const initialMechanics = generateInitialMechanics(rng, balance, {
+    linePool: lineMode,
+    specs: opts.airportPreset?.setup?.initialMechs,
+  });
   const g: GameState = {
     clock: createClock(undefined, 0), // arranca pausado en START_MINUTE (06:00 día 1)
     airlines,
@@ -290,10 +297,9 @@ export function createGame(
     contracts: initialContracts,
     // Pivot iteración 2026-05-25: si hay preset, generar mecs según specs.
     // Sino, comportamiento legacy (linePool si lineMode, sino pool tradicional).
-    mechanics: generateInitialMechanics(rng, balance, {
-      linePool: lineMode,
-      specs: opts.airportPreset?.setup?.initialMechs,
-    }),
+    mechanics: initialMechanics,
+    // Cuadrillas por defecto derivadas de la plantilla (el jugador las edita en la Oficina).
+    crews: buildDefaultCrews(initialMechanics),
     airplanes: [],
     workOrders: [],
     maintenanceChecks: [],

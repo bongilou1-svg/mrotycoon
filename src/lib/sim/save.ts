@@ -14,6 +14,7 @@ import { getMaintenanceCheckCounter, resetMaintenanceCheckCounter } from "./main
 import { getCandidateCounter, resetCandidateCounter } from "./labor.ts";
 import { migrateLegacyReputation } from "./reputation.ts";
 import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
+import { buildDefaultCrews } from "./crews.ts";
 
 /** v1 = pre-Fase3. v2 = añade fleet + aliCounter + AirplaneInstance.{instanceId,flightHoursThisLeg}.
  *  v3 = añade maintenanceChecks + mcCounter. v4 = añade compliance (Bloque J).
@@ -38,7 +39,9 @@ import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
 //  con esos campos undefined (el timeline los omite). No requiere lógica de migración; el
 //  bump invalida saves v16 en storage (MIN_COMPATIBLE_VERSION) por limpieza, no por
 //  incompatibilidad real — un save v16 deserializaría sin problema salvo por la política de purga.
-export const SAVE_VERSION = 17;
+// v18 = cuadrillas (2026-06-03): añade game.crews (oficial(es)+helpers por cuadrilla, una furgo
+//  cada una). Migración trivial: saves sin crews → buildDefaultCrews(mechanics) al deserializar.
+export const SAVE_VERSION = 18;
 
 export interface GameSavePayload {
   version: number;
@@ -101,6 +104,8 @@ export interface GameSavePayload {
   // Fase C (brief maestro): acumulador WOs de la semana en curso (eventos). Opcional: saves
   // viejos → defaults a cero (se pierde a lo sumo el conteo parcial de la semana en curso).
   weeklyWoStats?: { completed: number; late: number; failed: number };
+  // v18 (cuadrillas): oficial(es)+helpers por cuadrilla. Saves viejos → buildDefaultCrews al cargar.
+  crews?: GameState["crews"];
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -150,6 +155,7 @@ export function serializeGame(g: GameState): GameSavePayload {
     archive: g.archive, // v15: performance archive (Departed + WOs cerradas antiguas)
     standTravelMinutes: g.standTravelMinutes ?? {}, // INC3: viaje variable precomputado
     weeklyWoStats: g.weeklyWoStats ?? { completed: 0, late: 0, failed: 0 }, // Fase C
+    crews: g.crews, // v18: cuadrillas
   };
 }
 
@@ -256,5 +262,7 @@ export function deserializeGame(
     tierUpgradeLastTickMinute: payload.tierUpgradeLastTickMinute ?? 0,
     // v12 (pivot línea pura · Fase D): snapshot inicial vacío.
     lastWeeklyHoursSnapshot: payload.lastWeeklyHoursSnapshot ?? {},
+    // v18 (cuadrillas): saves viejos sin crews → derivar de la plantilla cargada.
+    crews: payload.crews ?? buildDefaultCrews(payload.mechanics),
   };
 }

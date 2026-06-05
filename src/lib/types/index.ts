@@ -23,6 +23,7 @@ export type {
 export type { Airline } from "./airline";
 export type { Contract, ContractStatus } from "./contract";
 export type { Mechanic, MechanicState, TypeRating, ShiftSlot } from "./mechanic";
+export type { Crew } from "./crew";
 export type { Balance } from "./balance";
 export type { FleetAircraft } from "./fleet";
 export type {
