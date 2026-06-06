@@ -4202,6 +4202,18 @@ function renderModal(){
     const deferTitle = mc ? \`Difiere la WO \${S.MEL_DEFERRAL_DAYS[mc]} días (libera mecánicos · vence con -10k € + -5 rep)\` : 'No diferible: AOG / Critical / sin MEL';
     inner += \`<div style="margin-top:1rem"><button id="btn-defer"\${!mc?' disabled':''} title="\${deferTitle}">📋 Diferir (MEL \${mc ?? '—'})</button></div>\`;
   } else {
+    // Cuadrillas: mandar una cuadrilla ENTERA de un golpe (oficial + helpers viajan juntos en su
+    // furgo). Cubre tanto Operaciones como el click en el avión del mapa (misma ficha de WO).
+    var crewsAvail = (game.crews||[]).filter(function(cr){ return cr.officerIds.length>0; });
+    if (crewsAvail.length){
+      inner += '<h4 style="margin-bottom:.3rem">🚐 Mandar cuadrilla</h4><div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem">';
+      for (var ci=0; ci<crewsAvail.length; ci++){
+        var cr = crewsAvail[ci];
+        var crHex = '#' + (cr.color>>>0).toString(16).padStart(6,'0');
+        inner += '<button data-assign-crew="'+cr.id+'" style="display:flex;align-items:center;gap:.4rem;padding:.3rem .6rem;border:1px solid var(--border);border-left:3px solid '+crHex+';border-radius:6px;background:var(--panel);cursor:pointer"><span style="width:10px;height:10px;border-radius:2px;background:'+crHex+';display:inline-block"></span>'+esc(cr.name)+' <span class="muted" style="font-size:.7rem">('+(cr.officerIds.length+cr.helperIds.length)+' pers)</span></button>';
+      }
+      inner += '</div><div class="muted" style="font-size:.75rem;margin-bottom:.6rem">…o asigna a mano:</div>';
+    }
     inner += '<h4>Asignar mecánicos</h4><label>Certifier (con type rating válido):</label><select id="sel-cert"><option value="">— elegir —</option>';
     for (const m of certs) {
       const available = m.state === "Idle";
@@ -5054,6 +5066,13 @@ document.body.addEventListener("click", (e) => {
     detailStandId = null;
     invalidateModalCache();
     render();
+    return;
+  }
+  const crewBtn = e.target.closest && e.target.closest("[data-assign-crew]");
+  if (crewBtn && selectedWoId) {
+    const r = S.assignCrewToWo(game, selectedWoId, crewBtn.dataset.assignCrew);
+    if (r.ok) { selectedWoId = null; invalidatePanelCache(); render(); }
+    else alert("No se puede mandar la cuadrilla: " + (r.error ?? "razón desconocida"));
     return;
   }
   if (e.target.id === "btn-assign" && selectedWoId && manualCertId) {
@@ -6215,6 +6234,27 @@ window.__mroDebug = {
       newGameStep=null; activeTab="map"; invalidatePanelCache?.(); render();
       return { seeded:true, crew:crew.id, members:memberIds.length, stand:sid };
     } catch(e){ return { error:String(e) }; }
+  },
+  // Abre la ficha de una WO SIN asignar (para ver/probar los botones de 'Mandar cuadrilla').
+  dbgOpenWo(simStandId){
+    try {
+      if (game.clock) game.clock.speed = 0;
+      var sid = simStandId || "H1-S1";
+      var ap = game.airplanes.find(function(a){ return a.status!=="Departed"; });
+      if (!ap) { ap = { instanceId:"DBG-AP-1", registration:"EC-DBG", model:"A320", engineVariant:"CFM56", contractId:(game.contracts[0]&&game.contracts[0].id)||"C-1", standId:sid, arrivalMinute:game.clock.minute-120, scheduledDepartureMinute:game.clock.minute+600, status:"OnGround", flightHoursThisLeg:2 }; game.airplanes.push(ap); }
+      else { ap.standId = sid; ap.arrivalMinute = game.clock.minute-120; ap.status="OnGround"; }
+      var wo = { instanceId:"DBG-WO-OPEN", templateId:game.templates[0].id, airplaneInstanceId:ap.instanceId, airplaneRegistration:ap.registration, emissionMinute:game.clock.minute, slaMinute:game.clock.minute+9999, phase:"ToPlane", phaseElapsedMinutes:0, assignedMechanicIds:[], scopeRevealed:true };
+      game.workOrders.push(wo);
+      selectedWoId = wo.instanceId; activeTab="operations"; newGameStep=null; invalidateModalCache?.(); invalidatePanelCache?.(); render();
+      return { woId: wo.instanceId, reqCat: game.templates[0].requiredCategory };
+    } catch(e){ return { error:String(e) }; }
+  },
+  // Lectura de depuración: mecánicos asignados a una WO (para verificar el dispatch de cuadrilla).
+  woMechs(woId){
+    var wo = game.workOrders.find(function(w){ return w.instanceId===woId; });
+    if (!wo) return { error:"no wo" };
+    var names = wo.assignedMechanicIds.map(function(id){ var m=game.mechanics.find(function(x){return x.id===id;}); return m?m.name:id; });
+    return { assigned: wo.assignedMechanicIds.length, names: names, phase: wo.phase };
   },
   // Centra la cámara en la posición REAL del furgo (la que pintó renderF5DScaffold), con zoom
   // dado. Así no hay que adivinar coords: enfoca exactamente donde está el furgo.
