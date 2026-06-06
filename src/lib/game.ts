@@ -1609,6 +1609,35 @@ export function assignMechanicsManually(
   return { ok: true };
 }
 
+/** Dispatch de una CUADRILLA entera a una WO (Dani 2026-06-03). Certifier = oficial de la
+ *  cuadrilla con type rating válido para el avión + categoría requerida e Idle; el resto de la
+ *  cuadrilla (otro oficial + helpers) viajan como helpers (máx 2, solo Idle). Así la cuadrilla
+ *  viaja junta en su furgoneta. Devuelve {ok,error}. */
+export function assignCrewToWo(g: GameState, woInstanceId: string, crewId: string): { ok: boolean; error?: string } {
+  const crew = g.crews.find((c) => c.id === crewId);
+  if (!crew) return { ok: false, error: "Cuadrilla no encontrada" };
+  const wo = g.workOrders.find((w) => w.instanceId === woInstanceId);
+  if (!wo) return { ok: false, error: "WO no encontrada" };
+  if (wo.assignedMechanicIds.length > 0) return { ok: false, error: "La WO ya tiene equipo" };
+  const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
+  if (!ap) return { ok: false, error: "Avión no encontrado" };
+  const tpl = g.templates.find((t) => t.id === wo.templateId);
+  if (!tpl) return { ok: false, error: "Plantilla de WO no encontrada" };
+  const byId = (id: string): Mechanic | undefined => g.mechanics.find((m) => m.id === id);
+  const officers = crew.officerIds.map(byId).filter((m): m is Mechanic => !!m);
+  const certifier = officers.find((m) => m.state === "Idle" && m.typeRatings.some(
+    (r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === tpl.requiredCategory,
+  ));
+  if (!certifier) return { ok: false, error: `La cuadrilla no tiene un oficial ${tpl.requiredCategory} habilitado para ${ap.model}/${ap.engineVariant} disponible` };
+  const rest = [...crew.officerIds, ...crew.helperIds].filter((id) => id !== certifier.id);
+  const helperIds = rest.filter((id) => byId(id)?.state === "Idle").slice(0, 2);
+  const res = assignMechanicsToWo(g.mechanics, g.workOrders, woInstanceId, certifier.id, helperIds, g.balance, g.clock.minute, g.standTravelMinutes ?? {});
+  if (res.error) return { ok: false, error: res.error };
+  g.mechanics = res.mechanics;
+  g.workOrders = res.workOrders;
+  return { ok: true };
+}
+
 /**
  * Acción del jugador: contratar un candidato. Paga signing bonus, mueve a mechanics, retira del pool.
  * Devuelve {ok:false} si el candidato no existe o no se puede pagar.

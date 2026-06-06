@@ -6181,6 +6181,41 @@ window.__mroDebug = {
       return { seeded: true, stand: sid, mech: m?.id, wo: wo.instanceId, apReg: ap.registration };
     } catch(e){ return { error: String(e) }; }
   },
+  // Siembra una CUADRILLA entera (oficial + helpers) viajando/trabajando para VER la furgo por
+  // cuadrilla en el mapa. mode "transit"|"working". crewId opcional (default: 1ª cuadrilla).
+  seedCrew(crewId, simStandId, mode){
+    try {
+      try { S.setGameSpeed(game, 0); } catch(e){}
+      if (game.clock) game.clock.speed = 0;
+      var sid = simStandId || "H1-S1";
+      var vanMode = mode || "transit";
+      var crew = (game.crews||[]).find(function(c){ return c.id===crewId; }) || (game.crews||[])[0];
+      if (!crew) return { error: "no crews" };
+      var ap = game.airplanes.find(function(a){ return a.standId===sid && a.status!=="Departed"; });
+      if (!ap) { ap = game.airplanes.find(function(a){ return a.status!=="Departed"; }); if (ap) ap.standId = sid; }
+      if (!ap) {
+        ap = { instanceId:"DBG-AP-1", registration:"EC-DBG", model:"A320", engineVariant:"CFM56", contractId:(game.contracts[0]&&game.contracts[0].id)||"C-1", standId:sid, arrivalMinute:game.clock.minute, scheduledDepartureMinute:game.clock.minute+600, status:"OnGround", flightHoursThisLeg:2 };
+        game.airplanes.push(ap);
+      }
+      ap.arrivalMinute = game.clock.minute - 120; ap.status = "OnGround";
+      var wo = game.workOrders.find(function(w){ return w.airplaneInstanceId===ap.instanceId && w.phase!=="Completed" && w.phase!=="Failed"; });
+      if (!wo) {
+        var tpl = game.templates[0];
+        wo = { instanceId:"DBG-WO-1", templateId:tpl.id, airplaneInstanceId:ap.instanceId, airplaneRegistration:ap.registration, emissionMinute:game.clock.minute, slaMinute:game.clock.minute+9999, phase:"ToPlane", phaseElapsedMinutes:0, assignedMechanicIds:[], scopeRevealed:true };
+        game.workOrders.push(wo);
+      }
+      if (vanMode === "working") wo.phase = "MainTask";
+      var memberIds = crew.officerIds.concat(crew.helperIds).slice(0,3);
+      wo.assignedMechanicIds = memberIds;
+      var stm = game.standTravelMinutes; var travel = (stm && stm[sid]) ? stm[sid] : (game.balance.officeToStandMinutes||2);
+      memberIds.forEach(function(id){
+        var mm = game.mechanics.find(function(x){ return x.id===id; });
+        if (mm){ mm.state = vanMode==="working" ? "Working" : "ToPlane"; mm.assignedWoInstanceId = wo.instanceId; mm.assignedCheckInstanceId=null; mm.stateRemainingMinutes = vanMode==="working"?0:travel*0.5; }
+      });
+      newGameStep=null; activeTab="map"; invalidatePanelCache?.(); render();
+      return { seeded:true, crew:crew.id, members:memberIds.length, stand:sid };
+    } catch(e){ return { error:String(e) }; }
+  },
   // Centra la cámara en la posición REAL del furgo (la que pintó renderF5DScaffold), con zoom
   // dado. Así no hay que adivinar coords: enfoca exactamente donde está el furgo.
   focusVan(zoom){

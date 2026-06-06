@@ -9,6 +9,7 @@ import { currentStands } from "../sim/stands.ts";
 import { runwayClosedAt } from "../sim/events.ts";
 import { DAY_MINUTES } from "../sim/time.ts";
 import { getFlightsForGameDay } from "../sim/schedule.ts";
+import { findCrewOfMechanic } from "../sim/crews.ts";
 import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay, AirplaneDisplayState } from "./types.ts";
 
 /** Pivot iteración 2026-05-25: ya NO una constante fija. Los passthrough usan TODOS los
@@ -184,12 +185,14 @@ export function buildRenderState(g: GameState): RenderState {
     } else if (m.state === "Working") {
       progress = 1;
     }
+    const crew = findCrewOfMechanic(g.crews, m.id);
     return {
       id: m.id,
       name: m.name,
       state: m.state,
       destStandId,
       progress,
+      ...(crew ? { crewId: crew.id, crewColor: crew.color } : {}),
     };
   });
 

@@ -95,6 +95,10 @@ export interface RenderMechanic {
   /** P-γ: 0..1 — progreso del trayecto del furgo. ToPlane: 0=oficina, 1=stand. Returning:
    *  igual pero el driver invierte el path. Working: 1 (en stand). Otros estados: 0. */
   progress: number;
+  /** Cuadrilla del mecánico (si pertenece a una). El driver dibuja UNA furgo por cuadrilla. */
+  crewId?: string;
+  /** Color de la furgoneta de la cuadrilla (0xRRGGBB) para distinguirlas en el mapa. */
+  crewColor?: number;
 }
 
 export interface RenderState {

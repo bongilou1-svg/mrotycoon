@@ -3019,7 +3019,16 @@ export class PixiDriver {
       }
     };
 
+    // UNA furgoneta por CUADRILLA: agrupamos los mecánicos en tránsito/trabajando por crewId (los de
+    // una cuadrilla viajan juntos → comparten dest/estado/progress). Sin cuadrilla → furgo individual.
+    const vanGroups = new Map<string, RenderMechanic>();
     for (const m of state.mechanics) {
+      if (m.state === "ToPlane" || m.state === "Returning" || (m.state === "Working" && m.destStandId)) {
+        const key = m.crewId || ("solo:" + m.id);
+        if (!vanGroups.has(key)) vanGroups.set(key, m);
+      }
+    }
+    for (const m of vanGroups.values()) {
       const st = m.state;
       if (st === "ToPlane" || st === "Returning") {
         // (2) TRÁNSITO: oficina ↔ stand pasando por el punto tránsito. progress 0..1.
@@ -3040,7 +3049,9 @@ export class PixiDriver {
           ang = Math.atan2(sw.y - transitW.y, sw.x - transitW.x);
         }
         if (returning) ang += Math.PI;
-        drawVan(px, py, ang, returning ? 0x3d6f9d : 0xf5b945, returning ? "a ofi" : ("a " + code));
+        // Color de la furgo = color de la cuadrilla (cae a ámbar/gris si va sin cuadrilla).
+        const col = m.crewColor ?? (returning ? 0x3d6f9d : 0xf5b945);
+        drawVan(px, py, ang, col, returning ? "a ofi" : ("a " + code));
       } else if (st === "Working" && m.destStandId) {
         // (3) PEGADO AL STAND: al lado del avión, sin solaparse, lado contrario a la pista.
         const code = PixiDriver.F5D_STAND_CODE[m.destStandId];
@@ -3052,16 +3063,32 @@ export class PixiDriver {
         const OFF = 42; // separación furgo↔centro stand (el avión + matrícula ocupan el centro)
         const px = sw.x + dx * OFF, py = sw.y + dy * OFF;
         const ang = Math.atan2(-dy, -dx); // mirando hacia el avión
-        drawVan(px, py, ang, 0xf5b945, null);
+        drawVan(px, py, ang, m.crewColor ?? 0xf5b945, null);
       }
-      // (1) OFICINA: Idle/OffShift → no dibujamos N furgos amontonados; un solo furgo "flota"
-      // en la oficina solo si NADIE está en tránsito/working (se gestiona abajo).
     }
-    // (1) OFICINA: si no hay ningún mec en tránsito/working, un furgo en reposo en la oficina.
+    // (1) OFICINA: furgonetas APARCADAS — una por cuadrilla cuyos miembros están TODOS en oficina,
+    // en fila para no solaparse (así se ven "tantas furgos como cuadrillas").
     {
-      const busy = state.mechanics.some(m => m.state === "ToPlane" || m.state === "Returning" || (m.state === "Working" && m.destStandId));
-      if (!busy && state.mechanics.length > 0) {
-        drawVan(officeX, officeY, 0, 0x3d6f9d, null);
+      const crewBusy = new Map<string, boolean>();
+      const crewCol = new Map<string, number>();
+      for (const m of state.mechanics) {
+        if (!m.crewId) continue;
+        if (!crewBusy.has(m.crewId)) crewBusy.set(m.crewId, false);
+        if (m.crewColor !== undefined) crewCol.set(m.crewId, m.crewColor);
+        if (m.state === "ToPlane" || m.state === "Returning" || (m.state === "Working" && m.destStandId)) crewBusy.set(m.crewId, true);
+      }
+      let idx = 0;
+      for (const [cid, busy] of crewBusy) {
+        if (busy) continue; // su furgo está fuera (dibujada arriba)
+        const ox = officeX + ((idx % 3) - 1) * 22;
+        const oy = officeY + Math.floor(idx / 3) * 18;
+        drawVan(ox, oy, 0, crewCol.get(cid) ?? 0x3d6f9d, null);
+        idx++;
+      }
+      // Legacy / sin cuadrillas: si no hay crews y nadie ocupado, un furgo genérico en reposo.
+      if (crewBusy.size === 0) {
+        const busy = state.mechanics.some(m => m.state === "ToPlane" || m.state === "Returning" || (m.state === "Working" && m.destStandId));
+        if (!busy && state.mechanics.length > 0) drawVan(officeX, officeY, 0, 0x3d6f9d, null);
       }
     }
 
