@@ -1197,6 +1197,8 @@ const BODY = `<div class="app">
         <button data-speed="5" title="Rápido (5× · 1 hora = 12 s)">5×</button>
         <button data-speed="10" title="Muy rápido (10× · 1 hora = 6 s)">10×</button>
         <button data-speed="25" title="Ultrarrápido (25× · 1 hora ≈ 2,4 s)">25×</button>
+        <button data-speed="500" title="TEST (500× · 1 día ≈ 3 s)" style="opacity:.85">500×</button>
+        <button data-speed="5000" title="TEST máx (5000× · 1 día ≈ 0,3 s · si el PC lo aguanta)" style="opacity:.85">5000×</button>
       </div>
     </div>
   </header>

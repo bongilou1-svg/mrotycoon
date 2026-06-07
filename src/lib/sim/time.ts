@@ -6,8 +6,9 @@
 // Cada tick avanza N minutos según el speed.
 
 // Velocidades (Dani 2026-06-03): a 1x, 1 min de juego = 1 s real (tick 100ms · ver build-vanilla).
-// 1x=1min/s · 5x=12s/hora · 10x=6s/hora · 25x≈2,4s/hora.
-export type Speed = 0 | 1 | 5 | 10 | 25;
+// 1x=1min/s · 5x=12s/hora · 10x=6s/hora · 25x≈2,4s/hora. 500x/5000x = TEST (1 día ≈ 3s / ≈0,3s),
+// limitados por CPU; cada tick avanza speed*0.1 min (500x=50/tick, 5000x=500/tick < 1 día, seguro).
+export type Speed = 0 | 1 | 5 | 10 | 25 | 500 | 5000;
 
 export interface ClockState {
   /** Minutos absolutos desde inicio de partida (0 = 01/01 06:00 de arranque). */
