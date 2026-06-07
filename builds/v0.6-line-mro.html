@@ -1074,6 +1074,7 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
         <button class="icbtn" id="btn-save" title="Guardar partida"><svg class="tic" viewBox="0 0 24 24"><path d="M5 4h11l3.2 3.2V20H5Z"/><path d="M8 4v5h6.5V4"/><rect x="8" y="13" width="8" height="6.5"/></svg></button>
         <button class="icbtn" id="btn-load" title="Cargar partida"><svg class="tic" viewBox="0 0 24 24"><path d="M3.6 7.2A1.6 1.6 0 0 1 5.2 5.6h3.4l2 2.4h7.2a1.6 1.6 0 0 1 1.6 1.6V18a1.6 1.6 0 0 1-1.6 1.6H5.2A1.6 1.6 0 0 1 3.6 18Z"/></svg></button>
         <button class="icbtn" id="btn-new" title="Nueva partida"><svg class="tic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg></button>
+        <button class="icbtn" id="btn-menu" title="Menú (pausa · guardar · volver al menú)"><svg class="tic" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.6V19.5h13V9.6"/><path d="M10 19.5v-5h4v5"/></svg></button>
         <button class="icbtn" id="btn-age-fleet" title="DEBUG: envejecer flota cerca de triggers A/C"><svg class="tic" viewBox="0 0 24 24"><path d="M14.7 6.3a3.6 3.6 0 0 0-4.9 4.2l-5.4 5.4a1.5 1.5 0 0 0 0 2.1l1.6 1.6a1.5 1.5 0 0 0 2.1 0l5.4-5.4a3.6 3.6 0 0 0 4.2-4.9l-2.4 2.4-2.6-.6-.6-2.6Z"/></svg></button>
         <span id="save-indicator" style="font-size:.7rem;color:#3fb950;align-self:center;margin-left:.25rem"></span>
       </div>
@@ -97566,6 +97567,10 @@ let manualCertId = "";
 let manualHelperIds = [];
 let hasSavedSlot = false;
 let saveIndicator = "";
+// Menú de pausa in-game (guardar / volver al menú principal), 2026-06-06. Estándar tipo
+// "todos los juegos". pmPrevSpeed recuerda la velocidad para Reanudar tras pausar.
+let pauseMenuOpen = false;
+let pmPrevSpeed = 0;
 // === Tutorial Rookie guiado (2026-05-30) ===
 // tutActive: el overlay de bloqueo + bocadillo están vivos. tutStep: índice en TUT_STEPS.
 // El tutorial fuerza los primeros clicks (guiado absoluto) hasta graduarse el día 3.
@@ -100957,6 +100962,10 @@ function render(){
   let msOverlay = document.getElementById("milestone-overlay-root");
   if (!msOverlay) { msOverlay = document.createElement("div"); msOverlay.id = "milestone-overlay-root"; document.body.appendChild(msOverlay); }
   msOverlay.innerHTML = (milestoneData && newGameStep === null && !(game.gameOver && game.gameOver.isOver) && !weeklyCloseData) ? renderMilestone() : "";
+  // Menú de pausa in-game (guardar / volver al menú). Por encima del juego, por debajo del wizard.
+  let pmOverlay = document.getElementById("pause-menu-overlay-root");
+  if (!pmOverlay) { pmOverlay = document.createElement("div"); pmOverlay.id = "pause-menu-overlay-root"; document.body.appendChild(pmOverlay); }
+  pmOverlay.innerHTML = (pauseMenuOpen && newGameStep === null && !(game.gameOver && game.gameOver.isOver)) ? renderPauseMenu() : "";
   document.getElementById("clock").textContent = fmtClock(game.clock.minute);
   document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
   const balEl = document.getElementById("bal");
@@ -101200,6 +101209,22 @@ document.body.addEventListener("click", (e) => {
   if (e.target.id === "btn-save") { doSave(); return; }
   if (e.target.id === "btn-load") { doLoad(); return; }
   if (e.target.id === "btn-new")  { doNewGame(); return; }
+  // Menú de pausa in-game
+  if (e.target.id === "btn-menu") { pauseMenuOpen = true; pmPrevSpeed = game.clock.speed; S.setGameSpeed(game, 0); invalidatePanelCache(); render(); return; }
+  if (e.target.closest("#pm-resume")) { pauseMenuOpen = false; if (pmPrevSpeed) S.setGameSpeed(game, pmPrevSpeed); render(); return; }
+  if (e.target.closest("#pm-save"))   { doSave(); return; }
+  if (e.target.closest("#pm-save-quit")) {
+    (async () => {
+      try { await S.getStorage().save(S.serializeGame(game)); hasSavedSlot = true; }
+      catch (err) { alert("Error al guardar: " + err.message); return; }
+      pauseMenuOpen = false; newGameStep = "intro"; saveIndicator = ""; render();
+    })();
+    return;
+  }
+  if (e.target.closest("#pm-quit")) {
+    if (!confirm("¿Volver al menú principal sin guardar? Se perderá el progreso desde el último guardado.")) return;
+    pauseMenuOpen = false; newGameStep = "intro"; render(); return;
+  }
   // Pivot iteración 2026-05-25 — New Game wizard handlers
   // Intro step
   if (e.target.closest("#ng-start")) { newGameStep = "airport"; render(); return; }
@@ -101621,6 +101646,26 @@ async function startGameFromPreset(presetFile) {
     // pequeño defer para asegurar que el DOM base está montado antes del overlay.
     setTimeout(() => startTutorial(), 50);
   }
+}
+
+/** Menú de pausa in-game (estándar): Reanudar · Guardar · Guardar y volver al menú · Volver sin
+ *  guardar. Overlay modal. Escrito con concatenación (no template literals) para el APP_JS. */
+function renderPauseMenu(){
+  var pmBtn = function(id, icon, label, sub, accent){
+    return '<button id="'+id+'" style="display:flex;align-items:center;gap:.7rem;width:100%;text-align:left;padding:.65rem .9rem;margin-bottom:.5rem;border:1px solid var(--border);border-radius:8px;background:'+(accent?'var(--accent)':'var(--panel)')+';color:'+(accent?'#fff':'var(--text)')+';cursor:pointer">'
+      + '<span style="font-size:1.2rem;width:1.5rem;text-align:center">'+icon+'</span>'
+      + '<span style="display:flex;flex-direction:column;line-height:1.2"><strong>'+label+'</strong>'+(sub?'<span style="font-size:.74rem;opacity:.75">'+sub+'</span>':'')+'</span></button>';
+  };
+  var h = '<div id="pm-backdrop" style="position:fixed;inset:0;background:rgba(6,10,18,.78);z-index:1000;display:flex;align-items:center;justify-content:center">';
+  h += '<div style="width:min(380px,92vw);background:linear-gradient(180deg,rgba(27,35,48,.98),rgba(18,23,32,.98));border:1px solid var(--border-strong);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.6);padding:1.2rem 1.2rem 1rem">';
+  h += '<h2 style="margin:0 0 .15rem;font-size:1.25rem">⏸ Pausa</h2>';
+  h += '<p style="margin:0 0 1rem;font-size:.8rem;opacity:.7">Día '+S.getDay(game.clock.minute)+' · '+S.formatClock(game.clock.minute).split("· ")[1]+' · '+game.economy.balance.toLocaleString("es-ES")+' €</p>';
+  h += pmBtn('pm-resume','▶','Reanudar','Volver al juego', true);
+  h += pmBtn('pm-save','💾','Guardar partida', saveIndicator==='saved'?'✓ Guardado':'Sobrescribe tu guardado', false);
+  h += pmBtn('pm-save-quit','🏠','Guardar y volver al menú','Guarda y sale al menú principal', false);
+  h += pmBtn('pm-quit','🚪','Volver al menú sin guardar','Descarta lo no guardado', false);
+  h += '</div></div>';
+  return h;
 }
 
 /** Renderiza overlay wizard New Game (full-screen, front-of-house responsive 2026-05-30). */
