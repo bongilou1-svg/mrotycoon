@@ -29,6 +29,8 @@ export interface RenderAirplane {
   standId: string | null;
   /** Aerolínea — para colorear el sprite. */
   airlineId: string;
+  /** Color de librea de la aerolínea (0xRRGGBB) — alas + cola del avioncito (Dani 2026-06-06). */
+  airlineColor?: number;
   status: "Idle" | "InMaintenance" | "Departed";
   /** Si pernocta — informativo para halos especiales. */
   overnight: boolean;
@@ -68,6 +70,8 @@ export interface RenderStand {
 export interface RenderPassthroughTraffic {
   callsign: string;
   airlineCode: string;
+  /** Color de librea de la aerolínea (0xRRGGBB) — alas + cola del avioncito. */
+  airlineColor?: number;
   /** OSM ref del parking position (e.g. "06", "08A"). Stands libres no usados por sim. */
   standOsmRef: string;
   /** Visualmente "rodando" tras aterrizaje — interpolación pista→stand. */

@@ -81,6 +81,17 @@ export function buildRenderState(g: GameState): RenderState {
     if (c.phase === "InProgress") inProgressCheckByReg.set(c.registration, c);
   }
 
+  // Color de librea por aerolínea (hex "#RRGGBB" → número) para pintar alas+cola del avioncito.
+  const airlineColById = new Map<string, number>();
+  const airlineColByCode = new Map<string, number>();
+  for (const a of g.airlines) {
+    const hex = (a as { color?: string }).color;
+    const num = hex ? parseInt(String(hex).replace(/^#/, ""), 16) : 0x3aa9ff;
+    airlineColById.set(a.id, num);
+    const code = (a as { iataCode?: string }).iataCode;
+    if (code) airlineColByCode.set(code, num);
+  }
+
   const airplanes: RenderAirplane[] = g.airplanes
     .filter((a) => a.arrivalMinute <= now && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now))
     .map((a) => {
@@ -119,6 +130,7 @@ export function buildRenderState(g: GameState): RenderState {
         registration: a.registration,
         standId: a.standId || null,
         airlineId: contract?.airlineId ?? "",
+        airlineColor: airlineColById.get(contract?.airlineId ?? ""),
         status: a.status,
         overnight: a.overnight ?? false,
         taxiing,
@@ -277,6 +289,7 @@ export function buildRenderState(g: GameState): RenderState {
         taxiProgress,
         notHandled: f.notHandled === true,
         contracted: contractsByCode.has(f.airlineCode),
+        airlineColor: airlineColByCode.get(f.airlineCode),
       });
     }
   }

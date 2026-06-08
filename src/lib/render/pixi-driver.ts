@@ -2532,13 +2532,14 @@ export class PixiDriver {
     // Escala contra-zoom compartida (legible a casi cualquier zoom) + avioncito vectorial,
     // usados tanto por los aviones en tránsito como por los parados.
     const vanScale = () => Math.max(0.7, Math.min(3.2, 1 / (this.camera?.zoom || 1))) * 1.5;
-    const drawPlane = (px: number, py: number, ang: number, col: number, reg: string | null) => {
+    // livery = color de la AEROLÍNEA (alas + cola); halo = color de estado (working/aog…) detrás.
+    const drawPlane = (px: number, py: number, ang: number, livery: number, halo: number, reg: string | null) => {
       const s = vanScale();
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: col, alpha: 0.12 }));
+      this.worldDynamic!.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: halo, alpha: 0.14 }));
       const pl = new Container();
-      pl.addChild(new Graphics().poly([-11, 2.5, 11, 2.5, 5.5, -1.5, -5.5, -1.5]).fill({ color: col, alpha: 0.95 })); // alas swept
-      pl.addChild(new Graphics().poly([-5, 8, 5, 8, 3, 5.5, -3, 5.5]).fill({ color: col, alpha: 0.95 }));            // estabilizador cola
-      pl.addChild(new Graphics().roundRect(-2.2, -9, 4.4, 17, 2.2).fill({ color: 0xe6f0fb }).stroke({ width: 1, color: col })); // fuselaje
+      pl.addChild(new Graphics().poly([-11, 2.5, 11, 2.5, 5.5, -1.5, -5.5, -1.5]).fill({ color: livery, alpha: 0.97 })); // alas = librea
+      pl.addChild(new Graphics().poly([-5, 8, 5, 8, 3, 5.5, -3, 5.5]).fill({ color: livery, alpha: 0.97 }));            // cola = librea
+      pl.addChild(new Graphics().roundRect(-2.2, -9, 4.4, 17, 2.2).fill({ color: 0xe6f0fb }).stroke({ width: 1, color: livery })); // fuselaje claro, borde librea
       pl.addChild(new Graphics().poly([-2.2, -8.5, 2.2, -8.5, 0, -11.5]).fill({ color: 0xe6f0fb }));                  // morro
       pl.addChild(new Graphics().circle(0, -6.5, 1).fill({ color: 0x0a1428, alpha: 0.85 }));                         // cockpit
       pl.position.set(px, py); pl.rotation = ang; pl.scale.set(s);
@@ -2822,7 +2823,7 @@ export class PixiDriver {
       // línea per-plane: con todo el tráfico serían demasiadas; el movimiento ya traza el camino.
       const at = transitAt(ap.taxiProgress, standPos);
       const col = PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
-      drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, col, ap.registration);
+      drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, ap.airlineColor ?? col, col, ap.registration);
     }
 
     // ── Aviones parados en stand · avioncito vectorial tamaño furgo + matrícula ──
@@ -2840,7 +2841,7 @@ export class PixiDriver {
 
       const planeCol = PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
       const planeAng = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - standPos.y, f5dRunwayMid.x - standPos.x) + Math.PI / 2 : 0;
-      drawPlane(standPos.x, standPos.y, planeAng, planeCol, ap.registration);
+      drawPlane(standPos.x, standPos.y, planeAng, ap.airlineColor ?? planeCol, planeCol, ap.registration);
 
       // Badge de tarea activa (vector, sin emoji): check > WO > daily. Esquina sup-dcha del avión.
       let badgeCol = 0;
@@ -2893,10 +2894,10 @@ export class PixiDriver {
       const col = PixiDriver.F5D_STAND_STATE_COL.idle; // todos igual (sin distinguir contrato)
       if (pt.taxiing) {
         const at = transitAt(pt.taxiProgress, pos);
-        drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, col, pt.callsign);
+        drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, pt.airlineColor ?? col, pt.airlineColor ?? col, pt.callsign);
       } else {
         const ang = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - pos.y, f5dRunwayMid.x - pos.x) + Math.PI / 2 : 0;
-        drawPlane(pos.x, pos.y, ang, col, pt.callsign);
+        drawPlane(pos.x, pos.y, ang, pt.airlineColor ?? col, pt.airlineColor ?? col, pt.callsign);
       }
     }
 
