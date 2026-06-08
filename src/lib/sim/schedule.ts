@@ -205,12 +205,14 @@ export function generateScheduledArrivals(
   // realidad aeropuertos regionales europeos: el último vuelo se queda hasta primera
   // hora del día siguiente.
   const overnightDepartureOffset = 30 + 6 * 60; // 06:30 día siguiente
-  const OVERNIGHT_THRESHOLD_MIN = 19 * 60; // 19:00
-  const lastArrivalByCode = new Map<string, number>();
+  // Realista (Dani 2026-06-06): pernocta toda llegada de aerolínea BASADA que NO tiene salida
+  // posterior ese día (el avión termina su jornada aquí y se queda). Necesitamos el ÚLTIMO
+  // departure por aerolínea del día.
+  const lastDepartureByCode = new Map<string, number>();
   for (const f of flights) {
-    if (f.type !== "arrival") continue;
-    const prev = lastArrivalByCode.get(f.airlineCode) ?? -1;
-    if (f.scheduledMinute > prev) lastArrivalByCode.set(f.airlineCode, f.scheduledMinute);
+    if (f.type !== "departure") continue;
+    const prev = lastDepartureByCode.get(f.airlineCode) ?? -1;
+    if (f.scheduledMinute > prev) lastDepartureByCode.set(f.airlineCode, f.scheduledMinute);
   }
   // Pivot iteración 2026-05-25: solo aerolíneas con BASE en este aeropuerto pernoctan.
   // Vueling/easyJet/Ryanair hacen turnaround corto en OVD aunque su último arrival sea
@@ -223,9 +225,12 @@ export function generateScheduledArrivals(
     if (code) baseByCode.set(code, bases.includes(airportIcao));
   }
   function isOvernightCandidate(f: { scheduledMinute: number; airlineCode: string }): boolean {
-    if (f.scheduledMinute < OVERNIGHT_THRESHOLD_MIN) return false;
-    if (lastArrivalByCode.get(f.airlineCode) !== f.scheduledMinute) return false;
-    return baseByCode.get(f.airlineCode) === true; // solo si la aerolínea tiene base aquí
+    if (baseByCode.get(f.airlineCode) !== true) return false; // solo aerolíneas con base aquí
+    // Sin salida posterior ese día → termina su jornada aquí y pernocta (1-2/noche reales en OVD
+    // según el snapshot). Sale a la mañana siguiente (06:30) → no queda varado. NO inflamos: solo
+    // marcamos bien cuáles se quedan según el propio schedule.
+    const lastDep = lastDepartureByCode.get(f.airlineCode) ?? -1;
+    return f.scheduledMinute > lastDep;
   }
 
   // Helper para encontrar el next departure pareja de un arrival (misma aerolínea,
