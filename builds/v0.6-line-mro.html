@@ -97570,15 +97570,21 @@ let saveIndicator = "";
 // "todos los juegos". pmPrevSpeed recuerda la velocidad para Reanudar tras pausar.
 let pauseMenuOpen = false;
 let pmPrevSpeed = 0;
-// === Popups de evento (Dani 2026-06-06) ===
-// Cada evento (callout, AOG, AOG evitable, release AOG, resolucion on-time/retraso) saca un modal
-// con el detalle, PAUSA el reloj y centra+zoom el mapa en el stand del evento. "No mostrar este
-// tipo" se recuerda (localStorage). Cola: un evento a la vez, "Entendido" pasa al siguiente.
+// === Popups de evento · ciclo de vida de la WO (Dani 2026-06-06 / refactor 2026-06-08) ===
+// Los pop-outs siguen el ciclo de vida REAL de la avería, en orden, un hito por popup:
+//   1) callout   → WO nueva, scope OCULTO (sabes el sistema ATA, no la avería todavía)
+//   2) mechanic  → la cuadrilla llega al avión (arrivalAtStand / fase Inspection)
+//   3) diagnosis → TSM cerrado, scope REVELADO (avería + tiempos estimados + ETD)
+//   4) release   → despacho (puntual / con retraso / release AOG)
+// Más AOG como interrupción (aog / aog-evitable al escalar por retraso). Cada evento PAUSA el reloj
+// y centra+zoom el mapa en el stand. "No mostrar este tipo" se recuerda (localStorage). Cola FIFO.
+// Tracking por WO (evWO[instanceId] = snapshot con matrícula SELLADA + flags de hito) → las
+// matrículas no se mezclan y el release sale solo de la WO trabajada (no de despegues sueltos).
 let eventQueue = [];     // [{type,title,icon,color,lines:[],standId}]
 let eventSkip = {};      // {tipo:true} persistido
 let evPrevSpeed = -1;    // velocidad antes de pausar por evento (-1 = no pausado por evento)
 let evCamDone = false;   // si ya enfoque el mapa para el evento actual
-let evWoIds = null, evAog = null, evDeparted = null; // trackers diff (null = 1er tick init)
+let evWO = null, evAog = null; // evWO: tracker por WO (null = 1er tick init) · evAog: aviones ya AOG
 try { const _es = (typeof localStorage !== "undefined") ? localStorage.getItem("mro_event_skip") : null; if (_es) eventSkip = JSON.parse(_es) || {}; } catch (e) {}
 function saveEventSkip(){ try { if (typeof localStorage !== "undefined") localStorage.setItem("mro_event_skip", JSON.stringify(eventSkip)); } catch (e) {} }
 // Coords OSM normalizadas de los 7 stands del juego (para centrar el mapa en el evento).
@@ -101688,35 +101694,86 @@ function focusMapOnStand(standId, tries){
 }
 function detectEvents(){
   var aps = game.airplanes;
-  var apById = new Map(aps.map(function(a){ return [a.instanceId, a]; }));
-  var woNonDC = game.workOrders.filter(function(w){ return !String(w.templateId || "").startsWith("DC-"); });
-  if (evWoIds === null){ // primer tick: solo inicializa trackers (no dispara eventos retro)
-    evWoIds = new Set(woNonDC.map(function(w){ return w.instanceId; }));
-    evAog = new Set(aps.filter(function(a){ return a.aogEscalated; }).map(function(a){ return a.instanceId; }));
-    evDeparted = new Set(aps.filter(function(a){ return a.actualDepartureMinute !== undefined; }).map(function(a){ return a.instanceId; }));
-    return;
-  }
+  var apById = {}; for (var x = 0; x < aps.length; x++) apById[aps[x].instanceId] = aps[x];
+  var woAll = game.workOrders.filter(function(w){ return !String(w.templateId || "").startsWith("DC-"); });
+  var woById = {}; for (var y = 0; y < woAll.length; y++) woById[woAll[y].instanceId] = woAll[y];
+  // Fases que IMPLICAN haber pasado un hito (excluyen Failed/Deferred a propósito: una WO que
+  // muere sin trabajarse NO debe disparar mecánico/diagnóstico/release falsos).
+  var afterTP = { Inspection: 1, MainTask: 1, Test: 1, Rework: 1, Release: 1, Completed: 1 };
+  var afterIns = { MainTask: 1, Test: 1, Rework: 1, Release: 1, Completed: 1 };
   var enq = function(ev){ if (!eventSkip[ev.type]) eventQueue.push(ev); };
   var alName = function(cid){ var c = game.contracts.find(function(k){ return k.id === cid; }); var al = c && game.airlines.find(function(a){ return a.id === c.airlineId; }); return al ? al.name : "—"; };
-  var hh = function(m){ var mod = ((Math.floor(m) % 1440) + 1440) % 1440; return String(Math.floor(mod / 60)).padStart(2, "0") + ":" + String(mod % 60).padStart(2, "0"); };
-  var openWO = function(apId){ return woNonDC.some(function(w){ return w.airplaneInstanceId === apId && w.phase !== "Completed" && w.phase !== "Failed"; }); };
-  for (var i = 0; i < woNonDC.length; i++){
-    var w = woNonDC[i];
-    if (evWoIds.has(w.instanceId)) continue;
-    var ap = apById.get(w.airplaneInstanceId);
+  var hh = function(m){ if (m == null) return "—"; var mod = ((Math.floor(m) % 1440) + 1440) % 1440; return String(Math.floor(mod / 60)).padStart(2, "0") + ":" + String(mod % 60).padStart(2, "0"); };
+  var ataNm = function(a){ try { return (S.DATA.ataChapters || {})[String(a)] || ""; } catch (e) { return ""; } };
+  var mechNames = function(ids){ if (!ids || !ids.length) return "sin asignar"; return ids.map(function(id){ var m = game.mechanics.find(function(k){ return k.id === id; }); return m ? m.name : id; }).join(", "); };
+  // Snapshot por WO: la matrícula se SELLA aquí (w.airplaneRegistration) → no se mezcla aunque el
+  // avión se reasigne/despegue. Todos los hitos de esta WO usan estos datos.
+  var snap = function(w){
+    var ap = apById[w.airplaneInstanceId];
     var tpl = game.templates.find(function(t){ return t.id === w.templateId; });
-    var reg = ap ? ap.registration : (w.airplaneRegistration || "?");
-    var base = ["Matrícula: " + reg + (ap ? " · " + ap.model + "/" + ap.engineVariant : ""), "Aerolínea: " + (ap ? alName(ap.contractId) : "—"), "Stand: " + (ap && ap.standId ? ap.standId : "—"), "Síntoma: " + String((tpl && tpl.description) || w.templateId).slice(0, 140)];
-    if (tpl && tpl.isAOG){
-      enq({ type: "aog", icon: "🛑", color: "#ff4757", title: "AOG · avión en tierra", standId: ap && ap.standId, lines: base.concat(["Severidad: AOG (no diferible) — penaliza fuerte si se retrasa", "Acción: asigna una cuadrilla YA"]) });
-    } else {
-      enq({ type: "callout", icon: "🔧", color: "#f5b945", title: "Callout · nueva avería", standId: ap && ap.standId, lines: base.concat([tpl ? ("Severidad: " + (tpl.severity || "normal")) : "", w.slaMinute ? ("Límite (SLA): " + hh(w.slaMinute)) : ""].filter(Boolean)) });
+    return { reg: w.airplaneRegistration || (ap && ap.registration) || "?",
+      model: ap ? ap.model : "", engine: ap ? ap.engineVariant : "", airline: ap ? alName(ap.contractId) : "—",
+      ata: tpl ? tpl.ata : 0, ataName: tpl ? ataNm(tpl.ata) : "", desc: tpl ? (tpl.name || tpl.description) : w.templateId,
+      sev: tpl ? (tpl.severity || "normal") : "normal", dur: tpl ? tpl.durationMinutes : 0, isAOG: !!(tpl && tpl.isAOG),
+      sla: w.slaMinute, etd: w.etdMinute, standId: (ap && ap.standId) || w.standId || null, fired: {} };
+  };
+  var fireRelease = function(s, w){
+    var delay = 0;
+    if (w && w.releaseMinute != null && s.etd != null) delay = Math.max(0, Math.floor(w.releaseMinute - s.etd));
+    else if (s.etd != null) delay = Math.max(0, Math.floor(game.clock.minute - s.etd));
+    if (s.isAOG) enq({ type: "release-aog", icon: "✅", color: "#3fb950", title: "Release · AOG despachado", standId: s.standId,
+      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Avería: " + s.desc, (delay > 0 ? ("Salió con " + delay + " min de retraso") : "A tiempo ✓"), "El avión vuelve a volar."] });
+    else if (delay > 0) enq({ type: "release-late", icon: "🕒", color: "#d29922", title: "Despacho con retraso", standId: s.standId,
+      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Trabajo: " + s.desc, "Retraso: " + delay + " min" + (delay >= 15 ? " (cuenta contra tu KPI)" : " (<15 min, no penaliza)")] });
+    else enq({ type: "release-ontime", icon: "🟢", color: "#3fb950", title: "Despacho puntual", standId: s.standId,
+      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Trabajo: " + s.desc, "Cerrada a tiempo ✓ — dispatch fiable"] });
+  };
+  if (evWO === null){ // 1er tick: baseline. Marca como ya-disparados los hitos alcanzados (no suelta historial).
+    evWO = {};
+    for (var b = 0; b < woAll.length; b++){ var wb = woAll[b]; var sb = snap(wb);
+      sb.fired.callout = true;
+      if (wb.arrivalAtStandMinute != null || afterTP[wb.phase]) sb.fired.mech = true;
+      if (wb.scopeRevealed || wb.tshootCompleteMinute != null || afterIns[wb.phase]) sb.fired.diag = true;
+      if (wb.phase === "Completed" || wb.releaseMinute != null) sb.fired.release = true;
+      evWO[wb.instanceId] = sb;
     }
+    evAog = new Set(aps.filter(function(a){ return a.aogEscalated; }).map(function(a){ return a.instanceId; }));
+    return;
   }
-  for (var j = 0; j < aps.length; j++){
-    var a = aps[j];
+  // Hitos por WO viva, EN ORDEN (callout → mecánico → diagnóstico → release). En fast-forward los
+  // timestamps se sellan todos en el mismo step → se encolan en secuencia.
+  for (var i = 0; i < woAll.length; i++){
+    var w = woAll[i];
+    var s = evWO[w.instanceId];
+    if (!s){ // 1) CALLOUT — scope OCULTO: sabes el sistema (ATA), no la avería todavía.
+      s = snap(w); evWO[w.instanceId] = s; s.fired.callout = true;
+      enq({ type: s.isAOG ? "aog-new" : "callout", icon: s.isAOG ? "🛑" : "🔧", color: s.isAOG ? "#ff4757" : "#f5b945",
+        title: s.isAOG ? "AOG entrante · avión en tierra" : "Callout · nuevo aviso", standId: s.standId,
+        lines: ["Matrícula: " + s.reg + (s.model ? " · " + s.model + "/" + s.engine : ""), "Aerolínea: " + s.airline, "Stand: " + (s.standId || "—"),
+          "Sistema: ATA " + s.ata + (s.ataName ? " · " + s.ataName : ""), "Diagnóstico: pendiente (a la espera del TSM)",
+          (s.sla != null ? ("Límite SLA: " + hh(s.sla)) : "")].filter(Boolean) });
+    }
+    if (!s.fired.mech && (w.arrivalAtStandMinute != null || afterTP[w.phase])){ // 2) MECÁNICO llega al avión.
+      s.fired.mech = true;
+      enq({ type: "mechanic", icon: "🧰", color: "#6dc7ff", title: "Cuadrilla en el avión", standId: s.standId,
+        lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Equipo: " + mechNames(w.assignedMechanicIds), "Inspección / diagnóstico en curso…"] });
+    }
+    if (!s.fired.diag && (w.scopeRevealed || w.tshootCompleteMinute != null || afterIns[w.phase])){ // 3) DIAGNÓSTICO (TSM): scope revelado.
+      s.fired.diag = true;
+      var hold = (s.etd != null) ? Math.floor(s.etd - game.clock.minute) : null;
+      enq({ type: "diagnosis", icon: "🔎", color: "#3aa9ff", title: "Diagnóstico cerrado · avería confirmada", standId: s.standId,
+        lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Avería: " + s.desc,
+          "ATA " + s.ata + (s.ataName ? " · " + s.ataName : "") + " · " + s.sev + (s.isAOG ? " · AOG" : ""),
+          "Tiempo estimado: " + s.dur + " min",
+          "ETD objetivo: " + hh(s.etd) + (hold != null ? (hold >= 0 ? " (holgura " + hold + " min)" : " (¡vencido " + Math.abs(hold) + " min!)") : "")] });
+    }
+    if (!s.fired.release && (w.phase === "Completed" || w.releaseMinute != null)){ s.fired.release = true; fireRelease(s, w); } // 4) RELEASE.
+  }
+  for (var id in evWO){ if (!woById[id]) delete evWO[id]; } // limpieza: WOs archivadas (ya soltaron release al completarse)
+  // AOG por escalado (interrupción, por avión — fuera del flujo normal).
+  for (var j = 0; j < aps.length; j++){ var a = aps[j];
     if (a.aogEscalated && !evAog.has(a.instanceId)){
-      var evit = openWO(a.instanceId);
+      var evit = woAll.some(function(w2){ return w2.airplaneInstanceId === a.instanceId && w2.phase !== "Completed" && w2.phase !== "Failed"; });
       enq({ type: evit ? "aog-evitable" : "aog", icon: evit ? "⛔" : "🛑", color: "#ff4757",
         title: evit ? "AOG EVITABLE · por tu gestión" : "AOG · escalado por retraso", standId: a.standId,
         lines: ["Matrícula: " + a.registration + " · " + a.model, "Aerolínea: " + alName(a.contractId), "Stand: " + (a.standId || "—"),
@@ -101725,22 +101782,7 @@ function detectEvents(){
           "Penalty AOG: -" + (S.AOG_ESCALATION_PENALTY_EUR || 90000).toLocaleString("es-ES") + " €"] });
     }
   }
-  for (var k = 0; k < aps.length; k++){
-    var d = aps[k];
-    if (d.actualDepartureMinute !== undefined && !evDeparted.has(d.instanceId)){
-      var delay = d.delayMinutes || 0;
-      if (d.aogEscalated){
-        enq({ type: "aog-release", icon: "✅", color: "#3fb950", title: "Release · AOG despachado", standId: d.standId, lines: ["Matrícula: " + d.registration + " · " + d.model, "Aerolínea: " + alName(d.contractId), "Salió con " + delay + " min de retraso", "El avión vuelve a volar."] });
-      } else if (delay > 0){
-        enq({ type: "resolve-late", icon: "🕒", color: "#d29922", title: "Despacho con retraso", standId: d.standId, lines: ["Matrícula: " + d.registration, "Aerolínea: " + alName(d.contractId), "Retraso: " + delay + " min" + (delay >= 15 ? " (cuenta contra tu KPI)" : " (<15 min, no penaliza)")] });
-      } else {
-        enq({ type: "resolve-ontime", icon: "🟢", color: "#3fb950", title: "Despacho puntual", standId: d.standId, lines: ["Matrícula: " + d.registration, "Aerolínea: " + alName(d.contractId), "A tiempo ✓ — dispatch fiable"] });
-      }
-    }
-  }
-  evWoIds = new Set(woNonDC.map(function(w){ return w.instanceId; }));
   evAog = new Set(aps.filter(function(a){ return a.aogEscalated; }).map(function(a){ return a.instanceId; }));
-  evDeparted = new Set(aps.filter(function(a){ return a.actualDepartureMinute !== undefined; }).map(function(a){ return a.instanceId; }));
 }
 function pumpEvents(){
   if (!eventQueue.length){
@@ -102595,7 +102637,21 @@ window.__mroDebug = {
   zoomOut(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomOut?.(); return mapDriver?.camera?.zoom; },
   fitAll(){ mapDriver?.fitAll?.(); return mapDriver?.camera?.zoom; },
   // Inyecta un evento de prueba (callout/aog/...) para verificar el popup + enfoque del mapa.
-  testEvent(type, standId){ eventQueue.push({ type: type || "callout", icon: type === "aog" ? "🛑" : "🔧", color: type === "aog" ? "#ff4757" : "#f5b945", title: (type || "callout") + " · prueba", standId: standId || "H1-S1", lines: ["Matrícula: EC-TEST · A320/CFM56", "Aerolínea: Volotea", "Stand: " + (standId || "H1-S1"), "Síntoma: evento de prueba para el popup"] }); newGameStep = null; activeTab = "map"; pumpEvents(); render(); return { queued: eventQueue.length }; },
+  testEvent(type, standId){ type = type || "callout"; standId = standId || "H1-S1";
+    var P = {
+      callout: { icon: "🔧", color: "#f5b945", title: "Callout · nuevo aviso", lines: ["Matrícula: EC-TEST · A320/CFM56", "Aerolínea: Volotea", "Stand: " + standId, "Sistema: ATA 21 · Aire acondicionado", "Diagnóstico: pendiente (a la espera del TSM)", "Límite SLA: 12:30"] },
+      "aog-new": { icon: "🛑", color: "#ff4757", title: "AOG entrante · avión en tierra", lines: ["Matrícula: EC-TEST · A320/CFM56", "Aerolínea: Volotea", "Stand: " + standId, "Sistema: ATA 32 · Tren de aterrizaje", "Diagnóstico: pendiente (a la espera del TSM)", "Límite SLA: 11:00"] },
+      mechanic: { icon: "🧰", color: "#6dc7ff", title: "Cuadrilla en el avión", lines: ["Matrícula: EC-TEST", "Aerolínea: Volotea", "Equipo: Sara González, Adrián López", "Inspección / diagnóstico en curso…"] },
+      diagnosis: { icon: "🔎", color: "#3aa9ff", title: "Diagnóstico cerrado · avería confirmada", lines: ["Matrícula: EC-TEST", "Aerolínea: Volotea", "Avería: Replace cabin air recirculation fan", "ATA 21 · Aire acondicionado · Major", "Tiempo estimado: 45 min", "ETD objetivo: 12:30 (holgura 60 min)"] },
+      "release-ontime": { icon: "🟢", color: "#3fb950", title: "Despacho puntual", lines: ["Matrícula: EC-TEST", "Aerolínea: Volotea", "Trabajo: Replace cabin air recirculation fan", "Cerrada a tiempo ✓ — dispatch fiable"] },
+      "release-late": { icon: "🕒", color: "#d29922", title: "Despacho con retraso", lines: ["Matrícula: EC-TEST", "Aerolínea: Volotea", "Trabajo: Replace cabin air recirculation fan", "Retraso: 22 min (cuenta contra tu KPI)"] },
+      "release-aog": { icon: "✅", color: "#3fb950", title: "Release · AOG despachado", lines: ["Matrícula: EC-TEST", "Aerolínea: Volotea", "Avería: Main gear actuator", "Salió con 35 min de retraso", "El avión vuelve a volar."] },
+      aog: { icon: "🛑", color: "#ff4757", title: "AOG · escalado por retraso", lines: ["Matrícula: EC-TEST · A320", "Aerolínea: Volotea", "Stand: " + standId, "Retraso: 190 min", "Causa: externa (no imputable a tu MRO)", "Penalty AOG: -90.000 €"] },
+      "aog-evitable": { icon: "⛔", color: "#ff4757", title: "AOG EVITABLE · por tu gestión", lines: ["Matrícula: EC-TEST · A320", "Aerolínea: Volotea", "Stand: " + standId, "Retraso: 190 min", "Causa: avería tuya sin resolver a tiempo → penalty agravado", "Penalty AOG: -90.000 €"] }
+    };
+    var p = P[type] || P.callout;
+    eventQueue.push({ type: type, icon: p.icon, color: p.color, title: p.title, standId: standId, lines: p.lines });
+    newGameStep = null; activeTab = "map"; pumpEvents(); render(); return { queued: eventQueue.length }; },
   // Activa el tráfico de línea (schedule real OVD) para VER el passthrough en el mapa. El arg
   // minute (opcional) salta el reloj a una hora con tráfico (p.ej. 780 = 13:00). Devuelve cuántos.
   lineTraffic(minute){ try{ game.useScheduleArrivals=true; game.lineModeEnabled=true; if(typeof minute==="number" && game.clock) game.clock.minute=minute; if(game.clock) game.clock.speed=0; newGameStep=null; activeTab="map"; invalidatePanelCache?.(); render(); var ls=mapDriver&&mapDriver.lastState; return {line:true, min:game.clock&&game.clock.minute, passthrough:(ls&&ls.passthroughTraffic||[]).length, airplanes:(ls&&ls.airplanes||[]).length}; }catch(e){return {error:String(e)}} },
