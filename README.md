@@ -1,6 +1,6 @@
 # MRO Tycoon
 
-Tycoon de Maintenance, Repair, Overhaul aeronáutico. Vertical slice en construcción (Fase 2).
+Tycoon de Maintenance, Repair, Overhaul aeronáutico. Build jugable single-file: pivot MRO línea pura + mapa Pixi v8 / OSM real OVD. Preparando F6 (pre-Steam). Estado vivo: [`STATUS.md`](./STATUS.md).
 
 > Proyecto comercial standalone (target: Steam). Texto + paneles + mapa esquemático. Cero 3D.
 
