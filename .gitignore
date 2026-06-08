@@ -32,3 +32,11 @@ src-tauri/WixTools/
 # Data raw descargada de APIs (no commit — usar scripts para regenerar)
 # IMPORTANTE: solo el /data en raíz, no afectar src/lib/data/
 /data/
+
+# Tooling local de dev (no es código del juego — específico de la máquina)
+/JUGAR-MRO.bat
+/serve-build.cjs
+
+# Temporales de render / snapshots sueltos
+/_*.png
+/builds/*-snapshot.html
