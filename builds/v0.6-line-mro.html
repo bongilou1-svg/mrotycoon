@@ -97570,6 +97570,31 @@ let saveIndicator = "";
 // "todos los juegos". pmPrevSpeed recuerda la velocidad para Reanudar tras pausar.
 let pauseMenuOpen = false;
 let pmPrevSpeed = 0;
+// === Popups de evento (Dani 2026-06-06) ===
+// Cada evento (callout, AOG, AOG evitable, release AOG, resolucion on-time/retraso) saca un modal
+// con el detalle, PAUSA el reloj y centra+zoom el mapa en el stand del evento. "No mostrar este
+// tipo" se recuerda (localStorage). Cola: un evento a la vez, "Entendido" pasa al siguiente.
+let eventQueue = [];     // [{type,title,icon,color,lines:[],standId}]
+let eventSkip = {};      // {tipo:true} persistido
+let evPrevSpeed = -1;    // velocidad antes de pausar por evento (-1 = no pausado por evento)
+let evCamDone = false;   // si ya enfoque el mapa para el evento actual
+let evWoIds = null, evAog = null, evDeparted = null; // trackers diff (null = 1er tick init)
+try { const _es = (typeof localStorage !== "undefined") ? localStorage.getItem("mro_event_skip") : null; if (_es) eventSkip = JSON.parse(_es) || {}; } catch (e) {}
+function saveEventSkip(){ try { if (typeof localStorage !== "undefined") localStorage.setItem("mro_event_skip", JSON.stringify(eventSkip)); } catch (e) {} }
+// Coords OSM normalizadas de los 7 stands del juego (para centrar el mapa en el evento).
+const EV_STAND_NORM = { "H1-S1":[0.477,0.559], "H1-S2":[0.487,0.565], "H1-S3":[0.513,0.580], "H1-S4":[0.532,0.592], "H1-S5":[0.561,0.610], "R1":[0.584,0.621], "H2-S1":[0.607,0.637] };
+// Centra + zoom el mapa en una coord normalizada (misma lógica verificada que __mroDebug.focusNorm).
+function focusMapOnNorm(nx, ny, zoom){
+  if (!mapDriver || mapDriver.theme !== "f5d" || !mapDriver.app) return;
+  const z = Math.max(0.2, Math.min(8, zoom || 2.4));
+  const W = mapDriver.app.screen.width, H = mapDriver.app.screen.height;
+  const FW = 6000, FH = 4800, pad = 400;
+  const wx = pad + nx * (FW - pad * 2), wy = pad + ny * (FH - pad * 2);
+  mapDriver.camera.zoom = z;
+  mapDriver.camera.x = (W / 2) / z - wx;
+  mapDriver.camera.y = (H / 2) / z - wy;
+  if (mapDriver.worldRoot) { mapDriver.worldRoot.scale.set(z); mapDriver.worldRoot.position.set(mapDriver.camera.x * z, mapDriver.camera.y * z); }
+}
 // === Tutorial Rookie guiado (2026-05-30) ===
 // tutActive: el overlay de bloqueo + bocadillo están vivos. tutStep: índice en TUT_STEPS.
 // El tutorial fuerza los primeros clicks (guiado absoluto) hasta graduarse el día 3.
@@ -100965,6 +100990,10 @@ function render(){
   let pmOverlay = document.getElementById("pause-menu-overlay-root");
   if (!pmOverlay) { pmOverlay = document.createElement("div"); pmOverlay.id = "pause-menu-overlay-root"; document.body.appendChild(pmOverlay); }
   pmOverlay.innerHTML = (pauseMenuOpen && newGameStep === null && !(game.gameOver && game.gameOver.isOver)) ? renderPauseMenu() : "";
+  // Popup de evento (callout/AOG/resolución…). Por encima del juego, debajo de wizard/pausa.
+  let evOverlay = document.getElementById("event-overlay-root");
+  if (!evOverlay) { evOverlay = document.createElement("div"); evOverlay.id = "event-overlay-root"; document.body.appendChild(evOverlay); }
+  evOverlay.innerHTML = (eventQueue.length && newGameStep === null && !pauseMenuOpen && !(game.gameOver && game.gameOver.isOver) && !weeklyCloseData && !milestoneData) ? renderEventPopup(eventQueue[0]) : "";
   document.getElementById("clock").textContent = fmtClock(game.clock.minute);
   document.getElementById("week").textContent = "Semana " + S.getWeek(game.clock.minute);
   const balEl = document.getElementById("bal");
@@ -101211,6 +101240,9 @@ document.body.addEventListener("click", (e) => {
   if (e.target.closest("#btn-new"))  { doNewGame(); return; }
   // Menú de pausa in-game
   if (e.target.closest("#btn-menu")) { pauseMenuOpen = true; pmPrevSpeed = game.clock.speed; S.setGameSpeed(game, 0); invalidatePanelCache(); render(); return; }
+  // Popups de evento: Entendido pasa al siguiente; "No mostrar este tipo" lo silencia (persistido).
+  if (e.target.closest("#ev-ok")) { eventQueue.shift(); evCamDone = false; pumpEvents(); render(); return; }
+  if (e.target.closest("#ev-skip")) { var _evc = eventQueue[0]; if (_evc) { eventSkip[_evc.type] = true; saveEventSkip(); eventQueue = eventQueue.filter(function(x){ return x.type !== _evc.type; }); } evCamDone = false; pumpEvents(); render(); return; }
   if (e.target.closest("#pm-resume")) { pauseMenuOpen = false; if (pmPrevSpeed) S.setGameSpeed(game, pmPrevSpeed); render(); return; }
   if (e.target.closest("#pm-save"))   { doSave(); return; }
   if (e.target.closest("#pm-save-quit")) {
@@ -101646,6 +101678,95 @@ async function startGameFromPreset(presetFile) {
     // pequeño defer para asegurar que el DOM base está montado antes del overlay.
     setTimeout(() => startTutorial(), 50);
   }
+}
+
+// === Detección de eventos para popups (Dani 2026-06-06) ===
+function focusMapOnStand(standId, tries){
+  var norm = EV_STAND_NORM[standId] || [0.52, 0.6];
+  if (mapDriver && mapDriver.app) { focusMapOnNorm(norm[0], norm[1], 2.6); return; }
+  if ((tries || 0) < 12) setTimeout(function(){ focusMapOnStand(standId, (tries || 0) + 1); }, 80);
+}
+function detectEvents(){
+  var aps = game.airplanes;
+  var apById = new Map(aps.map(function(a){ return [a.instanceId, a]; }));
+  var woNonDC = game.workOrders.filter(function(w){ return !String(w.templateId || "").startsWith("DC-"); });
+  if (evWoIds === null){ // primer tick: solo inicializa trackers (no dispara eventos retro)
+    evWoIds = new Set(woNonDC.map(function(w){ return w.instanceId; }));
+    evAog = new Set(aps.filter(function(a){ return a.aogEscalated; }).map(function(a){ return a.instanceId; }));
+    evDeparted = new Set(aps.filter(function(a){ return a.actualDepartureMinute !== undefined; }).map(function(a){ return a.instanceId; }));
+    return;
+  }
+  var enq = function(ev){ if (!eventSkip[ev.type]) eventQueue.push(ev); };
+  var alName = function(cid){ var c = game.contracts.find(function(k){ return k.id === cid; }); var al = c && game.airlines.find(function(a){ return a.id === c.airlineId; }); return al ? al.name : "—"; };
+  var hh = function(m){ var mod = ((Math.floor(m) % 1440) + 1440) % 1440; return String(Math.floor(mod / 60)).padStart(2, "0") + ":" + String(mod % 60).padStart(2, "0"); };
+  var openWO = function(apId){ return woNonDC.some(function(w){ return w.airplaneInstanceId === apId && w.phase !== "Completed" && w.phase !== "Failed"; }); };
+  for (var i = 0; i < woNonDC.length; i++){
+    var w = woNonDC[i];
+    if (evWoIds.has(w.instanceId)) continue;
+    var ap = apById.get(w.airplaneInstanceId);
+    var tpl = game.templates.find(function(t){ return t.id === w.templateId; });
+    var reg = ap ? ap.registration : (w.airplaneRegistration || "?");
+    var base = ["Matrícula: " + reg + (ap ? " · " + ap.model + "/" + ap.engineVariant : ""), "Aerolínea: " + (ap ? alName(ap.contractId) : "—"), "Stand: " + (ap && ap.standId ? ap.standId : "—"), "Síntoma: " + String((tpl && tpl.description) || w.templateId).slice(0, 140)];
+    if (tpl && tpl.isAOG){
+      enq({ type: "aog", icon: "🛑", color: "#ff4757", title: "AOG · avión en tierra", standId: ap && ap.standId, lines: base.concat(["Severidad: AOG (no diferible) — penaliza fuerte si se retrasa", "Acción: asigna una cuadrilla YA"]) });
+    } else {
+      enq({ type: "callout", icon: "🔧", color: "#f5b945", title: "Callout · nueva avería", standId: ap && ap.standId, lines: base.concat([tpl ? ("Severidad: " + (tpl.severity || "normal")) : "", w.slaMinute ? ("Límite (SLA): " + hh(w.slaMinute)) : ""].filter(Boolean)) });
+    }
+  }
+  for (var j = 0; j < aps.length; j++){
+    var a = aps[j];
+    if (a.aogEscalated && !evAog.has(a.instanceId)){
+      var evit = openWO(a.instanceId);
+      enq({ type: evit ? "aog-evitable" : "aog", icon: evit ? "⛔" : "🛑", color: "#ff4757",
+        title: evit ? "AOG EVITABLE · por tu gestión" : "AOG · escalado por retraso", standId: a.standId,
+        lines: ["Matrícula: " + a.registration + " · " + a.model, "Aerolínea: " + alName(a.contractId), "Stand: " + (a.standId || "—"),
+          "Retraso: " + (a.delayMinutes != null ? a.delayMinutes + " min" : "≥ " + (S.AOG_DELAY_THRESHOLD_MIN || 180) + " min"),
+          evit ? "Causa: avería tuya sin resolver a tiempo → penalty agravado" : "Causa: externa (no imputable a tu MRO)",
+          "Penalty AOG: -" + (S.AOG_ESCALATION_PENALTY_EUR || 90000).toLocaleString("es-ES") + " €"] });
+    }
+  }
+  for (var k = 0; k < aps.length; k++){
+    var d = aps[k];
+    if (d.actualDepartureMinute !== undefined && !evDeparted.has(d.instanceId)){
+      var delay = d.delayMinutes || 0;
+      if (d.aogEscalated){
+        enq({ type: "aog-release", icon: "✅", color: "#3fb950", title: "Release · AOG despachado", standId: d.standId, lines: ["Matrícula: " + d.registration + " · " + d.model, "Aerolínea: " + alName(d.contractId), "Salió con " + delay + " min de retraso", "El avión vuelve a volar."] });
+      } else if (delay > 0){
+        enq({ type: "resolve-late", icon: "🕒", color: "#d29922", title: "Despacho con retraso", standId: d.standId, lines: ["Matrícula: " + d.registration, "Aerolínea: " + alName(d.contractId), "Retraso: " + delay + " min" + (delay >= 15 ? " (cuenta contra tu KPI)" : " (<15 min, no penaliza)")] });
+      } else {
+        enq({ type: "resolve-ontime", icon: "🟢", color: "#3fb950", title: "Despacho puntual", standId: d.standId, lines: ["Matrícula: " + d.registration, "Aerolínea: " + alName(d.contractId), "A tiempo ✓ — dispatch fiable"] });
+      }
+    }
+  }
+  evWoIds = new Set(woNonDC.map(function(w){ return w.instanceId; }));
+  evAog = new Set(aps.filter(function(a){ return a.aogEscalated; }).map(function(a){ return a.instanceId; }));
+  evDeparted = new Set(aps.filter(function(a){ return a.actualDepartureMinute !== undefined; }).map(function(a){ return a.instanceId; }));
+}
+function pumpEvents(){
+  if (!eventQueue.length){
+    if (evPrevSpeed !== -1){ var sp = evPrevSpeed; evPrevSpeed = -1; if (sp > 0) S.setGameSpeed(game, sp); }
+    return;
+  }
+  if (evPrevSpeed === -1){ evPrevSpeed = game.clock.speed; S.setGameSpeed(game, 0); }
+  if (!evCamDone){
+    evCamDone = true;
+    if (activeTab !== "map"){ activeTab = "map"; invalidatePanelCache(); }
+    focusMapOnStand(eventQueue[0] && eventQueue[0].standId);
+  }
+}
+function renderEventPopup(ev){
+  if (!ev) return "";
+  var lines = ev.lines.map(function(l){ return '<li style="margin:.18rem 0">' + l + '</li>'; }).join("");
+  var h = '<div style="position:fixed;inset:0;background:rgba(6,10,18,.42);z-index:1100;display:flex;align-items:flex-start;justify-content:center;pointer-events:none">';
+  h += '<div style="margin-top:13vh;width:min(430px,92vw);background:linear-gradient(180deg,rgba(27,35,48,.98),rgba(18,23,32,.98));border:1px solid var(--border-strong);border-left:5px solid ' + ev.color + ';border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.6);padding:1rem 1.1rem;pointer-events:auto">';
+  h += '<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem"><span style="font-size:1.6rem">' + ev.icon + '</span><strong style="font-size:1.08rem;color:' + ev.color + '">' + ev.title + '</strong></div>';
+  h += '<ul style="margin:.2rem 0 .85rem;padding-left:1.1rem;font-size:.88rem;line-height:1.4">' + lines + '</ul>';
+  if (eventQueue.length > 1) h += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:.5rem">+' + (eventQueue.length - 1) + ' evento(s) en cola</div>';
+  h += '<div style="display:flex;gap:.5rem;justify-content:space-between;align-items:center">';
+  h += '<button id="ev-skip" style="padding:.4rem .7rem;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;font-size:.78rem" title="No volver a mostrar este tipo de evento">🔕 No mostrar este tipo</button>';
+  h += '<button id="ev-ok" class="primary" style="padding:.45rem 1.1rem;border-radius:7px;cursor:pointer">Entendido</button>';
+  h += '</div></div></div>';
+  return h;
 }
 
 /** Menú de pausa in-game (estándar): Reanudar · Guardar · Guardar y volver al menú · Volver sin
@@ -102423,6 +102544,8 @@ setInterval(() => {
     }
     lastProductionPackageDay = gd;
   }
+  detectEvents();
+  pumpEvents();
   const _tC = performance.now();
   render();
   const _tD = performance.now();
@@ -102471,6 +102594,8 @@ window.__mroDebug = {
   zoomIn(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomIn?.(); return mapDriver?.camera?.zoom; },
   zoomOut(n){ for(let i=0;i<(n||1);i++) mapDriver?.zoomOut?.(); return mapDriver?.camera?.zoom; },
   fitAll(){ mapDriver?.fitAll?.(); return mapDriver?.camera?.zoom; },
+  // Inyecta un evento de prueba (callout/aog/...) para verificar el popup + enfoque del mapa.
+  testEvent(type, standId){ eventQueue.push({ type: type || "callout", icon: type === "aog" ? "🛑" : "🔧", color: type === "aog" ? "#ff4757" : "#f5b945", title: (type || "callout") + " · prueba", standId: standId || "H1-S1", lines: ["Matrícula: EC-TEST · A320/CFM56", "Aerolínea: Volotea", "Stand: " + (standId || "H1-S1"), "Síntoma: evento de prueba para el popup"] }); newGameStep = null; activeTab = "map"; pumpEvents(); render(); return { queued: eventQueue.length }; },
   // Activa el tráfico de línea (schedule real OVD) para VER el passthrough en el mapa. El arg
   // minute (opcional) salta el reloj a una hora con tráfico (p.ej. 780 = 13:00). Devuelve cuántos.
   lineTraffic(minute){ try{ game.useScheduleArrivals=true; game.lineModeEnabled=true; if(typeof minute==="number" && game.clock) game.clock.minute=minute; if(game.clock) game.clock.speed=0; newGameStep=null; activeTab="map"; invalidatePanelCache?.(); render(); var ls=mapDriver&&mapDriver.lastState; return {line:true, min:game.clock&&game.clock.minute, passthrough:(ls&&ls.passthroughTraffic||[]).length, airplanes:(ls&&ls.airplanes||[]).length}; }catch(e){return {error:String(e)}} },
