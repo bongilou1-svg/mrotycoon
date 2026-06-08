@@ -101206,11 +101206,12 @@ document.body.addEventListener("click", (e) => {
   // Tutorial: botones del bocadillo (se evalúan primero; van por encima del bloqueo).
   if (e.target.id === "tut-next") { tutAdvance(); return; }
   if (e.target.id === "tut-skip") { tutSkip(); return; }
-  if (e.target.id === "btn-save") { doSave(); return; }
-  if (e.target.id === "btn-load") { doLoad(); return; }
-  if (e.target.id === "btn-new")  { doNewGame(); return; }
+  // closest() (no e.target.id): al clicar el icono SVG el target es el <path>, no el <button>.
+  if (e.target.closest("#btn-save")) { doSave(); return; }
+  if (e.target.closest("#btn-load")) { doLoad(); return; }
+  if (e.target.closest("#btn-new"))  { doNewGame(); return; }
   // Menú de pausa in-game
-  if (e.target.id === "btn-menu") { pauseMenuOpen = true; pmPrevSpeed = game.clock.speed; S.setGameSpeed(game, 0); invalidatePanelCache(); render(); return; }
+  if (e.target.closest("#btn-menu")) { pauseMenuOpen = true; pmPrevSpeed = game.clock.speed; S.setGameSpeed(game, 0); invalidatePanelCache(); render(); return; }
   if (e.target.closest("#pm-resume")) { pauseMenuOpen = false; if (pmPrevSpeed) S.setGameSpeed(game, pmPrevSpeed); render(); return; }
   if (e.target.closest("#pm-save"))   { doSave(); return; }
   if (e.target.closest("#pm-save-quit")) {
@@ -101277,8 +101278,8 @@ document.body.addEventListener("click", (e) => {
   if (e.target.closest("#ng-back")) { newGameStep = "airport"; render(); return; }
   if (e.target.closest("#ng-back-menu")) { newGameStep = "intro"; render(); return; }
   if (e.target.closest("#ng-exit")) { try { const T = window.__TAURI__; if (T && T.window) { (T.window.getCurrentWindow ? T.window.getCurrentWindow() : T.window.appWindow).close(); } else if (T && T.process && T.process.exit) { T.process.exit(0); } } catch (err) {} return; }
-  if (e.target.id === "btn-age-fleet") { ageFleet(); return; }
-  if (e.target.id === "btn-autopause") { game.autoPauseEnabled = !game.autoPauseEnabled; render(); return; }
+  if (e.target.closest("#btn-age-fleet")) { ageFleet(); return; }
+  if (e.target.closest("#btn-autopause")) { game.autoPauseEnabled = !game.autoPauseEnabled; render(); return; }
   if (e.target.closest("#kpi-compliance")) { complianceModalOpen = true; invalidateModalCache(); render(); return; }
   if (e.target.id === "compliance-modal-close") { complianceModalOpen = false; invalidateModalCache(); render(); return; }
   if (e.target.closest("#kpi-rep")) { repModalOpen = true; invalidateModalCache(); render(); return; }
