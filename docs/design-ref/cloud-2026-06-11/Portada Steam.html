@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>MRO Tycoon en Steam</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #060B14;
+    --bg-2: #0B1422;
+    --panel: #0E1B2D;
+    --panel-2: #11253E;
+    --panel-3: #142A47;
+    --line: #1B304C;
+    --line-2: #243F60;
+    --ink: #DCE7F5;
+    --dim: #8FA8C7;
+    --mute: #5F7796;
+    --cyan: #5BC5E8;
+    --amber: #F4A82E;
+    --good: #6FD49A;
+    --danger: #E8584A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 50% -120px, #0d1c30 0%, transparent 70%),
+      var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-feature-settings: "ss01","cv11";
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  .mono { font-family: "IBM Plex Mono", monospace; }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+
+  /* ---------- Top nav / breadcrumb ---------- */
+  .topbar {
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(11,20,34,0.9), rgba(6,11,20,0.6));
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(8px);
+  }
+  .topbar-in {
+    max-width: 1100px; margin: 0 auto; padding: 12px 20px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .mark {
+    width: 22px; height: 22px; border: 1.5px solid var(--cyan); position: relative; flex-shrink: 0;
+  }
+  .mark::before, .mark::after { content: ""; position: absolute; background: var(--cyan); }
+  .mark::before { left: -4px; top: 50%; width: 7px; height: 1.5px; transform: translateY(-50%); }
+  .mark::after  { right: -4px; top: 50%; width: 7px; height: 1.5px; transform: translateY(-50%); }
+  .brand b { font-size: 14px; font-weight: 600; letter-spacing: 0.04em; }
+  .brand b span { color: var(--cyan); }
+  .crumb {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--mute);
+    letter-spacing: 0.06em; text-transform: uppercase; margin-left: 6px;
+  }
+  .crumb a:hover { color: var(--dim); }
+  .crumb .sep { opacity: 0.5; margin: 0 7px; }
+  .topbar .spacer { margin-left: auto; }
+  .pill-link {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--dim); border: 1px solid var(--line-2);
+    padding: 6px 12px; border-radius: 2px;
+  }
+  .pill-link:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* ---------- Shell ---------- */
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- Title block ---------- */
+  .title-row { padding: 30px 0 18px; }
+  .title-row h1 {
+    margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .title-row h1 .t { color: var(--cyan); }
+  .title-row .tagline { color: var(--dim); font-size: 15px; margin-top: 6px; max-width: 720px; }
+  .title-row .tagline em { color: var(--ink); font-style: normal; font-weight: 600; }
+
+  /* ---------- Main grid ---------- */
+  .layout { display: grid; grid-template-columns: 1fr 324px; gap: 22px; align-items: start; }
+
+  /* ---------- Media gallery ---------- */
+  .gallery { }
+  .viewer {
+    position: relative; background: #000; border: 1px solid var(--line);
+    aspect-ratio: 16 / 9; overflow: hidden;
+  }
+  .viewer img { width: 100%; height: 100%; object-fit: cover; }
+  .viewer .vlabel {
+    position: absolute; left: 12px; bottom: 12px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--dim);
+    background: rgba(6,11,20,0.72); border: 1px solid var(--line-2);
+    padding: 5px 10px; backdrop-filter: blur(4px);
+  }
+  .viewer .corner {
+    position: absolute; top: 12px; right: 12px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.12em;
+    color: var(--mute); text-transform: uppercase;
+  }
+  .thumbs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+  .thumb {
+    aspect-ratio: 16/9; border: 1px solid var(--line); overflow: hidden; cursor: pointer;
+    opacity: 0.5; transition: opacity 0.15s, border-color 0.15s; background: #000;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb:hover { opacity: 0.85; }
+  .thumb.active { opacity: 1; border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+
+  /* ---------- Feature highlight band ---------- */
+  .highband {
+    margin-top: 22px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line);
+  }
+  .highband .cell { background: var(--panel); padding: 16px 18px; }
+  .highband .cell .h {
+    display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 14px; margin-bottom: 5px;
+  }
+  .highband .cell .h .gl {
+    width: 9px; height: 9px; flex-shrink: 0; border: 1.5px solid var(--cyan); transform: rotate(45deg);
+  }
+  .highband .cell .h .gl.amber { border-color: var(--amber); }
+  .highband .cell .h .gl.good { border-color: var(--good); }
+  .highband .cell .h .gl.danger { border-color: var(--danger); }
+  .highband .cell p { margin: 0; color: var(--dim); font-size: 13px; }
+
+  /* ---------- Sidebar ---------- */
+  .side { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 76px; }
+  .capsule {
+    position: relative; border: 1px solid var(--line); overflow: hidden;
+    aspect-ratio: 460 / 215; background: #07101e;
+  }
+  .capsule img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.55; }
+  .capsule .veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,11,20,0.25), rgba(6,11,20,0.9)); }
+  .capsule .cap-in { position: absolute; inset: 0; padding: 18px; display: flex; flex-direction: column; justify-content: center; }
+  .capsule .cap-mark { display: flex; align-items: center; gap: 10px; }
+  .capsule .cap-mark .mark { width: 18px; height: 18px; }
+  .capsule .wordmark { font-size: 22px; font-weight: 700; letter-spacing: 0.08em; margin-top: 10px; }
+  .capsule .wordmark span { color: var(--cyan); }
+  .capsule .cap-sub { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); margin-top: 6px; }
+
+  .short {
+    background: var(--panel); border: 1px solid var(--line); padding: 15px 16px;
+    font-size: 13px; color: var(--dim);
+  }
+  .short strong { color: var(--ink); font-weight: 600; }
+
+  .meta-card { background: var(--panel); border: 1px solid var(--line); }
+  .meta-card .row {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 9px 16px; border-bottom: 1px solid var(--line);
+    font-size: 12px;
+  }
+  .meta-card .row:last-child { border-bottom: none; }
+  .meta-card .row .k { color: var(--mute); font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .meta-card .row .v { color: var(--dim); text-align: right; }
+  .meta-card .row .v a { color: var(--cyan); }
+
+  .tags { background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
+  .tags .lbl { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); margin-bottom: 10px; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 12px; color: var(--dim); background: var(--panel-2);
+    border: 1px solid var(--line-2); padding: 4px 9px; border-radius: 2px;
+  }
+  .tag:hover { color: var(--cyan); border-color: var(--cyan); }
+
+  /* ---------- Buy box ---------- */
+  .buy {
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--line-2); padding: 16px;
+  }
+  .buy .status {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--cyan); margin-bottom: 12px;
+  }
+  .buy .status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .buy .price-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .buy .price { font-size: 26px; font-weight: 700; }
+  .buy .price small { font-size: 13px; color: var(--mute); font-weight: 400; }
+  .buy .price-note { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--mute); letter-spacing: 0.06em; }
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    width: 100%; padding: 13px; border: none; cursor: pointer;
+    font-family: "IBM Plex Sans", sans-serif; font-size: 14px; font-weight: 600;
+    letter-spacing: 0.02em; border-radius: 2px; transition: all 0.15s;
+  }
+  .btn.primary { background: var(--cyan); color: #061018; }
+  .btn.primary:hover { background: #7ad6f3; box-shadow: 0 0 22px rgba(91,197,232,0.4); }
+  .btn.primary.done { background: var(--good); color: #06140d; }
+  .btn.ghost { background: transparent; color: var(--dim); border: 1px solid var(--line-2); margin-top: 9px; }
+  .btn.ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+  .buy .demo-note {
+    margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--dim); display: flex; align-items: flex-start; gap: 9px;
+  }
+  .buy .demo-note .gl { width: 8px; height: 8px; border: 1.5px solid var(--amber); transform: rotate(45deg); margin-top: 4px; flex-shrink: 0; }
+  .buy .demo-note b { color: var(--amber); font-weight: 600; }
+
+  /* ---------- Section ---------- */
+  .section { margin: 56px 0; }
+  .section-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+  .section-head .num { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--cyan); letter-spacing: 0.1em; }
+  .section-head h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .section-head .tag-r { margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--mute); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .about-lead { font-size: 17px; line-height: 1.6; color: var(--ink); max-width: 800px; }
+  .about-body { font-size: 14px; line-height: 1.7; color: var(--dim); max-width: 800px; margin-top: 18px; }
+  .about-body p { margin: 0 0 14px; }
+  .about-body strong { color: var(--ink); font-weight: 600; }
+  .about-body .cy { color: var(--cyan); }
+
+  /* ---------- Deep feature rows ---------- */
+  .feat { display: grid; grid-template-columns: 1.15fr 1fr; gap: 26px; align-items: center; margin-bottom: 30px; }
+  .feat:nth-child(even) { grid-template-columns: 1fr 1.15fr; }
+  .feat:nth-child(even) .feat-media { order: 2; }
+  .feat-media { border: 1px solid var(--line); overflow: hidden; background: #000; }
+  .feat-media img { width: 100%; display: block; }
+  .feat-txt .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--cyan); margin-bottom: 10px;
+  }
+  .feat-txt .kicker .gl { width: 8px; height: 8px; border: 1.5px solid currentColor; transform: rotate(45deg); }
+  .feat-txt .kicker.amber { color: var(--amber); }
+  .feat-txt .kicker.danger { color: var(--danger); }
+  .feat-txt .kicker.good { color: var(--good); }
+  .feat-txt h3 { margin: 0 0 9px; font-size: 19px; font-weight: 600; }
+  .feat-txt p { margin: 0; color: var(--dim); font-size: 14px; line-height: 1.65; }
+  .feat-txt ul { margin: 12px 0 0; padding: 0; list-style: none; }
+  .feat-txt li { font-size: 13px; color: var(--dim); padding: 5px 0 5px 18px; position: relative; }
+  .feat-txt li::before { content: ""; position: absolute; left: 0; top: 12px; width: 6px; height: 6px; border: 1px solid var(--cyan); transform: rotate(45deg); }
+  .feat-txt li .mono { color: var(--ink); }
+
+  /* ---------- Glossary strip ---------- */
+  .gloss { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .gloss .g { background: var(--panel); padding: 16px 16px 18px; }
+  .gloss .g .code { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; color: var(--cyan); letter-spacing: 0.04em; }
+  .gloss .g .nm { font-size: 12px; color: var(--ink); margin: 6px 0 4px; font-weight: 600; }
+  .gloss .g .ds { font-size: 11.5px; color: var(--mute); line-height: 1.5; }
+
+  /* ---------- System requirements ---------- */
+  .sysreq { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .sysreq .col { background: var(--panel); padding: 20px 22px; }
+  .sysreq .col h4 { margin: 0 0 14px; font-size: 13px; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+  .sysreq .col h4 span { color: var(--cyan); }
+  .sysreq dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 8px 14px; font-size: 12.5px; }
+  .sysreq dt { color: var(--mute); font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.04em; }
+  .sysreq dd { margin: 0; color: var(--dim); }
+
+  /* ---------- Footer ---------- */
+  .foot { border-top: 1px solid var(--line); margin-top: 64px; padding: 28px 0 60px; }
+  .foot-in { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .foot .mono { font-size: 11px; color: var(--mute); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .side { position: static; }
+    .feat, .feat:nth-child(even) { grid-template-columns: 1fr; }
+    .feat:nth-child(even) .feat-media { order: 0; }
+    .gloss { grid-template-columns: repeat(2, 1fr); }
+    .sysreq { grid-template-columns: 1fr; }
+    .highband { grid-template-columns: 1fr; }
+    .thumbs { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ TOP NAV ============ -->
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="#"><span class="mark"></span><b>MRO <span>TYCOON</span></b></a>
+    <nav class="crumb">
+      <a href="#">Inicio</a><span class="sep">›</span><a href="#">Simulación</a><span class="sep">›</span><a href="#">Gestión</a><span class="sep">›</span>MRO Tycoon
+    </nav>
+    <span class="spacer"></span>
+    <a class="pill-link" href="#wishlist">+ Lista de deseos</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ TITLE ============ -->
+  <div class="title-row" data-screen-label="Título">
+    <h1>MRO <span class="t">Tycoon</span></h1>
+    <p class="tagline"><em>Project Hospital con aviones reales y el manual técnico EASA.</em> Diriges un taller de mantenimiento aeronáutico independiente: aceptas contratos, fichas mecánicos certificados y resuelves cada Work Order como en la vida real. Cero 3D — pura sala de control.</p>
+  </div>
+
+  <!-- ============ MAIN LAYOUT ============ -->
+  <div class="layout">
+
+    <!-- LEFT -->
+    <div class="main-col">
+      <!-- Media gallery -->
+      <div class="gallery">
+        <div class="viewer">
+          <img id="viewer-img" src="mockup_night.png" alt="Vista del juego" />
+          <div class="vlabel mono" id="viewer-label">MAPA ESQUEMÁTICO · NOCHE · LEAS / OVD</div>
+          <div class="corner mono">01 / 06</div>
+        </div>
+        <div class="thumbs" id="thumbs">
+          <div class="thumb active" data-src="mockup_night.png"        data-label="MAPA ESQUEMÁTICO · NOCHE · LEAS / OVD"><img src="mockup_night.png" alt="" /></div>
+          <div class="thumb" data-src="design/_shots/01-ops.png"       data-label="OPERACIONES · TRIAJE DE WORK ORDERS EN VIVO"><img src="design/_shots/01-ops.png" alt="" /></div>
+          <div class="thumb" data-src="design/_shots/sched.png"        data-label="SCHEDULE · PROGRAMACIÓN DEL DÍA · 86 MOVIMIENTOS"><img src="design/_shots/sched.png" alt="" /></div>
+          <div class="thumb" data-src="design/_shots/01-mech2.png"     data-label="OFICINA · MECÁNICOS EASA · MORAL Y TURNOS 24/7"><img src="design/_shots/01-mech2.png" alt="" /></div>
+          <div class="thumb" data-src="design/_shots/map-final.png"    data-label="MAPA EN VIVO · STANDS, FURGO Y RODAJE"><img src="design/_shots/map-final.png" alt="" /></div>
+          <div class="thumb" data-src="mockup_day.png"                 data-label="MAPA ESQUEMÁTICO · DÍA · CICLO COMPLETO"><img src="mockup_day.png" alt="" /></div>
+        </div>
+
+        <!-- Feature highlight band -->
+        <div class="highband">
+          <div class="cell">
+            <div class="h"><span class="gl"></span> Cada Work Order es real</div>
+            <p>100 órdenes con capítulos ATA auténticos, referencias AMM y part numbers reales. No es flavor: el código las usa tal cual.</p>
+          </div>
+          <div class="cell">
+            <div class="h"><span class="gl good"></span> Fichas mecánicos EASA</div>
+            <p>Licencias B1/B2, type ratings CFM56 / V2500, moral, fatiga y turnos mañana/tarde/noche. Sin certifier, la WO no se cierra.</p>
+          </div>
+          <div class="cell">
+            <div class="h"><span class="gl danger"></span> AOG: el reloj corre</div>
+            <p>Aircraft On Ground. Penalty SLA ×5, no diferible, badge rojo pulsando. La mejor tensión del MRO real, modelada al detalle.</p>
+          </div>
+          <div class="cell">
+            <div class="h"><span class="gl amber"></span> Sandbox con derrota real</div>
+            <p>Sin victoria impuesta. Creces a tu ritmo… o quiebras: bancarrota o reputación cero y se acabó la partida.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <section class="section" id="about">
+        <div class="section-head">
+          <span class="num">01</span>
+          <h2>Acerca de este juego</h2>
+          <span class="tag-r">Sim · Gestión · Nicho hardcore</span>
+        </div>
+        <p class="about-lead">No pilotas. No ves aviones aterrizar. Eres el <strong>director de un MRO</strong> — el taller que mantiene la flota — y tu emoción no es el espectáculo, es la decisión informada en el panel de asignación.</p>
+        <div class="about-body">
+          <p><em class="cy">"Esta WO crítica entra a las 14:20. Tengo a Pedro libre, pero su rating B1 caduca en 3 semanas. ¿Le asigno, o me arriesgo a la penalización SLA?"</em></p>
+          <p>Sirves narrowbody A320/A321 a aerolíneas que generan trabajo real en tu plataforma. Aceptas o rechazas contratos según su BaseFee, su penalty y la reputación que pides. Fichas mecánicos certificados <strong>EASA Part-66</strong>, los asignas como certifier o helper, gestionas su moral y sus turnos. Construyes hangares cuando el balance lo aguanta. Y mantienes tu aprobación <strong>Part-145</strong> a flote auditoría tras auditoría.</p>
+          <p>Todo se ve como una <strong>sala de control</strong>: paneles densos, listas, dashboards y un mapa esquemático del aeropuerto a escala real. Día y noche como eje de gameplay — la pernocta abre los daily checks, el A-check entra de madrugada. Cuando dominas el minuto a minuto, asciendes el nivel de abstracción y dejas que el jefe de turno asigne por ti.</p>
+          <p>Pensado para la intersección de dos nichos exigentes: el <strong>entusiasta de la aviación</strong> que reconoce un ATA chapter de un vistazo, y el <strong>tycoon hardcore</strong> que vive de dashboards y KPIs. Si te gustó Project Hospital, Production Line o Software Inc., esto te va a doler bien.</p>
+        </div>
+      </section>
+
+      <!-- Deep features -->
+      <section class="section">
+        <div class="section-head">
+          <span class="num">02</span>
+          <h2>Qué vas a gestionar</h2>
+          <span class="tag-r">5 escalas de loop · 15 s → 30 h</span>
+        </div>
+
+        <div class="feat">
+          <div class="feat-media"><img src="design/_shots/01-ops.png" alt="Panel de operaciones" /></div>
+          <div class="feat-txt">
+            <div class="kicker"><span class="gl"></span> Operaciones · triaje en vivo</div>
+            <h3>Cada avión en tierra es una decisión</h3>
+            <p>El feed de operaciones es el corazón del juego. WOs que progresan en tiempo real por sus 5 fases — Travel, T-shoot, Fix, Test, Release — cada una con su SLA corriendo.</p>
+            <ul>
+              <li>Filtro automático de mecánicos por <span class="mono">certificación</span> y disponibilidad</li>
+              <li>Asigna <span class="mono">1 certifier + 0–2 helpers</span> y confirma en 3 clicks</li>
+              <li>Multiplicador <span class="mono">pause / 1x / 2x / 5x</span> para planificar en pausa</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feat">
+          <div class="feat-media"><img src="design/_shots/sched.png" alt="Schedule del día" /></div>
+          <div class="feat-txt">
+            <div class="kicker amber"><span class="gl"></span> Schedule · contratos y leads</div>
+            <h3>Tu plataforma, tu agenda</h3>
+            <p>El día llega lleno: llegadas, salidas, pernoctas. Los aviones contratados generan trabajo MRO; el resto son leads comerciales que puedes captar subiendo tu reputación.</p>
+            <ul>
+              <li>Schedule realista con rutas, operadores y modelos</li>
+              <li>Pernocta nocturna → daily checks y A-checks de madrugada</li>
+              <li>Decide qué turnaround te interesa de verdad</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feat">
+          <div class="feat-media"><img src="design/_shots/01-mech2.png" alt="Oficina de mecánicos" /></div>
+          <div class="feat-txt">
+            <div class="kicker good"><span class="gl"></span> Oficina · recursos humanos</div>
+            <h3>Mecánicos con licencia, moral y vida</h3>
+            <p>No son peones. Cada técnico tiene su base B1/B2, sus type ratings, su eficiencia y su moral — que sube y baja según cómo lo trates. Cobertura 24h por turnos: si no hay nadie de noche, la noche va a 0.</p>
+            <ul>
+              <li>Eficiencia real = <span class="mono">base × (moral / 100)</span></li>
+              <li>Forma juniors para nuevos type ratings, o ficha senior</li>
+              <li>Negocia subidas… o déjalos ir y come la rotación</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feat">
+          <div class="feat-media"><img src="design/_shots/map-final.png" alt="Mapa en vivo" /></div>
+          <div class="feat-txt">
+            <div class="kicker"><span class="gl"></span> Mapa · esquemático en vivo</div>
+            <h3>El aeropuerto como un panel de control</h3>
+            <p>Pista 11/29 a escala real, taxiways, apron y stands con código de aeropuerto. Los aviones son puntos luminosos; la furgo de mecánicos recorre las callecitas con giros de 90°. Estética CIC / mission control, no arcade.</p>
+            <ul>
+              <li>Estado visual por stand: <span class="mono">AOG · sin asignar · trabajando · libre</span></li>
+              <li>Pan / zoom / WASD + minimapa</li>
+              <li>Zona de hangares que crece con tu MRO (Stage 3 → Stage 4)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Glossary -->
+      <section class="section">
+        <div class="section-head">
+          <span class="num">03</span>
+          <h2>Sin metáforas. Terminología real.</h2>
+          <span class="tag-r">El jugador hardcore lo reconoce</span>
+        </div>
+        <div class="gloss">
+          <div class="g"><div class="code">AOG</div><div class="nm">Aircraft On Ground</div><div class="ds">Fallo crítico que clava el avión en tierra. La aerolínea pierde miles de € por hora.</div></div>
+          <div class="g"><div class="code">MEL</div><div class="nm">Minimum Equipment List</div><div class="ds">¿Reparar ya o diferir N días/cycles? Decisión rica con coste reputacional.</div></div>
+          <div class="g"><div class="code">Part-145</div><div class="nm">Aprobación EASA</div><div class="ds">KPI de compliance + auditoría cada 8 semanas. Bajo 30 → revocación temporal.</div></div>
+          <div class="g"><div class="code">A/C/D</div><div class="nm">Checks programados</div><div class="ds">Base maintenance disparada por flight hours y cycles. Bloquea hangar días o semanas.</div></div>
+          <div class="g"><div class="code">SB / AD</div><div class="nm">Bulletins &amp; Directives</div><div class="ds">Recomendación cobrable del fabricante vs orden obligatoria con deadline duro.</div></div>
+          <div class="g"><div class="code">ATA</div><div class="nm">Chapter</div><div class="ds">Numeración estándar de sistemas. Cap 21 = ECS, 71 = motor. Filtra herramientas y ratings.</div></div>
+          <div class="g"><div class="code">B1 / B2</div><div class="nm">Part-66 license</div><div class="ds">Habilitación individual del mecánico. B1 mecánica, B2 aviónica.</div></div>
+          <div class="g"><div class="code">SLA</div><div class="nm">Turnaround window</div><div class="ds">El reloj de cada WO está dimensionado al turnaround típico. Pásate y come penalty.</div></div>
+        </div>
+      </section>
+
+      <!-- System requirements -->
+      <section class="section">
+        <div class="section-head">
+          <span class="num">04</span>
+          <h2>Requisitos del sistema</h2>
+          <span class="tag-r">Binario nativo · ~5 MB</span>
+        </div>
+        <div class="sysreq">
+          <div class="col">
+            <h4><span>›</span> Mínimo</h4>
+            <dl>
+              <dt>SO</dt><dd>Windows 10 · macOS 12 · Linux (glibc 2.31+)</dd>
+              <dt>Procesador</dt><dd>Dual-core 2.0 GHz</dd>
+              <dt>Memoria</dt><dd>2 GB RAM</dd>
+              <dt>Gráficos</dt><dd>Cualquiera con WebView2 / WebGL</dd>
+              <dt>Almacenam.</dt><dd>50 MB disponibles</dd>
+              <dt>Notas</dt><dd>Sin conexión. Cero servidor, cero DRM online.</dd>
+            </dl>
+          </div>
+          <div class="col">
+            <h4><span>›</span> Recomendado</h4>
+            <dl>
+              <dt>SO</dt><dd>Windows 11 · macOS 14 · Linux reciente</dd>
+              <dt>Procesador</dt><dd>Quad-core 2.5 GHz</dd>
+              <dt>Memoria</dt><dd>4 GB RAM</dd>
+              <dt>Gráficos</dt><dd>GPU integrada moderna (mapa Pixi v8)</dd>
+              <dt>Almacenam.</dt><dd>100 MB · SSD para autosaves instantáneos</dd>
+              <dt>Pantalla</dt><dd>1920×1080. Funciona desde 1366×768.</dd>
+            </dl>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="side">
+      <div class="capsule">
+        <img src="mockup_night.png" alt="" />
+        <div class="veil"></div>
+        <div class="cap-in">
+          <div class="cap-mark"><span class="mark"></span><span class="mono" style="font-size:10px;letter-spacing:0.18em;color:var(--dim)">AVIATION · MRO · SIM</span></div>
+          <div class="wordmark">MRO <span>TYCOON</span></div>
+          <div class="cap-sub">Maintenance · Repair · Overhaul</div>
+        </div>
+      </div>
+
+      <div class="short">
+        Eres el director de un MRO independiente. Aceptas contratos de aerolíneas, fichas mecánicos certificados <strong>EASA B1/B2</strong> y gestionas hangares, turnos y compliance <strong>Part-145</strong>. Cada orden de trabajo está sacada del manual técnico real.
+      </div>
+
+      <div class="meta-card">
+        <div class="row"><span class="k">Reseñas</span><span class="v">Próximamente · sé de los primeros</span></div>
+        <div class="row"><span class="k">Lanzamiento</span><span class="v">2026 · TBC</span></div>
+        <div class="row"><span class="k">Desarrollo</span><span class="v"><a href="#">Estudio independiente</a></span></div>
+        <div class="row"><span class="k">Idiomas</span><span class="v">Español · English</span></div>
+        <div class="row"><span class="k">Plataformas</span><span class="v">Windows · macOS · Linux</span></div>
+      </div>
+
+      <div class="tags">
+        <div class="lbl">Etiquetas populares</div>
+        <div class="tag-list">
+          <span class="tag">Aviación</span>
+          <span class="tag">Gestión</span>
+          <span class="tag">Tycoon</span>
+          <span class="tag">Realista</span>
+          <span class="tag">Simulación</span>
+          <span class="tag">Sandbox</span>
+          <span class="tag">Un jugador</span>
+          <span class="tag">Indie</span>
+          <span class="tag">Gestión de recursos</span>
+        </div>
+      </div>
+
+      <div class="buy" id="wishlist">
+        <div class="status"><span class="dot"></span> Próximamente</div>
+        <div class="price-row">
+          <div class="price">19,99&nbsp;€ <small>aprox.</small></div>
+          <div class="price-note">PRECIO PREVISTO</div>
+        </div>
+        <button class="btn primary" id="wishbtn">+ Añadir a la lista de deseos</button>
+        <button class="btn ghost" id="followbtn">Seguir el desarrollo</button>
+        <div class="demo-note">
+          <span class="gl"></span>
+          <div><b>Demo gratuita en Steam Next Fest.</b> El vertical slice ya es jugable de principio a fin: acepta un contrato, asigna mecánicos, cierra la WO y cobra.</div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="foot-in">
+    <div class="mono">MRO Tycoon · Aviation maintenance tycoon · Build v0.6 línea · 873/873 tests verdes</div>
+    <div class="mono">Hecho para el nicho hardcore</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // ---- Gallery ----
+  var viewer = document.getElementById('viewer-img');
+  var label = document.getElementById('viewer-label');
+  var thumbs = Array.prototype.slice.call(document.querySelectorAll('#thumbs .thumb'));
+  thumbs.forEach(function (t, i) {
+    t.addEventListener('click', function () {
+      thumbs.forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      viewer.src = t.getAttribute('data-src');
+      label.textContent = t.getAttribute('data-label');
+      var corner = document.querySelector('.viewer .corner');
+      if (corner) corner.textContent = ('0' + (i + 1)).slice(-2) + ' / 06';
+    });
+  });
+
+  // ---- Wishlist button ----
+  var wb = document.getElementById('wishbtn');
+  wb.addEventListener('click', function () {
+    if (wb.classList.contains('done')) {
+      wb.classList.remove('done');
+      wb.textContent = '+ Añadir a la lista de deseos';
+    } else {
+      wb.classList.add('done');
+      wb.textContent = '✓ En tu lista de deseos';
+    }
+  });
+  var fb = document.getElementById('followbtn');
+  fb.addEventListener('click', function () {
+    fb.textContent = fb.textContent.indexOf('Siguiendo') === -1 ? '✓ Siguiendo el desarrollo' : 'Seguir el desarrollo';
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>MRO Tycoon — Map Pixel · LEAS / OVD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #1a2030; color: #DCE7F5;
+    font-family: "IBM Plex Mono", monospace; overflow: hidden; }
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #0d1320;
+  }
+  .toolbar {
+    position: fixed; top: 16px; left: 16px; z-index: 10;
+    display: flex; gap: 6px;
+    background: #0a1726; border: 1px solid #1b304c;
+    padding: 4px; border-radius: 6px;
+    font-size: 11px; letter-spacing: 2px;
+  }
+  .toolbar button {
+    background: transparent; color: #7a99bd; border: none;
+    padding: 5px 12px; font: inherit; letter-spacing: inherit;
+    font-weight: 500; text-transform: uppercase; cursor: pointer; border-radius: 3px;
+  }
+  .toolbar button.active { background: #5BC5E8; color: #0a1726; }
+  .label { position: fixed; bottom: 16px; left: 16px; z-index: 10;
+    font-size: 10px; color: #5A7596; letter-spacing: 3px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div class="toolbar" id="toolbar">
+  <button data-mode="day" class="active">Day</button>
+  <button data-mode="night">Night</button>
+  <button data-scale="2">2x</button>
+  <button data-scale="3" class="active">3x</button>
+  <button data-scale="4">4x</button>
+</div>
+
+<div class="label">LEAS · ASTURIAS · PIXEL ART · MRO TYCOON</div>
+<div id="stage"><canvas id="map"></canvas></div>
+
+<script src="map-pixel.js"></script>
+<script>
+  const cvs = document.getElementById('map');
+  const ctx = cvs.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // Base resolution — 320 × 180 (16:9), scaled up
+  const BASE_W = 320, BASE_H = 180;
+  let scale = 3;
+  let mode = 'day';
+
+  function resize() {
+    // fit to viewport
+    const fitS = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H);
+    const finalS = Math.min(fitS, scale * 2);
+    cvs.width = BASE_W;
+    cvs.height = BASE_H;
+    cvs.style.width = (BASE_W * finalS) + 'px';
+    cvs.style.height = (BASE_H * finalS) + 'px';
+  }
+  function render() {
+    ctx.imageSmoothingEnabled = false;
+    window.renderPixelMap(ctx, BASE_W, BASE_H, mode);
+  }
+
+  function reseed(s) { scale = s; resize(); render(); }
+
+  document.getElementById('toolbar').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    if (btn.dataset.mode) {
+      mode = btn.dataset.mode;
+      document.querySelectorAll('#toolbar [data-mode]').forEach(b =>
+        b.classList.toggle('active', b === btn));
+      render();
+    } else if (btn.dataset.scale) {
+      reseed(parseInt(btn.dataset.scale));
+      document.querySelectorAll('#toolbar [data-scale]').forEach(b =>
+        b.classList.toggle('active', b === btn));
+    }
+  });
+
+  window.addEventListener('resize', resize);
+  resize();
+  render();
+</script>
+</body>
+</html>

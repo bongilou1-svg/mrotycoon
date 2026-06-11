@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>MRO Tycoon — Map 3D · LEAS / OVD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0f1a2e; color: #DCE7F5;
+    font-family: "IBM Plex Mono", monospace; overflow: hidden; }
+  #scene { position: fixed; inset: 0; }
+  .toolbar {
+    position: fixed; top: 16px; left: 16px; z-index: 10;
+    display: flex; gap: 6px;
+    background: rgba(10, 23, 38, 0.85); border: 1px solid #1b304c;
+    padding: 4px; border-radius: 6px;
+    font-size: 11px; letter-spacing: 2px;
+    backdrop-filter: blur(8px);
+  }
+  .toolbar button {
+    background: transparent; color: #7a99bd; border: none;
+    padding: 5px 12px; font: inherit; letter-spacing: inherit;
+    font-weight: 500; text-transform: uppercase; cursor: pointer; border-radius: 3px;
+  }
+  .toolbar button.active { background: #5BC5E8; color: #0a1726; }
+  .label {
+    position: fixed; bottom: 16px; left: 16px; z-index: 10;
+    font-size: 10px; color: #5A7596; letter-spacing: 3px; text-transform: uppercase;
+  }
+  .status {
+    position: fixed; bottom: 16px; right: 16px; z-index: 10;
+    font-size: 11px; color: #7a99bd; letter-spacing: 2px;
+    background: rgba(10, 23, 38, 0.85); border: 1px solid #1b304c;
+    padding: 8px 14px; border-radius: 4px;
+  }
+  .loading {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: #0f1a2e; z-index: 100; font-size: 14px; color: #5BC5E8;
+    letter-spacing: 4px; text-transform: uppercase;
+  }
+  .loading.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="toolbar" id="toolbar">
+  <button data-cam="iso" class="active">Iso</button>
+  <button data-cam="top">Top</button>
+  <button data-mode="day" class="active">Day</button>
+  <button data-mode="night">Night</button>
+</div>
+
+<div class="label">LEAS · ASTURIAS · MRO TYCOON · KENNEY CAR-KIT</div>
+<div class="status" id="status">Cars: 0 · FPS: --</div>
+<div class="loading" id="loading">Loading models…</div>
+
+<canvas id="scene"></canvas>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.167.1/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.167.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module" src="scene.js"></script>
+</body>
+</html>

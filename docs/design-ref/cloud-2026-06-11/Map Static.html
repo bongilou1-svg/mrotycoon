@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>MRO Tycoon — Map Static · LEAS / OVD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #050B14; color: #DCE7F5;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #stage > div {
+    width: 1280px; height: 720px;
+    transform-origin: center center;
+  }
+  .toolbar {
+    position: fixed; top: 16px; left: 16px; z-index: 10;
+    display: flex; gap: 6px;
+    background: #0A1726; border: 1px solid #1B304C;
+    padding: 4px; border-radius: 6px;
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 2px;
+  }
+  .toolbar button {
+    background: transparent; color: #7A99BD;
+    border: none; padding: 5px 12px;
+    font: inherit; letter-spacing: inherit;
+    font-weight: 500; text-transform: uppercase;
+    cursor: pointer; border-radius: 3px;
+  }
+  .toolbar button.active { background: #5BC5E8; color: #0A1726; }
+</style>
+</head>
+<body>
+
+<div class="toolbar" id="toolbar">
+  <button data-mode="day" class="active">Day</button>
+  <button data-mode="night">Night</button>
+</div>
+
+<div id="stage"><div id="map"></div></div>
+
+<script src="map3d.js"></script>
+<script>
+  let currentMode = 'day';
+  const mapEl = document.getElementById('map');
+  const stageInner = mapEl;
+  const stageWrap = document.getElementById('stage');
+
+  function render() {
+    mapEl.innerHTML = window.render3DMap(currentMode, { idPrefix: 'm3d-' + currentMode });
+  }
+
+  // Auto-scale to fit viewport while preserving aspect
+  function fit() {
+    const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    mapEl.style.transform = `scale(${s})`;
+  }
+  window.addEventListener('resize', fit);
+
+  document.getElementById('toolbar').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    currentMode = btn.dataset.mode;
+    document.querySelectorAll('#toolbar button').forEach(b => b.classList.toggle('active', b === btn));
+    render();
+  });
+
+  render();
+  fit();
+</script>
+</body>
+</html>
