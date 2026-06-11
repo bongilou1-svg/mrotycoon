@@ -32,13 +32,16 @@ export function _resetInstanceCounter(): void {
  * PURO: sin efectos. La UI lo llama con S.DATA.ataChapters; los tests con el JSON cargado.
  */
 export function complaintForTemplate(
-  template: Pick<WorkOrderTemplate, "complaint" | "ataChapter">,
+  // Acepta `ataChapter` (string, contrato del test/llamadas legacy) o `ata` (number, el campo
+  // REAL de WorkOrderTemplate). Bug 2026-06-11: solo leía `ataChapter`, que no existe en los
+  // templates de producción → todos los callouts decían "anomalía ATA undefined".
+  template: { complaint?: string | null; ataChapter?: string | number; ata?: number },
   ataChapterNames: Readonly<Record<string, string>> = {},
 ): string {
   const c = template.complaint;
   if (typeof c === "string" && c.trim().length > 0) return c.trim();
-  const chapter = template.ataChapter;
-  const name = ataChapterNames[chapter];
+  const chapter = template.ataChapter ?? template.ata;
+  const name = ataChapterNames[String(chapter)];
   if (name && name !== "Reservado" && name !== "Reserved") {
     return `Reporte de tripulación · ${name} (ATA ${chapter})`;
   }
