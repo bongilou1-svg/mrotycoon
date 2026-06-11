@@ -1107,6 +1107,51 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 .bench-sep{font:.58rem var(--disp);text-transform:uppercase;letter-spacing:.09em;color:var(--subtle);margin:.3rem .1rem .05rem}
 .bench-m{display:flex;align-items:center;gap:.38rem;padding:.3rem .42rem;border-radius:7px;background:var(--panel);border:1px solid var(--border)}
 .fm-card{background:linear-gradient(180deg,#1a2740,#111825);border:1px solid #2c456b;border-radius:8px;padding:.42rem .58rem;display:flex;align-items:center;gap:.42rem;margin-bottom:.35rem}
+/* ===== Asignar WO · cajón crew-first (diseño cloud 2026-06-11) ===== */
+.awo-sla{display:flex;align-items:center;justify-content:space-between;font:.68rem var(--mono);color:var(--muted);margin:.2rem 0 .25rem}
+.awo-sla b{font-size:.95rem;font-weight:600}
+.awo-sla b.ok{color:var(--ok)} .awo-sla b.warn{color:var(--warn)} .awo-sla b.bad{color:var(--bad)}
+.awo-slabar{height:5px;border-radius:3px;background:#222a36;overflow:hidden;margin-bottom:.6rem}
+.awo-slabar i{display:block;height:100%;background:linear-gradient(90deg,var(--warn),var(--bad))}
+.awo-sect{font:.62rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;align-items:baseline;margin:.3rem 0 .45rem}
+.awo-sect .n{color:var(--muted)}
+.awo-opt{position:relative;border:1px solid var(--border);border-radius:9px;background:var(--panel);padding:.7rem .8rem;cursor:pointer;transition:border-color .13s;margin-bottom:.55rem}
+.awo-opt:hover{border-color:var(--line-2,var(--border))}
+.awo-opt.rec{border-color:var(--accent);background:linear-gradient(180deg,rgba(77,163,255,.07),var(--panel));box-shadow:0 0 0 1px rgba(77,163,255,.25)}
+.awo-opt.rec::before{content:"RECOMENDADA";position:absolute;top:-1px;right:14px;transform:translateY(-50%);font:600 .5rem var(--mono);letter-spacing:.14em;color:#06101a;background:var(--accent);padding:2px 8px;border-radius:3px}
+.awo-opt.rec.pick::before{content:"SELECCIONADA"}
+.awo-opt.dis{opacity:.45;cursor:not-allowed}
+.awo-head{display:flex;align-items:center;gap:.5rem}
+.awo-sw{width:13px;height:13px;border-radius:4px;flex:none}
+.awo-nm{font-weight:700;font-size:.9rem}
+.awo-membs{display:flex;margin-left:2px}
+.awo-mav{width:21px;height:21px;border-radius:50%;border:2px solid var(--panel);margin-left:-6px;display:grid;place-items:center;font:600 .5rem var(--mono)}
+.awo-mav.b1{background:#1f4f7d;color:#bcd9f7}.awo-mav.b2{background:#13525f;color:#a8e6f2}.awo-mav.h{background:#33405a;color:#aeb9cc}
+.awo-state{margin-left:auto;font:.62rem var(--mono);color:var(--muted);text-align:right;line-height:1.3}
+.awo-state.free{color:var(--ok)} .awo-state.busy{color:var(--warn)}
+.awo-match{display:flex;gap:.35rem;margin-top:.5rem;flex-wrap:wrap}
+.awo-mt{display:inline-flex;align-items:center;gap:4px;font:.62rem var(--mono);padding:2px 7px;border-radius:4px}
+.awo-mt.ok{color:var(--ok);background:rgba(63,185,80,.1)}
+.awo-mt.miss{color:var(--bad);background:rgba(248,81,73,.1)}
+.awo-mt.eta{color:var(--cyan,#46c6e6);background:rgba(70,198,230,.09)}
+.awo-pred{margin-top:.55rem}
+.awo-pl{display:flex;justify-content:flex-end;font:.58rem var(--mono);color:var(--dim);margin-bottom:4px}
+.awo-pl b{font-weight:600}
+.awo-pl b.fit{color:var(--ok)} .awo-pl b.tight{color:var(--warn)} .awo-pl b.over{color:var(--bad)}
+.awo-track{position:relative;height:14px;border-radius:4px;background:#10161f;border:1px solid var(--border);overflow:hidden}
+.awo-seg{position:absolute;top:0;bottom:0}
+.awo-seg.travel{background:#2b3a52}.awo-seg.work{background:linear-gradient(90deg,#2a5d8f,#3f87c9)}.awo-seg.test{background:#2f6e4f}
+.awo-dead{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--bad);box-shadow:0 0 6px rgba(248,81,73,.8);z-index:2}
+.awo-over{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(248,81,73,.4) 0 4px,rgba(248,81,73,.15) 4px 8px)}
+.awo-foot{display:flex;gap:.5rem;align-items:stretch;margin:.7rem 0 .3rem}
+.awo-fbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:.6rem;border-radius:7px;font:600 .82rem var(--sans);cursor:pointer;border:1px solid var(--line-2,var(--border));background:transparent;color:var(--muted)}
+.awo-fbtn:hover{border-color:var(--accent);color:var(--accent)}
+.awo-fbtn.primary{background:var(--accent);border-color:var(--accent);color:#06101a;flex:1.6}
+.awo-fbtn.primary:hover{box-shadow:0 0 20px rgba(77,163,255,.35)}
+.awo-fbtn.primary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.awo-fbtn .sub{font:.55rem var(--mono);opacity:.75;font-weight:400}
+.awo-manual-t{background:none;border:none;color:var(--dim);font:.72rem var(--sans);cursor:pointer;padding:.2rem 0;text-decoration:underline dotted}
+.awo-manual-t:hover{color:var(--accent)}
 </style></head><body>
 <div class="app">
   <header class="hud">
@@ -7344,8 +7389,8 @@ var Sim = (() => {
   function complaintForTemplate(template, ataChapterNames = {}) {
     const c = template.complaint;
     if (typeof c === "string" && c.trim().length > 0) return c.trim();
-    const chapter = template.ataChapter;
-    const name = ataChapterNames[chapter];
+    const chapter = template.ataChapter ?? template.ata;
+    const name = ataChapterNames[String(chapter)];
     if (name && name !== "Reservado" && name !== "Reserved") {
       return `Reporte de tripulaci\xF3n \xB7 ${name} (ATA ${chapter})`;
     }
@@ -97593,6 +97638,8 @@ let newGameSelectedIcao = null;
 let newGameCatalog = null; // cargado lazy desde catalog.json bundled
 let lastProductionPackageDay = 0; // notif diaria del paquete de trabajo nocturno (12:00)
 let selectedWoId = null;
+let awoSelCrewId = null;   // Asignar WO (cajón crew-first): cuadrilla elegida; null = la recomendada
+let awoManualOpen = false; // Asignar WO: sección "asignación manual" desplegada
 let complianceModalOpen = false;
 let repModalOpen = false;
 let detailFleetReg = null;   // F5B-ε: matrícula seleccionada para modal de avión
@@ -98820,7 +98867,7 @@ function renderCrews(){
   var crews = game.crews || [];
   var mechs = game.mechanics;
   var mById = function(id){ return mechs.find(function(m){ return m.id===id; }); };
-  var ini = function(name){ return (name||'?').split(/s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase(); };
+  var ini = function(name){ return (name||'?').split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase(); };
   var avCls = function(m){ return m.isLeadForeman?'fm':m.base==='B1'?'b1':m.base==='B2'?'b2':'h'; };
   var licCls = function(m){ return m.isLeadForeman?'fm':m.base==='B1'?'b1':m.base==='B2'?'b2':'h'; };
   var licLbl = function(m){ return m.isLeadForeman?'TMA':m.base||'H'; };
@@ -100457,6 +100504,134 @@ function renderComplianceModal(){
   </div>`;
 }
 
+// === Asignar WO · cajón crew-first (diseño cloud "Asignar WO.html", 2026-06-11) ===
+// Cards por cuadrilla con elegibilidad REAL del sim (la misma regla que assignCrewToWo:
+// oficial Idle con type rating modelo+motor+categoría requerida) y proyección honesta:
+// cierre estimado = ahora + furgo + fases(15%+100%+10% + release) / eficiencia del equipo
+// (certifier + helpers al 50%, moral incluida — réplica de teamEffectiveEfficiency).
+// La RECOMENDADA es la elegible con más margen vs SLA. Escrito en concatenación pura
+// (cero backticks / cero interpolación) por la regla dura del template APP_JS.
+function crewAssignSection(wo, tpl, ap){
+  var crews = (game.crews || []).filter(function(c){ return c.officerIds.length > 0; });
+  if (!crews.length) return "";
+  var now = game.clock.minute;
+  var bal = game.balance || {};
+  var ratios = bal.phaseDurationRatios || { inspection: 0.15, mainTask: 1, test: 0.1 };
+  var releaseMin = bal.releaseMinutes != null ? bal.releaseMinutes : 3;
+  var travel = (game.standTravelMinutes && ap.standId && game.standTravelMinutes[ap.standId] != null)
+    ? game.standTravelMinutes[ap.standId]
+    : (bal.officeToStandMinutes != null ? bal.officeToStandMinutes : 2);
+  var inspMainMin = Math.round(tpl.durationMinutes * ratios.inspection) + Math.round(tpl.durationMinutes * ratios.mainTask);
+  var testRelMin = Math.round(tpl.durationMinutes * ratios.test) + releaseMin;
+  var phasesMin = inspMainMin + testRelMin;
+  var mById = function(id){ return game.mechanics.find(function(m){ return m.id === id; }); };
+  var effOf = function(m){ var mo = m.moral != null ? m.moral : 70; return (m.efficiency || 1) * (0.5 + Math.max(0, Math.min(100, mo)) / 100 * 0.7); };
+  var hasRating = function(m){ return (m.typeRatings || []).some(function(r){ return r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === tpl.requiredCategory; }); };
+  var hhmm = function(min){ var mod = ((Math.floor(min) % 1440) + 1440) % 1440; return String(Math.floor(mod / 60)).padStart(2, "0") + ":" + String(mod % 60).padStart(2, "0"); };
+  var ini = function(name){ return (name || "?").split(/\s+/).map(function(w){ return w[0] || ""; }).join("").slice(0, 2).toUpperCase(); };
+  var shiftLbl = { morning: "mañana", afternoon: "tarde", night: "noche" };
+  var shiftStart = { morning: "06:00", afternoon: "14:00", night: "22:00" };
+
+  // Evaluar cada cuadrilla (elegibilidad + proyección)
+  var evals = crews.map(function(c){
+    var officers = c.officerIds.map(mById).filter(Boolean);
+    var helpers = c.helperIds.map(mById).filter(Boolean);
+    var members = officers.concat(helpers);
+    var certifier = officers.find(function(m){ return m.state === "Idle" && hasRating(m); });
+    var bases = []; officers.forEach(function(m){ if (m.base && bases.indexOf(m.base) < 0) bases.push(m.base); });
+    var ev = { crew: c, members: members, certifier: certifier || null, bases: bases, state: "", stateCls: "", missChip: "", proj: null };
+    if (certifier){
+      ev.state = "libre ahora"; ev.stateCls = "free";
+      var idleRest = members.filter(function(m){ return m.id !== certifier.id && m.state === "Idle"; }).slice(0, 2);
+      var certEff = effOf(certifier);
+      var team = certEff;
+      idleRest.forEach(function(h){ team += Math.min(effOf(h) * 0.5, certEff * 0.5); });
+      var workReal = phasesMin / Math.max(team, 0.1);
+      var close = now + travel + workReal;
+      ev.proj = { close: close, margin: Math.round(wo.slaMinute - close), workReal: workReal, team: 1 + idleRest.length };
+    } else {
+      var anyRated = officers.some(hasRating);
+      var busyOff = officers.find(function(m){ return m.state === "Working" || m.state === "ToPlane" || m.state === "Returning"; });
+      var offOff = officers.find(function(m){ return m.state === "OffShift"; });
+      if (!anyRated){ ev.missChip = "✗ sin " + tpl.requiredCategory + " habilitado " + ap.model + "/" + ap.engineVariant; ev.state = "no puede certificar"; }
+      else if (busyOff){ ev.state = "en " + (busyOff.assignedWoInstanceId || "otro trabajo"); ev.stateCls = "busy"; }
+      else if (offOff){ ev.state = "turno de " + (shiftLbl[offOff.shift] || offOff.shift || "?") + " · entra " + (shiftStart[offOff.shift] || "—"); }
+      else ev.state = "oficial no disponible";
+    }
+    return ev;
+  });
+  var eligibles = evals.filter(function(e){ return !!e.certifier; });
+  eligibles.sort(function(a, b){ return b.proj.margin - a.proj.margin; });
+  var recId = eligibles.length ? eligibles[0].crew.id : null;
+  var selId = (awoSelCrewId && eligibles.some(function(e){ return e.crew.id === awoSelCrewId; })) ? awoSelCrewId : recId;
+  var selEval = eligibles.find(function(e){ return e.crew.id === selId; }) || null;
+
+  // Cabecera: SLA restante con barra de consumo
+  var slaLeft = Math.round(wo.slaMinute - now);
+  var slaTxt = slaLeft >= 60 ? (Math.floor(slaLeft / 60) + ":" + String(slaLeft % 60).padStart(2, "0") + " h") : (slaLeft + " min");
+  if (slaLeft < 0) slaTxt = "vencido " + Math.abs(slaLeft) + " min";
+  var slaCls = slaLeft <= 30 ? "bad" : slaLeft <= 60 ? "warn" : "ok";
+  var winTotal = Math.max(wo.slaMinute - (wo.emissionMinute != null ? wo.emissionMinute : now), 1);
+  var slaUsedPct = Math.max(0, Math.min(100, Math.round((now - (wo.emissionMinute != null ? wo.emissionMinute : now)) / winTotal * 100)));
+  var h = '<div class="awo-sla"><span>SLA restante</span><b class="' + slaCls + '">' + slaTxt + '</b></div>';
+  h += '<div class="awo-slabar"><i style="width:' + slaUsedPct + '%"></i></div>';
+
+  var minOfDay = now % 1440; var hourNow = Math.floor(minOfDay / 60);
+  var curShift = (hourNow >= 6 && hourNow < 14) ? "mañana" : (hourNow >= 14 && hourNow < 22) ? "tarde" : "noche";
+  h += '<div class="awo-sect">Cuadrillas en turno · ' + curShift + ' <span class="n">' + eligibles.length + ' de ' + evals.length + ' elegibles</span></div>';
+
+  // Cards
+  evals.forEach(function(ev){
+    var c = ev.crew;
+    var colorHex = '#' + ((c.color >>> 0).toString(16).padStart(6, '0'));
+    var isSel = ev.certifier && c.id === selId;
+    var cls = 'awo-opt' + (isSel ? ' rec' + (selId !== recId ? ' pick' : '') : '') + (ev.certifier ? '' : ' dis');
+    var membsHtml = ev.members.map(function(m){
+      var k = m.base === 'B1' ? 'b1' : m.base === 'B2' ? 'b2' : 'h';
+      return '<span class="awo-mav ' + k + '" title="' + esc(m.name) + '">' + ini(m.name) + '</span>';
+    }).join('');
+    h += '<div class="' + cls + '"' + (ev.certifier ? ' data-awo-pick="' + c.id + '"' : '') + '>';
+    h += '<div class="awo-head"><span class="awo-sw" style="background:' + colorHex + '"></span><span class="awo-nm">' + esc(c.name) + '</span><span class="awo-membs">' + membsHtml + '</span><span class="awo-state ' + ev.stateCls + '">' + esc(ev.state) + '</span></div>';
+    // chips de capacidad
+    var chips = '';
+    if (ev.bases.length) chips += '<span class="awo-mt ok">✓ ' + ev.bases.join(' + ') + '</span>';
+    if (ev.missChip) chips += '<span class="awo-mt miss">' + esc(ev.missChip) + '</span>';
+    if (ev.certifier) chips += '<span class="awo-mt eta">furgo ' + travel + ' min</span>';
+    if (chips) h += '<div class="awo-match">' + chips + '</div>';
+    // proyección
+    if (ev.proj){
+      var p = ev.proj;
+      var fitCls = p.margin >= 15 ? 'fit' : p.margin >= 0 ? 'tight' : 'over';
+      var label = 'cierra ' + hhmm(p.close) + ' · ' + (p.margin >= 0 ? '+' + p.margin + ' min de margen' : 'SLA vencido por ' + Math.abs(p.margin) + ' min');
+      var span = Math.max(p.close - now, wo.slaMinute - now, 1) * 1.06;
+      var travelW = Math.max(travel / span * 100, 1.5);
+      var workW = (p.workReal * (inspMainMin / phasesMin)) / span * 100;
+      var testW = (p.workReal * (testRelMin / phasesMin)) / span * 100;
+      var slaPos = Math.max(0, Math.min(98.5, (wo.slaMinute - now) / span * 100));
+      h += '<div class="awo-pred"><div class="awo-pl"><b class="' + fitCls + '">' + label + '</b></div><div class="awo-track">';
+      h += '<span class="awo-seg travel" style="left:0;width:' + travelW.toFixed(1) + '%"></span>';
+      h += '<span class="awo-seg work" style="left:' + travelW.toFixed(1) + '%;width:' + workW.toFixed(1) + '%"></span>';
+      h += '<span class="awo-seg test" style="left:' + (travelW + workW).toFixed(1) + '%;width:' + testW.toFixed(1) + '%"></span>';
+      if (p.margin < 0){
+        var closePos = Math.min((p.close - now) / span * 100, 100);
+        h += '<span class="awo-over" style="left:' + slaPos.toFixed(1) + '%;width:' + Math.max(closePos - slaPos, 1).toFixed(1) + '%"></span>';
+      }
+      h += '<span class="awo-dead" style="left:' + slaPos.toFixed(1) + '%"></span>';
+      h += '</div></div>';
+    }
+    h += '</div>';
+  });
+
+  // Pie: dejar al foreman (si hay TMA) + asignar la seleccionada
+  var foreman = game.mechanics.find(function(m){ return m.isLeadForeman; });
+  h += '<div class="awo-foot">';
+  if (foreman) h += '<button class="awo-fbtn" id="awo-foreman"><span>Dejar al foreman</span><span class="sub">auto · ' + esc(foreman.name.split(' ')[0]) + ' decide</span></button>';
+  if (selEval) h += '<button class="awo-fbtn primary" data-assign-crew="' + selEval.crew.id + '"><span>Asignar ' + esc(selEval.crew.name) + ' →</span><span class="sub">cierra ' + hhmm(selEval.proj.close) + (selEval.proj.margin >= 0 ? ' · +' + selEval.proj.margin + ' min' : ' · SLA vencido') + '</span></button>';
+  else h += '<button class="awo-fbtn primary" disabled><span>Sin cuadrillas elegibles</span><span class="sub">ningún oficial ' + esc(tpl.requiredCategory) + ' libre con rating</span></button>';
+  h += '</div>';
+  return h;
+}
+
 function renderModal(){
   const back = document.getElementById("modal-back");
   if (repModalOpen) {
@@ -100690,18 +100865,18 @@ function renderModal(){
     const deferTitle = mc ? `Difiere la WO ${S.MEL_DEFERRAL_DAYS[mc]} días (libera mecánicos · vence con -10k € + -5 rep)` : 'No diferible: AOG / Critical / sin MEL';
     inner += `<div style="margin-top:1rem"><button id="btn-defer"${!mc?' disabled':''} title="${deferTitle}">📋 Diferir (MEL ${mc ?? '—'})</button></div>`;
   } else {
-    // Cuadrillas: mandar una cuadrilla ENTERA de un golpe (oficial + helpers viajan juntos en su
-    // furgo). Cubre tanto Operaciones como el click en el avión del mapa (misma ficha de WO).
-    var crewsAvail = (game.crews||[]).filter(function(cr){ return cr.officerIds.length>0; });
-    if (crewsAvail.length){
-      inner += '<h4 style="margin-bottom:.3rem">🚐 Mandar cuadrilla</h4><div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem">';
-      for (var ci=0; ci<crewsAvail.length; ci++){
-        var cr = crewsAvail[ci];
-        var crHex = '#' + (cr.color>>>0).toString(16).padStart(6,'0');
-        inner += '<button data-assign-crew="'+cr.id+'" style="display:flex;align-items:center;gap:.4rem;padding:.3rem .6rem;border:1px solid var(--border);border-left:3px solid '+crHex+';border-radius:6px;background:var(--panel);cursor:pointer"><span style="width:10px;height:10px;border-radius:2px;background:'+crHex+';display:inline-block"></span>'+esc(cr.name)+' <span class="muted" style="font-size:.7rem">('+(cr.officerIds.length+cr.helperIds.length)+' pers)</span></button>';
-      }
-      inner += '</div><div class="muted" style="font-size:.75rem;margin-bottom:.6rem">…o asigna a mano:</div>';
+    // Cajón crew-first (diseño cloud "Asignar WO.html" 2026-06-11): cards por cuadrilla
+    // con elegibilidad real del sim + proyección de cierre vs SLA + RECOMENDADA. Cubre
+    // tanto Operaciones como el click en el avión del mapa (misma ficha de WO). La
+    // asignación manual mecánico-a-mecánico queda plegada debajo (toggle).
+    var hasCrews = (game.crews||[]).some(function(cr){ return cr.officerIds.length>0; });
+    if (hasCrews){
+      inner += crewAssignSection(wo, tpl, ap);
+      inner += '<div style="display:flex;align-items:center;gap:.7rem;margin-top:.2rem"><button class="awo-manual-t" id="awo-manual-toggle">' + (awoManualOpen ? '▾ ocultar asignación manual' : '▸ asignación manual (mecánico a mecánico)…') + '</button>' + (!awoManualOpen ? '<button id="btn-defer"' + (!mc ? ' disabled' : '') + ' style="margin-left:auto" title="' + (mc ? 'Difiere la WO (vence con penalty)' : 'No diferible: AOG / Critical / sin MEL') + '">📋 Diferir (MEL ' + (mc || '—') + ')</button>' : '') + '</div>';
+    } else {
+      awoManualOpen = true; // sin cuadrillas formadas: el form manual es la única vía
     }
+    if (awoManualOpen) {
     inner += '<h4>Asignar mecánicos</h4><label>Certifier (con type rating válido):</label><select id="sel-cert"><option value="">— elegir —</option>';
     for (const m of certs) {
       const available = m.state === "Idle";
@@ -100757,6 +100932,7 @@ function renderModal(){
 
     if (hintMsg) inner += `<p class="muted" style="margin:.5rem 0;color:var(--warning);font-size:.85rem">${hintMsg}</p>`;
     inner += `<div style="margin-top:.5rem;display:flex;gap:.5rem">${primaryButton}<button id="btn-defer"${!mc?' disabled':''} title="${deferTitle}">📋 Diferir (MEL ${mc ?? '—'})</button></div>`;
+    } // fin awoManualOpen (form manual plegable bajo el cajón crew-first)
   }
   inner += '</div>';
   if (inner !== lastModalHtml) {
@@ -101584,10 +101760,20 @@ document.body.addEventListener("click", (e) => {
     render();
     return;
   }
+  // Cajón Asignar WO (crew-first 2026-06-11): elegir card / plegar manual / dejar al foreman.
+  const awoPick = e.target.closest && e.target.closest("[data-awo-pick]");
+  if (awoPick && selectedWoId && !e.target.closest("[data-assign-crew]")) {
+    awoSelCrewId = awoPick.dataset.awoPick; render(); return;
+  }
+  if (e.target.closest && e.target.closest("#awo-manual-toggle")) { awoManualOpen = !awoManualOpen; render(); return; }
+  if (e.target.closest && e.target.closest("#awo-foreman")) {
+    // "Dejar al foreman": cierra la ficha sin asignar — el TMA (auto-assign) la coge si procede.
+    selectedWoId = null; awoSelCrewId = null; render(); return;
+  }
   const crewBtn = e.target.closest && e.target.closest("[data-assign-crew]");
   if (crewBtn && selectedWoId) {
     const r = S.assignCrewToWo(game, selectedWoId, crewBtn.dataset.assignCrew);
-    if (r.ok) { selectedWoId = null; invalidatePanelCache(); render(); }
+    if (r.ok) { selectedWoId = null; awoSelCrewId = null; invalidatePanelCache(); render(); }
     else alert("No se puede mandar la cuadrilla: " + (r.error ?? "razón desconocida"));
     return;
   }
