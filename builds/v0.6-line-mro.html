@@ -1703,7 +1703,7 @@ var Sim = (() => {
     const minRepBonus = TIER_MIN_REP_BONUS[tier];
     const baseFeePerWeek = Math.round(randInt(rng, 12e3, 22e3) * repFactor * feeMult);
     const paymentPerWOMinute = Math.round(randFloat(rng, 50, 72) * repFactor * feeMult);
-    const penaltyPerLateMinute = Math.round(randFloat(rng, 3, 8) * repFactor * penaltyMult);
+    const penaltyPerLateMinute = Math.round(randFloat(rng, 8, 18) * repFactor * penaltyMult);
     const minReputation = Math.max(0, Math.min(95, Math.round(randInt(rng, 35, 55) + (repFactor - 1) * 15) + minRepBonus));
     const expectedLandingsPerDay = randInt(rng, 3, 9);
     return { baseFeePerWeek, paymentPerWOMinute, penaltyPerLateMinute, minReputation, expectedLandingsPerDay, tier };
@@ -1887,10 +1887,17 @@ var Sim = (() => {
     _contractCounter += 1;
     return `C-${_contractCounter.toString().padStart(3, "0")}`;
   }
+  var MAX_OFFERS_PER_TICK = 1;
+  var MAX_PENDING_OFFERS = 2;
   function tickContractMarket(rng, contracts, airlines, reputationByAirline, nowMinute) {
     const newlyOffered = [];
     const updated = [...contracts];
     for (const al of airlines) {
+      if (newlyOffered.length >= MAX_OFFERS_PER_TICK) break;
+      const pendingOffers = updated.filter(
+        (c) => c.status === "offered" && (c.expiresAtMinute === void 0 || nowMinute < c.expiresAtMinute)
+      ).length;
+      if (pendingOffers >= MAX_PENDING_OFFERS) break;
       const rep = reputationByAirline[al.id] ?? 50;
       if (rep < AIRLINE_OFFER_REP_THRESHOLD) continue;
       const alreadyEngaged = updated.some(
@@ -1928,6 +1935,11 @@ var Sim = (() => {
       }
     }
     for (const al of airlines) {
+      if (newOffers.length >= MAX_OFFERS_PER_TICK) break;
+      const pendingOffers = updated.filter(
+        (c) => c.status === "offered" && (c.expiresAtMinute === void 0 || nowMinute < c.expiresAtMinute)
+      ).length;
+      if (pendingOffers >= MAX_PENDING_OFFERS) break;
       if (!al.iataCode) continue;
       const repIndividual = reputationByAirline[al.id] ?? 50;
       const repToEvaluate = brandRepForOutsiders ?? repIndividual;
@@ -9970,7 +9982,7 @@ var Sim = (() => {
         (w) => w.airplaneInstanceId === a.instanceId && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred"
       );
       if (blocking.length > 0) {
-        const currentDelay = nowMinute - a.scheduledDepartureMinute;
+        const currentDelay = Math.round(nowMinute - a.scheduledDepartureMinute);
         if (currentDelay >= AOG_DELAY_THRESHOLD_MIN && !a.aogEscalated) {
           a.aogEscalated = true;
           a.aogEscalatedAtMinute = nowMinute;
@@ -9995,7 +10007,7 @@ var Sim = (() => {
         }
         continue;
       }
-      const rawDelay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
+      const rawDelay = Math.round(Math.max(0, nowMinute - a.scheduledDepartureMinute));
       const wasEligibleLastTick = nowMinute - stepMinutes >= a.scheduledDepartureMinute;
       const delay = wasEligibleLastTick ? rawDelay : 0;
       a.actualDepartureMinute = nowMinute;
@@ -14425,7 +14437,7 @@ var Sim = (() => {
           tier: "line",
           baseFeePerWeek: 15e3,
           paymentPerWOMinute: 65,
-          penaltyPerLateMinute: 5,
+          penaltyPerLateMinute: 10,
           minReputation: 40,
           expectedLandingsPerDay: 5,
           withOvernight: true
@@ -14469,7 +14481,7 @@ var Sim = (() => {
           tier: "line",
           baseFeePerWeek: 5e3,
           paymentPerWOMinute: 55,
-          penaltyPerLateMinute: 5,
+          penaltyPerLateMinute: 10,
           minReputation: 40,
           expectedLandingsPerDay: 2,
           withOvernight: false
@@ -97709,6 +97721,22 @@ let settingsCat = "audio";
 let howtoStep = 0; // Cómo se juega (handoff entrega-menu 3): paso activo 0..3
 let catalogTab = "aircraft"; // Catálogo: pestaña activa (aircraft|tasks|daily|checks|airlines|airports|economy)
 let catAtaOpen = {}; // Catálogo·Tareas: capítulos ATA desplegados (manual acordeón)
+// === Progresión de usuario (Dani 2026-06-11) — meta-nivel persistente ENTRE partidas ===
+// rookie: en Nueva Partida solo OVD (LEAS) + arranque Vueling elegibles → progresión enfocada.
+// Al lograr LOS 3 HITOS jugando en OVD subes a "medio" y se desbloquean el resto de aeropuertos
+// y arranques para partidas distintas. Vive en localStorage mro_player_profile (no en el save:
+// es del USUARIO, no de la partida).
+let playerProfile = { level: "rookie", ovd: {} };
+try { const _pp = (typeof localStorage !== "undefined") ? localStorage.getItem("mro_player_profile") : null; if (_pp) { const _p = JSON.parse(_pp); if (_p && typeof _p === "object") playerProfile = { level: _p.level === "medio" ? "medio" : "rookie", ovd: _p.ovd || {} }; } } catch (e) {}
+function saveProfile(){ try { if (typeof localStorage !== "undefined") localStorage.setItem("mro_player_profile", JSON.stringify(playerProfile)); } catch (e) {} }
+const PROFILE_GOALS = [
+  ["volotea", "Firma el contrato de Volotea"],
+  ["caja", "Llega a 400.000 € de caja"],
+  ["rep", "Rep media ≥ 60 con 2+ semanas operadas"],
+];
+function profileGoalsDone(){ var n = 0; for (var i = 0; i < PROFILE_GOALS.length; i++) if (playerProfile.ovd[PROFILE_GOALS[i][0]]) n++; return n; }
+function isMedio(){ return playerProfile.level === "medio"; }
+let nightHintShown = false; // hint one-shot por sesión: turno de noche sin cubrir con rotación nocturna
 // Cierre Semanal (handoff entrega-menu 3): cuando el sim cierra una semana (kpiHistory
 // crece dentro de S.advanceGame), pausamos el reloj y mostramos el modal. weeklyCloseData
 // guarda el snapshot a mostrar (null = sin modal). lastKpiLen detecta el crecimiento.
@@ -101087,6 +101115,12 @@ const TUT_STEPS = [
     body: "En <strong>🏢 Oficina</strong> gestionas a tus mecánicos: turnos, moral y contratación de nuevos.",
     why: "Tu equipo es tu capacidad. Pocos mecánicos = avisos sin atender = penalizaciones.",
     target: ".side button[data-tab=\"office\"]", place: "right", showNext: true },
+  // Lección dura descubierta jugando (2026-06-11): la rotación de las ~22:15 sin turno de
+  // noche escala a AOG cada madrugada → rep -60 en 5 días → rescisión. Avisar EXPLÍCITO.
+  { phase: "Sistemas", title: "La noche no perdona",
+    body: "Mira el <strong>📅 Schedule</strong>: hay una rotación que aterriza ~22:15 y sale ~23:10. Si su avería cae <strong>sin nadie en turno de NOCHE</strong>, no se atiende, el avión no sale y de madrugada escala a <strong>AOG</strong>.",
+    why: "Es el error nº1 del principiante: cubrir solo mañana y tarde. En cuanto fiches, reparte los turnos para cubrir las 24h — la Oficina te marca en rojo el turno sin cubrir.",
+    target: null, place: "center", showNext: true },
   { phase: "Sistemas", title: "Economía",
     body: "En <strong>💼 Economía</strong> ves tus finanzas: cobros, salarios y penalizaciones, semana a semana.",
     why: "Si gastas más de lo que ingresas, quiebras. Vigila el balance al cerrar cada semana.",
@@ -102031,6 +102065,61 @@ function focusMapOnStand(standId, tries){
   if (mapDriver && mapDriver.app) { focusMapOnNorm(norm[0], norm[1], 2.6); return; }
   if ((tries || 0) < 12) setTimeout(function(){ focusMapOnStand(standId, (tries || 0) + 1); }, 80);
 }
+// === Progresión de usuario: hitos OVD → nivel MEDIO (Dani 2026-06-11) ===
+// Evalúa los 3 hitos de carrera jugando en OVD. Cada hito nuevo dispara el overlay dorado de
+// Hito; al completar los 3, sube el PERFIL (persistente entre partidas) a "medio" y anuncia
+// los aeropuertos desbloqueados. Concatenación pura (regla APP_JS).
+function checkProfileProgress(){
+  if (!game || !game.clock || newGameStep !== null) return;
+  if (game.gameOver && game.gameOver.isOver) return;
+  if ((game.airportIcao || "LEAS") !== "LEAS") return; // los hitos de carrera se logran en OVD
+  var changed = false;
+  var hit = function(key, ms){ if (!playerProfile.ovd[key]) { playerProfile.ovd[key] = true; changed = true; if (ms && !milestoneData && !weeklyCloseData) { milestoneData = ms; try { S.setGameSpeed(game, 0); } catch (e) {} } } };
+  var v7 = game.airlines.find(function(a){ return a.iataCode === "V7"; });
+  if (v7 && game.contracts.some(function(c){ return c.status === "active" && c.airlineId === v7.id; })) {
+    hit("volotea", { icon: "🏁", kicker: "Hito de carrera · Volotea", titlePre: "", titleHl: "Volotea firmada",
+      descPre: " — el objetivo del arranque Rookie en OVD. Completa los 3 hitos de carrera para subir a nivel MEDIO y desbloquear nuevos aeropuertos.", rewards: [] });
+  }
+  if (game.economy.balance >= 400000) {
+    hit("caja", { icon: "💰", kicker: "Hito de carrera · Caja", titlePre: "", titleHl: "400.000 € de caja",
+      descPre: " — tu MRO ya es un negocio de verdad. Los hitos de carrera te acercan al nivel MEDIO.", rewards: [] });
+  }
+  var repsObj = (game.reputation && game.reputation.perAirline) || {};
+  var repKeys = Object.keys(repsObj);
+  var repAvg = repKeys.length ? repKeys.reduce(function(s, k){ return s + repsObj[k]; }, 0) / repKeys.length : 0;
+  if (repAvg >= 60 && game.clock.minute >= 2 * 7 * 1440) {
+    hit("rep", { icon: "⭐", kicker: "Hito de carrera · Marca", titlePre: "", titleHl: "Reputación consolidada",
+      descPre: " — media ≥ 60 tras dos semanas operando. El sector empieza a hablar de ti.", rewards: [] });
+  }
+  if (changed) {
+    saveProfile();
+    if (!isMedio() && profileGoalsDone() >= PROFILE_GOALS.length) {
+      playerProfile.level = "medio"; saveProfile();
+      milestoneData = { icon: "🎖️", kicker: "Nivel de carrera", titlePre: "", titleHl: "NIVEL MEDIO desbloqueado",
+        descPre: " — has dominado Asturias. Bilbao (LEBB) y Alicante (LEAL) ya están disponibles en Nueva Partida, con sus propios operadores y arranques.", rewards: [] };
+      try { S.setGameSpeed(game, 0); } catch (e) {}
+      game.notifCounter += 1;
+      game.notifications.push({ id: game.notifCounter, minute: game.clock.minute, text: "🎖️ NIVEL MEDIO — nuevos aeropuertos desbloqueados en Nueva Partida", type: "success" });
+    }
+  }
+}
+// Hint one-shot del turno de noche: si hay rotación que sale de madrugada y NINGÚN oficial en
+// turno de noche, avisa pronto (D1 mediodía → D3). Sin esto la avería de la rotación de las
+// ~22:15 escala a AOG a las ~02:00 cada noche y el jugador nuevo no entiende por qué pierde.
+function checkNightHint(){
+  if (nightHintShown || !game || !game.clock || newGameStep !== null) return;
+  var m = game.clock.minute;
+  if (m < 720 || m > 4320) { if (m > 4320) nightHintShown = true; return; }
+  var hasNightOfficer = game.mechanics.some(function(x){ return (x.base === "B1" || x.base === "B2") && x.shift === "night"; });
+  if (hasNightOfficer) { nightHintShown = true; return; }
+  var hasNightRotation = game.airplanes.some(function(a){ if (a.actualDepartureMinute !== undefined || a.scheduledDepartureMinute == null) return false; var d = a.scheduledDepartureMinute % 1440; return d >= 1290 || d < 120; });
+  if (!hasNightRotation) return;
+  nightHintShown = true;
+  game.notifCounter += 1;
+  game.notifications.push({ id: game.notifCounter, minute: m,
+    text: "🌙 OJO: hay rotación que sale de madrugada (~23:10). Sin un oficial en turno de NOCHE su avería no se atiende y escalará a AOG (~02:00). Ficha o mueve a alguien a noche en la Oficina.",
+    type: "warning" });
+}
 function detectEvents(){
   var aps = game.airplanes;
   var apById = {}; for (var x = 0; x < aps.length; x++) apById[aps[x].instanceId] = aps[x];
@@ -102199,12 +102288,18 @@ function renderNewGameWizard() {
         cards += `<div class="foh-lcard" title="${esc(ap.comingSoonReason ?? "Próximamente")}"><h3>${esc(ap.name)}</h3><div class="code">${ap.icao} / ${ap.iata} · ${ap.country}</div><div class="lock">⏳ ${esc(ap.comingSoonReason ?? "Próximamente")}</div></div>`;
         continue;
       }
+      // Progresión de usuario (2026-06-11): a nivel rookie solo OVD es elegible. El resto se
+      // desbloquea al subir a MEDIO (los 3 hitos de carrera jugando en OVD).
+      if (!isMedio() && ap.icao !== "LEAS") {
+        cards += `<div class="foh-lcard" title="Completa los hitos de carrera en Asturias para desbloquear"><h3>${esc(ap.name)}</h3><div class="code">${ap.icao} / ${ap.iata} · ${ap.country}</div><div class="lock">🔒 Nivel MEDIO · hitos OVD ${profileGoalsDone()}/${PROFILE_GOALS.length}</div></div>`;
+        continue;
+      }
       const isFeat = ap.icao === featIcao;
       const opCount = ap.operators.filter(o => o.available).length;
       const model = ap.operators[0]?.metrics?.model ?? "A320";
       cards += `<a class="foh-apcard${isFeat ? " feat" : ""}" data-newgame-airport="${ap.icao}">${isFeat ? '<span class="ribbon">Recomendado</span>' : ""}<div class="ah"><h2>${esc(ap.name)}</h2><div class="code">${ap.icao} / ${ap.iata} · ${esc(ap.city)}</div><div class="stars">${stars}</div></div><div class="desc">${esc(ap.shortDesc)}</div><div class="metrics"><div class="m"><div class="k">Operadores</div><div class="v">${opCount} <span class="u">contrat.</span></div></div><div class="m"><div class="k">Flota base</div><div class="v" style="font-size:13px">${esc(model)}</div></div><div class="m"><div class="k">Dificultad</div><div class="v">${ap.difficultyOverall}<span class="u">/5</span></div></div></div><div class="acta"><span class="note">LAYOUT OSM REAL · 2026</span><span class="foh-btn primary" style="pointer-events:none">Seleccionar <span class="foh-ar"></span></span></div></a>`;
     }
-    body = `<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> Nueva partida</div><div class="foh-steprail"><span class="s on"><span class="n">1</span> Aeropuerto</span><span class="bar"></span><span class="s"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 1 de 2 · Base de operaciones</div><h1>Elige tu <span class="t">base</span></h1><p class="sub">Cada aeropuerto trae layout OSM real, schedule de AeroDataBox y operadores físicos saneados. Empieza pequeño: el resto se irá activando.</p></div><div class="foh-cards">${cards}</div><div class="foh-foot"><span class="foh-btn back ghost" id="ng-back-menu"><span class="foh-ar"></span> Menú principal</span><div class="right"><span>${availCount} / ${catalog.airports.length} AEROPUERTOS DISPONIBLES</span></div></div></div>`;
+    body = `<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> Nueva partida</div><div class="foh-steprail"><span class="s on"><span class="n">1</span> Aeropuerto</span><span class="bar"></span><span class="s"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 1 de 2 · Base de operaciones</div><h1>Elige tu <span class="t">base</span></h1><p class="sub">Cada aeropuerto trae layout OSM real, schedule de AeroDataBox y operadores físicos saneados. Empieza pequeño: el resto se irá activando.</p></div><div class="foh-cards">${cards}</div><div class="foh-foot"><span class="foh-btn back ghost" id="ng-back-menu"><span class="foh-ar"></span> Menú principal</span><div class="right"><span>NIVEL ${isMedio() ? "MEDIO" : `ROOKIE · HITOS OVD ${profileGoalsDone()}/${PROFILE_GOALS.length}`} · ${availCount} / ${catalog.airports.length} AEROPUERTOS</span></div></div></div>`;
   } else if (newGameStep === "operator") {
     const ap = catalog.airports.find(a => a.icao === newGameSelectedIcao);
     if (!ap) { newGameStep = "airport"; return renderNewGameWizard(); }
@@ -102213,9 +102308,12 @@ function renderNewGameWizard() {
     let cards = "";
     for (const op of ap.operators) {
       const stars = "★".repeat(op.difficulty) + "☆".repeat(Math.max(0, 5 - op.difficulty));
-      const dis = !op.available;
-      const isRec = op.presetFile === recPreset;
-      cards += `<div class="foh-op${dis ? " dis" : ""}${isRec ? " rec" : ""}" style="--oc:${op.color}" ${op.available ? `data-newgame-preset="${op.presetFile}"` : ""} ${dis ? `title="${esc(op.comingSoonReason ?? "Próximamente")}"` : ""}><div class="topbar"></div><div class="oh"><div class="nm"><h2>${esc(op.operatorName)}</h2><span class="iata">${esc(op.operatorIata)}</span></div><div class="diff"><span class="stars" style="color:${op.color}">${stars}</span><span class="lbl">${esc(op.difficultyLabel)}</span></div></div><div class="shortline">${esc(op.shortLine)}</div><div class="tagline">"${esc(op.tagline)}"</div><div class="ometrics"><div class="row"><span class="k">Movimientos / sem</span><span class="v">${op.metrics.movsPerWeek}</span></div><div class="row"><span class="k">Pernoctas / sem</span><span class="v">${op.metrics.overnightsPerWeek}</span></div><div class="row"><span class="k">Modelo</span><span class="v">${esc(op.metrics.model)}</span></div><div class="row"><span class="k">Balance inicial</span><span class="v" style="color:var(--success)">${op.metrics.balance.toLocaleString("es-ES")} €</span></div><div class="row"><span class="k">Mecánicos</span><span class="v">${esc(op.metrics.mechs)}</span></div></div><div class="octa">${op.available ? `<span class="foh-btn" style="pointer-events:none">Empezar con ${esc(op.operatorName)} <span class="foh-ar"></span></span>` : `<span class="foh-btn ghost" style="pointer-events:none;opacity:.75">⏳ ${esc(op.comingSoonReason ?? "Próximamente")}</span>`}</div></div>`;
+      // Progresión (2026-06-11): a nivel rookie solo el arranque Vueling de OVD es elegible.
+      const lockedOp = !isMedio() && op.presetFile !== "LEAS_vueling.preset.json";
+      const dis = !op.available || lockedOp;
+      const lockMsg = lockedOp ? "Empieza con Vueling: los demás arranques se desbloquean a nivel MEDIO (hitos de carrera en OVD)" : (op.comingSoonReason ?? "Próximamente");
+      const isRec = op.presetFile === recPreset && !dis;
+      cards += `<div class="foh-op${dis ? " dis" : ""}${isRec ? " rec" : ""}" style="--oc:${op.color}" ${!dis ? `data-newgame-preset="${op.presetFile}"` : ""} ${dis ? `title="${esc(lockMsg)}"` : ""}><div class="topbar"></div><div class="oh"><div class="nm"><h2>${esc(op.operatorName)}</h2><span class="iata">${esc(op.operatorIata)}</span></div><div class="diff"><span class="stars" style="color:${op.color}">${stars}</span><span class="lbl">${esc(op.difficultyLabel)}</span></div></div><div class="shortline">${esc(op.shortLine)}</div><div class="tagline">"${esc(op.tagline)}"</div><div class="ometrics"><div class="row"><span class="k">Movimientos / sem</span><span class="v">${op.metrics.movsPerWeek}</span></div><div class="row"><span class="k">Pernoctas / sem</span><span class="v">${op.metrics.overnightsPerWeek}</span></div><div class="row"><span class="k">Modelo</span><span class="v">${esc(op.metrics.model)}</span></div><div class="row"><span class="k">Balance inicial</span><span class="v" style="color:var(--success)">${op.metrics.balance.toLocaleString("es-ES")} €</span></div><div class="row"><span class="k">Mecánicos</span><span class="v">${esc(op.metrics.mechs)}</span></div></div><div class="octa">${!dis ? `<span class="foh-btn" style="pointer-events:none">Empezar con ${esc(op.operatorName)} <span class="foh-ar"></span></span>` : `<span class="foh-btn ghost" style="pointer-events:none;opacity:.75">${lockedOp ? "🔒 Nivel MEDIO" : `⏳ ${esc(op.comingSoonReason ?? "Próximamente")}`}</span>`}</div></div>`;
     }
     body = `<div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> ${esc(ap.name)} · ${ap.icao} / ${ap.iata}</div><div class="foh-steprail"><span class="s done"><span class="n">✓</span> Aeropuerto</span><span class="bar"></span><span class="s on"><span class="n">2</span> Operador</span></div></div><div class="foh-head"><div class="foh-eyebrow">Paso 2 de 2 · Tu primer cliente</div><h1>Elige tu <span class="t">operador</span> de arranque</h1><p class="sub">El primer contrato define tu setup inicial — flota, fees y dificultad. Puedes captar a los demás más adelante subiendo reputación.</p></div><div class="foh-cards ops">${cards}</div><div class="foh-foot"><button class="foh-btn back ghost" id="ng-back"><span class="foh-ar"></span> Cambiar aeropuerto</button><div class="right"><span>SETUP REVERSIBLE · CAPTA AL RESTO IN-GAME</span></div></div></div><div class="foh-loader" id="foh-loader"><div class="spin"></div><div class="txt">Inicializando MRO…</div></div>`;
   }
@@ -102925,6 +103023,8 @@ setInterval(() => {
     }
     lastProductionPackageDay = gd;
   }
+  checkProfileProgress();
+  checkNightHint();
   detectEvents();
   pumpEvents();
   const _tC = performance.now();
