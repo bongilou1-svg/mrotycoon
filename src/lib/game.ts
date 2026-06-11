@@ -731,7 +731,7 @@ function processDepartures(g: GameState, nowMinute: number, stepMinutes: number)
     // aogEscalated, marcarlo + cobrar penalty UNA VEZ (no esperar al departure final).
     // Cuando finalmente despegue, processDepartures ya verá aogEscalated=true y no doblará.
     if (blocking.length > 0) {
-      const currentDelay = nowMinute - a.scheduledDepartureMinute;
+      const currentDelay = Math.round(nowMinute - a.scheduledDepartureMinute);
       if (currentDelay >= AOG_DELAY_THRESHOLD_MIN && !a.aogEscalated) {
         a.aogEscalated = true;
         a.aogEscalatedAtMinute = nowMinute;
@@ -769,7 +769,9 @@ function processDepartures(g: GameState, nowMinute: number, stepMinutes: number)
     // (prevTick < sched) → eran puntuales en tiempo continuo, el desfase era puro artefacto.
     // Regla: solo es retraso REAL si el avión YA era elegible en el tick anterior (estuvo
     // retenido/bloqueado más allá de su hora). Si este es el primer tick elegible, delay = 0.
-    const rawDelay = Math.max(0, nowMinute - a.scheduledDepartureMinute);
+    // Math.round: el reloj es fraccional (ticks de 0.1 min) → sin redondear, delayMinutes
+    // acababa como 170.10000000000002 y se filtraba a notifs/popups (visto 2026-06-11).
+    const rawDelay = Math.round(Math.max(0, nowMinute - a.scheduledDepartureMinute));
     const wasEligibleLastTick = (nowMinute - stepMinutes) >= a.scheduledDepartureMinute;
     const delay = wasEligibleLastTick ? rawDelay : 0;
     a.actualDepartureMinute = nowMinute;
