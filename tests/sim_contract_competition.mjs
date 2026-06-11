@@ -287,16 +287,22 @@ console.log("\n=== Per-airline brandThreshold ordena las ofertas (V7→VY→U2) 
   expect(offerersAt75.has(vy.id), "brand=75 → Vueling oferta (70<75)");
   expect(!offerersAt75.has(u2.id), "brand=75 → easyJet NO oferta (85>75)");
 
-  // Brand=90 → todas pueden ofertar.
+  // Brand=90 → todas PUEDEN ofertar… pero ESCALONADO (rebalance 2026-06-11): máx 1 oferta
+  // nueva por tick (la primera elegible que pasa su roll). Para que las de threshold alto
+  // (easyJet) aparezcan hace falta que las de threshold bajo fallen su roll ese tick →
+  // muestreamos muchos más ticks. Y validamos el cap: nunca >1 oferta por tick.
   _resetContractCounter(5000);
   const offerersAt90 = new Set();
-  for (let seed = 1; seed <= 30; seed++) {
+  let maxOffersPerTick90 = 0;
+  for (let seed = 1; seed <= 300; seed++) {
     const rng = createRng(seed);
     const r = tickLineCompetition(rng, [], airlines, rep, seed * 100000, 90);
+    maxOffersPerTick90 = Math.max(maxOffersPerTick90, r.newOffers.length);
     for (const o of r.newOffers) offerersAt90.add(o.airlineId);
   }
   expect(offerersAt90.has(v7.id) && offerersAt90.has(vy.id) && offerersAt90.has(u2.id),
-    "brand=90 → todas ofertan");
+    "brand=90 → todas acaban ofertando (a lo largo de ticks)");
+  expect(maxOffersPerTick90 <= 1, `escalonado: nunca más de 1 oferta por tick (got ${maxOffersPerTick90})`);
 }
 
 console.log(`\n=== Total: ${pass} OK, ${fail} FAIL`);

@@ -21,7 +21,7 @@
         "tier": "line",
         "baseFeePerWeek": 15000,
         "paymentPerWOMinute": 65,
-        "penaltyPerLateMinute": 5,
+        "penaltyPerLateMinute": 10,
         "minReputation": 40,
         "expectedLandingsPerDay": 5,
         "withOvernight": true

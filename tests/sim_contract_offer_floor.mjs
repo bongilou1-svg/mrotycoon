@@ -23,12 +23,14 @@ console.log("\n=== constantes del piso ===");
 expect(LINE_OFFER_BASE_PROB === 0.4, `LINE_OFFER_BASE_PROB = 0.4 (got ${LINE_OFFER_BASE_PROB})`);
 expect(LINE_OFFER_MAX_PROB > LINE_OFFER_BASE_PROB, `MAX (${LINE_OFFER_MAX_PROB}) > BASE (${LINE_OFFER_BASE_PROB})`);
 
-console.log("\n=== JUSTO en el umbral + rng < piso → TODAS ofertan (antes: 0% → ninguna) ===");
+console.log("\n=== JUSTO en el umbral + rng < piso → oferta (antes: 0% → ninguna) ===");
 {
   // prob en el umbral = BASE_PROB (0.4). rng 0.3 < 0.4 → oferta. Con la fórmula vieja prob=0 → cero.
+  // Rebalance 2026-06-11: el mercado ESCALONA — máx 1 oferta nueva por tick aunque todas
+  // crucen su umbral (el piso se valida igual: 1 con rng<piso vs 0 con rng>piso).
   const res = tickLineCompetition(makeRng(0.3), [], real, repAtOwnThreshold(0), 1000);
-  expect(res.newOffers.length === real.length,
-    `las ${real.length} aerolíneas en su umbral ofertan (got ${res.newOffers.length})`);
+  expect(res.newOffers.length === 1,
+    `en el umbral oferta exactamente 1 por tick — escalonado (got ${res.newOffers.length})`);
 }
 
 console.log("\n=== JUSTO en el umbral + rng > piso → ninguna (confirma que el piso es 0.4, no 1.0) ===");
@@ -47,7 +49,7 @@ console.log("\n=== rep máxima (100) → prob MAX (0.6): rng 0.55 oferta, 0.65 n
 {
   const rep100 = {}; for (const a of real) rep100[a.id] = 100;
   const yes = tickLineCompetition(makeRng(0.55), [], real, rep100, 1000);
-  expect(yes.newOffers.length === real.length, `rng 0.55 < MAX 0.6 → todas ofertan (got ${yes.newOffers.length})`);
+  expect(yes.newOffers.length === 1, `rng 0.55 < MAX 0.6 → oferta (1 por tick, escalonado) (got ${yes.newOffers.length})`);
   const no = tickLineCompetition(makeRng(0.65), [], real, rep100, 1000);
   expect(no.newOffers.length === 0, `rng 0.65 > MAX 0.6 → ninguna (got ${no.newOffers.length})`);
 }

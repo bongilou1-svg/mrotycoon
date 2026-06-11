@@ -81,7 +81,9 @@ export function rollContractTerms(rng: Rng, params: ContractGenParams, tier: Con
   // Fase 4.5: multiplicadores tier escalan fees/penalty/minRep.
   const baseFeePerWeek = Math.round(randInt(rng, 12000, 22000) * repFactor * feeMult);
   const paymentPerWOMinute = Math.round(randFloat(rng, 50, 72) * repFactor * feeMult);
-  const penaltyPerLateMinute = Math.round(randFloat(rng, 3, 8) * repFactor * penaltyMult);
+  // Rebalance 2026-06-11: 3-8 → 8-18 €/min. Con 3-8 un despacho tarde típico (~70 min) costaba
+  // ~380 € — irrelevante: "asignar tarde" siempre ganaba a diferir y el MEL no tenía juego.
+  const penaltyPerLateMinute = Math.round(randFloat(rng, 8, 18) * repFactor * penaltyMult);
   const minReputation = Math.max(0, Math.min(95, Math.round(randInt(rng, 35, 55) + (repFactor - 1) * 15) + minRepBonus));
   const expectedLandingsPerDay = randInt(rng, 3, 9);
 
@@ -399,12 +401,20 @@ function nextContractId(): string {
   return `C-${_contractCounter.toString().padStart(3, "0")}`;
 }
 
+/** Rebalance 2026-06-11 (partida experta): el tick ofertaba para TODAS las aerolíneas elegibles
+ *  a la vez → D8 caían 5 ofertas standard simultáneas aceptables con 3 mecánicos (+411k/28d en
+ *  fees). Se escalona: máx 1 oferta nueva por tick y máx 2 pendientes sin responder. */
+const MAX_OFFERS_PER_TICK = 1;
+const MAX_PENDING_OFFERS = 2;
+
 /**
  * Tick periódico del mercado de contratos: para cada aerolínea sin contrato activo NI oferta
  * viva, si su rep ≥ AIRLINE_OFFER_REP_THRESHOLD, decide probabilísticamente (más prob cuanto más
  * alta la rep) si generar una nueva oferta.
  *
  * Si rep < threshold: esa aerolínea NUNCA ofrece (te dejan de querer).
+ * Escalonado (2026-06-11): corta en MAX_OFFERS_PER_TICK por tick y no genera si ya hay
+ * MAX_PENDING_OFFERS ofertas vivas sin responder — el mercado respira en vez de inundar.
  */
 export function tickContractMarket(
   rng: Rng,
@@ -416,6 +426,11 @@ export function tickContractMarket(
   const newlyOffered: Contract[] = [];
   const updated: Contract[] = [...contracts];
   for (const al of airlines) {
+    if (newlyOffered.length >= MAX_OFFERS_PER_TICK) break;
+    const pendingOffers = updated.filter(
+      (c) => c.status === "offered" && (c.expiresAtMinute === undefined || nowMinute < c.expiresAtMinute),
+    ).length;
+    if (pendingOffers >= MAX_PENDING_OFFERS) break;
     const rep = reputationByAirline[al.id] ?? 50;
     if (rep < AIRLINE_OFFER_REP_THRESHOLD) continue;
     // ¿Ya hay contrato vivo (active u offered no expirado)?
@@ -502,6 +517,16 @@ export function tickLineCompetition(
   // natural: a medida que tu brand sube, primero te oferta Volotea (operador local),
   // luego Iberia (rescue si la perdiste), luego Vueling, finalmente easyJet.
   for (const al of airlines) {
+    // Rebalance 2026-06-11 (partida experta): sin cap, el primer tick tras subir el brand
+    // soltaba 5 ofertas simultáneas (todas aceptables con 3 mecánicos → +411k/28d en fees).
+    // Escalonado: máx 1 oferta nueva por tick y máx 2 pendientes sin responder. Como las
+    // airlines se evalúan en orden de brandThreshold natural, la única oferta del tick es
+    // la del operador "más cercano" — progresión narrativa en vez de inundación.
+    if (newOffers.length >= MAX_OFFERS_PER_TICK) break;
+    const pendingOffers = updated.filter(
+      (c) => c.status === "offered" && (c.expiresAtMinute === undefined || nowMinute < c.expiresAtMinute),
+    ).length;
+    if (pendingOffers >= MAX_PENDING_OFFERS) break;
     if (!al.iataCode) continue; // solo aerolíneas reales del schedule
     const repIndividual = reputationByAirline[al.id] ?? 50;
     const repToEvaluate = brandRepForOutsiders ?? repIndividual;
