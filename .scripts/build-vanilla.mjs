@@ -1173,7 +1173,53 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 .linkcard .lk-ic{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;flex:none}
 .linkcard .lk-t{font:.6rem var(--disp);text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
 .linkcard .lk-v{font:600 .82rem var(--mono);color:var(--text)}
-.linkcard .lk-go{margin-left:auto;color:var(--dim)}`;
+.linkcard .lk-go{margin-left:auto;color:var(--dim)}
+/* ===== Cuadrillas shift board ===== */
+.cov-strip{display:flex;gap:.5rem;padding:.55rem 1rem;border-bottom:1px solid var(--border);background:#07090f;flex-wrap:wrap}
+.cov-chip{display:flex;align-items:center;gap:.5rem;padding:.42rem .65rem;border-radius:8px;background:var(--panel);border:1px solid var(--border);flex:1;min-width:160px;box-shadow:inset 3px 0 0 var(--chip-c,var(--border))}
+.cov-chip.cov-ok{--chip-c:var(--ok)}.cov-chip.cov-warn{--chip-c:var(--warn)}.cov-chip.cov-bad{--chip-c:var(--bad);border-color:rgba(248,81,73,.3)}
+.cov-ic{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-size:.85rem;flex:none}
+.cov-chip.cov-ok .cov-ic{background:rgba(63,185,80,.13)}.cov-chip.cov-warn .cov-ic{background:rgba(230,169,58,.13)}.cov-chip.cov-bad .cov-ic{background:rgba(248,81,73,.13)}
+.cov-lbl{font:.75rem var(--sans);font-weight:600;display:flex;align-items:center;gap:.35rem}.cov-hrs{font:.6rem var(--mono);color:var(--dim);margin-top:1px}
+.cov-cnt{margin-left:auto;font:700 1.1rem var(--mono)}
+.cov-chip.cov-ok .cov-cnt{color:var(--ok)}.cov-chip.cov-warn .cov-cnt{color:var(--warn)}.cov-chip.cov-bad .cov-cnt{color:var(--bad)}
+.cov-badge{font:.56rem var(--mono);padding:1px 5px;border-radius:4px;background:rgba(248,81,73,.13);color:var(--bad);border:1px solid rgba(248,81,73,.3)}
+.sb-wrap{display:grid;grid-template-columns:1fr 1fr 1fr 220px;height:calc(100vh - 210px);min-height:380px;overflow:hidden}
+.sb-col{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-col-h{display:flex;align-items:center;gap:.45rem;padding:.5rem .75rem;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:2;font:700 .85rem var(--sans)}
+.sh-ic{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;font-size:.82rem;flex:none}
+.sb-col.morning .sh-ic{background:rgba(230,169,58,.16)}.sb-col.afternoon .sh-ic{background:rgba(77,163,255,.16)}.sb-col.night .sh-ic{background:rgba(167,139,250,.16)}
+.sh-hrs{font:.62rem var(--mono);color:var(--muted);margin-left:.2rem}.sh-ct{margin-left:auto;font:.68rem var(--mono);color:var(--muted)}
+.sb-col.live-shift .sb-col-h{box-shadow:inset 0 -2px 0 var(--accent)}
+.sb-col-body{padding:.55rem;display:flex;flex-direction:column;gap:.45rem;flex:1}
+.cr-card{background:var(--panel);border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.cr-top{height:3px}.cr-head{display:flex;align-items:center;gap:.45rem;padding:.5rem .6rem .3rem}
+.cr-nm{font:700 .82rem var(--sans);flex:1}.cr-moral{font:.64rem var(--mono);color:var(--muted)}
+.cr-caps{display:flex;flex-wrap:wrap;gap:.22rem;padding:.1rem .6rem .32rem}
+.cr-cap{font:.57rem var(--mono);padding:1px 5px;border-radius:4px;background:#0b1422;border:1px solid var(--line);color:var(--muted)}
+.cr-cap.miss{color:var(--bad);border-color:rgba(248,81,73,.3);background:rgba(248,81,73,.06)}
+.cr-mecs{padding:.18rem .48rem .48rem;display:flex;flex-direction:column;gap:.22rem}
+.cr-slot{display:flex;align-items:center;gap:.38rem;padding:.28rem .4rem;border-radius:6px;background:#0b1422;border:1px solid var(--line)}
+.cr-av{width:24px;height:24px;border-radius:6px;flex:none;display:grid;place-items:center;font:700 .58rem var(--mono);color:#eaf2fb}
+.cr-av.b1{background:radial-gradient(120% 120% at 30% 20%,#1f4f7d,#0c1f33)}.cr-av.b2{background:radial-gradient(120% 120% at 30% 20%,#13525f,#0a2330)}.cr-av.h{background:radial-gradient(120% 120% at 30% 20%,#2d3a4e,#161d2b);color:#aeb9cc}.cr-av.fm{background:radial-gradient(120% 120% at 30% 20%,#caa44a,#5a4310);color:#241a06}
+.cr-nm2{font:.74rem var(--sans);font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-lic{font:.54rem var(--mono);padding:0 4px;border-radius:3px;font-weight:600;flex:none}
+.cr-lic.b1{color:var(--accent);background:rgba(77,163,255,.14)}.cr-lic.b2{color:var(--cyan);background:rgba(58,214,197,.12)}.cr-lic.h{color:var(--subtle);background:#1a2230}.cr-lic.fm{color:var(--warn);background:rgba(230,169,58,.14)}
+.cr-xbtn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.9rem;padding:0 .1rem;line-height:1;flex:none;opacity:0;transition:.1s}
+.cr-slot:hover .cr-xbtn{opacity:1}.cr-xbtn:hover{color:var(--bad)}
+.cr-foot{display:flex;align-items:center;gap:.5rem;padding:.3rem .6rem;border-top:1px solid var(--line);background:#07090f;font:.6rem var(--mono);color:var(--muted)}
+.cr-add-row{display:flex;gap:.3rem;padding:.3rem .48rem .48rem;flex-wrap:wrap}
+.cr-select{flex:1;min-width:100px;font:.72rem var(--sans);background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:.25rem .4rem}
+.cr-del-btn{background:none;border:1px solid var(--line);border-radius:5px;color:var(--dim);cursor:pointer;padding:.25rem .45rem;font-size:.82rem}
+.cr-del-btn:hover{border-color:var(--bad);color:var(--bad)}
+.cr-new-btn{display:flex;align-items:center;justify-content:center;gap:.35rem;padding:.48rem;border:1px dashed var(--line-2);border-radius:8px;color:var(--dim);font:.74rem var(--sans);font-weight:600;cursor:pointer;background:transparent}
+.cr-new-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(77,163,255,.05)}
+.sb-bench{background:#07090f;display:flex;flex-direction:column;overflow-y:auto}
+.sb-bench-h{padding:.5rem .75rem;border-bottom:1px solid var(--border);font:700 .8rem var(--sans);display:flex;align-items:center;gap:.4rem;position:sticky;top:0;background:#07090f;z-index:2;color:var(--muted)}
+.sb-bench-body{padding:.45rem .55rem;display:flex;flex-direction:column;gap:.28rem;flex:1}
+.bench-sep{font:.58rem var(--disp);text-transform:uppercase;letter-spacing:.09em;color:var(--subtle);margin:.3rem .1rem .05rem}
+.bench-m{display:flex;align-items:center;gap:.38rem;padding:.3rem .42rem;border-radius:7px;background:var(--panel);border:1px solid var(--border)}
+.fm-card{background:linear-gradient(180deg,#1a2740,#111825);border:1px solid #2c456b;border-radius:8px;padding:.42rem .58rem;display:flex;align-items:center;gap:.42rem;margin-bottom:.35rem}`;
 
 const BODY = `<div class="app">
   <header class="hud">
@@ -1239,7 +1285,7 @@ const S = window.Sim;
 // restaura su save en doContinueFromIntro(). Hasta entonces, el wizard intro cubre todo.
 let game = S.createGame(S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, 42, [], S.DATA.dailyChecks, { lineMode: false });
 let activeTab = "map"; // pivot línea pura: arrancamos en mapa (wow factor) y operaciones aparte
-let officeSubtab = "team"; // Pivot iteración 2026-05-25: "team" | "hiring" | "management"
+let officeSubtab = "crews"; // "crews" | "team" | "hiring" | "management"
 // Pivot iteración 2026-05-25 — Wizard de arranque: SIEMPRE empezamos en "intro" para que
 // el usuario decida explícitamente (Continuar / Nueva partida / Borrar guardado). Sin esto
 // el HTML aterrizaba mostrando un game default OVD pre-seedeado por debajo del wizard, que
@@ -2477,47 +2523,155 @@ function renderCrews(){
   var crews = game.crews || [];
   var mechs = game.mechanics;
   var mById = function(id){ return mechs.find(function(m){ return m.id===id; }); };
+  var ini = function(name){ return (name||'?').split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase(); };
+  var avCls = function(m){ return m.isLeadForeman?'fm':m.base==='B1'?'b1':m.base==='B2'?'b2':'h'; };
+  var licCls = function(m){ return m.isLeadForeman?'fm':m.base==='B1'?'b1':m.base==='B2'?'b2':'h'; };
+  var licLbl = function(m){ return m.isLeadForeman?'TMA':m.base||'H'; };
+
   var inCrew = {};
   crews.forEach(function(c){ c.officerIds.concat(c.helperIds).forEach(function(id){ inCrew[id]=true; }); });
   var freeOfficers = mechs.filter(function(m){ return (m.base==="B1"||m.base==="B2") && !m.isLeadForeman && !inCrew[m.id]; });
-  var freeHelpers = mechs.filter(function(m){ return m.base===null && !m.isLeadForeman && !inCrew[m.id]; });
-  var h = '<h3 style="margin-top:0">🚐 Cuadrillas</h3>';
-  h += '<p class="muted" style="margin-bottom:.6rem;font-size:.88rem">Compón tus cuadrillas: cada una lleva uno o dos oficiales (B1/B2) y uno o dos helpers, y viaja en su propia furgoneta. Mandas la cuadrilla entera a un avión y se desplazan juntos.</p>';
-  h += '<button class="primary" data-crew-new="1" style="margin-bottom:.8rem">＋ Nueva cuadrilla</button>';
-  if (crews.length===0) h += '<div class="empty">Sin cuadrillas. Crea una y añádele un oficial + helpers.</div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:.8rem">';
-  for (var i=0;i<crews.length;i++){
-    var c = crews[i];
-    var colorHex = '#' + (c.color>>>0).toString(16).padStart(6,'0');
-    var memberMechs = c.officerIds.concat(c.helperIds).map(mById).filter(Boolean);
-    var busy = memberMechs.some(function(m){ return m.state==="Working"||m.state==="ToPlane"||m.state==="Returning"; });
-    var salary = memberMechs.reduce(function(s,m){ return s + S.effectiveWeeklySalary(m); }, 0);
-    var chip = function(id, role){
-      var m = mById(id); if(!m) return '';
-      var lbl = role==="officer" ? (m.base||"?") : "H";
-      return '<span style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:.15rem .5rem;margin:.15rem">'+esc(m.name)+' <span class="muted" style="font-size:.7rem">'+lbl+'</span> <button data-crew-remove="'+c.id+':'+m.id+'" title="Quitar" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700;padding:0 .1rem">×</button></span>';
-    };
-    var officersHtml = c.officerIds.map(function(id){ return chip(id,"officer"); }).join('') || '<span class="muted" style="font-size:.8rem">—</span>';
-    var helpersHtml = c.helperIds.map(function(id){ return chip(id,"helper"); }).join('') || '<span class="muted" style="font-size:.8rem">—</span>';
-    var warn = c.officerIds.length===0 ? '<div style="color:var(--warn);font-size:.78rem;margin-top:.3rem">⚠️ Sin oficial: no puede certificar trabajos.</div>' : '';
-    var addOfficer = (c.officerIds.length<2 && freeOfficers.length>0) ? '<select data-crew-add="'+c.id+':officer" style="flex:1;min-width:120px"><option value="">＋ oficial…</option>'+freeOfficers.map(function(m){ return '<option value="'+m.id+'">'+esc(m.name)+' ('+m.base+')</option>'; }).join('')+'</select>' : '';
-    var addHelper = (c.helperIds.length<2 && freeHelpers.length>0) ? '<select data-crew-add="'+c.id+':helper" style="flex:1;min-width:120px"><option value="">＋ helper…</option>'+freeHelpers.map(function(m){ return '<option value="'+m.id+'">'+esc(m.name)+'</option>'; }).join('')+'</select>' : '';
-    h += '<div style="border:1px solid var(--border);border-left:4px solid '+colorHex+';border-radius:8px;padding:.7rem;background:var(--panel)">'
-      + '<header style="display:flex;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.4rem">'
-      +   '<span style="display:flex;align-items:center;gap:.4rem"><span style="width:14px;height:14px;border-radius:3px;background:'+colorHex+';display:inline-block"></span><strong>'+esc(c.name)+'</strong></span>'
-      +   '<span style="display:flex;align-items:center;gap:.5rem"><span class="'+(busy?'':'muted')+'" style="font-size:.75rem">'+(busy?'🚐 en ruta/trabajo':'en oficina')+'</span><button data-crew-delete="'+c.id+'" title="Eliminar cuadrilla" style="background:none;border:none;color:var(--bad);cursor:pointer">🗑</button></span>'
-      + '</header>'
-      + '<div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Oficiales</div><div style="min-height:1.7rem">'+officersHtml+'</div>'
-      + '<div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:.3rem">Helpers</div><div style="min-height:1.7rem">'+helpersHtml+'</div>'
-      + warn
-      + '<div style="display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap">'+addOfficer+addHelper+'</div>'
-      + '<div class="muted" style="font-size:.75rem;margin-top:.4rem">'+memberMechs.length+' pers · '+(salary/1000).toFixed(1)+'k €/sem</div>'
-      + '</div>';
-  }
+  var freeHelpers  = mechs.filter(function(m){ return m.base===null && !m.isLeadForeman && !inCrew[m.id]; });
+  var foreman = mechs.find(function(m){ return m.isLeadForeman; });
+
+  // Determine crew shift from its lead officer's shift
+  var crewShift = function(c){
+    var off = c.officerIds.map(mById).find(Boolean);
+    return off ? (off.shift||'morning') : 'morning';
+  };
+
+  var hourNow = Math.floor((game.clock.minute % 1440) / 60);
+  var liveShift = hourNow>=6 && hourNow<14 ? 'morning' : hourNow>=14 && hourNow<22 ? 'afternoon' : 'night';
+
+  var SDEFS = [['morning','☀️','Mañana','06-14h'],['afternoon','🌅','Tarde','14-22h'],['night','🌙','Noche','22-06h']];
+
+  // Build crew → shift map
+  var byShift = { morning:[], afternoon:[], night:[] };
+  crews.forEach(function(c){
+    var sh = crewShift(c);
+    (byShift[sh] || (byShift[sh]=[])).push(c);
+  });
+
+  // Coverage status per shift
+  var shiftStatus = function(sh){
+    var cs = byShift[sh]||[];
+    if (cs.length===0) return 'bad';
+    var hasOff = cs.some(function(c){ return c.officerIds.length>0; });
+    return hasOff ? 'ok' : 'warn';
+  };
+
+  // ── Coverage strip ──
+  var h = '<div class="cov-strip">';
+  SDEFS.forEach(function(sd){
+    var sh=sd[0], icon=sd[1], label=sd[2], hrs=sd[3];
+    var cs = byShift[sh]||[];
+    var st = shiftStatus(sh);
+    var hasB1 = cs.some(function(c){ return c.officerIds.map(mById).filter(Boolean).some(function(m){return m.base==='B1';}); });
+    var hasB2 = cs.some(function(c){ return c.officerIds.map(mById).filter(Boolean).some(function(m){return m.base==='B2';}); });
+    var badge = cs.length===0 ? '<span class="cov-badge">sin cubrir</span>'
+               : !hasB1&&!hasB2 ? '<span class="cov-badge">sin oficial</span>'
+               : !hasB2 ? '<span class="cov-badge" style="color:var(--warn);background:rgba(230,169,58,.13);border-color:rgba(230,169,58,.35)">sin B2</span>' : '';
+    h += '<div class="cov-chip cov-'+st+'"><span class="cov-ic">'+icon+'</span><div><div class="cov-lbl">'+label+' '+badge+'</div><div class="cov-hrs">'+hrs+'</div></div><span class="cov-cnt">'+cs.length+'</span></div>';
+  });
   h += '</div>';
-  if (freeOfficers.length || freeHelpers.length){
-    h += '<div class="muted" style="margin-top:.8rem;font-size:.82rem">Sin asignar: '+freeOfficers.length+' oficial(es) · '+freeHelpers.length+' helper(s). Añádelos a una cuadrilla.</div>';
+
+  // ── Shift board ──
+  h += '<div class="sb-wrap">';
+
+  SDEFS.forEach(function(sd){
+    var sh=sd[0], icon=sd[1], label=sd[2], hrs=sd[3];
+    var cs = byShift[sh]||[];
+    var isLive = sh===liveShift;
+    h += '<div class="sb-col '+sh+(isLive?' live-shift':'')+'">'+
+      '<div class="sb-col-h"><span class="sh-ic">'+icon+'</span><span>'+label+'</span><span class="sh-hrs">'+hrs+'</span>'+
+      (isLive?'<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse-alert 1.2s infinite;margin-left:.2rem"></span>':'')+
+      '<span class="sh-ct">'+cs.length+' cuadrilla'+(cs.length!==1?'s':'')+'</span></div>'+
+      '<div class="sb-col-body">';
+
+    if (cs.length===0){
+      h += '<div style="text-align:center;color:var(--bad);font-size:.78rem;padding:1.5rem .5rem;opacity:.8">⚠ Sin cuadrillas en este turno</div>';
+    } else {
+      cs.forEach(function(c){
+        var colorHex = '#' + ((c.color>>>0).toString(16).padStart(6,'0'));
+        var members = c.officerIds.concat(c.helperIds).map(mById).filter(Boolean);
+        var busy = members.some(function(m){ return m.state==='Working'||m.state==='ToPlane'||m.state==='Returning'; });
+        var salary = members.reduce(function(s,m){ return s+S.effectiveWeeklySalary(m); },0);
+        var hasB2 = c.officerIds.map(mById).filter(Boolean).some(function(m){return m.base==='B2';});
+        var avgMoral = members.length ? Math.round(members.reduce(function(s,m){return s+(m.moral||70);},0)/members.length) : 70;
+        var ratings = [];
+        members.forEach(function(m){ (m.typeRatings||[]).forEach(function(r){ var k=r.model+'/'+r.engineVariant; if(!ratings.includes(k)) ratings.push(k); }); });
+
+        h += '<div class="cr-card">'+
+          '<div class="cr-top" style="background:'+colorHex+'"></div>'+
+          '<div class="cr-head"><span class="cr-nm">'+esc(c.name)+'</span>'+
+          '<button class="cr-del-btn" data-crew-delete="'+c.id+'" title="Eliminar">🗑</button>'+
+          '<span class="cr-moral">'+avgMoral+'%</span></div>'+
+          '<div class="cr-caps">'+ratings.slice(0,2).map(function(r){return '<span class="cr-cap">'+esc(r)+'</span>';}).join('')+(c.officerIds.length>0&&!hasB2?'<span class="cr-cap miss">B2 ✕</span>':'')+'</div>'+
+          '<div class="cr-mecs">';
+
+        // Officers first
+        c.officerIds.forEach(function(id){
+          var m=mById(id); if(!m) return;
+          var woCls = (m.state==='Working'||m.state==='ToPlane'||m.state==='Returning')?'working':m.state==='Idle'?'idle':'';
+          var woLbl = m.assignedWoInstanceId ? esc(m.assignedWoInstanceId) : m.state==='Idle'?'libre':m.state;
+          h += '<div class="cr-slot"><span class="cr-av '+avCls(m)+'">'+ini(m.name)+'</span>'+
+            '<span class="cr-nm2" title="'+esc(m.name)+'">'+esc(m.name)+'</span>'+
+            '<span class="cr-lic '+licCls(m)+'">'+licLbl(m)+'</span>'+
+            '<span class="cr-lic" style="background:rgba(255,255,255,.04);color:var(--dim);font-size:.52rem">'+woLbl+'</span>'+
+            '<button class="cr-xbtn" data-crew-remove="'+c.id+':'+id+'" title="Quitar">×</button></div>';
+        });
+        // Helpers
+        c.helperIds.forEach(function(id){
+          var m=mById(id); if(!m) return;
+          h += '<div class="cr-slot"><span class="cr-av h">'+ini(m.name)+'</span>'+
+            '<span class="cr-nm2" title="'+esc(m.name)+'">'+esc(m.name)+'</span>'+
+            '<span class="cr-lic h">H</span>'+
+            '<button class="cr-xbtn" data-crew-remove="'+c.id+':'+id+'" title="Quitar">×</button></div>';
+        });
+
+        // Add member dropdowns
+        var addOf = (c.officerIds.length<2 && freeOfficers.length>0)
+          ? '<select class="cr-select" data-crew-add="'+c.id+':officer"><option value="">＋ oficial…</option>'+freeOfficers.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+' ('+m.base+')</option>';}).join('')+'</select>' : '';
+        var addHl = (c.helperIds.length<2 && freeHelpers.length>0)
+          ? '<select class="cr-select" data-crew-add="'+c.id+':helper"><option value="">＋ helper…</option>'+freeHelpers.map(function(m){return '<option value="'+m.id+'">'+esc(m.name)+'</option>';}).join('')+'</select>' : '';
+
+        h += '</div>';
+        if (addOf||addHl) h += '<div class="cr-add-row">'+addOf+addHl+'</div>';
+        h += '<div class="cr-foot">'+(busy?'<span style="color:var(--accent)">● en trabajo</span>':'<span style="color:var(--ok)">● en oficina</span>')+'<span style="margin-left:auto">'+(salary/1000).toFixed(1)+'k €/sem</span></div></div>';
+      });
+    }
+
+    // + nueva cuadrilla button at bottom of each column
+    h += '<div class="cr-new-btn" data-crew-new="'+sh+'">＋ nueva cuadrilla '+label+'</div>';
+    h += '</div></div>';
+  });
+
+  // ── Bench ──
+  h += '<div class="sb-bench"><div class="sb-bench-h">💤 Banco <span style="margin-left:auto;font:.65rem var(--mono)">'+(freeOfficers.length+freeHelpers.length+(foreman?1:0))+'</span></div><div class="sb-bench-body">';
+
+  if (foreman){
+    h += '<div class="fm-card"><span class="cr-av fm">'+ini(foreman.name)+'</span>'+
+      '<div><div style="font:.76rem var(--sans);font-weight:700">'+esc(foreman.name)+'</div>'+
+      '<div style="font:.58rem var(--mono);color:var(--warn)">TMA · auto-asigna</div></div></div>';
   }
+  if (freeOfficers.length){
+    h += '<div class="bench-sep">👷 Oficiales libres</div>';
+    freeOfficers.forEach(function(m){
+      h += '<div class="bench-m"><span class="cr-av '+avCls(m)+'">'+ini(m.name)+'</span>'+
+        '<span class="cr-nm2">'+esc(m.name)+'</span><span class="cr-lic '+licCls(m)+'">'+licLbl(m)+'</span></div>';
+    });
+  }
+  if (freeHelpers.length){
+    h += '<div class="bench-sep">🤝 Helpers libres</div>';
+    freeHelpers.forEach(function(m){
+      h += '<div class="bench-m"><span class="cr-av h">'+ini(m.name)+'</span>'+
+        '<span class="cr-nm2">'+esc(m.name)+'</span><span class="cr-lic h">H</span></div>';
+    });
+  }
+  if (!foreman && !freeOfficers.length && !freeHelpers.length){
+    h += '<div style="color:var(--dim);font-size:.78rem;text-align:center;padding:.8rem .2rem">Todos en cuadrilla</div>';
+  }
+  h += '</div></div></div>'; // bench-body, sb-bench, sb-wrap
   return h;
 }
 
@@ -2572,8 +2726,7 @@ function renderOffice(){
   }
   // Subseción "Cuadrillas" = composición manual de equipos (oficial + helpers, una furgo c/u)
   if (officeSubtab === "crews") {
-    h += renderCrews();
-    return h;
+    return h + '<div style="margin:-1rem -1.5rem;border-top:1px solid var(--border)">' + renderCrews() + '</div>';
   }
   // === Resto = subseción "Equipo" === (rediseño CIC 2026-05-30: tiles + bandas + mcards)
   h += '<p class="muted" style="margin-bottom:.6rem">Sede física del MRO · OVD/LEAS · los técnicos esperan aquí y viajan al stand (~2 min). Click en una tarjeta para detalle, ratings y acciones (formar, turno, despedir).</p>';
