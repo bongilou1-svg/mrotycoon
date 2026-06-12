@@ -768,6 +768,11 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .ms-reward .rl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px}
 .ms-reward .rv{font-size:24px;font-weight:800;color:#e6b450}
 .ms-reward .rv .u{font-size:13px;color:var(--muted)}
+.ms-goals{display:flex;flex-direction:column;gap:7px;margin:-14px 0 30px;align-items:flex-start}
+.ms-goal{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.ms-goal .gk{width:20px;height:20px;border-radius:50%;border:1px solid var(--border-s);display:grid;place-items:center;font-size:11px;color:var(--subtle);flex:none}
+.ms-goal.done{color:var(--text)}
+.ms-goal.done .gk{border-color:#e6b450;background:rgba(230,180,80,.14);color:#e6b450}
 .ms-btn{font-family:var(--sans);font-size:15px;font-weight:600;padding:13px 30px;border:1px solid #e6b450;background:#e6b450;color:#1a1206;border-radius:4px;cursor:pointer;transition:all .14s}
 .ms-btn:hover{background:#f0c468;border-color:#f0c468;box-shadow:0 0 22px rgba(230,180,80,.4)}
 /* Accesibilidad: clases en <html> aplicadas por applySettings() según mro_settings */
@@ -1437,6 +1442,7 @@ let lastKpiLen = 0;
 // (nuevo cliente firmado), mostramos la pantalla de hito. milestoneData = datos a mostrar
 // (null = sin modal). lastActiveContracts detecta el crecimiento sin tocar el sim.
 let milestoneData = null;
+let msMillionShown = false; // hito "primer millón" — una vez por partida; al cargar una partida ya rica no re-salta
 let lastActiveContracts = 0;
 const SETTINGS_DEFAULTS = {
   vol_music: 55, vol_sfx: 80, vol_alert: 90, mute_bg: true,
@@ -5685,6 +5691,7 @@ async function doContinueFromIntro() {
     // pixi-driver y schedule.ts arranquen con los assets correctos del aeropuerto).
     swapRuntimeForGame(loaded);
     Object.assign(game, loaded);
+    msMillionShown = game.economy.balance >= 1000000; // partida ya rica: no re-saltar el hito
     newGameStep = null;
     saveIndicator = "loaded";
     render();
@@ -5742,6 +5749,7 @@ async function startGameFromPreset(presetFile) {
     { lineMode: true, airportPreset: preset });
   lastProductionPackageDay = 0;
   Object.assign(game, fresh);
+  msMillionShown = false; // partida nueva: el primer millón vuelve a estar por lograr
   hasSavedSlot = false;
   selectedWoId = null;
   newGameStep = null;
@@ -5773,7 +5781,7 @@ function checkProfileProgress(){
   if (game.gameOver && game.gameOver.isOver) return;
   if ((game.airportIcao || "LEAS") !== "LEAS") return; // los hitos de carrera se logran en OVD
   var changed = false;
-  var hit = function(key, ms){ if (!playerProfile.ovd[key]) { playerProfile.ovd[key] = true; changed = true; if (ms && !milestoneData && !weeklyCloseData) { milestoneData = ms; try { S.setGameSpeed(game, 0); } catch (e) {} } } };
+  var hit = function(key, ms){ if (!playerProfile.ovd[key]) { playerProfile.ovd[key] = true; changed = true; if (ms && !milestoneData && !weeklyCloseData) { ms.goals = PROFILE_GOALS.map(function(gd){ return { label: gd[1], done: !!playerProfile.ovd[gd[0]] }; }); milestoneData = ms; try { S.setGameSpeed(game, 0); } catch (e) {} } } };
   var v7 = game.airlines.find(function(a){ return a.iataCode === "V7"; });
   if (v7 && game.contracts.some(function(c){ return c.status === "active" && c.airlineId === v7.id; })) {
     hit("volotea", { icon: "🏁", kicker: "Hito de carrera · Volotea", titlePre: "", titleHl: "Volotea firmada",
@@ -5795,7 +5803,8 @@ function checkProfileProgress(){
     if (!isMedio() && profileGoalsDone() >= PROFILE_GOALS.length) {
       playerProfile.level = "medio"; saveProfile();
       milestoneData = { icon: "🎖️", kicker: "Nivel de carrera", titlePre: "", titleHl: "NIVEL MEDIO desbloqueado",
-        descPre: " — has dominado Asturias. Bilbao (LEBB) y Alicante (LEAL) ya están disponibles en Nueva Partida, con sus propios operadores y arranques.", rewards: [] };
+        descPre: " — has dominado Asturias. Bilbao (LEBB) y Alicante (LEAL) ya están disponibles en Nueva Partida, con sus propios operadores y arranques.", rewards: [],
+        goals: PROFILE_GOALS.map(function(gd){ return { label: gd[1], done: true }; }) };
       try { S.setGameSpeed(game, 0); } catch (e) {}
       game.notifCounter += 1;
       game.notifications.push({ id: game.notifCounter, minute: game.clock.minute, text: "🎖️ NIVEL MEDIO — nuevos aeropuertos desbloqueados en Nueva Partida", type: "success" });
@@ -5878,7 +5887,7 @@ function detectEvents(){
         title: s.isAOG ? "AOG entrante · avión en tierra" : "Callout · nuevo aviso", standId: s.standId,
         lines: ["Matrícula: " + s.reg + (s.model ? " · " + s.model + "/" + s.engine : ""), "Aerolínea: " + s.airline, "Stand: " + (s.standId || "—"),
           "Sistema: ATA " + s.ata + (s.ataName ? " · " + s.ataName : ""), "Diagnóstico: pendiente (a la espera del TSM)",
-          (s.sla != null ? ("Límite SLA: " + hh(s.sla)) : "")].filter(Boolean) });
+          (s.sla != null ? ("Límite SLA: " + hh(s.sla) + " · " + (function(){ var lf = Math.round(s.sla - game.clock.minute); if (lf <= 0) return "VENCIDO hace " + Math.abs(lf) + " min"; return "faltan " + (lf >= 60 ? Math.floor(lf / 60) + "h " + (lf % 60) + "m" : lf + " min"); })()) : "")].filter(Boolean) });
     }
     if (!s.fired.mech && (w.arrivalAtStandMinute != null || afterTP[w.phase])){ // 2) MECÁNICO llega al avión.
       s.fired.mech = true;
@@ -6567,12 +6576,21 @@ function renderMilestone(){
   if (!d) return "";
   let rewards = "";
   for (const r of d.rewards) rewards += '<div class="ms-reward"><div class="rl">' + r.l + '</div><div class="rv">' + r.v + '<span class="u">' + (r.u || "") + '</span></div></div>';
+  // Checklist de hitos (mockup Hito.html: "lista de siguientes hitos"): en los hitos de
+  // carrera muestra ✓/○ de los 3 objetivos OVD para que se vea el camino al nivel MEDIO.
+  let goals = "";
+  if (d.goals && d.goals.length) {
+    goals = '<div class="ms-goals">';
+    for (const g of d.goals) goals += '<div class="ms-goal' + (g.done ? ' done' : '') + '"><span class="gk">' + (g.done ? '✓' : '○') + '</span><span>' + esc(g.label) + '</span></div>';
+    goals += '</div>';
+  }
   return '<div class="ms-root"><div class="ms-scrim"></div><div class="ms-hero">'
     + '<div class="ms-badge"><span class="ic">' + d.icon + '</span></div>'
     + '<div class="ms-kicker">' + esc(d.kicker) + '</div>'
     + '<h1 class="ms-title">' + esc(d.titlePre || "") + '<span class="hl">' + esc(d.titleHl) + '</span></h1>'
     + '<p class="ms-desc"><strong style="color:var(--text)">' + esc(d.titleHl) + '</strong>' + esc(d.descPre || "") + '</p>'
     + '<div class="ms-rewards">' + rewards + '</div>'
+    + goals
     + '<button class="ms-btn" id="ms-continue">Seguir construyendo →</button>'
     + '</div></div>';
 }
@@ -6693,6 +6711,16 @@ setInterval(() => {
         milestoneData = buildMilestoneData();
         if (milestoneData) S.setGameSpeed(game, 0);
       }
+    }
+  }
+  // Hito histórico: PRIMER MILLÓN en caja (mockup Hito.html). Una vez por partida.
+  if (!msMillionShown && game.economy.balance >= 1000000) {
+    msMillionShown = true;
+    if (newGameStep === null && !(game.gameOver && game.gameOver.isOver) && !weeklyCloseData && !milestoneData) {
+      milestoneData = { icon: "💎", kicker: "Hito histórico", titlePre: "", titleHl: "PRIMER MILLÓN",
+        descPre: " — siete cifras en caja. De taller de línea a empresa seria: hangares, checks pesados y flota propia dejan de ser un sueño.",
+        rewards: [{ l: "Caja", v: Math.round(game.economy.balance).toLocaleString("es-ES"), u: " €" }] };
+      S.setGameSpeed(game, 0);
     }
   }
   // Pivot línea pura: notif diaria del paquete de trabajo nocturno (~12:00).
