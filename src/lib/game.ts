@@ -72,7 +72,7 @@ import {
   ACTIVE_TRAINING_COST_EUR, tickShiftTransitions,
 } from "./sim/shifts.ts";
 import { generateInitialMechanics, generateInitialDualCandidates, eligibleCertifiers } from "./sim/mechanics.ts";
-import { buildDefaultCrews } from "./sim/crews.ts";
+import { buildDefaultCrews, addCrewMember, crewShiftOf } from "./sim/crews.ts";
 import { assignMechanicsToWo, tickMechanicTravel } from "./sim/assignment.ts";
 import { computeStandTravelMinutes } from "./sim/travel.ts";
 import { tickAutoAssign, hasActiveLead, findHandoffReplacement } from "./sim/foreman.ts";
@@ -1688,6 +1688,40 @@ export function setMechanicShift(g: GameState, mechanicId: string, shift: "morni
     return { ok: false, error: "Cambia turno cuando el mecánico esté Idle" };
   }
   g.mechanics = g.mechanics.map((mm) => (mm.id === mechanicId ? { ...mm, shift } : mm));
+  return { ok: true };
+}
+
+/**
+ * Añade un mecánico a una cuadrilla Y le impone el turno de la cuadrilla (Dani 2026-06-11:
+ * "arrastrando a la cuadrilla tiene que cambiarse el turno, eso manda"). El turno individual
+ * ya no se toca a mano en la UI: lo fija la cuadrilla a la que perteneces.
+ * Orden: se valida pertenencia (addCrewMember, puro) y disponibilidad para el cambio de turno
+ * ANTES de mutar nada — si el mecánico está trabajando, no se añade (sin estados a medias).
+ */
+export function addMechanicToCrew(
+  g: GameState,
+  crewId: string,
+  mechanicId: string,
+  role: "officer" | "helper",
+): { ok: boolean; error?: string } {
+  const crew = g.crews.find((c) => c.id === crewId);
+  if (!crew) return { ok: false, error: "Cuadrilla no encontrada" };
+  const mech = g.mechanics.find((m) => m.id === mechanicId);
+  if (!mech) return { ok: false, error: "Mecánico no encontrado" };
+  const targetShift = crewShiftOf(crew, g.mechanics);
+  const needsShiftChange = (mech.shift ?? "morning") !== targetShift;
+  if (needsShiftChange && mech.state !== "Idle" && mech.state !== "OffShift") {
+    return { ok: false, error: `${mech.name} está trabajando — espera a que termine para pasarle al turno de la cuadrilla` };
+  }
+  const res = addCrewMember(g.crews, g.mechanics, crewId, mechanicId, role);
+  if (res.error) return { ok: false, error: res.error };
+  g.crews = res.crews;
+  // Estampar el turno en cuadrillas de save legacy sin campo (queda fijado a partir de aquí).
+  if (!crew.shift) g.crews = g.crews.map((c) => (c.id === crewId ? { ...c, shift: targetShift } : c));
+  if (needsShiftChange) {
+    const sr = setMechanicShift(g, mechanicId, targetShift);
+    if (!sr.ok) return { ok: false, error: sr.error }; // pre-validado; rama defensiva
+  }
   return { ok: true };
 }
 

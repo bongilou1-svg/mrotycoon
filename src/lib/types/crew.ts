@@ -13,4 +13,8 @@ export interface Crew {
   helperIds: string[];
   /** Color de la furgoneta en el mapa (0xRRGGBB) para distinguir cuadrillas a simple vista. */
   color: number;
+  /** Turno de la cuadrilla — MANDA sobre el de sus miembros (Dani 2026-06-11): al añadir un
+   *  mecánico a la cuadrilla, su turno individual se cambia al de la cuadrilla. Opcional por
+   *  retro-compat de saves v18: si falta, se deriva del primer oficial. */
+  shift?: "morning" | "afternoon" | "night";
 }

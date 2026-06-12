@@ -58,18 +58,28 @@ export function buildDefaultCrews(mechanics: Mechanic[]): Crew[] {
         officerIds: [off.id],
         helperIds: crewHelpers,
         color: CREW_COLORS[crews.length % CREW_COLORS.length],
+        shift,
       });
     });
   }
   return crews;
 }
 
+/** Turno efectivo de una cuadrilla: el suyo propio (Dani 2026-06-11: el turno lo MANDA la
+ *  cuadrilla) o, en saves v18 sin el campo, derivado de su primer oficial. */
+export function crewShiftOf(crew: Crew, mechanics: readonly Mechanic[]): "morning" | "afternoon" | "night" {
+  if (crew.shift === "morning" || crew.shift === "afternoon" || crew.shift === "night") return crew.shift;
+  const off = crew.officerIds.map((id) => mechanics.find((m) => m.id === id)).find(Boolean);
+  const s = off?.shift;
+  return s === "afternoon" || s === "night" ? s : "morning";
+}
+
 // ── Mutaciones puras (la UI hace game.crews = resultado) ──────────────────────────────
 
-/** Crea una cuadrilla nueva vacía. Devuelve el array nuevo + el id creado. */
-export function createCrew(crews: Crew[]): { crews: Crew[]; crewId: string } {
+/** Crea una cuadrilla nueva vacía en un turno dado. Devuelve el array nuevo + el id creado. */
+export function createCrew(crews: Crew[], shift: "morning" | "afternoon" | "night" = "morning"): { crews: Crew[]; crewId: string } {
   const id = nextCrewId(crews);
-  const crew: Crew = { id, name: defaultCrewName(crews.length), officerIds: [], helperIds: [], color: CREW_COLORS[crews.length % CREW_COLORS.length] };
+  const crew: Crew = { id, name: defaultCrewName(crews.length), officerIds: [], helperIds: [], color: CREW_COLORS[crews.length % CREW_COLORS.length], shift };
   return { crews: [...crews, crew], crewId: id };
 }
 
