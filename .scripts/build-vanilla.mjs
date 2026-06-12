@@ -2599,6 +2599,9 @@ function renderCrews(){
 
   // Determine crew shift from its lead officer's shift
   var crewShift = function(c){
+    // El turno es DE LA CUADRILLA (Dani 2026-06-11). Fallback para saves v18 sin campo:
+    // derivar del primer oficial (igual que S.crewShiftOf).
+    if (c.shift === 'morning' || c.shift === 'afternoon' || c.shift === 'night') return c.shift;
     var off = c.officerIds.map(mById).find(Boolean);
     return off ? (off.shift||'morning') : 'morning';
   };
@@ -2822,11 +2825,10 @@ function renderOffice(){
     else if (m.assignedWoInstanceId){ const w = workOrderByInstance(m.assignedWoInstanceId); const tpl = w ? game.templates.find(t=>t.id===w.templateId) : null; task = \`<span class="mono" style="color:var(--accent-2)">\${esc(m.assignedWoInstanceId)}</span> · \${esc(tpl ? tpl.description.slice(0,38) : (w?w.airplaneRegistration:""))}\`; }
     else if (m.assignedCheckInstanceId) task = \`<span class="mono" style="color:var(--base)">\${esc(m.assignedCheckInstanceId)}</span> · check\`;
     else task = \`<span style="color:var(--dim)">Sin asignación · \${m.shift ?? "morning"}</span>\`;
-    const canChangeShift = m.state === "Idle" || m.state === "OffShift";
+    // Dani 2026-06-11: el turno individual YA NO se edita aquí — lo fija la cuadrilla a la que
+    // pertenece (añadir a una cuadrilla = heredar su turno, en la pestaña Cuadrillas).
     const shLbl = s => s==="morning"?"☀️ mañana":s==="afternoon"?"🌅 tarde":s==="night"?"🌙 noche":"💤 libre";
-    const shiftHtml = canChangeShift
-      ? \`<select class="shift-select" data-shift-mech="\${m.id}"><option value="morning"\${m.shift==="morning"?" selected":""}>☀️ mañana</option><option value="afternoon"\${m.shift==="afternoon"?" selected":""}>🌅 tarde</option><option value="night"\${m.shift==="night"?" selected":""}>🌙 noche</option><option value="off"\${m.shift==="off"?" selected":""}>💤 libre</option></select>\`
-      : \`<span class="tag shift-\${m.shift==="afternoon"?"afternoon":m.shift==="night"?"night":m.shift==="off"?"off":"morning"}">\${shLbl(m.shift ?? "morning")}</span>\`;
+    const shiftHtml = \`<span class="tag shift-\${m.shift==="afternoon"?"afternoon":m.shift==="night"?"night":m.shift==="off"?"off":"morning"}" title="El turno lo fija su cuadrilla (pestaña Cuadrillas)">\${shLbl(m.shift ?? "morning")}</span>\`;
     h += \`<article class="mcard" data-mech-id="\${m.id}" title="Click para detalle">
       <div class="mcard-top">
         <span class="mc-av">\${ini}</span>
@@ -5597,7 +5599,11 @@ document.body.addEventListener("click", (e) => {
     return;
   }
   if (e.target.dataset.crewNew) {
-    const rc = S.createCrew(game.crews); game.crews = rc.crews;
+    // El botón "+ nueva cuadrilla <turno>" del shift-board pasa el turno de su columna —
+    // la cuadrilla NACE en ese turno y se lo impondrá a quien entre (Dani 2026-06-11).
+    const shNew = e.target.dataset.crewNew;
+    const rc = S.createCrew(game.crews, (shNew === "afternoon" || shNew === "night") ? shNew : "morning");
+    game.crews = rc.crews;
     invalidatePanelCache(); render(); return;
   }
   if (e.target.dataset.crewDelete) {
@@ -5623,8 +5629,10 @@ document.body.addEventListener("change", (e) => {
     const mid = e.target.value;
     if (mid) {
       const pa = e.target.dataset.crewAdd.split(":");
-      const ra = S.addCrewMember(game.crews, game.mechanics, pa[0], mid, pa[1]);
-      if (ra.error) alert(ra.error); else game.crews = ra.crews;
+      // El turno lo MANDA la cuadrilla: addMechanicToCrew añade Y le cambia el turno al de
+      // la cuadrilla (error si está trabajando — sin estados a medias).
+      const ra = S.addMechanicToCrew(game, pa[0], mid, pa[1]);
+      if (!ra.ok) alert(ra.error ?? "No se pudo añadir");
       invalidatePanelCache(); render();
     }
     return;
