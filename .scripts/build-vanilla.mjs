@@ -5851,8 +5851,10 @@ function detectEvents(){
       model: ap ? ap.model : "", engine: ap ? ap.engineVariant : "", airline: ap ? alName(ap.contractId) : "—",
       ata: tpl ? tpl.ata : 0, ataName: tpl ? ataNm(tpl.ata) : "", desc: tpl ? (tpl.name || tpl.description) : w.templateId,
       sev: tpl ? (tpl.severity || "normal") : "normal", dur: tpl ? tpl.durationMinutes : 0, isAOG: !!(tpl && tpl.isAOG),
+      isFinding: w.parentWoInstanceId !== undefined,
       sla: w.slaMinute, etd: w.etdMinute, standId: (ap && ap.standId) || w.standId || null, fired: {} };
   };
+  var slaLeftTxt = function(sla){ var lf = Math.round(sla - game.clock.minute); if (lf <= 0) return "VENCIDO hace " + Math.abs(lf) + " min"; return "faltan " + (lf >= 60 ? Math.floor(lf / 60) + "h " + (lf % 60) + "m" : lf + " min"); };
   var fireRelease = function(s, w){
     var delay = 0;
     if (w && w.releaseMinute != null && s.etd != null) delay = Math.max(0, Math.floor(w.releaseMinute - s.etd));
@@ -5881,13 +5883,22 @@ function detectEvents(){
   for (var i = 0; i < woAll.length; i++){
     var w = woAll[i];
     var s = evWO[w.instanceId];
-    if (!s){ // 1) CALLOUT — scope OCULTO: sabes el sistema (ATA), no la avería todavía.
+    if (!s){ // 1) CALLOUT (scope OCULTO) o HALLAZGO (scope ya conocido, lo encontró el técnico).
       s = snap(w); evWO[w.instanceId] = s; s.fired.callout = true;
-      enq({ type: s.isAOG ? "aog-new" : "callout", icon: s.isAOG ? "🛑" : "🔧", color: s.isAOG ? "#ff4757" : "#f5b945",
-        title: s.isAOG ? "AOG entrante · avión en tierra" : "Callout · nuevo aviso", standId: s.standId,
-        lines: ["Matrícula: " + s.reg + (s.model ? " · " + s.model + "/" + s.engine : ""), "Aerolínea: " + s.airline, "Stand: " + (s.standId || "—"),
-          "Sistema: ATA " + s.ata + (s.ataName ? " · " + s.ataName : ""), "Diagnóstico: pendiente (a la espera del TSM)",
-          (s.sla != null ? ("Límite SLA: " + hh(s.sla) + " · " + (function(){ var lf = Math.round(s.sla - game.clock.minute); if (lf <= 0) return "VENCIDO hace " + Math.abs(lf) + " min"; return "faltan " + (lf >= 60 ? Math.floor(lf / 60) + "h " + (lf % 60) + "m" : lf + " min"); })()) : "")].filter(Boolean) });
+      if (s.isFinding){ // Finding: trabajo extra que apareció al inspeccionar otra avería. Ya se sabe qué es.
+        if (s.isFinding) s.fired.diag = true; // no repetir el pop-out de diagnóstico (el scope ya se enseñó aquí)
+        enq({ type: "finding", icon: "🔍", color: "#d29922", title: "Hallazgo · trabajo extra detectado", standId: s.standId,
+          lines: ["Matrícula: " + s.reg + (s.model ? " · " + s.model + "/" + s.engine : ""), "Aerolínea: " + s.airline, "Stand: " + (s.standId || "—"),
+            "Encontrado al inspeccionar: " + s.desc, "ATA " + s.ata + (s.ataName ? " · " + s.ataName : "") + " · " + s.sev,
+            "Tiempo estimado: " + s.dur + " min", "Necesita su propia asignación — no estaba en el aviso original",
+            (s.sla != null ? ("Límite SLA: " + hh(s.sla) + " · " + slaLeftTxt(s.sla)) : "")].filter(Boolean) });
+      } else {
+        enq({ type: s.isAOG ? "aog-new" : "callout", icon: s.isAOG ? "🛑" : "🔧", color: s.isAOG ? "#ff4757" : "#f5b945",
+          title: s.isAOG ? "AOG entrante · avión en tierra" : "Callout · nuevo aviso", standId: s.standId,
+          lines: ["Matrícula: " + s.reg + (s.model ? " · " + s.model + "/" + s.engine : ""), "Aerolínea: " + s.airline, "Stand: " + (s.standId || "—"),
+            "Sistema: ATA " + s.ata + (s.ataName ? " · " + s.ataName : ""), "Diagnóstico: pendiente (a la espera del TSM)",
+            (s.sla != null ? ("Límite SLA: " + hh(s.sla) + " · " + slaLeftTxt(s.sla)) : "")].filter(Boolean) });
+      }
     }
     if (!s.fired.mech && (w.arrivalAtStandMinute != null || afterTP[w.phase])){ // 2) MECÁNICO llega al avión.
       s.fired.mech = true;
@@ -6813,7 +6824,8 @@ window.__mroDebug = {
       "release-late": { icon: "🕒", color: "#d29922", title: "Despacho con retraso", lines: ["Matrícula: EC-TEST", "Aerolínea: Volotea", "Trabajo: Replace cabin air recirculation fan", "Retraso: 22 min (cuenta contra tu KPI)"] },
       "release-aog": { icon: "✅", color: "#3fb950", title: "Release · AOG despachado", lines: ["Matrícula: EC-TEST", "Aerolínea: Volotea", "Avería: Main gear actuator", "Salió con 35 min de retraso", "El avión vuelve a volar."] },
       aog: { icon: "🛑", color: "#ff4757", title: "AOG · escalado por retraso", lines: ["Matrícula: EC-TEST · A320", "Aerolínea: Volotea", "Stand: " + standId, "Retraso: 190 min", "Causa: externa (no imputable a tu MRO)", "Penalty AOG: -90.000 €"] },
-      "aog-evitable": { icon: "⛔", color: "#ff4757", title: "AOG EVITABLE · por tu gestión", lines: ["Matrícula: EC-TEST · A320", "Aerolínea: Volotea", "Stand: " + standId, "Retraso: 190 min", "Causa: avería tuya sin resolver a tiempo → penalty agravado", "Penalty AOG: -90.000 €"] }
+      "aog-evitable": { icon: "⛔", color: "#ff4757", title: "AOG EVITABLE · por tu gestión", lines: ["Matrícula: EC-TEST · A320", "Aerolínea: Volotea", "Stand: " + standId, "Retraso: 190 min", "Causa: avería tuya sin resolver a tiempo → penalty agravado", "Penalty AOG: -90.000 €"] },
+      finding: { icon: "🔍", color: "#d29922", title: "Hallazgo · trabajo extra detectado", lines: ["Matrícula: EC-TEST · A320/CFM56", "Aerolínea: Volotea", "Stand: " + standId, "Encontrado al inspeccionar: Hydraulic line chafing at clamp 14", "ATA 29 · Hidráulico · Major", "Tiempo estimado: 60 min", "Necesita su propia asignación — no estaba en el aviso original", "Límite SLA: 14:21 · faltan 51 min"] }
     };
     var p = P[type] || P.callout;
     eventQueue.push({ type: type, icon: p.icon, color: p.color, title: p.title, standId: standId, lines: p.lines });
