@@ -857,6 +857,12 @@ function processDepartures(g: GameState, nowMinute: number, stepMinutes: number)
 /** Probabilidad de generar un finding al completar una daily check subtask. ~15% real
  *  para daily; tunable según playtest. */
 export const DAILY_FINDING_PROB = 0.15;
+/** Probabilidad de hallazgo no-rutinario al cerrar la INSPECCIÓN (T-shoot) de un callout:
+ *  el técnico abre el panel y encuentra más de lo que reportó la tripulación. Realismo MRO
+ *  core (Dani 2026-06-11): hace que el alcance de un callout sea INCIERTO hasta abrirlo y
+ *  mete picos de carga impredecibles en el mid-game. Más bajo que el daily (un callout ya es
+ *  trabajo reactivo; el finding es la guinda). */
+export const CALLOUT_FINDING_PROB = 0.10;
 /** ID counter para WOs finding (FND-XXXXXX). */
 let _findingCounter = 0;
 function nextFindingId(): string {
@@ -864,12 +870,10 @@ function nextFindingId(): string {
   return `FND-${_findingCounter.toString().padStart(6, "0")}`;
 }
 
-/** Roll de finding al completar daily check. Si dice sí, elige un template plausible
- *  (severity Minor o Major, no AOG) compatible con el modelo del avión y crea una
- *  nueva WO con `parentWoInstanceId` apuntando a la daily. */
-function tryRollDailyFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airplane, nowMinute: number): void {
-  if (g.woRng.next() > DAILY_FINDING_PROB) return;
-  // Elegibles: severity Minor/Major, NO AOG, compatibles con modelo + variant del avión
+/** Crea una sub-WO "finding" (trabajo no-rutinario) sobre el avión, colgando de parentWo.
+ *  Template plausible: severity Minor/Major, NO AOG, compatible con modelo+motor. SLA =
+ *  scheduledDeparture del avión (coherente con createWorkOrderInstance). */
+function spawnFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airplane, nowMinute: number, msgPrefix: string): void {
   const eligible = g.templates.filter(
     (t) =>
       !t.isAOG &&
@@ -879,9 +883,6 @@ function tryRollDailyFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airp
   );
   if (eligible.length === 0) return;
   const tpl = eligible[Math.floor(g.woRng.next() * eligible.length)];
-  // Pivot iteración 2026-05-25: finding también respeta SLA = scheduledDeparture del
-  // avión. Si el finding se hace antes del próximo departure → on-time; si se queda
-  // colgado y bloquea el avión → late. Coherente con createWorkOrderInstance.
   const slaMinute = ap.scheduledDepartureMinute > 0
     ? ap.scheduledDepartureMinute
     : nowMinute + Math.round(tpl.durationMinutes * g.balance.slaMultiplier);
@@ -900,9 +901,24 @@ function tryRollDailyFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airp
   g.workOrders.push(finding);
   pushNotification(
     g,
-    `🔍 Finding en ${ap.registration}: ${tpl.description.slice(0, 55)} (ATA ${tpl.ata}, book ${(tpl.durationMinutes/60).toFixed(1)}h)`,
+    `${msgPrefix} ${ap.registration}: ${tpl.description.slice(0, 55)} (ATA ${tpl.ata}, book ${(tpl.durationMinutes / 60).toFixed(1)}h)`,
     "warning",
   );
+}
+
+/** Roll de finding al completar una daily check subtask. */
+function tryRollDailyFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airplane, nowMinute: number): void {
+  if (g.woRng.next() > DAILY_FINDING_PROB) return;
+  spawnFinding(g, parentWo, ap, nowMinute, "🔍 Finding en");
+}
+
+/** Roll de hallazgo al cerrar la inspección (T-shoot) de un callout. Guards: no finding-de-finding
+ *  (sin cascada) ni daily checks (esas ruedan al completar, no al inspeccionar). */
+function tryRollCalloutFinding(g: GameState, parentWo: WorkOrderInstance, ap: Airplane, nowMinute: number): void {
+  if (parentWo.parentWoInstanceId !== undefined) return;
+  if (parentWo.templateId.startsWith("DC-")) return;
+  if (g.woRng.next() > CALLOUT_FINDING_PROB) return;
+  spawnFinding(g, parentWo, ap, nowMinute, "🔍 Hallazgo en inspección de");
 }
 
 function pushNotification(g: GameState, text: string, type: NotificationItem["type"] = "info"): void {
@@ -1232,6 +1248,12 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
         `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " · AOG" : ""}`,
         ev.onTime ? "success" : "warning",
       );
+    } else if (ev.type === "phase_change" && ev.from === "Inspection" && ev.to === "MainTask" && g.lineModeEnabled) {
+      // T-shoot cerrado en un callout: el técnico abre y puede encontrar trabajo extra. El
+      // hallazgo es una sub-WO nueva sin asignar que el jugador debe atender (o diferir).
+      const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
+      const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : undefined;
+      if (wo && ap) tryRollCalloutFinding(g, wo, ap, next);
     }
   }
 
