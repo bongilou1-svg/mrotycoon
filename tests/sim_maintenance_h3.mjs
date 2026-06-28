@@ -33,14 +33,14 @@ const fleet0 = generateInitialFleet(rng, airlines);
 const due0 = detectChecksDue(fleet0, defs, []);
 expect(due0.length === 0, `flota fresca no dispara checks (got ${due0.length})`);
 
-// 2. Bumpear UN avión por encima del trigger A (600 FH) → detecta A debido
-const fleet1 = fleet0.map((f, i) => i === 0 ? { ...f, fhSinceLastA: 650, cyclesSinceLastA: 50 } : f);
+// 2. Bumpear UN avión por encima del trigger A (750 FH) → detecta A debido
+const fleet1 = fleet0.map((f, i) => i === 0 ? { ...f, fhSinceLastA: 850, cyclesSinceLastA: 50 } : f);
 const due1 = detectChecksDue(fleet1, defs, []);
 expect(due1.length === 1 && due1[0].type === "A" && due1[0].registration === fleet0[0].registration,
   `1 A-check debido sobre ${fleet0[0].registration} (got ${due1.length})`);
 
 // 3. Bumpear por cycles aunque FH bajo (umbral cumplido por OR)
-const fleet2 = fleet0.map((f, i) => i === 1 ? { ...f, fhSinceLastA: 100, cyclesSinceLastA: 220 } : f);
+const fleet2 = fleet0.map((f, i) => i === 1 ? { ...f, fhSinceLastA: 100, cyclesSinceLastA: 850 } : f);
 const due2 = detectChecksDue(fleet2, defs, []);
 expect(due2.length === 1 && due2[0].type === "A", `dispara por cycles aunque FH < trigger`);
 
@@ -69,7 +69,7 @@ expect(due4.length === 1, "Completed no bloquea futuras detecciones");
 
 // 6. Un mismo avión puede tener A y C simultáneos (independientes)
 const fleet5 = fleet0.map((f, i) => i === 0 ? {
-  ...f, fhSinceLastA: 700, cyclesSinceLastA: 250, fhSinceLastC: 8000, cyclesSinceLastC: 100,
+  ...f, fhSinceLastA: 850, cyclesSinceLastA: 250, fhSinceLastC: 8000, cyclesSinceLastC: 100,
 } : f);
 const due5 = detectChecksDue(fleet5, defs, []);
 const typesOnFirstAircraft = new Set(due5.filter(d => d.registration === fleet0[0].registration).map(d => d.type));
@@ -92,7 +92,7 @@ resetMaintenanceCheckCounter(0);
 const g = createGame(balance, airlines, templates, 42, defs);
 // Envejecer parte de la flota: los primeros 4 aviones con A check inminente
 for (let i = 0; i < 4; i++) {
-  g.fleet[i] = { ...g.fleet[i], fhSinceLastA: 580, cyclesSinceLastA: 195 };
+  g.fleet[i] = { ...g.fleet[i], fhSinceLastA: 720, cyclesSinceLastA: 720 };
 }
 g.clock.speed = 1;
 g.autoPauseEnabled = false;

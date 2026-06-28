@@ -110,7 +110,7 @@ while (g.clock.minute < 5 * DAY_MINUTES && g.maintenanceChecks[0].phase !== "Com
 // === H6 (cont): segundo check sobre la misma matrícula post-Completed ===
 console.log("\n=== H6: re-detección tras Completed ===");
 // Forzar contadores otra vez por encima del trigger A
-g.fleet = g.fleet.map(f => f.registration === reg ? { ...f, fhSinceLastA: 700, cyclesSinceLastA: 250 } : f);
+g.fleet = g.fleet.map(f => f.registration === reg ? { ...f, fhSinceLastA: 850, cyclesSinceLastA: 250 } : f);
 const beforeChecks = g.maintenanceChecks.length;
 const due = scheduleDueChecks(g.fleet, defs, g.maintenanceChecks, g.clock.minute);
 expect(due.newlyScheduled.length === 1, "Completed previo no bloquea nuevo schedule");

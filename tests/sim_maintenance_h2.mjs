@@ -28,7 +28,7 @@ expect(defs.every(d => ["A320", "A321"].includes(d.model)), "todos los model ∈
 
 // 2. findCheckDefinition
 const aA320 = findCheckDefinition(defs, "A", "A320");
-expect(aA320 && aA320.triggerFH === 600 && aA320.triggerCycles === 200, `A check A320: 600 FH / 200 cycles (got ${aA320?.triggerFH}/${aA320?.triggerCycles})`);
+expect(aA320 && aA320.triggerFH === 750 && aA320.triggerCycles === 750, `A check A320: 750 FH / 750 cycles (got ${aA320?.triggerFH}/${aA320?.triggerCycles})`);
 const cA320 = findCheckDefinition(defs, "C", "A320");
 expect(cA320 && cA320.triggerFH === 7500, `C check A320: 7500 FH (got ${cA320?.triggerFH})`);
 const dA321 = findCheckDefinition(defs, "D", "A321");

@@ -35,14 +35,14 @@ const fleet0 = generateInitialFleet(rng, airlines);
 const up0 = detectChecksUpcoming(fleet0, defs, []);
 expect(up0.length === 0, `flota fresca no avisa (got ${up0.length})`);
 
-// 2. Avión a 30 FH del trigger A (600) → avisa
-const fleet1 = fleet0.map((f, i) => i === 0 ? { ...f, fhSinceLastA: 570 } : f);
+// 2. Avión a 30 FH del trigger A (750) → avisa
+const fleet1 = fleet0.map((f, i) => i === 0 ? { ...f, fhSinceLastA: 720 } : f);
 const up1 = detectChecksUpcoming(fleet1, defs, []);
 expect(up1.length === 1 && up1[0].type === "A" && up1[0].remainingFH === 30,
   `A-check upcoming: 30 FH restantes (got ${up1[0]?.remainingFH})`);
 
 // 3. Avión a 100 FH del trigger (margen 50) → NO avisa
-const fleet2 = fleet0.map((f, i) => i === 0 ? { ...f, fhSinceLastA: 500 } : f);
+const fleet2 = fleet0.map((f, i) => i === 0 ? { ...f, fhSinceLastA: 650 } : f);
 const up2 = detectChecksUpcoming(fleet2, defs, []);
 expect(up2.length === 0, `100 FH > margen ${CHECK_WARNING_FH_MARGIN}, no avisa`);
 
@@ -67,9 +67,9 @@ const g = createGame(balance, airlines, templates, 42, defs);
 // Reset fleet a FH=0 (createGame aplica aging que pone varios cerca del trigger). Solo
 // bumpeamos manualmente UN avión para verificar la emisión one-shot.
 g.fleet = g.fleet.map(f => ({ ...f, fhSinceLastA: 0, cyclesSinceLastA: 0, fhSinceLastC: 0, cyclesSinceLastC: 0, fhSinceLastD: 0, cyclesSinceLastD: 0, warnedA: false, warnedC: false, warnedD: false }));
-// Forzar avión 0 a 580 FH (a 20 del trigger A=600)
+// Forzar avión 0 a 730 FH (a 20 del trigger A=750)
 const reg = g.fleet[0].registration;
-g.fleet[0] = { ...g.fleet[0], fhSinceLastA: 580, cyclesSinceLastA: 190 };
+g.fleet[0] = { ...g.fleet[0], fhSinceLastA: 730, cyclesSinceLastA: 740 };
 g.clock.speed = 1;
 g.autoPauseEnabled = false;
 
