@@ -1814,20 +1814,21 @@ export function deferWoManually(
   const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
   if (!ap) return { ok: false, error: "Avión no encontrado" };
 
-  // Validar B1 elegible para firmar el MEL: base B1, no foreman, con type rating válido para
-  // (model, engine). El MEL lo firma siempre un B1, no un B2.
-  // Audit 2026-06-11: la firma del MEL es ADMINISTRATIVA (no requiere viajar al avión), así que
-  // un B1 OffShift también puede firmarla. Antes solo aceptaba "Idle" → con shift gating (2/3 B1
-  // OffShift y el único on-shift Working en plena ola de SLA) NUNCA había firmante disponible y
-  // el mecanismo de diferir quedaba muerto (0 defers en partidas largas).
+  // Validar firmante elegible para el MEL: la firma del CRS/MEL la da quien tiene la licencia de
+  // la CATEGORÍA que cubre la tarea (Part-66): un defecto avionics (B2) lo firma un B2, uno
+  // mecánico (B1) lo firma un B1. Audit aero 2026-06-28: antes forzaba SIEMPRE B1 (`base==="B1"`),
+  // invirtiendo el reparto Part-66 para las WO B2 (FMGC, VHF, Rad Alt…). Ahora gatea por
+  // tpl.requiredCategory. Clave del modelo: un DUAL tiene base "B1" pero typeRatings de B1 Y B2,
+  // así que gateamos por la CATEGORÍA del rating (no por base) — si no, el dual no podría firmar
+  // un MEL avionics. (Conserva: firma ADMINISTRATIVA → Idle u OffShift valen; no foreman.)
+  const sigCat = tpl.requiredCategory === "B2" ? "B2" : "B1";
   const eligibleSigners = g.mechanics.filter((m) =>
     (m.state === "Idle" || m.state === "OffShift") &&
-    m.base === "B1" &&
     !m.isLeadForeman &&
-    m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === "B1"),
+    m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === sigCat),
   );
   if (eligibleSigners.length === 0) {
-    return { ok: false, error: `Sin B1 habilitado para firmar MEL (${ap.model}/${ap.engineVariant})` };
+    return { ok: false, error: `Sin ${sigCat} habilitado para firmar MEL (${ap.model}/${ap.engineVariant})` };
   }
   const signer = eligibleSigners[0]; // first match — el primer cert con rating disponible
 

@@ -165,6 +165,7 @@ function findDeferrable(g) {
   for (const w of g.workOrders) {
     const tpl = tplOf(w.templateId);
     if (!tpl || getMelCategory(tpl) === null) continue; // diferible = categoría MEL derivada != null
+    if (tpl.requiredCategory !== "B1") continue; // esta demo (#2 OffShift) usa el pool B1; los MEL B2 los firma un B2 (audit aero #3)
     if (!ACTIVE.has(w.phase)) continue;
     const ap = g.airplanes.find((a) => a.instanceId === w.airplaneInstanceId);
     if (ap) return { wo: w, ap, mel: getMelCategory(tpl) };

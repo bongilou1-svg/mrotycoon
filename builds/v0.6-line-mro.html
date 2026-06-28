@@ -8706,10 +8706,10 @@ var Sim = (() => {
 
   // src/lib/sim/mel.ts
   var MEL_DEFERRAL_DAYS = {
-    A: 3,
-    B: 10,
-    C: 120,
-    D: 365
+    A: 1,
+    B: 3,
+    C: 10,
+    D: 120
   };
   var MEL_EXPIRY_PENALTY_EUR = 1e4;
   var MEL_EXPIRY_REP_DELTA = -5;
@@ -10792,11 +10792,12 @@ var Sim = (() => {
     if (!tpl) return { ok: false, error: "Template no encontrado" };
     const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
     if (!ap) return { ok: false, error: "Avi\xF3n no encontrado" };
+    const sigCat = tpl.requiredCategory === "B2" ? "B2" : "B1";
     const eligibleSigners = g.mechanics.filter(
-      (m) => (m.state === "Idle" || m.state === "OffShift") && m.base === "B1" && !m.isLeadForeman && m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === "B1")
+      (m) => (m.state === "Idle" || m.state === "OffShift") && !m.isLeadForeman && m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === sigCat)
     );
     if (eligibleSigners.length === 0) {
-      return { ok: false, error: `Sin B1 habilitado para firmar MEL (${ap.model}/${ap.engineVariant})` };
+      return { ok: false, error: `Sin ${sigCat} habilitado para firmar MEL (${ap.model}/${ap.engineVariant})` };
     }
     const signer = eligibleSigners[0];
     const newWo = deferWorkOrder(wo, tpl, g.clock.minute);

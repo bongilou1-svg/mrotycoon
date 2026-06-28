@@ -10,13 +10,16 @@
 import type { MelCategory, WorkOrderInstance, WorkOrderTemplate } from "$lib/types";
 import { DAY_MINUTES } from "./time.ts";
 
-/** Ventanas de deferral en días por categoría MEL. D=indefinido se modela como 365 días
- *  (≈ 1 año ingame) — más que cualquier partida realista, así no expira "casi nunca". */
+/** Ventanas de rectificación MEL en días por categoría, según el estándar EU CS-MMEL / FAA MMEL
+ *  (días-calendario consecutivos, sin contar el día del hallazgo): B=3, C=10, D=120. La Cat A no
+ *  tiene un intervalo fijo único (se especifica por ítem en la columna "Remarks"); la modelamos
+ *  como el bucket más restrictivo = 1 día. Audit aero 2026-06-28: la tabla estaba corrida una
+ *  letra (3/10/120 mal etiquetados A/B/C) + una "D=365 indefinido" inventada → corregido. */
 export const MEL_DEFERRAL_DAYS: Record<"A" | "B" | "C" | "D", number> = {
-  A: 3,
-  B: 10,
-  C: 120,
-  D: 365,
+  A: 1,
+  B: 3,
+  C: 10,
+  D: 120,
 };
 
 /** Penalty regulatoria por deferral vencida (€). */

@@ -28,11 +28,12 @@ function expect(cond, msg, detail) {
 
 console.log("\n=== sim/mel — derivación de melCategory ===");
 
-// 1. MEL_DEFERRAL_DAYS — los 4 con días esperados
-expect(MEL_DEFERRAL_DAYS.A === 3, "A = 3 días");
-expect(MEL_DEFERRAL_DAYS.B === 10, "B = 10 días");
-expect(MEL_DEFERRAL_DAYS.C === 120, "C = 120 días");
-expect(MEL_DEFERRAL_DAYS.D >= 300, `D ≥ 300 días (got ${MEL_DEFERRAL_DAYS.D})`);
+// 1. MEL_DEFERRAL_DAYS — estándar EU/FAA MMEL (audit aero 2026-06-28): A restrictiva (1d),
+//    B=3, C=10, D=120 (antes estaba corrido: 3/10/120/365).
+expect(MEL_DEFERRAL_DAYS.A === 1, "A = 1 día (más restrictiva, sin intervalo fijo en MMEL)");
+expect(MEL_DEFERRAL_DAYS.B === 3, "B = 3 días");
+expect(MEL_DEFERRAL_DAYS.C === 10, "C = 10 días");
+expect(MEL_DEFERRAL_DAYS.D === 120, "D = 120 días");
 
 // 2. deriveMelCategory respeta el campo explícito
 expect(deriveMelCategory({ isAOG: false, deferrable: true, severity: "Minor", melCategory: "A" }) === "A",
@@ -50,9 +51,9 @@ expect(deriveMelCategory({ isAOG: false, deferrable: false, severity: "Minor" })
 expect(deriveMelCategory({ isAOG: false, deferrable: true, severity: "Critical" }) === null,
   "Critical → null (a pesar de deferrable=true)");
 expect(deriveMelCategory({ isAOG: false, deferrable: true, severity: "Major" }) === "B",
-  "Major + deferrable → 'B' (10d)");
+  "Major + deferrable → 'B' (3d)");
 expect(deriveMelCategory({ isAOG: false, deferrable: true, severity: "Minor" }) === "C",
-  "Minor + deferrable → 'C' (120d, mayoría)");
+  "Minor + deferrable → 'C' (10d, mayoría)");
 
 // 5. Aplicar derivación al dataset real workorders.json — debe haber al menos UN diferible
 const dataMelStats = { A: 0, B: 0, C: 0, D: 0, null: 0 };
@@ -85,7 +86,7 @@ const tplDeferrable = { ...templates[0], id: "WO-FIXTURE-C", deferrable: true, i
 const deferred = deferWorkOrder(sampleWo, tplDeferrable, 1000);
 expect(deferred !== null, "WO deferrable → deferred válido");
 expect(deferred.phase === "Deferred", "phase=Deferred");
-expect(deferred.deferralExpiryMinute === 1000 + 120 * DAY_MINUTES, `expiry = nowMin + 120d (C-cat explícito) (got ${deferred.deferralExpiryMinute})`);
+expect(deferred.deferralExpiryMinute === 1000 + 10 * DAY_MINUTES, `expiry = nowMin + 10d (C-cat explícito) (got ${deferred.deferralExpiryMinute})`);
 expect(deferred.assignedMechanicIds.length === 0, "asignaciones liberadas");
 expect(deferred.phaseElapsedMinutes === 0, "phaseElapsedMinutes reseteado");
 
