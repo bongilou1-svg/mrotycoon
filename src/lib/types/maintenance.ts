@@ -24,7 +24,11 @@ export interface CheckDefinition {
   /** Cycles desde el último check de este tipo que disparan la programación. Se usa el primero
    *  de los dos umbrales que se cumpla (FH o cycles). */
   triggerCycles: number;
-  /** Man-days ideales para completar el check (8h-equivalent × 1 mecánico). */
+  /** Man-days ideales para completar el check. OJO: aquí 1 man-day = un DÍA-CALENDARIO de 24h de
+   *  1 mecánico trabajando en continuo (el runtime usa MANDAY_MINUTES = DAY_MINUTES = 1440 min),
+   *  NO el turno de 8h del convenio MRO. Para man-horas reales multiplica por 24, no por 8
+   *  (p.ej. A = 8 man-days × 24h = 192 MH). Audit aero 2026-06-28: el doc decía "8h-equivalent"
+   *  pero el código usa 24h → discrepancia ×3 corregida en el doc. */
   manDays: number;
   /** Días reales que el avión queda fuera de servicio (parking + trabajo). */
   parkingDays: number;

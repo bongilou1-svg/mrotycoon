@@ -4,7 +4,7 @@
     "ata": 12,
     "ref": "AMM 12-13-79-680-001",
     "name": "Engine #1 oil servicing",
-    "description": "Engine #1 oil servicing — top up CFM56-5B reservoir within MIN/MAX range (AMM 12-13-79-680-001). Use Mobil Jet Oil II. Verify sight glass + magnetic chip detector for FOD.",
+    "description": "Engine #1 oil servicing — top up the engine oil reservoir within MIN/MAX range (AMM 12-13-79-680-001). Use Mobil Jet Oil II. Verify sight glass + magnetic chip detector for ferrous wear debris.",
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
@@ -14,7 +14,8 @@
       "A321"
     ],
     "engineVariantsCompatibles": [
-      "CFM56"
+      "CFM56",
+      "V2500"
     ],
     "durationMinutes": 20,
     "probability": 1,
@@ -30,7 +31,7 @@
     "ata": 12,
     "ref": "AMM 12-13-79-680-002",
     "name": "Engine #2 oil servicing",
-    "description": "Engine #2 oil servicing — V2500 IAE reservoir top-up to nominal level (AMM 12-13-79-680-002). Replace breather cap if seal degraded. Sign sight-glass check on tech log.",
+    "description": "Engine #2 oil servicing — engine oil reservoir top-up to nominal level (AMM 12-13-79-680-002). Replace breather cap if seal degraded. Sign sight-glass check on tech log.",
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
@@ -40,6 +41,7 @@
       "A321"
     ],
     "engineVariantsCompatibles": [
+      "CFM56",
       "V2500"
     ],
     "durationMinutes": 23,
@@ -169,7 +171,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -280,7 +282,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -974,7 +976,7 @@
   },
   {
     "id": "WO-036",
-    "ata": 25,
+    "ata": 33,
     "ref": "AMM 33-25-11-000-002",
     "name": "Reading light LED row 22",
     "description": "Reading light LED row 22 — 4 units replacement P/N LED-RL-1 (AMM 33-25-11-000-002). Verify 28VDC supply + PSU dimmer function. Discard old LEDs per RoHS protocol.",
@@ -1038,7 +1040,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -1060,7 +1062,7 @@
   },
   {
     "id": "WO-039",
-    "ata": 25,
+    "ata": 26,
     "ref": "AMM 26-16-21-720-002",
     "name": "Lavatory LAV-C smoke detector test",
     "description": "Lavatory LAV-C smoke detector test — Apollo 65-3 (AMM 26-16-21-720-002). Inject test aerosol + verify alarm + ECAM warning + CIDS report. Reset latched circuit.",
@@ -1439,7 +1441,6 @@
     "deferrable": true,
     "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
-      "A320",
       "A321"
     ],
     "engineVariantsCompatibles": [
@@ -1726,7 +1727,7 @@
     "description": "MLG #2 brake unit R&I — Honeywell carbon (AMM 32-45-15-000-002). Critical — return-to-service requires brake-cool test + dragging brake check on jack rotation.",
     "severity": "Critical",
     "isAOG": false,
-    "deferrable": true,
+    "deferrable": false,
     "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
@@ -1928,7 +1929,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -1957,7 +1958,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -1987,7 +1988,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -2016,7 +2017,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -2045,7 +2046,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -2244,7 +2245,7 @@
     "severity": "Minor",
     "isAOG": false,
     "deferrable": true,
-    "requiredCategory": "B2",
+    "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
       "A321"
@@ -2527,7 +2528,7 @@
     "description": "APU Fuel Control Unit R&I — Honeywell ECU-49 (AMM 49-91-15-000-001). Critical: software config restore + N speed governor calibration. Bonding < 2.5 mΩ.",
     "severity": "Critical",
     "isAOG": false,
-    "deferrable": true,
+    "deferrable": false,
     "requiredCategory": "B1",
     "aircraftModelsCompatibles": [
       "A320",
@@ -2809,7 +2810,7 @@
   },
   {
     "id": "WO-100",
-    "ata": 71,
+    "ata": 72,
     "ref": "AMM 72-50-00-200-001",
     "name": "Engine #1 HP turbine borescope inspection",
     "description": "Engine #1 HP turbine borescope inspection — CFM56-5B (AMM 72-50-00-200-001). Inspect stages 1-2 NGV + blades. Photo-document any blade tip rubs or cracks. Issue ALOC.",
