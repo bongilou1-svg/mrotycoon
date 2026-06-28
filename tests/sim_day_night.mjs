@@ -95,17 +95,20 @@ console.log("\n=== Overnight scheduledDeparture al amanecer siguiente ===");
 }
 
 // ---- rollDailyChecksOnOvernight ----
-console.log("\n=== rollDailyChecksOnOvernight emite 2-4 daily checks ===");
+console.log("\n=== rollDailyChecksOnOvernight emite el scope FIJO completo ===");
 {
   const airplane = {
     instanceId: "ALI-test", registration: "EC-TST", model: "A320", engineVariant: "CFM56",
     contractId: "C-001", standId: "H1-S1", arrivalMinute: 1200, scheduledDepartureMinute: 2000,
     status: "Idle", flightHoursThisLeg: 3.5, overnight: true,
   };
+  // Audit aero 2026-06-28: el daily check es de SCOPE FIJO — emite TODOS los compatibles cada vez,
+  // determinista (ya no la muestra aleatoria 2-4). Verificamos que todos los seeds dan el set completo.
+  const fullScope = rollDailyChecksOnOvernight(createRng(999), airplane, dailyChecks, balance).length;
   for (let seed = 1; seed <= 10; seed++) {
     const rng = createRng(seed);
     const dcs = rollDailyChecksOnOvernight(rng, airplane, dailyChecks, balance);
-    expect(dcs.length >= 2 && dcs.length <= 4, `seed ${seed}: 2-4 daily checks (got ${dcs.length})`);
+    expect(fullScope >= 2 && dcs.length === fullScope, `seed ${seed}: scope fijo completo y determinista (got ${dcs.length}, esperado ${fullScope})`);
     const ids = dcs.map(d => d.templateId);
     expect(new Set(ids).size === ids.length, `seed ${seed}: sin repetidos (${ids.join(",")})`);
     expect(dcs.every(d => d.phase === "ToPlane"), `seed ${seed}: phase ToPlane inicial`);

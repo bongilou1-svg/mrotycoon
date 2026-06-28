@@ -178,17 +178,14 @@ export function rollDailyChecksOnOvernight(
   // pero filtramos defensivamente por si algún caller pasa un pool mezclado.
   const mpds = dailyCheckTemplates.filter((t) => t.kind === "mpd");
   if (mpds.length === 0) return [];
-  // Pickear 2-4 templates distintos. Si el dataset es pequeño, devolvemos los disponibles.
-  const count = Math.min(mpds.length, 2 + Math.floor(rng.next() * 3)); // 2, 3, 4
+  // Audit aero 2026-06-28: un daily/transit check es de SCOPE FIJO — se ejecutan TODOS los ítems
+  // de su task-card cada vez que toca (walkaround, tren/ruedas/frenos, servicing, drenaje de agua
+  // de tanques, cabina/equipo de emergencia…), no una muestra aleatoria de 2-4. Saltarse ítems no
+  // es como funciona un check programado. Si hace falta acotar volumen, se acota en los FINDINGS
+  // (probabilísticos), no en los ítems del check. → emitimos todos los compatibles.
   const compat = compatibleTemplates(mpds, airplane.model, airplane.engineVariant);
   if (compat.length === 0) return [];
-  // Selección sin reemplazo
-  const pool = [...compat];
-  const picked: WorkOrderTemplate[] = [];
-  for (let i = 0; i < count && pool.length > 0; i++) {
-    const idx = Math.floor(rng.next() * pool.length);
-    picked.push(pool[idx]);
-    pool.splice(idx, 1);
-  }
-  return picked.map((tpl) => instantiateWorkOrder(tpl, airplane, balance));
+  // rng se mantiene en la firma (callers + determinismo del overnight) aunque ya no se muestree.
+  void rng;
+  return compat.map((tpl) => instantiateWorkOrder(tpl, airplane, balance));
 }
