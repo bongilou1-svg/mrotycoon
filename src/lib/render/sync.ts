@@ -10,7 +10,7 @@ import { runwayClosedAt } from "../sim/events.ts";
 import { DAY_MINUTES } from "../sim/time.ts";
 import { getFlightsForGameDay } from "../sim/schedule.ts";
 import { findCrewOfMechanic } from "../sim/crews.ts";
-import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay, AirplaneDisplayState } from "./types.ts";
+import type { RenderAirplane, RenderMechanic, RenderStand, RenderState, RenderPassthroughTraffic, TimeOfDay, AirplaneDisplayState, WorkOrderStatus } from "./types.ts";
 
 /** Pivot iteración 2026-05-25: ya NO una constante fija. Los passthrough usan TODOS los
  *  stands principales OSM que el sim NO ocupa según etapa actual del MRO. Stage 1: sim
@@ -121,6 +121,21 @@ export function buildRenderState(g: GameState): RenderState {
       } else if (dailyOpen.length > 0) {
         displayState = "daily";
       }
+      // Delta 2026-06-11: woStatus = estado de WO para el color del mapa, semántica de atención
+      // del jugador (aog > sin-asignar > en-trabajo > cerrando > listo). Coexiste con displayState.
+      const anyUnassigned = woOnPlane.some((w) => w.assignedMechanicIds.length === 0)
+        || (checkOnPlane !== undefined && checkOnPlane.assignedMechanicIds.length === 0);
+      const anyWorking = woOnPlane.some((w) => w.assignedMechanicIds.length > 0 && (w.phase === "Inspection" || w.phase === "MainTask" || w.phase === "Rework"))
+        || (checkOnPlane !== undefined && checkOnPlane.assignedMechanicIds.length > 0 && !(checkOnPlane.onPlatform ?? false));
+      const anyClosing = woOnPlane.some((w) => w.phase === "Test" || w.phase === "Release")
+        || (checkOnPlane !== undefined && (checkOnPlane.onPlatform ?? false));
+      let woStatus: WorkOrderStatus;
+      if (a.aogEscalated) woStatus = "aog";
+      else if (woOnPlane.length === 0 && checkOnPlane === undefined) woStatus = "ready";
+      else if (anyUnassigned) woStatus = "unassigned";
+      else if (anyWorking) woStatus = "working";
+      else if (anyClosing) woStatus = "closing";
+      else woStatus = "working"; // WO asignada en fase de viaje (ToPlane) → trabajo en marcha
       // Callout activo prioritario para click; si no hay callout pero hay check, ése.
       const activeWoInstanceId = calloutsOpen[0]?.instanceId;
       const activeCheckInstanceId = checkOnPlane?.instanceId;
@@ -136,6 +151,7 @@ export function buildRenderState(g: GameState): RenderState {
         taxiing,
         taxiProgress,
         displayState,
+        woStatus,
         ...(activeWoInstanceId ? { activeWoInstanceId } : {}),
         ...(activeCheckInstanceId ? { activeCheckInstanceId } : {}),
         ...(hasOpenDaily ? { hasOpenDaily } : {}),
@@ -181,11 +197,13 @@ export function buildRenderState(g: GameState): RenderState {
   const travelMin = (g.balance.officeToStandMinutes ?? 2) || 1;
   const mechanics: RenderMechanic[] = g.mechanics.map((m) => {
     let destStandId: string | null = null;
+    let destReg: string | null = null;
     if (m.assignedWoInstanceId) {
       const wo = woById.get(m.assignedWoInstanceId);
       if (wo) {
         const ap = airplaneById.get(wo.airplaneInstanceId);
         destStandId = ap?.standId || null;
+        destReg = ap?.registration || wo.airplaneRegistration || null;
       }
     } else if (m.assignedCheckInstanceId) {
       const chk = checkById.get(m.assignedCheckInstanceId);
@@ -204,6 +222,8 @@ export function buildRenderState(g: GameState): RenderState {
       state: m.state,
       destStandId,
       progress,
+      stateRemainingMinutes: m.stateRemainingMinutes,
+      destReg,
       ...(crew ? { crewId: crew.id, crewColor: crew.color } : {}),
     };
   });

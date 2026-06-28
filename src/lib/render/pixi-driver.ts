@@ -2422,6 +2422,18 @@ export class PixiDriver {
   };
   private static readonly F5D_STAND_FREE_COL = 0x3d6f9d;
 
+  /** Delta de diseño (Dani 2026-06-11): paleta por estado de WO — fuente de verdad del color
+   *  del mapa, leyenda y listas. aog rojo · sin asignar ámbar · en trabajo AZUL · cerrando CIAN
+   *  · listo VERDE · libre gris. */
+  private static readonly F5D_WO_STATUS_COL: Record<string, number> = {
+    aog: 0xff4757, unassigned: 0xf5b945, working: 0x4da3ff, closing: 0x3ad6c5, ready: 0x3fb950, free: 0x3d6f9d,
+  };
+  /** Color de un avión en el mapa: prefiere woStatus (delta) y cae a displayState (compat). */
+  private static acColor(ap: { woStatus?: string; displayState?: string }): number {
+    if (ap.woStatus && PixiDriver.F5D_WO_STATUS_COL[ap.woStatus] !== undefined) return PixiDriver.F5D_WO_STATUS_COL[ap.woStatus];
+    return PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
+  }
+
   /** Devuelve el standMap del aeropuerto activo (o fallback OVD si no está disponible). */
   private getStandMap(): Record<string, string> {
     return (activeAirportPaths as { standMap?: Record<string, string> }).standMap
@@ -2726,9 +2738,9 @@ export class PixiDriver {
       if (!simId || !PixiDriver.F5D_STAND_CODE[simId]) continue;
       const ap = simId ? apByStand.get(simId) : undefined;
       const active = ap !== undefined;
-      // Color por estado del ocupante (coherente con el avión); libre → azul apagado.
+      // Color por estado de WO del ocupante (delta: woStatus → paleta); libre → gris apagado.
       const stCol = active
-        ? (PixiDriver.F5D_STAND_STATE_COL[ap!.displayState ?? "idle"] ?? 0x3aa9ff)
+        ? PixiDriver.acColor(ap!)
         : PixiDriver.F5D_STAND_FREE_COL;
       // Código placard (351/451…), cae al ref OSM si no hay mapeo.
       const code = (simId && PixiDriver.F5D_STAND_CODE[simId]) || ref;
@@ -2822,8 +2834,12 @@ export class PixiDriver {
       // Avión por la ruta en dos fases (aterrizaje pista → taxi → stand), nariz en avance. Sin
       // línea per-plane: con todo el tráfico serían demasiadas; el movimiento ya traza el camino.
       const at = transitAt(ap.taxiProgress, standPos);
-      const col = PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
-      drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, ap.airlineColor ?? col, col, ap.registration);
+      const col = PixiDriver.acColor(ap);
+      // Delta 2026-06-11: el avión INBOUND (aún en la fase de aterrizaje del tránsito) se pinta
+      // más brillante (azul claro) para destacar que acaba de tocar pista; en taxi va normal.
+      const inbound = ap.taxiProgress < LANDING_FRAC;
+      const livery = inbound ? 0xdceaff : (ap.airlineColor ?? col);
+      drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, livery, col, ap.registration);
     }
 
     // ── Aviones parados en stand · avioncito vectorial tamaño furgo + matrícula ──
@@ -2839,7 +2855,7 @@ export class PixiDriver {
       // Solo los 7 stands del juego (coherente con la pill); otros refs OSM no pintan avión.
       if (!PixiDriver.F5D_STAND_CODE[ap.standId]) continue;
 
-      const planeCol = PixiDriver.F5D_STAND_STATE_COL[ap.displayState ?? "idle"] ?? 0x3aa9ff;
+      const planeCol = PixiDriver.acColor(ap);
       const planeAng = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - standPos.y, f5dRunwayMid.x - standPos.x) + Math.PI / 2 : 0;
       drawPlane(standPos.x, standPos.y, planeAng, ap.airlineColor ?? planeCol, planeCol, ap.registration);
 
@@ -3052,7 +3068,12 @@ export class PixiDriver {
         if (returning) ang += Math.PI;
         // Color de la furgo = color de la cuadrilla (cae a ámbar/gris si va sin cuadrilla).
         const col = m.crewColor ?? (returning ? 0x3d6f9d : 0xf5b945);
-        drawVan(px, py, ang, col, returning ? "a ofi" : ("a " + code));
+        // Delta 2026-06-11: etiqueta con DESTINO + ETA ("→ EC-XXX · 4min"); a la vuelta, a oficina.
+        const eta = m.stateRemainingMinutes != null ? Math.max(0, Math.round(m.stateRemainingMinutes)) : null;
+        const vanLbl = returning
+          ? ("→ ofi" + (eta != null ? " · " + eta + "min" : ""))
+          : ("→ " + (m.destReg || code || "?") + (eta != null ? " · " + eta + "min" : ""));
+        drawVan(px, py, ang, col, vanLbl);
       } else if (st === "Working" && m.destStandId) {
         // (3) PEGADO AL STAND: al lado del avión, sin solaparse, lado contrario a la pista.
         const code = PixiDriver.F5D_STAND_CODE[m.destStandId];

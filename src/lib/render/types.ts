@@ -21,6 +21,17 @@ export type TimeOfDay = "day" | "night";
  *  El driver mapea cada uno a su color/badge. */
 export type AirplaneDisplayState = "idle" | "working" | "delayed" | "aog" | "daily";
 
+/** Estado de la WO activa para el COLOR del mapa (delta de diseño Dani 2026-06-11). Semántica
+ *  de "atención del jugador", fuente de verdad única para mapa + leyenda + listas:
+ *    - `aog`        → avión en tierra (rojo). Bloquea, penaliza fuerte.
+ *    - `unassigned` → tiene WO abierta SIN cuadrilla (ámbar). Acción tuya pendiente.
+ *    - `working`    → cuadrilla trabajando (Inspection/MainTask/Rework) (azul).
+ *    - `closing`    → cerrando (Test/Release o A-check en plataforma) (cian).
+ *    - `ready`      → sin trabajo abierto, listo para salir (verde).
+ *    - `free`       → stand sin avión (gris). Solo para stands.
+ *  Coexiste con displayState (no lo sustituye) para no romper otros consumidores. */
+export type WorkOrderStatus = "aog" | "unassigned" | "working" | "closing" | "ready" | "free";
+
 /** Avión visible en el mapa. Posición la calcula el driver según standId y layout. */
 export interface RenderAirplane {
   instanceId: string;
@@ -42,6 +53,9 @@ export interface RenderAirplane {
   taxiProgress: number;
   /** Pivot 2026-05-24: estado visual semántico — el driver lo mapea a paleta. */
   displayState: AirplaneDisplayState;
+  /** Delta 2026-06-11: estado de WO para el color del mapa (aog/unassigned/working/closing/ready).
+   *  Más informativo que displayState; el driver lo prefiere si está set. */
+  woStatus?: WorkOrderStatus;
   /** WO callout abierta más relevante (la primera open en orden de emisión). Si está set,
    *  el click en el avión del mapa abre el modal de esta WO en lugar del modal flota. */
   activeWoInstanceId?: string;
@@ -103,6 +117,10 @@ export interface RenderMechanic {
   crewId?: string;
   /** Color de la furgoneta de la cuadrilla (0xRRGGBB) para distinguirlas en el mapa. */
   crewColor?: number;
+  /** Delta 2026-06-11: minutos restantes del trayecto en curso (para la etiqueta ETA del furgo). */
+  stateRemainingMinutes?: number;
+  /** Delta 2026-06-11: matrícula del avión destino del furgo (etiqueta "→ {reg} · {N} min"). */
+  destReg?: string | null;
 }
 
 export interface RenderState {
