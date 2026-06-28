@@ -12427,9 +12427,9 @@ var Sim = (() => {
       ata: 29,
       ref: "AMM 29-13-21-690-001",
       name: "PTU (Power Transfer Unit) servicing",
-      description: "PTU (Power Transfer Unit) servicing \u2014 Green\u2194Yellow hydraulic bidirectional (AMM 29-13-21-690-001). AOG: fluid contamination found. Filter change + flush cycle mandatory.",
-      severity: "Critical",
-      isAOG: true,
+      description: "PTU (Power Transfer Unit) servicing \u2014 Green\u2194Yellow hydraulic bidirectional (AMM 29-13-21-690-001). Check filter for fluid contamination; filter change + flush cycle if contamination found.",
+      severity: "Major",
+      isAOG: false,
       deferrable: true,
       requiredCategory: "B1",
       aircraftModelsCompatibles: [
@@ -12451,7 +12451,8 @@ var Sim = (() => {
         "Heavy toolkit",
         "Hydraulic flush rig",
         "Particle counter"
-      ]
+      ],
+      melCategory: "C"
     },
     {
       id: "WO-058",
@@ -13684,6 +13685,64 @@ var Sim = (() => {
         "Camera/recorder",
         "Plug kit for igniter ports"
       ]
+    },
+    {
+      id: "WO-101",
+      ata: 27,
+      ref: "AMM 27-30-00-810-001",
+      name: "Elevator servo-control jam \u2014 primary flight control restriction",
+      description: "Elevator servo-control jam \u2014 restricted travel found on flight-control check (AMM 27-30-00). NO-GO: a primary flight control must move free through full range before dispatch. Inspect servo-control, linkage and ELAC interface; replace servo if seized, then full rig + range check.",
+      severity: "Critical",
+      isAOG: true,
+      deferrable: false,
+      requiredCategory: "B1",
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      durationMinutes: 60,
+      probability: 1,
+      partsRequired: [
+        "Elevator servo-control unit",
+        "Hydraulic seal kit"
+      ],
+      toolsRequired: [
+        "Flight control rigging kit",
+        "Servo pressure rig"
+      ]
+    },
+    {
+      id: "WO-102",
+      ata: 32,
+      ref: "AMM 32-31-00-810-001",
+      name: "Main landing gear uplock failure \u2014 gear unsafe",
+      description: "MLG uplock will not engage/release \u2014 unsafe gear indication (AMM 32-31-00). NO-GO: gear must lock up and down with a safe indication before dispatch. Inspect uplock assy, proximity target and hydraulic actuator; rig + full retraction test on jacks required.",
+      severity: "Critical",
+      isAOG: true,
+      deferrable: false,
+      requiredCategory: "B1",
+      aircraftModelsCompatibles: [
+        "A320",
+        "A321"
+      ],
+      engineVariantsCompatibles: [
+        "CFM56",
+        "V2500"
+      ],
+      durationMinutes: 60,
+      probability: 1,
+      partsRequired: [
+        "Uplock assembly",
+        "Proximity target (gear)"
+      ],
+      toolsRequired: [
+        "Landing gear retraction rig",
+        "Aircraft jacks"
+      ]
     }
   ];
 
@@ -14192,7 +14251,9 @@ var Sim = (() => {
       { id: "WO-097", kind: "mpd", rationale: "Windshield heat resistance check \u2014 programada" },
       { id: "WO-098", kind: "mpd", rationale: "Engine oil filter R&I \u2014 interval horas vuelo" },
       { id: "WO-099", kind: "mpd", rationale: "Engine oil filter R&I \u2014 interval horas vuelo" },
-      { id: "WO-100", kind: "mpd", rationale: "Engine HP turbine borescope \u2014 programada en check" }
+      { id: "WO-100", kind: "mpd", rationale: "Engine HP turbine borescope \u2014 programada en check" },
+      { id: "WO-101", kind: "callout", rationale: "Elevator servo jam \u2014 defecto AOG no programado, hallado en check de mandos" },
+      { id: "WO-102", kind: "callout", rationale: "MLG uplock failure \u2014 defecto AOG no programado, indicacion de tren insegura" }
     ]
   };
 

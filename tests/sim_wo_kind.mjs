@@ -53,12 +53,12 @@ const invalidKinds = classification.classifications.filter(
 );
 expect(invalidKinds.length === 0, `todas las entradas tienen kind válido (${invalidKinds.length} inválidas)`);
 
-// 4. Distribución 51 callout + 49 mpd (la real del dataset)
+// 4. Distribución 53 callout + 49 mpd (la real del dataset; +2 callout AOG en el audit aero 2026-06-28: WO-101/102)
 const counts = classification.classifications.reduce(
   (acc, c) => ((acc[c.kind] = (acc[c.kind] ?? 0) + 1), acc),
   {},
 );
-expect(counts.callout === 51 && counts.mpd === 49, `distribución 51 callout + 49 mpd`, `got callout=${counts.callout} mpd=${counts.mpd}`);
+expect(counts.callout === 53 && counts.mpd === 49, `distribución 53 callout + 49 mpd`, `got callout=${counts.callout} mpd=${counts.mpd}`);
 
 console.log("\n=== loadWorkOrdersWithKind merge ===");
 

@@ -109,6 +109,8 @@
     { "id": "WO-097", "kind": "mpd",     "rationale": "Windshield heat resistance check — programada" },
     { "id": "WO-098", "kind": "mpd",     "rationale": "Engine oil filter R&I — interval horas vuelo" },
     { "id": "WO-099", "kind": "mpd",     "rationale": "Engine oil filter R&I — interval horas vuelo" },
-    { "id": "WO-100", "kind": "mpd",     "rationale": "Engine HP turbine borescope — programada en check" }
+    { "id": "WO-100", "kind": "mpd",     "rationale": "Engine HP turbine borescope — programada en check" },
+    { "id": "WO-101", "kind": "callout", "rationale": "Elevator servo jam — defecto AOG no programado, hallado en check de mandos" },
+    { "id": "WO-102", "kind": "callout", "rationale": "MLG uplock failure — defecto AOG no programado, indicacion de tren insegura" }
   ]
 }

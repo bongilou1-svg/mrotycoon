@@ -34,7 +34,7 @@ function readJson(path) {
 console.log("\n=== workorders.json ===");
 const wos = readJson(join(dataDir, "workorders.json"));
 expect(Array.isArray(wos), "es un array");
-expect(wos.length === 100, `tiene 100 entradas (got ${wos.length})`);
+expect(wos.length === 102, `tiene 102 entradas (got ${wos.length})`);
 
 const counts = { sev: { Minor: 0, Major: 0, Critical: 0 }, cat: { B1: 0, B2: 0 }, aog: 0 };
 const ataSet = new Set();

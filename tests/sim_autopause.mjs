@@ -19,7 +19,7 @@ console.log("\n=== auto-pausa en AOG ===");
 const aogTemplates = templates.filter(t => t.isAOG);
 expect(aogTemplates.length > 0, `dataset tiene ${aogTemplates.length} templates AOG`);
 
-// Solo hay ~1 template AOG en el dataset (1% prob). Para que el test sea determinista
+// Hay ~2 templates AOG en el dataset (WO-101/102, ~2% prob). Para que el test sea determinista
 // e instantáneo, sustituimos TODOS los templates por uno AOG → garantizamos que la primera
 // WO emitida será AOG y dispara la auto-pausa.
 const aogOnlyTemplates = templates.map(t => ({ ...t, isAOG: true, severity: "Critical", deferrable: false }));
