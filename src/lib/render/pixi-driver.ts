@@ -2544,22 +2544,46 @@ export class PixiDriver {
     // Escala contra-zoom compartida (legible a casi cualquier zoom) + avioncito vectorial,
     // usados tanto por los aviones en tránsito como por los parados.
     const vanScale = () => Math.max(0.7, Math.min(3.2, 1 / (this.camera?.zoom || 1))) * 1.5;
-    // livery = color de la AEROLÍNEA (alas + cola); halo = color de estado (working/aog…) detrás.
-    const drawPlane = (px: number, py: number, ang: number, livery: number, halo: number, reg: string | null) => {
+    // Glifo de estado sobre el badge del avión parado (siluetas del handoff AC_BADGE, vector).
+    const drawBadgeGlyph = (W: Container, bx: number, by: number, br: number, status: string) => {
+      const dark = status === "aog" ? 0xffffff : 0x06101a;
+      const r = br * 0.62, lw = Math.max(1, br * 0.32);
+      if (status === "aog") { // triángulo de aviso
+        W.addChild(new Graphics().poly([bx, by - r, bx + r * 0.92, by + r * 0.68, bx - r * 0.92, by + r * 0.68]).stroke({ width: lw, color: dark, join: "round" }));
+        W.addChild(new Graphics().circle(bx, by + r * 0.36, br * 0.14).fill({ color: dark }));
+      } else if (status === "unassigned") { // "+" (falta cuadrilla)
+        W.addChild(new Graphics().rect(bx - r * 0.72, by - br * 0.16, r * 1.44, br * 0.32).fill({ color: dark }));
+        W.addChild(new Graphics().rect(bx - br * 0.16, by - r * 0.72, br * 0.32, r * 1.44).fill({ color: dark }));
+      } else if (status === "working") { // anillo (en marcha)
+        W.addChild(new Graphics().circle(bx, by, r * 0.55).stroke({ width: lw, color: dark }));
+      } else { // closing / ready → check
+        W.addChild(new Graphics().moveTo(bx - r * 0.72, by + r * 0.02).lineTo(bx - r * 0.08, by + r * 0.62).lineTo(bx + r * 0.8, by - r * 0.6).stroke({ width: lw, color: dark, cap: "round", join: "round" }));
+      }
+    };
+    // Avión top-down del DISEÑO (handoff MAPICON.plane): silueta SÓLIDA en color de aerolínea
+    // (livery) — fuselaje + alas en flecha + cola. Halo + ANILLO de ESTADO (stateCol) detrás, y
+    // badge de estado (glifo) en la esquina si va parado. Dani 2026-06-11 ("usa sus assets").
+    const drawPlane = (px: number, py: number, ang: number, livery: number, stateCol: number, reg: string | null, badge?: string) => {
       const s = vanScale();
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: halo, alpha: 0.14 }));
+      const W = this.worldDynamic!;
+      W.addChild(new Graphics().circle(px, py, 15 * s).fill({ color: stateCol, alpha: 0.20 }));
+      W.addChild(new Graphics().circle(px, py, 11.5 * s).fill({ color: 0x080d15, alpha: 0.32 }).stroke({ width: Math.max(1, 1.6 * s), color: stateCol, alpha: 0.92 }));
       const pl = new Container();
-      pl.addChild(new Graphics().poly([-11, 2.5, 11, 2.5, 5.5, -1.5, -5.5, -1.5]).fill({ color: livery, alpha: 0.97 })); // alas = librea
-      pl.addChild(new Graphics().poly([-5, 8, 5, 8, 3, 5.5, -3, 5.5]).fill({ color: livery, alpha: 0.97 }));            // cola = librea
-      pl.addChild(new Graphics().roundRect(-2.2, -9, 4.4, 17, 2.2).fill({ color: 0xe6f0fb }).stroke({ width: 1, color: livery })); // fuselaje claro, borde librea
-      pl.addChild(new Graphics().poly([-2.2, -8.5, 2.2, -8.5, 0, -11.5]).fill({ color: 0xe6f0fb }));                  // morro
-      pl.addChild(new Graphics().circle(0, -6.5, 1).fill({ color: 0x0a1428, alpha: 0.85 }));                         // cockpit
+      pl.addChild(new Graphics().poly([0, -3, 10.8, 3, 10.8, 5.1, 0, 0.6, -10.8, 5.1, -10.8, 3]).fill({ color: livery }));   // alas en flecha
+      pl.addChild(new Graphics().poly([0, 5.4, 4.8, 7.8, 4.8, 9.3, 0, 7.2, -4.8, 9.3, -4.8, 7.8]).fill({ color: livery })); // cola
+      pl.addChild(new Graphics().roundRect(-2.05, -9, 4.1, 18, 2.05).fill({ color: livery }));                                // fuselaje
+      pl.addChild(new Graphics().circle(0, -5.6, 1.1).fill({ color: 0x081018, alpha: 0.72 }));                                // cabina
       pl.position.set(px, py); pl.rotation = ang; pl.scale.set(s);
-      this.worldDynamic!.addChild(pl);
+      W.addChild(pl);
+      if (badge) {
+        const bx = px + 8.5 * s, by = py - 8.5 * s, br = 4.4 * s;
+        W.addChild(new Graphics().circle(bx, by, br).fill({ color: stateCol }).stroke({ width: Math.max(1, 1.4 * s), color: 0x080d15 }));
+        drawBadgeGlyph(W, bx, by, br, badge);
+      }
       if (reg) {
         const t = new Text({ text: reg, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(8.5 * s), fontWeight: "700", fill: 0xe6f0fb, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } } });
-        t.anchor.set(0.5, 0); t.position.set(px, py + 13 * s + 1);
-        this.worldDynamic!.addChild(t);
+        t.anchor.set(0.5, 0); t.position.set(px, py + 14 * s + 1);
+        W.addChild(t);
       }
     };
     // Punto + ángulo a fracción t (0..1) de una polilínea (por longitud de arco).
@@ -2857,17 +2881,8 @@ export class PixiDriver {
 
       const planeCol = PixiDriver.acColor(ap);
       const planeAng = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - standPos.y, f5dRunwayMid.x - standPos.x) + Math.PI / 2 : 0;
-      drawPlane(standPos.x, standPos.y, planeAng, ap.airlineColor ?? planeCol, planeCol, ap.registration);
-
-      // Badge de tarea activa (vector, sin emoji): check > WO > daily. Esquina sup-dcha del avión.
-      let badgeCol = 0;
-      if (ap.activeCheckInstanceId) badgeCol = 0xa8dafc;
-      else if (ap.activeWoInstanceId) badgeCol = 0x3fb950;
-      else if (ap.hasOpenDaily) badgeCol = 0x6dc7ff;
-      if (badgeCol) {
-        const bs = vanScale();
-        this.worldDynamic!.addChild(new Graphics().circle(standPos.x + 10 * bs, standPos.y - 11 * bs, 3.4 * bs).fill({ color: badgeCol }).stroke({ width: Math.max(1, 1 * bs), color: 0x0a1428 }));
-      }
+      // Parado: silueta del diseño + halo/anillo de estado + badge con glifo de woStatus.
+      drawPlane(standPos.x, standPos.y, planeAng, ap.airlineColor ?? planeCol, planeCol, ap.registration, ap.woStatus ?? "ready");
 
       // Hover + hitbox centrados en el avión (abre el modal contextual del avión).
       const hbS = vanScale();
@@ -3015,20 +3030,19 @@ export class PixiDriver {
       (this as { _lastVanWorld?: { x: number; y: number } })._lastVanWorld = { x: px, y: py };
       const z = this.camera?.zoom || 1;
       const s = Math.max(0.7, Math.min(3.2, 1 / z)) * 1.5; // legible a casi cualquier zoom
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: vanCol, alpha: 0.16 }));
-      this.worldDynamic!.addChild(new Graphics().circle(px, py, 7.5 * s).fill({ color: vanCol, alpha: 0.30 }));
+      const W = this.worldDynamic!;
+      W.addChild(new Graphics().circle(px, py, 13 * s).fill({ color: vanCol, alpha: 0.18 }));
+      W.addChild(new Graphics().circle(px, py, 8 * s).fill({ color: vanCol, alpha: 0.30 }));
+      // Furgo del DISEÑO (handoff MAPICON.van): caja redondeada + parabrisas oscuro. Silueta
+      // orientada con el morro a +x (mismo convenio que el rotado de abajo). Dani 2026-06-11.
       const van = new Container();
-      van.addChild(new Graphics().roundRect(-9, -5.5, 18, 11, 3).fill({ color: vanCol }).stroke({ width: 1.2, color: 0xa8dafc, alpha: 0.95 }));
-      van.addChild(new Graphics().roundRect(3, -4, 5, 8, 1.2).fill({ color: 0x0a1428, alpha: 0.9 }));
-      van.addChild(new Graphics().rect(-5.5, -4, 5, 3.5).fill({ color: 0xa8dafc, alpha: 0.55 }));
-      van.addChild(new Graphics().circle(8.5, -1, 1.4).fill({ color: 0xfff2c4, alpha: 0.95 }));
-      van.addChild(new Graphics().circle(-4.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol }));
-      van.addChild(new Graphics().circle(5.5, 6.5, 2.2).fill(0x0a1428).stroke({ width: 1.1, color: vanCol }));
+      van.addChild(new Graphics().roundRect(-7, -4.3, 14, 8.6, 2.6).fill({ color: vanCol }).stroke({ width: 1.2, color: 0xa8dafc, alpha: 0.9 }));
+      van.addChild(new Graphics().roundRect(2.4, -3.0, 3.4, 6.0, 1.3).fill({ color: 0x06101a, alpha: 0.58 })); // parabrisas (morro a +x)
       van.position.set(px, py);
       const flip = Math.abs(ang) > Math.PI / 2;
       van.rotation = flip ? ang + Math.PI : ang;
       van.scale.set(flip ? -s : s, s);
-      this.worldDynamic!.addChild(van);
+      W.addChild(van);
       if (label) {
         const vlbl = new Text({ text: label, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } } });
         vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 9 * s + 3);
