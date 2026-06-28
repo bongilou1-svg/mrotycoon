@@ -80,6 +80,7 @@ export function deferWorkOrder(
     phase: "Deferred",
     phaseElapsedMinutes: 0,
     assignedMechanicIds: [], // libera mecánicos asignados
+    melCategory: cat, // sella la categoría MEL para que la UI la muestre (antes salía "MEL ?")
     deferralExpiryMinute: nowMinute + days * DAY_MINUTES,
   };
 }

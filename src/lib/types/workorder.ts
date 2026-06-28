@@ -148,6 +148,10 @@ export interface WorkOrderInstance {
    *  pasa a `Failed` con penalty regulatoria. Undefined si nunca se difirió.
    *  Para melCategory='D' (indefinida), se setea a un valor MUY alto (ver `MEL_DEFERRAL_DAYS`). */
   deferralExpiryMinute?: number;
+  /** Categoría MEL (A/B/C/D) con la que se difirió esta WO. La sella `deferWorkOrder()` al pasar
+   *  a `Deferred` (derivada del template vía `getMelCategory`), para que la UI muestre la categoría
+   *  real sin re-derivarla. Undefined si la WO nunca se difirió. */
+  melCategory?: MelCategory;
   /** Pivot línea pura · Fase C (2026-05-24): si esta WO es un FINDING generado durante
    *  una daily check subtask, lleva el instanceId del WO padre (la DC-* que lo originó).
    *  Útil para trazar y para que la UI agrupe findings con su daily check origen. */
