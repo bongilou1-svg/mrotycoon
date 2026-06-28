@@ -407,6 +407,17 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .map-mini .mm-dots{display:flex;flex-wrap:wrap;gap:5px}
 .map-mini .mm-dot{width:13px;height:13px;border-radius:3px;display:grid;place-items:center;font-family:var(--mono);font-size:.5rem;color:#04070c;font-weight:700;box-shadow:0 0 5px currentColor}
 .map-mini .mm-empty{font-size:.6rem;color:var(--muted);font-style:italic}
+/* Oficina de mecs en el mapa + cobertura por turno (delta 2026-06-11). Screen-fixed top-center. */
+.map-office{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:11;display:flex;align-items:center;gap:8px;padding:5px 12px 5px 8px;background:rgba(7,13,24,.86);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:9px;box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:auto;cursor:pointer}
+.map-office:hover{border-color:var(--accent)}
+.map-office .mo-bldg{width:26px;height:26px;color:#7fb3e8;flex:none;display:grid;place-items:center}
+.map-office .mo-t{font:700 .56rem var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--text)}
+.map-office .mo-sub{font:.56rem var(--mono);color:var(--muted);margin-top:1px}
+.map-office .mo-cov{display:flex;gap:3px;margin-top:3px}
+.map-office .mo-cd{width:15px;height:13px;border-radius:3px;display:grid;place-items:center;font:700 .52rem var(--mono);color:#06101a}
+.map-office .mo-cd.ok{background:#3fb950}.map-office .mo-cd.warn{background:#f5b945}
+.map-office .mo-cd.bad{background:#ff4757;color:#fff;animation:pulse-alert 1.3s infinite}
+.map-office .mo-cd[data-live]{outline:1.5px solid rgba(255,255,255,.85);outline-offset:1px}
 
 /* Pivot iteración 2026-05-25 — New Game wizard overlay */
 .newgame-overlay{position:fixed;inset:0;background:rgba(7,13,24,.97);backdrop-filter:blur(10px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:2rem;overflow-y:auto}
@@ -1755,14 +1766,54 @@ function renderMap(){
     </div>
     <div class="map-legend">
       <span class="lg" style="color:#ff4757"><i></i>AOG</span>
-      <span class="lg" style="color:#f5b945"><i></i>Demora</span>
-      <span class="lg" style="color:#3fb950"><i></i>Trabajando</span>
-      <span class="lg" style="color:#6dc7ff"><i></i>Daily</span>
-      <span class="lg" style="color:#3aa9ff"><i></i>En tierra</span>
+      <span class="lg" style="color:#f5b945"><i></i>Sin asignar</span>
+      <span class="lg" style="color:#4da3ff"><i></i>En trabajo</span>
+      <span class="lg" style="color:#3ad6c5"><i></i>Cerrando</span>
+      <span class="lg" style="color:#3fb950"><i></i>Listo</span>
       <span class="lg" style="color:#3d6f9d"><i></i>Libre</span>
     </div>
+    <div id="map-office" class="map-office"></div>
     <div id="map-mini" class="map-mini"></div>
   </div>\`;
+}
+// Paleta de estado de WO — fuente de verdad DOM (espeja F5D_WO_STATUS_COL del Pixi). Delta 2026-06-11.
+const WO_STATUS_COL = { aog:"#ff4757", unassigned:"#f5b945", working:"#4da3ff", closing:"#3ad6c5", ready:"#3fb950", free:"#3d6f9d" };
+const WO_STATUS_LBL = { aog:"AOG", unassigned:"Sin asignar", working:"En trabajo", closing:"Cerrando", ready:"Listo", free:"Libre" };
+// Estado de WO de un avión (espeja la derivación de sync.ts) para colorear listas/minimapa.
+function woStatusOfAirplane(ap){
+  if (!ap) return "free";
+  if (ap.aogEscalated) return "aog";
+  var wos = (game.workOrders||[]).filter(function(w){ return w.airplaneInstanceId === ap.instanceId && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred"; });
+  if (wos.length === 0) return "ready";
+  if (wos.some(function(w){ return w.assignedMechanicIds.length === 0; })) return "unassigned";
+  if (wos.some(function(w){ return w.phase === "Inspection" || w.phase === "MainTask" || w.phase === "Rework"; })) return "working";
+  if (wos.some(function(w){ return w.phase === "Test" || w.phase === "Release"; })) return "closing";
+  return "working";
+}
+// Cobertura de turno por cuadrillas (espeja el cov-strip del shift-board): bad=sin cuadrilla,
+// warn=cuadrilla(s) sin B2, ok=cubierto. Delta 2026-06-11 — alimenta la oficina del mapa.
+function shiftCoverage(sh){
+  var mById = function(id){ return game.mechanics.find(function(m){ return m.id === id; }); };
+  var crews = (game.crews||[]).filter(function(c){
+    var s = (c.shift === "morning" || c.shift === "afternoon" || c.shift === "night") ? c.shift
+      : ((c.officerIds.map(mById).find(Boolean) || {}).shift || "morning");
+    return s === sh;
+  });
+  if (crews.length === 0) return "bad";
+  var hasB2 = crews.some(function(c){ return c.officerIds.map(mById).filter(Boolean).some(function(m){ return m && m.base === "B2"; }); });
+  return hasB2 ? "ok" : "warn";
+}
+function updateOfficeMarker(){
+  var el = document.getElementById("map-office");
+  if (!el) return;
+  var crews = (game.crews||[]).length;
+  var hourNow = Math.floor((game.clock.minute % 1440) / 60);
+  var liveShift = (hourNow >= 6 && hourNow < 14) ? "morning" : (hourNow >= 14 && hourNow < 22) ? "afternoon" : "night";
+  var onShift = (game.mechanics||[]).filter(function(m){ return !m.isLeadForeman && (m.shift || "morning") === liveShift && m.state !== "OffShift"; }).length;
+  var SH = [["morning","M"],["afternoon","T"],["night","N"]];
+  var dots = SH.map(function(p){ var st = shiftCoverage(p[0]); var live = p[0] === liveShift ? ' data-live="1"' : ''; return '<span class="mo-cd ' + st + '"' + live + ' title="' + p[0] + '">' + p[1] + '</span>'; }).join("");
+  var bldg = '<svg viewBox="0 0 40 40" width="26" height="26"><path d="M6 17 L20 7.5 L34 17 V34 H6 Z" fill="currentColor" opacity=".22"/><path d="M5 17.5 L20 7 L35 17.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><g fill="currentColor"><rect x="10.5" y="20.5" width="4.6" height="4.6" rx="1"/><rect x="17.7" y="20.5" width="4.6" height="4.6" rx="1"/><rect x="24.9" y="20.5" width="4.6" height="4.6" rx="1"/><rect x="17.7" y="27.5" width="4.6" height="6.5" rx="1"/></g></svg>';
+  el.innerHTML = '<div class="mo-bldg">' + bldg + '</div><div class="mo-body"><div class="mo-t">Oficina mecs</div><div class="mo-sub">' + crews + ' cuadrilla' + (crews !== 1 ? 's' : '') + ' · ' + onShift + ' en turno</div><div class="mo-cov">' + dots + '</div></div>';
 }
 
 /** Actualiza el panel info overlay sobre el mapa. Idempotente: se llama cada tick
@@ -1880,6 +1931,7 @@ function updateMapInfoPanel(){
 
   el.innerHTML = html;
   updateMapMini();
+  updateOfficeMarker();
 }
 
 /** Minimapa (handoff design 6 · Pasada 3): cuadrícula esquemática de stands ocupados,
@@ -1891,31 +1943,16 @@ function updateMapMini(){
   const el = document.getElementById("map-mini");
   if (!el) return;
   const now = game.clock.minute;
-  // displayState por avión presente (mismo criterio cromático que la leyenda).
-  const COLORS = { aog: "#ff4757", delayed: "#f5b945", working: "#3fb950", daily: "#6dc7ff", idle: "#3aa9ff" };
   const present = game.airplanes.filter(a => a.status !== "Departed" && a.arrivalMinute <= now
     && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now));
-  // Estado por avión: replica la prioridad aog>delayed>working>daily>idle de sync.ts,
-  // derivado de sus WOs activas (sin depender del render).
-  function stateOf(a){
-    const wos = game.workOrders.filter(w => w.airplaneInstanceId === a.instanceId
-      && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred");
-    const tplAog = wos.some(w => { const t = game.templates.find(x => x.id === w.templateId); return t && t.isAOG; });
-    if (tplAog) return "aog";
-    if (a.scheduledDepartureMinute < now && wos.length > 0) return "delayed";
-    const working = wos.some(w => (w.assignedMechanicIds && w.assignedMechanicIds.length > 0)
-      && (w.phase === "MainTask" || w.phase === "Test" || w.phase === "Rework" || w.phase === "Inspection"));
-    if (working) return "working";
-    const daily = wos.some(w => w.templateId && w.templateId.indexOf && w.templateId.indexOf("DC-") === 0);
-    if (daily) return "daily";
-    return "idle";
-  }
+  // Estado de WO por avión (delta 2026-06-11): misma derivación que sync.ts → color coherente
+  // con el mapa y la leyenda (aog/unassigned/working/closing/ready).
   let dots = "";
   for (const a of present) {
-    const st = stateOf(a);
-    const col = COLORS[st] || "#3aa9ff";
+    const st = woStatusOfAirplane(a);
+    const col = WO_STATUS_COL[st] || "#3d6f9d";
     const code = a.standId ? esc(String(a.standId).replace(/^H1-S?/, "")) : "";
-    dots += '<span class="mm-dot" style="background:' + col + ';color:' + col + '" title="' + esc(a.registration) + ' · ' + st + '">' + code + '</span>';
+    dots += '<span class="mm-dot" style="background:' + col + ';color:' + col + '" title="' + esc(a.registration) + ' · ' + (WO_STATUS_LBL[st] || st) + '">' + code + '</span>';
   }
   const body = present.length === 0 ? '<div class="mm-empty">Apron despejado</div>' : '<div class="mm-dots">' + dots + '</div>';
   el.innerHTML = '<div class="mm-head"><span>OVD · apron</span><b>' + present.length + '</b></div>' + body;
@@ -5409,6 +5446,8 @@ document.body.addEventListener("click", (e) => {
     return;
   }
   if (e.target.closest("[data-map-fit]")) { if (mapDriver) mapDriver.fitAll(); return; }
+  // Oficina del mapa (delta 2026-06-11): click → ir a Oficina · Cuadrillas (a cubrir turnos).
+  if (e.target.closest("#map-office")) { activeTab = "office"; officeSubtab = "crews"; invalidatePanelCache(); render(); return; }
   const speedBtn = e.target.closest(".speeds button");
   if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
   const tabBtn = e.target.closest(".side button[data-tab]");
