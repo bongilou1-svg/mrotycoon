@@ -98137,10 +98137,13 @@ function woStatusOfAirplane(ap){
   if (!ap) return "free";
   if (ap.aogEscalated) return "aog";
   var wos = (game.workOrders||[]).filter(function(w){ return w.airplaneInstanceId === ap.instanceId && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred"; });
-  if (wos.length === 0) return "ready";
-  if (wos.some(function(w){ return w.assignedMechanicIds.length === 0; })) return "unassigned";
-  if (wos.some(function(w){ return w.phase === "Inspection" || w.phase === "MainTask" || w.phase === "Rework"; })) return "working";
-  if (wos.some(function(w){ return w.phase === "Test" || w.phase === "Release"; })) return "closing";
+  // Espejo EXACTO de sync.ts: incluir el A/C/D check InProgress (por matrícula) para que el
+  // minimapa/listas DOM den el MISMO estado que el mapa Pixi (paridad — review 2026-06-11).
+  var chk = (game.maintenanceChecks||[]).find(function(c){ return c.phase === "InProgress" && c.registration === ap.registration; });
+  if (wos.length === 0 && !chk) return "ready";
+  if (wos.some(function(w){ return w.assignedMechanicIds.length === 0; }) || (chk && (chk.assignedMechanicIds||[]).length === 0)) return "unassigned";
+  if (wos.some(function(w){ return w.phase === "Inspection" || w.phase === "MainTask" || w.phase === "Rework"; }) || (chk && (chk.assignedMechanicIds||[]).length > 0 && !chk.onPlatform)) return "working";
+  if (wos.some(function(w){ return w.phase === "Test" || w.phase === "Release"; }) || (chk && chk.onPlatform)) return "closing";
   return "working";
 }
 // Cobertura de turno por cuadrillas (espeja el cov-strip del shift-board): bad=sin cuadrilla,
