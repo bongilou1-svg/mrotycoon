@@ -1248,9 +1248,11 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
         `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " · AOG" : ""}`,
         ev.onTime ? "success" : "warning",
       );
-    } else if (ev.type === "phase_change" && ev.from === "Inspection" && ev.to === "MainTask" && g.lineModeEnabled) {
+    } else if (ev.type === "phase_change" && ev.from === "Inspection" && (ev.to === "MainTask" || ev.to === "Test") && g.lineModeEnabled) {
       // T-shoot cerrado en un callout: el técnico abre y puede encontrar trabajo extra. El
       // hallazgo es una sub-WO nueva sin asignar que el jugador debe atender (o diferir).
+      // Audit 2026-06-11: la inspección se cierra por AMBAS ramas (→MainTask 60% y →Test 40%
+      // en direct-dispatch); antes solo enganchaba MainTask → prob efectiva 6% en vez del 10%.
       const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
       const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : undefined;
       if (wo && ap) tryRollCalloutFinding(g, wo, ap, next);
@@ -1812,12 +1814,14 @@ export function deferWoManually(
   const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
   if (!ap) return { ok: false, error: "Avión no encontrado" };
 
-  // Pivot · validar B1 elegible disponible para firmar el MEL. La función eligibleCertifiers
-  // filtra mecs Idle con base = requiredCategory + type rating válido para (model, engine).
-  // Para diferir SIEMPRE se exige B1 con rating válido (sin importar la requiredCategory del
-  // template — el MEL lo firma siempre un B1, no un B2).
+  // Validar B1 elegible para firmar el MEL: base B1, no foreman, con type rating válido para
+  // (model, engine). El MEL lo firma siempre un B1, no un B2.
+  // Audit 2026-06-11: la firma del MEL es ADMINISTRATIVA (no requiere viajar al avión), así que
+  // un B1 OffShift también puede firmarla. Antes solo aceptaba "Idle" → con shift gating (2/3 B1
+  // OffShift y el único on-shift Working en plena ola de SLA) NUNCA había firmante disponible y
+  // el mecanismo de diferir quedaba muerto (0 defers en partidas largas).
   const eligibleSigners = g.mechanics.filter((m) =>
-    m.state === "Idle" &&
+    (m.state === "Idle" || m.state === "OffShift") &&
     m.base === "B1" &&
     !m.isLeadForeman &&
     m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === "B1"),

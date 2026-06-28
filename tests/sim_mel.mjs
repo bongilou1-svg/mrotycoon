@@ -180,8 +180,10 @@ if (deferableWo) {
   // En lugar de simular 120 días reales, hackeo deferralExpiryMinute a 1h en el futuro
   woAfter.deferralExpiryMinute = g.clock.minute + 60;
   for (let i = 0; i < 50; i++) advanceGame(g, 10);
-  const woFinal = g.workOrders.find(w => w.instanceId === deferableWo.instanceId);
-  expect(woFinal.phase === "Failed", "tras vencimiento: phase=Failed");
+  // La WO Failed puede haberse archivado (game.ts mueve Completed/Failed antiguas a archive).
+  const woFinal = g.workOrders.find(w => w.instanceId === deferableWo.instanceId)
+    || (g.archive?.workOrders || []).find(w => w.instanceId === deferableWo.instanceId);
+  expect(woFinal && woFinal.phase === "Failed", "tras vencimiento: phase=Failed");
   expect(g.economy.balance < balBefore, `penalty aplicada al balance (antes=${balBefore}, ahora=${g.economy.balance})`);
   const repAfter = Object.values(g.reputation.perAirline).reduce((s,v)=>s+v,0) / Object.keys(g.reputation.perAirline).length;
   expect(repAfter < repBefore, `penalty rep aplicada (antes=${repBefore.toFixed(1)}, ahora=${repAfter.toFixed(1)})`);

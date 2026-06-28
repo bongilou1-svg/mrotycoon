@@ -51,7 +51,10 @@ const templates = workordersRaw.map((w) => ({ ...w, kind: kindMap.get(w.id) ?? "
 const dailyChecks = dailyRaw.map((d) => ({ ...d, kind: "mpd" }));
 
 // === Setup partida ===
-const createOpts = MODE === "line" ? { lineMode: true } : undefined;
+// Audit 2026-06-11: en line, arrancar como el juego real (preset OVD → contrato Vueling). Sin él
+// el contrato cae sobre airlines[0]=Iberia Express, sin vuelos en LEAS → 0 arrivals/WOs.
+const leasPreset = JSON.parse(readFileSync(new URL("src/lib/data/airports/LEAS_oviedo.preset.json", root)));
+const createOpts = MODE === "line" ? { lineMode: true, airportPreset: leasPreset } : undefined;
 const g = createGame(balance, airlines, templates, SEED, defs, dailyChecks, createOpts);
 g.autoPauseEnabled = false;
 g.shiftGatingEnabled = MODE === "line"; // turnos reales en line, off en legacy

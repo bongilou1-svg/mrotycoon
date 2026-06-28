@@ -10382,7 +10382,7 @@ var Sim = (() => {
           `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " \xB7 AOG" : ""}`,
           ev.onTime ? "success" : "warning"
         );
-      } else if (ev.type === "phase_change" && ev.from === "Inspection" && ev.to === "MainTask" && g.lineModeEnabled) {
+      } else if (ev.type === "phase_change" && ev.from === "Inspection" && (ev.to === "MainTask" || ev.to === "Test") && g.lineModeEnabled) {
         const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
         const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : void 0;
         if (wo && ap) tryRollCalloutFinding(g, wo, ap, next);
@@ -10791,7 +10791,7 @@ var Sim = (() => {
     const ap = g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId);
     if (!ap) return { ok: false, error: "Avi\xF3n no encontrado" };
     const eligibleSigners = g.mechanics.filter(
-      (m) => m.state === "Idle" && m.base === "B1" && !m.isLeadForeman && m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === "B1")
+      (m) => (m.state === "Idle" || m.state === "OffShift") && m.base === "B1" && !m.isLeadForeman && m.typeRatings.some((r) => r.model === ap.model && r.engineVariant === ap.engineVariant && r.category === "B1")
     );
     if (eligibleSigners.length === 0) {
       return { ok: false, error: `Sin B1 habilitado para firmar MEL (${ap.model}/${ap.engineVariant})` };
