@@ -1284,7 +1284,7 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 
 const BODY = `<div class="app">
   <header class="hud">
-    <div class="hud-l"><span class="brand">✈</span><span class="name">MRO <b>TYCOON</b></span><span class="ver">v0.7</span></div>
+    <div class="hud-l"><span class="brand">✈</span><span class="name">MRO <b>TYCOON</b></span><span class="ver">v0.7</span><ovd-user-badge style="margin-left:12px"></ovd-user-badge></div>
     <div class="hud-c"><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="clock" id="clock">Día 1 · 00:00</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="kpi" style="display:none;cursor:pointer;margin-left:.5rem" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
     <div class="hud-r">
       <div class="kpi"><span class="klbl">Balance</span><strong id="bal">250.000 €</strong></div>

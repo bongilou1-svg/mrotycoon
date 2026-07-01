@@ -7,6 +7,17 @@ import type { GameSavePayload } from "./save.ts";
 
 const SLOT_KEY = "mro-tycoon-save-v1";
 
+// OVD Garage (build web en garage.*): el save sigue al usuario por toda la flota. Reclamamos
+// la clave (sale del blob legacy compartido → de-bloat), sembramos desde la nube al arrancar
+// (síncrono, antes de que la UI lea el save) y hacemos write-through en cada save. Es
+// browser-only y best-effort: en Node/tests (InMemoryBackend) y en Tauri/desktop (sin OVD
+// inyectado) `ovdApi()` devuelve null → no-op, comportamiento idéntico al de antes.
+const OVD_APP = "mro-tycoon";
+const OVD_SLOT = "main";
+function ovdApi(): any {
+  try { return (globalThis as unknown as { OVD?: any }).OVD || null; } catch { return null; }
+}
+
 // Corte 2026-05-30: saves anteriores a v16 podían contener aviones "overnighter" fantasma
 // EN TIERRA, sembrados por la lógica previa al fix de `isBased` (una partida OVD→Vueling
 // debe arrancar vacía; los saves viejos mostraban ~19). Los descartamos al leer para que
@@ -31,6 +42,11 @@ class LocalStorageBackend implements StorageBackend {
   async save(payload: GameSavePayload): Promise<void> {
     try {
       localStorage.setItem(SLOT_KEY, JSON.stringify(payload));
+      // write-through a la nube OVD (best-effort; no bloquea el guardado local)
+      try {
+        const O = ovdApi();
+        if (O && O.user && O.saves) O.saves.save(OVD_APP, OVD_SLOT, payload as unknown as Record<string, unknown>);
+      } catch { /* nube best-effort */ }
     } catch (e) {
       throw new Error(`No se pudo guardar (localStorage): ${(e as Error).message}`);
     }
@@ -75,6 +91,7 @@ class LocalStorageBackend implements StorageBackend {
   async clear(): Promise<void> {
     try {
       localStorage.removeItem(SLOT_KEY);
+      try { const O = ovdApi(); if (O && O.user && O.saves) O.saves.remove(OVD_APP, OVD_SLOT); } catch { /* ignore */ }
     } catch {
       // ignore
     }
@@ -101,6 +118,14 @@ class InMemoryBackend implements StorageBackend {
 let _backend: StorageBackend;
 if (typeof localStorage !== "undefined") {
   _backend = new LocalStorageBackend();
+  // OVD: reclamar la clave + sembrar el save de la nube ANTES de que la UI lo lea (síncrono).
+  try {
+    const O = ovdApi();
+    if (O) {
+      if (O.claimKeys) O.claimKeys([SLOT_KEY]);
+      if (O.saves && O.saves.seedKeySync) O.saves.seedKeySync(OVD_APP, OVD_SLOT, SLOT_KEY);
+    }
+  } catch { /* ignore */ }
 } else {
   _backend = new InMemoryBackend();
 }
