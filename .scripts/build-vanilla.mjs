@@ -14,6 +14,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
+// Motor GuidedTour (skill guided-tour), vendorizado verbatim. Se inyecta como <script> propio
+// ANTES de APP_JS (así window.GuidedTour existe cuando arranca la UI) y fuera del template
+// literal gigante para no chocar con el escaping de backticks del APP_JS.
+const TOUR_ENGINE_JS = readFileSync(join(__dirname, "vendor", "guided-tour.js"), "utf-8");
+
 const outputName = process.argv[2] || "v0.2-fase3-m.html";
 // Si el outputName empieza con "dist/" o es absoluto, lo respeta tal cual (relativo a root).
 // Si no, lo mete en builds/ por convención.
@@ -117,12 +122,25 @@ ${simBundle}
 ${renderBundle}
 </script>
 <script>
+${TOUR_ENGINE_JS}
+</script>
+<script>
 ${APP_JS}
 </script>
 </body></html>`;
 }
 
-const CSS = `:root{--bg:#090d15;--bg-grid:rgba(120,150,200,.035);--panel:#161b22;--panel-h:#1f2733;--panel-solid:#111925;--panel-2:#151f2d;--raised:#1a2536;--border:#2a3142;--border-s:#3a4256;--line:#212c3e;--line-2:#2e3a4f;--text:#e9edf4;--muted:#8b97ab;--subtle:#5d6677;--dim:#586477;--accent:#4da3ff;--accent-2:#86c5ff;--accent-d:#2a5a8f;--accent-deep:#10314f;--accent-bg:rgba(77,163,255,.12);--cyan:#3ad6c5;--success:#3fb950;--warning:#d29922;--danger:#f85149;--ok:#3fb950;--warn:#e6a93a;--bad:#f85149;--aog:#ff4242;--base:#a78bfa;--base-d:#5b3fbe;--ok-bg:rgba(63,185,80,.13);--warn-bg:rgba(230,169,58,.13);--bad-bg:rgba(248,81,73,.13);--modal:#0f1722;--mono:"JetBrains Mono","Fira Code",Consolas,monospace;--sans:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--disp:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--rad:8px;--rad-s:5px;}
+const CSS = `:root{--bg:#090d15;--bg-grid:rgba(120,150,200,.035);--panel:#161b22;--panel-h:#1f2733;--panel-solid:#111925;--panel-2:#151f2d;--raised:#1a2536;--border:#2a3142;--border-s:#3a4256;--line:#212c3e;--line-2:#2e3a4f;--text:#e9edf4;--muted:#8b97ab;--subtle:#5d6677;--dim:#586477;--accent:#4da3ff;--accent-2:#86c5ff;--accent-d:#2a5a8f;--accent-deep:#10314f;--accent-bg:rgba(77,163,255,.12);--cyan:#3ad6c5;--success:#3fb950;--warning:#d29922;--danger:#f85149;--ok:#3fb950;--warn:#e6a93a;--bad:#f85149;--aog:#ff4242;--base:#a78bfa;--base-d:#5b3fbe;--ok-bg:rgba(63,185,80,.13);--warn-bg:rgba(230,169,58,.13);--bad-bg:rgba(248,81,73,.13);--modal:#0f1722;--mono:"JetBrains Mono","Fira Code",Consolas,monospace;--sans:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--disp:"Space Grotesk","Inter","Segoe UI",system-ui,sans-serif;--rad:8px;--rad-s:5px;
+--tour-accent:var(--accent);--tour-surface:#141d2b;--tour-text:var(--text);--tour-muted:var(--muted);--tour-line:var(--border-s);--tour-scrim:rgba(4,7,13,.80);--tour-ok:var(--ok);--tour-warn:var(--warn);--tour-on-accent:#06121d;--tour-font:var(--sans);--tour-head:var(--disp);--tour-mono:var(--mono);}
+/* Tutorial GuidedTour: overlay click-through salvo la tarjeta → los pasos hands-on dejan tocar la app debajo (gate). */
+#gt-tour{pointer-events:none}
+#gt-tour .gt-pop{pointer-events:auto}
+/* Botón «?» de repasar el tutorial en la barra superior. */
+.tut-help{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--border-s);background:var(--panel-solid);color:var(--muted);font:700 15px/1 var(--disp);cursor:pointer;transition:.14s}
+/* "Por qué" del paso: segunda línea muted bajo el cuerpo de la tarjeta del tour. */
+.gt-pop .gt-why{display:block;margin-top:10px;padding-top:9px;border-top:1px solid var(--tour-line);color:var(--tour-muted);font-size:12px;line-height:1.5}
+.gt-pop h4{color:var(--text)}
+.tut-help:hover{border-color:var(--accent);color:var(--accent)}
 *{box-sizing:border-box}html,body{margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
 body{background:radial-gradient(1200px 700px at 78% -8%,rgba(77,163,255,.07),transparent 60%),linear-gradient(var(--bg-grid) 1px,transparent 1px),linear-gradient(90deg,var(--bg-grid) 1px,transparent 1px),var(--bg);background-size:auto,34px 34px,34px 34px,auto}
 .app{display:flex;flex-direction:column;height:100vh}
@@ -1295,6 +1313,7 @@ const BODY = `<div class="app">
         <button class="icbtn" id="btn-load" title="Cargar partida"><svg class="tic" viewBox="0 0 24 24"><path d="M3.6 7.2A1.6 1.6 0 0 1 5.2 5.6h3.4l2 2.4h7.2a1.6 1.6 0 0 1 1.6 1.6V18a1.6 1.6 0 0 1-1.6 1.6H5.2A1.6 1.6 0 0 1 3.6 18Z"/></svg></button>
         <button class="icbtn" id="btn-new" title="Nueva partida"><svg class="tic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg></button>
         <button class="icbtn" id="btn-menu" title="Menú (pausa · guardar · volver al menú)"><svg class="tic" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.6V19.5h13V9.6"/><path d="M10 19.5v-5h4v5"/></svg></button>
+        <button class="tut-help" id="btn-tour" title="Repasar el tutorial (recorrido guiado)">?</button>
         <button class="icbtn" id="btn-age-fleet" title="DEBUG: envejecer flota cerca de triggers A/C"><svg class="tic" viewBox="0 0 24 24"><path d="M14.7 6.3a3.6 3.6 0 0 0-4.9 4.2l-5.4 5.4a1.5 1.5 0 0 0 0 2.1l1.6 1.6a1.5 1.5 0 0 0 2.1 0l5.4-5.4a3.6 3.6 0 0 0 4.2-4.9l-2.4 2.4-2.6-.6-.6-2.6Z"/></svg></button>
         <span id="save-indicator" style="font-size:.7rem;color:#3fb950;align-self:center;margin-left:.25rem"></span>
       </div>
@@ -1414,11 +1433,8 @@ function focusMapOnNorm(nx, ny, zoom){
   if (mapDriver.worldRoot) { mapDriver.worldRoot.scale.set(z); mapDriver.worldRoot.position.set(mapDriver.camera.x * z, mapDriver.camera.y * z); }
 }
 // === Tutorial Rookie guiado (2026-05-30) ===
-// tutActive: el overlay de bloqueo + bocadillo están vivos. tutStep: índice en TUT_STEPS.
-// El tutorial fuerza los primeros clicks (guiado absoluto) hasta graduarse el día 3.
-// Por defecto ON en dificultad Rookie; "Saltar" siempre disponible.
-let tutActive = false;
-let tutStep = 0;
+// El tutorial ahora corre sobre el motor GuidedTour (skill guided-tour): ver el wrapper
+// mroStep/ensureTour/mroTourTick más abajo. Por defecto ON en dificultad Rookie; «?» lo repasa.
 let tutGraduated = false; // true tras completar/saltar — no reaparece en la misma partida
 // Ajustes (handoff entrega-menu 3, 2026-05-30). Persistidos en localStorage "mro_settings".
 // Defaults alineados con el mockup. Solo algunos están CABLEADOS a sistemas reales hoy
@@ -1765,12 +1781,12 @@ function renderMap(){
       <div class="map-daynight" id="map-daynight">— · --:--</div>
     </div>
     <div class="map-legend">
-      <span class="lg" style="color:#ff4757"><i></i>AOG</span>
-      <span class="lg" style="color:#f5b945"><i></i>Sin asignar</span>
-      <span class="lg" style="color:#4da3ff"><i></i>En trabajo</span>
-      <span class="lg" style="color:#3ad6c5"><i></i>Cerrando</span>
-      <span class="lg" style="color:#3fb950"><i></i>Listo</span>
-      <span class="lg" style="color:#3d6f9d"><i></i>Libre</span>
+      <span class="lg" style="color:#ff4757" data-tip-title="AOG" data-tip="Aircraft On Ground: el avión no puede volar. Penalización fuerte y reputación por los suelos hasta arreglarlo."><i></i>AOG</span>
+      <span class="lg" style="color:#f5b945" data-tip-title="Sin asignar" data-tip="Hay un aviso abierto en ese avión y todavía no le has puesto cuadrilla. El reloj corre contra su hora de salida."><i></i>Sin asignar</span>
+      <span class="lg" style="color:#4da3ff" data-tip-title="En trabajo" data-tip="Tu cuadrilla está reparando: inspección → tarea → prueba. Vigila que termine antes de la salida."><i></i>En trabajo</span>
+      <span class="lg" style="color:#3ad6c5" data-tip-title="Cerrando" data-tip="Trabajo casi listo: en prueba funcional o esperando la firma de aptitud (release)."><i></i>Cerrando</span>
+      <span class="lg" style="color:#3fb950" data-tip-title="Listo" data-tip="Trabajo cerrado y firmado: el avión está apto para volver al servicio."><i></i>Listo</span>
+      <span class="lg" style="color:#3d6f9d" data-tip-title="Libre" data-tip="Avión en tierra sin trabajo pendiente contigo."><i></i>Libre</span>
     </div>
     <div id="map-office" class="map-office"></div>
     <div id="map-mini" class="map-mini"></div>
@@ -4826,8 +4842,10 @@ const TUT_STEPS = [
     body: "Haz click en la <strong>tarjeta del aviso</strong>. Verás qué falla (capítulo ATA), qué cualificación necesita el técnico y cuánto tarda.",
     why: "Cada avión y cada avería son distintos. Leer la orden te dice a quién asignar.",
     target: "[data-wo]", place: "right",
-    // Mantener pausa + asegurar tab Operaciones para que exista la wo-card.
-    onEnter: () => { S.setGameSpeed(game, 0); if (activeTab !== "operations") { activeTab = "operations"; invalidatePanelCache(); } },
+    // Mantener pausa + asegurar tab Operaciones para que exista la wo-card. Deseleccionar cualquier
+    // WO heredada de antes para que la cond arranque en falso y el paso sea de verdad hands-on
+    // (si no, con un aviso ya abierto se saltaría — review 2026-07-01).
+    onEnter: () => { S.setGameSpeed(game, 0); selectedWoId = null; if (activeTab !== "operations") { activeTab = "operations"; invalidatePanelCache(); } },
     gate: "[data-wo]", cond: (g) => selectedWoId !== null },
   { phase: "Asignar", title: "Pon a un mecánico",
     body: "En el detalle, asigna un <strong>mecánico cualificado</strong> al trabajo. Irá al avión y empezará la reparación.",
@@ -4844,6 +4862,7 @@ const TUT_STEPS = [
     allow: ".speeds",
     gate: ".speeds button[data-speed=\\"5\\"]" },
   { phase: "¡Cobrado!", title: "Has cerrado tu primer trabajo",
+    note: { kind: "real", text: "El cobro y la subida de reputación son de verdad: se calculan en el sim, no es de adorno." },
     body: "Trabajo completado a tiempo: has <strong>cobrado</strong> y tu reputación con Vueling sube. Míralo en tu balance (💰, arriba).",
     why: "Ese es el bucle completo: llega → arregla → despega. Repetirlo bien, jornada tras jornada, es ganar la partida.",
     target: "#bal", place: "bottom",
@@ -4857,8 +4876,8 @@ const TUT_STEPS = [
   // Lección dura descubierta jugando (2026-06-11): la rotación de las ~22:15 sin turno de
   // noche escala a AOG cada madrugada → rep -60 en 5 días → rescisión. Avisar EXPLÍCITO.
   { phase: "Sistemas", title: "La noche no perdona",
+    note: { tone: "warn", prefix: "⚠ ", text: "El error nº1 del novato: cubrir solo mañana y tarde. Ficha y reparte turnos para las 24h — la Oficina te marca en rojo el turno sin cubrir." },
     body: "Mira el <strong>📅 Schedule</strong>: hay una rotación que aterriza ~22:15 y sale ~23:10. Si su avería cae <strong>sin nadie en turno de NOCHE</strong>, no se atiende, el avión no sale y de madrugada escala a <strong>AOG</strong>.",
-    why: "Es el error nº1 del principiante: cubrir solo mañana y tarde. En cuanto fiches, reparte los turnos para cubrir las 24h — la Oficina te marca en rojo el turno sin cubrir.",
     target: null, place: "center", showNext: true },
   { phase: "Sistemas", title: "Economía",
     body: "En <strong>💼 Economía</strong> ves tus finanzas: cobros, salarios y penalizaciones, semana a semana.",
@@ -4871,7 +4890,6 @@ const TUT_STEPS = [
     target: null, place: "center", showNext: true, isLast: true },
 ];
 
-function tutCur(){ return TUT_STEPS[tutStep] || null; }
 // ¿Existe un aviso (callout) activo? = WO no-daily abierta.
 function activeCalloutExists(g){
   return (g.workOrders || []).some(w => !w.templateId?.startsWith?.("DC-") && w.phase !== "Completed" && w.phase !== "Failed" && w.phase !== "Deferred");
@@ -4883,108 +4901,143 @@ function anyWoCompleted(g){
   return (g.workOrders || []).some(w => !w.templateId?.startsWith?.("DC-") && w.phase === "Completed");
 }
 
-function startTutorial(){
-  tutActive = true; tutStep = 0; tutGraduated = false;
-  const st = tutCur(); if (st && st.onEnter) { try { st.onEnter(); } catch(e){} }
-  render();
+// ===================================================================================
+// Tutorial dirigido — motor GuidedTour (skill guided-tour) + capa reactiva (gate/cond).
+// El motor vive en su propio <script> (window.GuidedTour). Aquí convertimos cada TUT_STEPS en
+// un paso del motor y PRESERVAMOS lo bueno del tutorial hands-on: el paso avanza cuando el
+// jugador ACTÚA (gate = click en el sitio indicado) o cuando el SIM cumple un evento real
+// (cond: "ya hay aviso" / "ya asignaste" / "ya cobraste"). El overlay es click-through (CSS)
+// para que los pasos gate dejen tocar la app por debajo. — 2026-07-01
+// ===================================================================================
+let mroTour = null;        // instancia GuidedTour (lazy: el motor puede no haber cargado aún)
+let curTourStep = null;    // TUT_STEPS activo (para gate/cond)
+let mroCondPending = false;
+// "Armado": solo auto-avanzamos un paso cond si su condición arranca en FALSO al entrar (avance en
+// la transición falso→verdadero real). Si la cond ya estaba satisfecha al entrar (p.ej. selectedWoId
+// heredado de una interacción previa), NO auto-avanzamos — mostramos "Continuar" para que el jugador
+// avance a mano y no se salte el paso en silencio (bug de review 2026-07-01).
+let curStepArmed = false;
+
+// Convierte un TUT_STEPS rico en un paso del motor GuidedTour.
+function mroStep(s){
+  return {
+    target: s.target || null,
+    title: s.title,
+    body: s.body,
+    note: s.note || null,
+    on: function(){
+      curTourStep = s;
+      // onEnter cambia de tab / prepara el sim; render() reconstruye los paneles ANTES de que el
+      // motor posicione el foco (así el target de un panel dinámico ya existe cuando lo resuelve).
+      if (s.onEnter) { try { s.onEnter(); } catch(e){} render(); }
+      // ¿La cond ya está satisfecha al ENTRAR (tras onEnter)? Armamos solo si arranca en falso.
+      var condTrueAtEntry = false;
+      if (s.cond) { try { condTrueAtEntry = !!s.cond(game); } catch(e){} }
+      curStepArmed = s.cond ? !condTrueAtEntry : false;
+      // Tras fijar el contenido base, enriquecerlo: cuerpo con HTML + "por qué" + eyebrow de fase,
+      // y ocultar "Continuar" solo en pasos hands-on cuya acción aún NO se ha cumplido.
+      requestAnimationFrame(function(){
+        var b = document.getElementById('gt-body');
+        if (b) b.innerHTML = s.body + (s.why ? '<span class="gt-why">💡 ' + s.why + '</span>' : '');
+        var ey = document.getElementById('gt-count');
+        if (ey && s.phase) ey.textContent = '📘 ' + s.phase;
+        var nx = document.getElementById('gt-next');
+        // hands-on = gate puro, o cond que arrancó sin cumplir (armada). Si la cond ya estaba
+        // cumplida, mostramos "Continuar" (no la escondemos) para evitar el salto silencioso.
+        var handsOn = ((s.gate && !s.cond) || (s.cond && curStepArmed)) && !s.showNext && !s.isLast;
+        if (nx) nx.style.display = handsOn ? 'none' : '';
+        if (mroTour && mroTour.resync) mroTour.resync();
+      });
+    },
+  };
 }
-function tutSkip(){
-  tutActive = false; tutGraduated = true;
-  document.querySelectorAll(".tut-spotlight").forEach(el => el.classList.remove("tut-spotlight"));
-  render();
+
+function ensureTour(){
+  if (mroTour) return mroTour;
+  if (!window.GuidedTour) return null;
+  mroTour = GuidedTour.create({
+    lang: 'es', autoStart: false, pad: 7, ariaLabel: 'Tutorial de MRO Tycoon',
+    labels: { skip: 'Saltar tutorial', prev: 'Atrás', next: 'Continuar →', done: 'Empezar a jugar ✈️' },
+    onEnd: function(){ curTourStep = null; tutGraduated = true; try { S.setGameSpeed(game, 0); } catch(e){} },
+    steps: TUT_STEPS.map(mroStep),
+  });
+  return mroTour;
 }
-function tutAdvance(){
-  if (!tutActive) return;
-  const cur = tutCur();
-  if (cur && cur.isLast) { tutSkip(); return; }
-  tutStep += 1;
-  const st = tutCur();
-  if (!st) { tutSkip(); return; }
-  if (st.onEnter) { try { st.onEnter(); } catch(e){} }
-  render();
-}
-// Auto-avance por condición del sim (llamado desde render cuando el tutorial está vivo).
-// Diferido con setTimeout para no re-entrar en render() de forma recursiva.
-let tutCondPending = false;
-function tutCheckCond(){
-  if (!tutActive || tutCondPending) return;
-  const st = tutCur();
-  if (st && st.cond) {
+
+function startTutorial(){ tutGraduated = false; var t = ensureTour(); if (t) t.startAt(0); }
+function tutSkip(){ if (mroTour) mroTour.end(); tutGraduated = true; }
+
+// Auto-avance por evento del sim (cond) + mantener el foco pegado a paneles que se reconstruyen.
+// Llamado desde render() en cada tick.
+function mroTourTick(){
+  if (!mroTour || !mroTour.isOpen()) return;
+  var s = curTourStep;
+  if (s && s.cond && curStepArmed && !mroCondPending){
     try {
-      if (st.cond(game)) {
-        // onMet: efecto inmediato al cumplirse la condición (p.ej. pausar el reloj en
-        // cuanto salta el aviso), ANTES del breve delay cosmético antes de avanzar.
-        if (st.onMet) { try { st.onMet(); } catch(e){} }
-        tutCondPending = true;
-        setTimeout(() => { tutCondPending = false; tutAdvance(); }, 600);
+      if (s.cond(game)){
+        if (s.onMet) { try { s.onMet(); } catch(e){} }   // efecto inmediato (p.ej. pausar el reloj)
+        curStepArmed = false;                            // desarmar: no reprogramar mientras esperamos
+        mroCondPending = true;
+        var step = s;
+        // Breve beat para que el jugador vea qué pasó, re-afirmando la pausa de onMet por si tocó
+        // velocidad en la ventana (overlay click-through), y avanzando si seguimos en el mismo paso.
+        setTimeout(function(){
+          mroCondPending = false;
+          if (curTourStep === step && mroTour.isOpen()){ if (s.onMet) { try { s.onMet(); } catch(e){} } mroTour.next(); }
+        }, 400);
       }
     } catch(e){}
   }
+  if (mroTour.resync) mroTour.resync();
 }
 
-let lastTutRenderedStep = -1;
-function renderTutorial(){
-  let root = document.getElementById("tutorial-root");
-  if (!root) { root = document.createElement("div"); root.id = "tutorial-root"; document.body.appendChild(root); }
-  if (!tutActive) {
-    if (root.innerHTML) root.innerHTML = "";
-    document.querySelectorAll(".tut-spotlight").forEach(el => el.classList.remove("tut-spotlight"));
-    lastTutRenderedStep = -1;
-    return;
+// Gate: en pasos hands-on SIN cond, el click sobre el elemento indicado ES el avance. El overlay es
+// click-through, así que el handler normal de la app ejecuta la acción y aquí avanzamos justo
+// después. Con cond, el avance lo da el sim (no el click). Listener único delegado (capture).
+document.addEventListener('click', function(e){
+  var s = curTourStep;
+  if (!s || !s.gate || !mroTour || !mroTour.isOpen()) return;
+  if (e.target.closest && e.target.closest('#gt-tour')) return;   // clicks dentro de la tarjeta, no cuentan
+  if (s.cond) return;                                             // con cond, avanza el sim
+  if (e.target.closest && e.target.closest(s.gate)){
+    var step = s;
+    setTimeout(function(){ if (curTourStep === step && mroTour.isOpen()) mroTour.next(); }, 140);
   }
-  const st = tutCur();
-  if (!st) { tutSkip(); return; }
-  const centered = !st.target || st.place === "center";
-  // Reconstruir el bocadillo SOLO al cambiar de paso (evita parpadeo a 2×/5× donde
-  // render() corre cada tick). El spotlight sí se re-aplica siempre (targets dentro de
-  // paneles dinámicos se recrean en cada innerHTML).
-  if (tutStep !== lastTutRenderedStep) {
-    const total = TUT_STEPS.length;
-    let pips = "";
-    for (let i = 0; i < total; i++) pips += \`<span class="pip \${i < tutStep ? "done" : i === tutStep ? "cur" : ""}"></span>\`;
-    const nextLabel = st.isLast ? "Empezar a jugar ✈️" : "Continuar →";
-    const nextBtn = (st.showNext || st.isLast) ? \`<button class="tut-next" id="tut-next">\${nextLabel}</button>\` : "";
-    const cta = st.gate && !st.isLast ? \`<div class="tut-cta">👆 Haz click donde se indica para continuar</div>\` : "";
-    root.innerHTML =
-      \`<div id="tut-block" class="dim"></div>\` +
-      \`<div id="tut-pop" class="\${centered ? "center" : ""}">\` +
-        \`<div class="tut-step">📘 Tutorial · \${esc(st.phase)}</div>\` +
-        \`<h3>\${st.title}</h3>\` +
-        \`<p>\${st.body}</p>\` +
-        (st.why ? \`<div class="tut-why">💡 \${st.why}</div>\` : "") +
-        cta +
-        \`<div class="tut-actions"><button class="tut-skip" id="tut-skip">Saltar tutorial</button>\${nextBtn}</div>\` +
-        \`<div id="tut-progress">\${pips}</div>\` +
-      \`</div>\`;
-    lastTutRenderedStep = tutStep;
-  }
-  // Spotlight: mover al target actual sin reiniciar la animación si ya lo tiene.
-  let targetEl = null;
-  if (st.target) { try { targetEl = document.querySelector(st.target); } catch(e){} }
-  document.querySelectorAll(".tut-spotlight").forEach(el => { if (el !== targetEl) el.classList.remove("tut-spotlight"); });
-  if (targetEl && !targetEl.classList.contains("tut-spotlight")) targetEl.classList.add("tut-spotlight");
-  tutPositionPop(targetEl, st.place);
-}
+}, true);
 
-// Coloca el bocadillo cerca del target (o centrado). Robusto: si no cabe, recae a centrado.
-function tutPositionPop(targetEl, place){
-  const pop = document.getElementById("tut-pop");
-  if (!pop) return;
-  if (!targetEl || place === "center") { pop.classList.add("center"); pop.style.top = ""; pop.style.left = ""; return; }
-  pop.classList.remove("center");
-  const r = targetEl.getBoundingClientRect();
-  const pw = pop.offsetWidth || 360, ph = pop.offsetHeight || 160;
-  const gap = 14, vw = window.innerWidth, vh = window.innerHeight;
-  let top, left;
-  if (place === "right")      { left = r.right + gap; top = r.top + r.height/2 - ph/2; }
-  else if (place === "left")  { left = r.left - gap - pw; top = r.top + r.height/2 - ph/2; }
-  else if (place === "top")   { left = r.left + r.width/2 - pw/2; top = r.top - gap - ph; }
-  else                        { left = r.left + r.width/2 - pw/2; top = r.bottom + gap; } // bottom
-  // Clamp a viewport.
-  left = Math.max(12, Math.min(left, vw - pw - 12));
-  top  = Math.max(12, Math.min(top,  vh - ph - 12));
-  pop.style.left = left + "px";
-  pop.style.top  = top + "px";
+// --- Tooltips contextuales (glosario aeronáutico) — la otra mitad de la skill guided-tour. ---
+// Un juego de MRO va cargado de jerga (MEL, AOG, ATA, B1/B2, A-check…); pasar el ratón por el
+// término te lo explica sin sacarte de la pantalla. El motor auto-enlaza una «i» a las etiquetas
+// cuyo texto coincide con una clave del glosario.
+var AERO_GLOSSARY = {
+  'reputación': 'Confianza de cada aerolínea contigo (0–100). Sube al cerrar a tiempo; baja con retrasos y AOG. Si cae muy bajo, te rescinden el contrato.',
+  'part-145': 'Norma EASA de una organización de mantenimiento aprobada. Tu compliance mide que trabajas según las reglas.',
+  'mel': 'Minimum Equipment List: permite despachar el avión con cierto equipo inoperativo, aplazando el arreglo un plazo tasado (categorías A/B/C/D).',
+  'aog': 'Aircraft On Ground: el avión NO puede volar hasta arreglarse. Lo peor que te puede pasar: penalización fuerte y reputación por los suelos.',
+  'ata': 'ATA iSpec 2200: numeración estándar de los sistemas del avión por capítulos (29 = hidráulica, 32 = tren…). Cada avería lleva su ATA.',
+  'b1': 'Licencia Part-66 B1: mecánica, motores y estructura. Un B1 firma tareas mecánicas y de motor.',
+  'b2': 'Licencia Part-66 B2: aviónica y eléctrica. Un B2 firma tareas de sistemas eléctricos y aviónica (ATA 22/23/31/34…).',
+  'daily': 'Daily check: revisión ligera diaria (fluidos, neumáticos, fugas). La disparan las rotaciones que pernoctan.',
+  'a-check': 'A-check: inspección programada cada ~750 horas/ciclos de vuelo. Más profunda que la daily; requiere parada.',
+  'turno': 'Franja horaria de tu cuadrilla: mañana, tarde o noche. Sin nadie en noche, las averías de madrugada no se atienden y escalan a AOG.',
+  'cuadrilla': 'Equipo de mecánicos que trabaja junto. El turno de la cuadrilla MANDA: al moverla, todos heredan su turno.',
+  'sla': 'El plazo real: la hora de salida programada de ESE avión. Si no cierras antes, hay retraso y penalización.',
+  'foreman': 'Jefe de equipo (capataz): coordina, no va al avión a ejecutar la tarea. No cuenta como firmante técnico de la orden.',
+  'stand': 'Puesto de estacionamiento del avión en plataforma. Tu furgo lleva a la cuadrilla del taller al stand.',
+  'release': 'Certificado de aptitud (CRS): la firma final que devuelve el avión al servicio cuando el trabajo está hecho y verificado.',
+  'hallazgo': 'Finding: defecto extra que aparece al inspeccionar una avería. Genera una sub-orden de trabajo aparte.',
+  'pernocta': 'El avión pasa la noche en tu aeropuerto. Te da mucho margen para trabajar… si tienes turno de noche.',
+};
+var _tipsInited = false, _lastTipTab = null;
+function refreshTips(){
+  if (!window.GuidedTour || !GuidedTour.tooltips) return;
+  // bindSelectors: solo spans/divs de etiqueta (NO label/th: inyectar una «i» focusable dentro de
+  // un <label>/<th> mete tab-stops espurios y descuadra columnas — review 2026-07-01).
+  if (!_tipsInited){ _tipsInited = true; GuidedTour.tooltips({ bindSelectors: '.klbl,.lbl,.mk,.dmk,.k', glossary: AERO_GLOSSARY }); _lastTipTab = activeTab; return; }
+  // Re-escanear SOLO al cambiar de panel (evento), no en el hot-path del tick a 25×/500×.
+  if (activeTab === _lastTipTab) return;
+  _lastTipTab = activeTab;
+  try { GuidedTour.tooltips.refresh(document); } catch(e){}
 }
 
 // Fase B2 (brief maestro): pop-out del callout. Cuando aparece una WO nueva (callout sin asignar)
@@ -5038,6 +5091,9 @@ function spawnCalloutToast(wo, tpl, ap){
 function maybePopoutCallouts(){
   try {
     if (!game || !game.workOrders) return;
+    // Mientras el tutorial guiado está abierto, NO lanzar pop-outs de evento: el propio tour
+    // narra el primer aviso y no queremos que un modal se pelee con la tarjeta del recorrido.
+    if (mroTour && mroTour.isOpen()) return;
     // WOs "callout vivo": sin asignar y en fase temprana (ToPlane/Inspection), no cerradas.
     const live = game.workOrders.filter(function(w){
       return w.assignedMechanicIds && w.assignedMechanicIds.length === 0 &&
@@ -5297,51 +5353,21 @@ function render(){
   const btnLoad = document.getElementById("btn-load");
   if (btnLoad) btnLoad.disabled = !hasSavedSlot;
 
-  // Tutorial guiado: aplicar overlay/spotlight al final (tras reconstruir paneles) y
-  // comprobar condiciones de auto-avance del sim.
-  renderTutorial();
-  tutCheckCond();
+  // Tutorial GuidedTour: auto-avance por evento del sim (cond) + re-glue del foco a paneles
+  // reconstruidos. Y refrescar los tooltips del glosario tras reconstruir el DOM.
+  mroTourTick();
+  refreshTips();
   // Fase B2: tras reconstruir paneles, evaluar si saltan pop-outs de callouts nuevos.
   maybePopoutCallouts();
 }
 
-// === Tutorial: gating de clicks (capture phase, antes que el handler normal) ===
-// Si el tutorial está activo, solo se permite: (a) clicks dentro del bocadillo #tut-pop,
-// (b) el elemento "gate" del paso actual. Todo lo demás se traga. Cuando el usuario clica
-// el gate correcto, dejamos pasar el click (para que el handler normal ejecute la acción)
-// y avanzamos el tutorial justo después.
-document.addEventListener("click", (e) => {
-  if (!tutActive) return;
-  // Clicks en el bocadillo (Continuar / Saltar) siempre permitidos — los gestiona el
-  // handler de burbuja de abajo.
-  if (e.target.closest && e.target.closest("#tut-pop")) return;
-  const st = tutCur();
-  const gateEl = st && st.gate ? (e.target.closest && e.target.closest(st.gate)) : null;
-  if (gateEl) {
-    // Click correcto sobre el gate: dejar que el handler normal haga la acción.
-    // Si el paso TAMBIÉN tiene cond (espera evento del sim), NO avanzamos por el click —
-    // dejamos que la condición lo haga (p.ej. abrir el aviso → selectedWoId !== null).
-    // Si NO tiene cond, el click ES el criterio de avance.
-    if (!st.cond) setTimeout(() => { if (tutActive && tutCur() === st) tutAdvance(); }, 60);
-    return;
-  }
-  // El campo allow lista elementos con los que el usuario PUEDE interactuar durante la
-  // espera de un evento (p.ej. botones de velocidad, o el modal para asignar) sin que se
-  // considere click prohibido ni avance el paso. El avance lo da cond cuando el sim cumple.
-  const allowEl = st && st.allow ? (e.target.closest && e.target.closest(st.allow)) : null;
-  if (allowEl) return; // permitir el click; el handler normal lo procesa
-  // Cualquier otro click: bloquear (guiado absoluto).
-  e.stopPropagation();
-  e.preventDefault();
-  // Feedback: parpadeo del bocadillo para indicar "aquí no".
-  const pop = document.getElementById("tut-pop");
-  if (pop) { pop.style.transition = "transform .08s"; pop.style.transform = (pop.classList.contains("center") ? "translate(-50%,-50%) " : "") + "scale(1.03)"; setTimeout(() => { pop.style.transform = pop.classList.contains("center") ? "translate(-50%,-50%)" : ""; }, 120); }
-}, true);
+// Nota: el gating de clicks del tutorial (avance por gate en pasos hands-on) vive ahora en el
+// wrapper GuidedTour de arriba (listener delegado + overlay click-through). El motor pinta su
+// propia tarjeta con Saltar/Atrás/Continuar, así que aquí ya no hay bocadillo propio que manejar.
 
 document.body.addEventListener("click", (e) => {
-  // Tutorial: botones del bocadillo (se evalúan primero; van por encima del bloqueo).
-  if (e.target.id === "tut-next") { tutAdvance(); return; }
-  if (e.target.id === "tut-skip") { tutSkip(); return; }
+  // Botón «?» de la barra superior: repasar el tutorial cuando el jugador quiera.
+  if (e.target.closest("#btn-tour")) { var t = ensureTour(); if (t) t.startAt(0); return; }
   // closest() (no e.target.id): al clicar el icono SVG el target es el <path>, no el <button>.
   if (e.target.closest("#btn-save")) { doSave(); return; }
   if (e.target.closest("#btn-load")) { doLoad(); return; }
@@ -5799,12 +5825,12 @@ async function startGameFromPreset(presetFile) {
   // Tutorial Rookie (2026-05-30): ON por defecto en dificultad 1 (Rookie). El primer paso
   // ofrece "Saltar tutorial" para quien ya tiene experiencia. activeTab arranca en mapa
   // para que la orientación tenga el contexto visual delante.
-  tutActive = false; tutGraduated = false; tutStep = 0;
+  tutGraduated = false; if (mroTour && mroTour.isOpen()) mroTour.end();
   activeTab = "map";
   render();
   if ((preset.difficulty ?? 1) === 1) {
     // pequeño defer para asegurar que el DOM base está montado antes del overlay.
-    setTimeout(() => startTutorial(), 50);
+    setTimeout(() => startTutorial(), 260);
   }
 }
 
