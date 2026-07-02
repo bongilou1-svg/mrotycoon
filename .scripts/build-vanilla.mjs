@@ -1396,6 +1396,7 @@ let detailFlightId = null;   // Rediseño CIC (2026-05-30): "callsign|type|min" 
 let detailStandId = null;    // Handoff mapa (2026-06-01): simId del stand para la ficha de stand
 let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
 let notifHistoryOpen = false;   // Deep pass 2026-07-01: modal "Ver todo" del log de actividad
+let _goSfxDone = false, _msSfxDone = false; // edge-flags para SFX one-shot (game over / hito)
 let detailDailyAirplaneId = null; // Pivot 2026-05-24: instanceId avión para modal daily check detallado
 let detailAirplaneType = null;    // Pivot 2026-05-24: "MODEL/ENGINE" para modal tipo avión
 let scheduleFilter = "all";  // Pivot línea pura · P3: filtro panel schedule "all"|"arrival"|"departure"
@@ -1501,6 +1502,69 @@ const SETTINGS_DEFAULTS = {
   callout_popup: true, // Fase B2: pop-out automático del callout al aparecer (toggle "no abrir auto")
 };
 let gameSettings = { ...SETTINGS_DEFAULTS };
+
+// === Audio sintetizado (WebAudio, sin assets) — deep pass 2026-07-01 ===
+// El juego era 100% mudo (los sliders de Ajustes decían "Sin efecto aún"). 5 SFX cortos
+// generados con osciladores (cero ficheros → sigue siendo single-file), enganchados a hooks
+// que YA existen. Volumen desde gameSettings.vol_sfx/vol_alert (0-100); mute_bg + pestaña
+// oculta = silencio. El AudioContext arranca suspendido (política de autoplay) → se desbloquea
+// en el 1er gesto del usuario.
+var mroAudio = (function(){
+  var ctx = null, master = null, bgMuted = false;
+  function ensure(){
+    if (ctx) return ctx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination);
+    } catch(e){ ctx = null; }
+    return ctx;
+  }
+  function vol(kind){
+    if (bgMuted) return 0;
+    var g = gameSettings || {};
+    var raw = kind === 'alert' ? (g.vol_alert != null ? g.vol_alert : 90) : (g.vol_sfx != null ? g.vol_sfx : 80);
+    return Math.max(0, Math.min(1, raw / 100));
+  }
+  // specs: [{f, f2?, d, type?, delay?, peak?}] — f2 = frecuencia destino (glissando)
+  function play(specs, v){
+    var c = ensure(); if (!c || v <= 0) return;
+    if (c.state === 'suspended') { try { c.resume(); } catch(e){} }
+    for (var i = 0; i < specs.length; i++){
+      var s = specs[i];
+      var t0 = c.currentTime + (s.delay || 0);
+      var osc = c.createOscillator(), g = c.createGain();
+      osc.type = s.type || 'sine';
+      osc.frequency.setValueAtTime(s.f, t0);
+      if (s.f2) osc.frequency.exponentialRampToValueAtTime(s.f2, t0 + s.d);
+      var peak = (s.peak != null ? s.peak : 0.22) * v;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0 + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + s.d);
+      osc.connect(g); g.connect(master);
+      osc.start(t0); osc.stop(t0 + s.d + 0.03);
+    }
+  }
+  var lastClick = 0;
+  return {
+    unlock: function(){ var c = ensure(); if (c && c.state === 'suspended'){ try { c.resume(); } catch(e){} } },
+    setBgMuted: function(m){ bgMuted = !!m; },
+    callout:   function(){ play([{f:784,d:0.10},{f:1175,d:0.09,delay:0.05,peak:0.14}], vol('sfx')); },        // ding suave de nuevo aviso
+    alert:     function(){ var v = vol('alert'); play([{f:466,d:0.16,type:'sawtooth',peak:0.15},{f:349,d:0.18,type:'sawtooth',delay:0.17,peak:0.15},{f:466,d:0.16,type:'sawtooth',delay:0.36,peak:0.15}], v); }, // alarma 2 tonos AOG
+    release:   function(){ play([{f:659,d:0.12},{f:880,d:0.12,delay:0.07},{f:1319,d:0.20,delay:0.14,peak:0.15}], vol('sfx')); }, // chime de despacho
+    click:     function(){ var now = (window.performance && performance.now) ? performance.now() : Date.now(); if (now - lastClick < 45) return; lastClick = now; play([{f:1500,d:0.028,peak:0.07}], vol('sfx') * 0.5); }, // tick de botón
+    milestone: function(){ play([{f:523,d:0.14},{f:659,d:0.14,delay:0.09},{f:784,d:0.14,delay:0.18},{f:1047,d:0.30,delay:0.27,peak:0.16}], vol('alert')); }, // fanfarria de hito
+    gameover:  function(){ play([{f:330,f2:220,d:0.4,type:'sawtooth',peak:0.17},{f:220,f2:110,d:0.75,type:'sawtooth',delay:0.3,peak:0.17}], vol('alert')); } // stinger grave de derrota
+  };
+})();
+// Desbloqueo del audio al primer gesto + tick en botones .primary. Silencio en 2º plano.
+document.addEventListener("pointerdown", function(e){
+  mroAudio.unlock();
+  if (e.target.closest && e.target.closest("button.primary,.cbtn.primary,.awo-fbtn.primary,.gt-primary")) mroAudio.click();
+}, true);
+document.addEventListener("visibilitychange", function(){ mroAudio.setBgMuted(document.hidden && !!gameSettings.mute_bg); });
+
 function loadSettings(){
   try {
     const raw = (typeof localStorage !== "undefined") ? localStorage.getItem("mro_settings") : null;
@@ -3440,7 +3504,7 @@ function renderSchedule(){
   const nextMov = flights.filter(f => f.scheduledMinute >= minOfDay).sort((a,b) => a.scheduledMinute - b.scheduledMinute)[0] || null;
   const arr = flights.filter(f => f.type === "arrival").length;
   const dep = flights.filter(f => f.type === "departure").length;
-  // Deep pass 2026-07-01: el tile "Contratados" mostraba `handled` (serviciables A320/A321),
+  // Deep pass 2026-07-01: el tile "Contratados" mostraba 'handled' (serviciables A320/A321),
   // no contratados reales → Contratados+Leads no sumaban Movimientos. Ahora partición limpia:
   // contratados = vuelos de aerolíneas con contrato activo; leads = el resto.
   const contracted = flights.filter(f => contractsActive.has(f.airlineCode)).length;
@@ -5165,6 +5229,7 @@ function spawnCalloutToast(wo, tpl, ap){
     '<div class="ct-meta">' + esc(meta) + '</div>' +
     '<div class="ct-cta">Abrir ›</div>';
   root.appendChild(el);
+  if (sevBig) mroAudio.alert(); else mroAudio.callout(); // SFX: alarma AOG/Critical vs ding suave
   // Auto-cierre: AOG/Critical persisten mas (12s); Minor/Major sutiles (6s). reduce-motion no afecta.
   const ttl = sevBig ? 12000 : 6000;
   const timer = setTimeout(function(){ dismissCalloutToast(el); }, ttl);
@@ -5228,7 +5293,10 @@ function render(){
   // partida ha terminado Y no hay wizard activo (el wizard manda si el jugador fue al menú).
   let goOverlay = document.getElementById("gameover-overlay-root");
   if (!goOverlay) { goOverlay = document.createElement("div"); goOverlay.id = "gameover-overlay-root"; document.body.appendChild(goOverlay); }
-  goOverlay.innerHTML = (game.gameOver && game.gameOver.isOver && newGameStep === null) ? renderGameOver() : "";
+  const goOn = !!(game.gameOver && game.gameOver.isOver && newGameStep === null);
+  goOverlay.innerHTML = goOn ? renderGameOver() : "";
+  if (goOn && !_goSfxDone) { _goSfxDone = true; mroAudio.gameover(); } // SFX una sola vez
+  else if (!goOn) _goSfxDone = false;
   // Cierre Semanal (2026-05-30): overlay modal si hay datos de cierre pendientes y no hay
   // wizard ni game over por encima.
   let wcOverlay = document.getElementById("weekly-close-overlay-root");
@@ -5237,7 +5305,10 @@ function render(){
   // Hito (2026-05-30): overlay de milestone si hay datos y nada por encima.
   let msOverlay = document.getElementById("milestone-overlay-root");
   if (!msOverlay) { msOverlay = document.createElement("div"); msOverlay.id = "milestone-overlay-root"; document.body.appendChild(msOverlay); }
-  msOverlay.innerHTML = (milestoneData && newGameStep === null && !(game.gameOver && game.gameOver.isOver) && !weeklyCloseData) ? renderMilestone() : "";
+  const msOn = !!(milestoneData && newGameStep === null && !(game.gameOver && game.gameOver.isOver) && !weeklyCloseData);
+  msOverlay.innerHTML = msOn ? renderMilestone() : "";
+  if (msOn && !_msSfxDone) { _msSfxDone = true; mroAudio.milestone(); } // SFX fanfarria de hito, una vez
+  else if (!msOn) _msSfxDone = false;
   // Menú de pausa in-game (guardar / volver al menú). Por encima del juego, por debajo del wizard.
   let pmOverlay = document.getElementById("pause-menu-overlay-root");
   if (!pmOverlay) { pmOverlay = document.createElement("div"); pmOverlay.id = "pause-menu-overlay-root"; document.body.appendChild(pmOverlay); }
@@ -6046,6 +6117,7 @@ function detectEvents(){
   };
   var slaLeftTxt = function(sla){ var lf = Math.round(sla - game.clock.minute); if (lf <= 0) return "VENCIDO hace " + Math.abs(lf) + " min"; return "faltan " + (lf >= 60 ? Math.floor(lf / 60) + "h " + (lf % 60) + "m" : lf + " min"); };
   var fireRelease = function(s, w){
+    mroAudio.release(); // SFX: chime de despacho (el avión vuelve a volar)
     var delay = 0;
     if (w && w.releaseMinute != null && s.etd != null) delay = Math.max(0, Math.floor(w.releaseMinute - s.etd));
     else if (s.etd != null) delay = Math.max(0, Math.floor(game.clock.minute - s.etd));
@@ -6287,9 +6359,9 @@ function renderSettingsBody(){
     cats += '<button class="set-catbtn' + (settingsCat === c[0] ? " on" : "") + '" data-set-cat="' + c[0] + '"><span class="ci"></span> ' + c[1] + '</button>';
   });
   var audio = '<div class="set-cat' + (settingsCat==="audio"?" on":"") + '" data-cat="audio"><div class="set-ct">Audio · mezcla</div>'
-    + opt("Música", "Banda sonora ambiente de la sala de control.", slide("vol_music"), "Sin efecto aún (sonido no implementado)")
-    + opt("Efectos", "Confirmaciones, transiciones, ticks del reloj.", slide("vol_sfx"), "Sin efecto aún")
-    + opt("Alertas", "Avisos de AOG, SLA en riesgo y auditorías.", slide("vol_alert"), "Sin efecto aún")
+    + opt("Música", "Banda sonora ambiente de la sala de control.", slide("vol_music"), "Próximamente")
+    + opt("Efectos", "Avisos, despachos y clicks. Suena de verdad.", slide("vol_sfx"))
+    + opt("Alertas", "Alarma de AOG y fanfarria de hito.", slide("vol_alert"))
     + opt("Silenciar en segundo plano", "Corta el audio cuando la ventana pierde el foco.", sw("mute_bg"))
     + '</div>';
   var video = '<div class="set-cat' + (settingsCat==="video"?" on":"") + '" data-cat="video"><div class="set-ct">Vídeo · pantalla</div>'
