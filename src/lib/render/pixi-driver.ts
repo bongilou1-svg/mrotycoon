@@ -373,6 +373,14 @@ function airlineColor(airlineId: string): number {
 }
 
 // ---------- Helpers ----------
+// Deep pass 2026-07-01: los overlays de desarrollo del mapa (diag t=…, fps, "skin: f5d…")
+// renderizaban como fragmentos ilegibles en el juego real y son ruido de cara a Steam.
+// Solo se pintan con ?mrodebug en la URL. La atribución ODbL vive ahora en un chip DOM
+// de la leyenda (inmune a resizes del canvas), no en el canvas.
+const DEBUG_OVERLAY: boolean = (() => {
+  try { return typeof location !== "undefined" && /[?&]mrodebug/.test(location.search); } catch { return false; }
+})();
+
 function strokeDashed(g: Graphics, x1: number, y1: number, x2: number, y2: number, dash = 8, gap = 6, width = 1, color = 0xffffff, alpha = 1): void {
   const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
   if (len < 0.5) return;
@@ -2460,15 +2468,40 @@ export class PixiDriver {
     };
   }
 
-  /** Inicializa cámara F5D: zoom fit-all + centrado. */
+  /** Inicializa cámara F5D: fit al CONTENIDO real del aeropuerto, no al mundo 6000×4800.
+   *  Deep pass 2026-07-01: el fit-all al mundo entero dejaba el aeropuerto ocupando ~15% del
+   *  frame (85% navy vacío) como primera impresión. Ahora se calcula el bbox de la geometría
+   *  jugable (pista + taxiways + apron + terminal + stands) con margen, y se cae al mundo
+   *  completo solo si no hay geometría. */
   private initF5DCamera(): void {
     if (!this.app) return;
     const W = this.app.screen.width, H = this.app.screen.height;
-    const fitX = W / PixiDriver.F5D_WORLD_W;
-    const fitY = H / PixiDriver.F5D_WORLD_H;
-    this.camera.zoom = Math.max(0.15, Math.min(fitX, fitY) * 0.98);
-    this.camera.x = (W / this.camera.zoom - PixiDriver.F5D_WORLD_W) / 2;
-    this.camera.y = (H / this.camera.zoom - PixiDriver.F5D_WORLD_H) / 2;
+    const area = this.f5dArea();
+    const P = activeAirportPaths.paths;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const eat = (ways: Array<{ coords: number[][] }>) => {
+      for (const w of ways ?? []) {
+        for (const c of w.coords ?? []) {
+          const p = this.f5dProject(c, area);
+          if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+        }
+      }
+    };
+    eat(P.runways); eat(P.taxiways); eat(P.apron); eat(P.terminal); eat(P.parkingPositions);
+    let zoom: number, cx: number, cy: number;
+    if (minX < maxX && minY < maxY) {
+      const mx = (maxX - minX) * 0.12, my = (maxY - minY) * 0.12; // margen 12%
+      const bw = (maxX - minX) + mx * 2, bh = (maxY - minY) + my * 2;
+      zoom = Math.max(0.15, Math.min(4.0, Math.min(W / bw, H / bh)));
+      cx = (minX + maxX) / 2; cy = (minY + maxY) / 2;
+    } else {
+      zoom = Math.max(0.15, Math.min(W / PixiDriver.F5D_WORLD_W, H / PixiDriver.F5D_WORLD_H) * 0.98);
+      cx = PixiDriver.F5D_WORLD_W / 2; cy = PixiDriver.F5D_WORLD_H / 2;
+    }
+    this.camera.zoom = zoom;
+    this.camera.x = W / (2 * zoom) - cx;
+    this.camera.y = H / (2 * zoom) - cy;
     this.cameraInitialized = true;
     this.applyCamera();
   }
@@ -2509,20 +2542,29 @@ export class PixiDriver {
     [this.layerBg!, this.layerRoad!, this.layerStaticLabels!, this.layerSprites!, this.layerMoving!].forEach(l => l.removeChildren());
     this.layerOverlay!.removeChildren();
 
-    // P-β MVP: redibujar static cada tick (sin cache). Aceptable porque hay pocos
-    // elementos. Si hay tirones en runtime, separar static (apron/runway/etc) de
-    // dynamic (stands activos overlay) y aplicar cache key.
-    this.worldStaticCache!.removeChildren();
+    // Deep pass 2026-07-01 (perf): antes se reconstruía TODA la estática OSM (~127 nodos, con
+    // ~25-40 Text = raster canvas + upload GPU) en CADA apply (10/s) y en cada hover. Ahora la
+    // geometría PURA (fondo/grid/pista/taxiways/apron/terminal/torre/labels fijos) se cachea por
+    // key aeropuerto+día/noche, como ya hacía el skin huge. Los stands (pills/halos/hover, que
+    // dependen del estado y del pulso) se mudan a worldDynamic (se limpia cada tick).
+    const staticKey = `f5d:${(activeAirportPaths as { icao?: string }).icao ?? "?"}:${isNight ? "n" : "d"}`;
+    const rebuildStatic = this.staticCacheKey !== staticKey;
+    if (rebuildStatic) {
+      this.worldStaticCache!.removeChildren();
+      this.staticCacheKey = staticKey;
+    }
 
     const FW = PixiDriver.F5D_WORLD_W, FH = PixiDriver.F5D_WORLD_H;
 
     // ── Fondo navy + grid sutil (en world coords) ──
-    this.worldStaticCache!.addChild(new Graphics().rect(0, 0, FW, FH).fill(bgColor));
-    const grid = new Graphics();
-    for (let y = 240; y < FH; y += 240) grid.moveTo(0, y).lineTo(FW, y);
-    for (let x = 320; x < FW; x += 320) grid.moveTo(x, 0).lineTo(x, FH);
-    grid.stroke({ width: 2, color: 0x142543, alpha: 0.55 });
-    this.worldStaticCache!.addChild(grid);
+    if (rebuildStatic) {
+      this.worldStaticCache!.addChild(new Graphics().rect(0, 0, FW, FH).fill(bgColor));
+      const grid = new Graphics();
+      for (let y = 240; y < FH; y += 240) grid.moveTo(0, y).lineTo(FW, y);
+      for (let x = 320; x < FW; x += 320) grid.moveTo(x, 0).lineTo(x, FH);
+      grid.stroke({ width: 2, color: 0x142543, alpha: 0.55 });
+      this.worldStaticCache!.addChild(grid);
+    }
 
     const area = this.f5dArea();
     const P = activeAirportPaths.paths;
@@ -2590,7 +2632,7 @@ export class PixiDriver {
         drawBadgeGlyph(W, bx, by, br, badge);
       }
       if (reg) {
-        const t = new Text({ text: reg, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(8.5 * s), fontWeight: "700", fill: 0xe6f0fb, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } } });
+        const t = new Text({ text: reg, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(8.5 * s), fontWeight: "700", fill: 0xe6f0fb, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } }, resolution: 3 });
         t.anchor.set(0.5, 0); t.position.set(px, py + 14 * s + 1);
         W.addChild(t);
       }
@@ -2620,6 +2662,7 @@ export class PixiDriver {
       return ptAlong(taxiRoute, (progress - LANDING_FRAC) / (1 - LANDING_FRAC));
     };
 
+    if (rebuildStatic) { // ── estática OSM pura (solo al invalidar el cache aeropuerto/día-noche) ──
     // ── Aerodrome boundary (perímetro tenue) ──
     for (const w of P.aerodrome) {
       const g = new Graphics();
@@ -2684,14 +2727,14 @@ export class PixiDriver {
         const p0 = this.f5dProject(w.coords[0], area);
         const pN = this.f5dProject(w.coords[w.coords.length - 1], area);
         const isP0Left = p0.x < pN.x;
-        const lbl11 = new Text({ text: "11", style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 } });
+        const lbl11 = new Text({ text: "11", style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 }, resolution: 3 });
         lbl11.position.set((isP0Left ? p0.x : pN.x) + 6, (isP0Left ? p0.y : pN.y) + 16);
         this.worldStaticCache!.addChild(lbl11);
-        const lbl29 = new Text({ text: "29", style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 } });
+        const lbl29 = new Text({ text: "29", style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 }, resolution: 3 });
         lbl29.position.set((isP0Left ? pN.x : p0.x) - 18, (isP0Left ? pN.y : p0.y) + 16);
         this.worldStaticCache!.addChild(lbl29);
         // Label centro pista
-        const mid = new Text({ text: `RWY ${w.ref || "11/29"} · 2200m`, style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 } });
+        const mid = new Text({ text: `RWY ${w.ref || "11/29"} · 2200m`, style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 }, resolution: 3 });
         mid.anchor.set(0.5, 1);
         mid.position.set((p0.x + pN.x) / 2, (p0.y + pN.y) / 2 - 16);
         this.worldStaticCache!.addChild(mid);
@@ -2730,7 +2773,7 @@ export class PixiDriver {
       let cx = 0, cy = 0;
       for (const c of w.coords) { const p = this.f5dProject(c, area); cx += p.x; cy += p.y; }
       cx /= w.coords.length; cy /= w.coords.length;
-      const lbl = new Text({ text: "Terminal", style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 } });
+      const lbl = new Text({ text: "Terminal", style: { fontFamily: "Inter, sans-serif", fontSize: 11, fontWeight: "500", fill: 0x5da0e0 }, resolution: 3 });
       lbl.anchor.set(0.5); lbl.position.set(cx, cy);
       this.worldStaticCache!.addChild(lbl);
     }
@@ -2742,6 +2785,7 @@ export class PixiDriver {
       g.fill({ color: 0x13243f, alpha: 1 }).stroke({ width: 1.3, color: 0x2c4870 });
       this.worldStaticCache!.addChild(g);
     }
+    } // fin if (rebuildStatic) — estática OSM cacheada
 
     // ── Parking positions (stands) ──
     // Cada parking_position es un way con 2-3 puntos: el último es la posición del avión.
@@ -2778,6 +2822,10 @@ export class PixiDriver {
       // Código placard (351/451…), cae al ref OSM si no hay mapeo.
       const code = (simId && PixiDriver.F5D_STAND_CODE[simId]) || ref;
 
+      // Deep pass 2026-07-01: TODO el stand (guía/halos/pill/labels/hitbox) va a worldDynamic —
+      // depende del estado (ocupante, color WO, pulso, hover) y worldDynamic se limpia por tick.
+      // Antes iba a worldStaticCache, lo que obligaba a reconstruir la estática entera cada tick.
+      const D = this.worldDynamic!;
       // Línea guía (entrada del taxiway hacia la posición) — recoloreada al estado
       const g = new Graphics();
       if (pos.coords.length >= 2) {
@@ -2785,13 +2833,13 @@ export class PixiDriver {
         for (let i = 1; i < pos.coords.length; i++) g.lineTo(pos.coords[i].x, pos.coords[i].y);
         g.stroke({ width: active ? 1.2 : 0.8, color: active ? stCol : 0x2c4870, alpha: active ? 0.85 : 0.5 });
       }
-      this.worldStaticCache!.addChild(g);
+      D.addChild(g);
 
       // Glow ambiental del estado detrás de la pill (vida visual + pulso temporal)
       if (active) {
         const haloR = 13 + pulseT * 4;
-        this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, haloR + 7).fill({ color: stCol, alpha: 0.05 }));
-        this.worldStaticCache!.addChild(new Graphics().circle(pos.x, pos.y, haloR).fill({ color: stCol, alpha: 0.12 + pulseT * 0.06 }));
+        D.addChild(new Graphics().circle(pos.x, pos.y, haloR + 7).fill({ color: stCol, alpha: 0.05 }));
+        D.addChild(new Graphics().circle(pos.x, pos.y, haloR).fill({ color: stCol, alpha: 0.12 + pulseT * 0.06 }));
       }
 
       // Pill: fondo oscuro + borde de color de estado. Cuando el stand está OCUPADO, el avión
@@ -2799,7 +2847,7 @@ export class PixiDriver {
       // encima del avión y no taparlo. Libre → placard al centro como siempre.
       const pillCY = active ? pos.y - 36 : pos.y;
       const pillX = pos.x - PILL_W / 2, pillY = pillCY - PILL_H / 2;
-      this.worldStaticCache!.addChild(
+      D.addChild(
         new Graphics()
           .roundRect(pillX, pillY, PILL_W, PILL_H, 6)
           .fill({ color: 0x0a1119, alpha: 0.86 })
@@ -2807,16 +2855,17 @@ export class PixiDriver {
       );
       // LED (glow + core)
       const ledX = pillX + 10;
-      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pillCY, 5.5).fill({ color: stCol, alpha: 0.32 }));
-      this.worldStaticCache!.addChild(new Graphics().circle(ledX, pillCY, 3).fill(stCol));
-      // Código airport-style (grande, legible)
+      D.addChild(new Graphics().circle(ledX, pillCY, 5.5).fill({ color: stCol, alpha: 0.32 }));
+      D.addChild(new Graphics().circle(ledX, pillCY, 3).fill(stCol));
+      // Código airport-style (grande, legible; resolution 3 = nítido a zoom alto)
       const codeLbl = new Text({
         text: code,
         style: { fontFamily: "Inter, sans-serif", fontSize: 12.5, fontWeight: "700", fill: 0xe6f0fb },
+        resolution: 3,
       });
       codeLbl.anchor.set(0, 0.5);
       codeLbl.position.set(ledX + 9, pillCY + 0.5);
-      this.worldStaticCache!.addChild(codeLbl);
+      D.addChild(codeLbl);
 
       // Stand libre → "libre" bajo el placard. Ocupado → la matrícula va PEGADA al avión
       // (la dibuja drawPlane abajo), no aquí, para que sea "el avioncito con su matrícula".
@@ -2824,16 +2873,17 @@ export class PixiDriver {
         const occLbl = new Text({
           text: "libre",
           style: { fontFamily: "JetBrains Mono, monospace", fontSize: 9.5, fontWeight: "400", fill: stCol },
+          resolution: 3,
         });
         occLbl.anchor.set(0.5, 0);
         occLbl.position.set(pos.x, pillY + PILL_H + 3);
         occLbl.alpha = 0.7;
-        this.worldStaticCache!.addChild(occLbl);
+        D.addChild(occLbl);
       }
 
       // P-ε: hover outline si está hovered (forma de pill)
       if (this.f5dHoveredStand === ref) {
-        this.worldStaticCache!.addChild(
+        D.addChild(
           new Graphics().roundRect(pillX - 3, pillY - 3, PILL_W + 6, PILL_H + 6, 8).stroke({ width: 1.5, color: 0xa8dafc, alpha: 0.85 }),
         );
       }
@@ -2850,7 +2900,7 @@ export class PixiDriver {
           this.callbacks.onStandClick(simId, !!ap, ap?.registration ?? null);
         }
       });
-      this.worldStaticCache!.addChild(hit);
+      D.addChild(hit);
     }
 
     // ── Aviones EN TRÁNSITO (taxiing) · ruta marcada por Dani: pista → taxi → stand ──
@@ -2955,37 +3005,42 @@ export class PixiDriver {
     ];
     for (const ghost of ghosts) {
       if (!ghost.available) continue;
+      // Deep pass 2026-07-01: a worldDynamic (dependen de hangarBuildUnlocked/mroStage/hover).
+      const GD = this.worldDynamic!;
       const dash = new Graphics();
       dashedRect(dash, ghost.x, ghostY, ghostW, ghostH, { dash: 24, gap: 14, width: 2, color: 0xf5b945, alpha: 0.65 });
-      this.worldStaticCache!.addChild(dash);
+      GD.addChild(dash);
       // Diagonal fill tenue
-      this.worldStaticCache!.addChild(new Graphics().rect(ghost.x, ghostY, ghostW, ghostH).fill({ color: 0x2a1a08, alpha: 0.15 }));
+      GD.addChild(new Graphics().rect(ghost.x, ghostY, ghostW, ghostH).fill({ color: 0x2a1a08, alpha: 0.15 }));
       // Labels
       const t1 = new Text({
         text: `STAGE ${ghost.stage}`,
         style: { fontFamily: "Inter, sans-serif", fontSize: 22, fontWeight: "500", fill: 0xf5b945 },
+        resolution: 3,
       });
       t1.anchor.set(0.5);
       t1.position.set(ghost.x + ghostW / 2, ghostY + ghostH / 2 - 18);
-      this.worldStaticCache!.addChild(t1);
+      GD.addChild(t1);
       const t2 = new Text({
         text: ghost.cost,
         style: { fontFamily: "JetBrains Mono, monospace", fontSize: 16, fill: 0xa8dafc },
+        resolution: 3,
       });
       t2.anchor.set(0.5);
       t2.position.set(ghost.x + ghostW / 2, ghostY + ghostH / 2 + 14);
-      this.worldStaticCache!.addChild(t2);
+      GD.addChild(t2);
       const t3 = new Text({
         text: "click para construir",
         style: { fontFamily: "JetBrains Mono, monospace", fontSize: 11, fill: 0x5da0e0 },
+        resolution: 3,
       });
       t3.anchor.set(0.5);
       t3.position.set(ghost.x + ghostW / 2, ghostY + ghostH / 2 + 42);
-      this.worldStaticCache!.addChild(t3);
+      GD.addChild(t3);
       // Hover outline
       const gKey = `ghost-${ghost.stage}`;
       if (this.f5dHoveredStand === gKey) {
-        this.worldStaticCache!.addChild(
+        GD.addChild(
           new Graphics().rect(ghost.x - 4, ghostY - 4, ghostW + 8, ghostH + 8).stroke({ width: 2, color: 0xa8dafc, alpha: 0.9 }),
         );
       }
@@ -2999,7 +3054,7 @@ export class PixiDriver {
         ev.stopPropagation();
         if (this.callbacks.onBuildClick) this.callbacks.onBuildClick();
       });
-      this.worldStaticCache!.addChild(gHit);
+      GD.addChild(gHit);
     }
 
     // ── FURGO de mecánicos · modelo de 3 estados (2026-06-02, Dani v4) ──
@@ -3053,7 +3108,7 @@ export class PixiDriver {
       van.scale.set(flip ? -s : s, s);
       W.addChild(van);
       if (label) {
-        const vlbl = new Text({ text: label, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } } });
+        const vlbl = new Text({ text: label, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } }, resolution: 3 });
         vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 9 * s + 3);
         this.worldDynamic!.addChild(vlbl);
       }
@@ -3123,10 +3178,14 @@ export class PixiDriver {
         if (m.state === "ToPlane" || m.state === "Returning" || (m.state === "Working" && m.destStandId)) crewBusy.set(m.crewId, true);
       }
       let idx = 0;
+      // Deep pass 2026-07-01: el spacing de la parrilla era FIJO en world px mientras el furgo
+      // contra-escala hasta ×4.8 → a zoom fit-all las 5 furgos se apilaban en un blob multicolor.
+      // Multiplicar el spacing por la MISMA contra-escala que usa drawVan las separa a cualquier zoom.
+      const parkS = vanScale();
       for (const [cid, busy] of crewBusy) {
         if (busy) continue; // su furgo está fuera (dibujada arriba)
-        const ox = officeX + ((idx % 3) - 1) * 22;
-        const oy = officeY + Math.floor(idx / 3) * 18;
+        const ox = officeX + ((idx % 3) - 1) * 22 * parkS;
+        const oy = officeY + Math.floor(idx / 3) * 18 * parkS;
         drawVan(ox, oy, 0, crewCol.get(cid) ?? 0x3d6f9d, null);
         idx++;
       }
@@ -3142,6 +3201,7 @@ export class PixiDriver {
       const t = new Text({
         text,
         style: { fontFamily: "Inter, sans-serif", fontSize: 13, fontWeight: "600", fill: color, letterSpacing: 1.5 },
+        resolution: 3,
       });
       t.anchor.set(0.5);
       t.alpha = 0.5;
@@ -3149,7 +3209,8 @@ export class PixiDriver {
       this.worldStaticCache!.addChild(t);
     };
     // Zona sur de la plataforma reservada a hangares (ámbar, igual familia que los plots ghost).
-    zoneLabel("ESPACIO HANGARES", area.x + area.w * 0.3, area.y + area.h * 0.9, 0xf5b945);
+    // Va al static cache → solo al reconstruirlo (si no, se duplicaría cada tick).
+    if (rebuildStatic) zoneLabel("ESPACIO HANGARES", area.x + area.w * 0.3, area.y + area.h * 0.9, 0xf5b945);
     // (Etiqueta "OFICINA MEC." quitada v3 — sin edificio oficina hasta el dibujo de Dani.)
 
     // ── Overlay HUD ──
@@ -3181,43 +3242,38 @@ export class PixiDriver {
     nLbl.position.set(W - 46, 52);
     this.layerOverlay!.addChild(nLbl);
 
-    // Sync diag
-    const idleC = state.mechanics.filter((m) => m.state === "Idle").length;
-    const onShiftC = state.mechanics.filter((m) => m.state !== "OffShift" && m.state !== "Training").length;
-    const diag = new Text({
-      text: `t=${state.minute} · ${state.timeOfDay} · stage ${state.mroStage} · aviones=${state.airplanes.length} · mecs ${idleC}/${onShiftC}`,
-      style: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, fill: 0x5da0e0 },
-    });
-    diag.position.set(20, H - 26);
-    this.layerOverlay!.addChild(diag);
+    // Overlays de DESARROLLO (diag/fps/skin): solo con ?mrodebug — renderizaban como
+    // fragmentos ilegibles ("ors", "sk.") y son ruido para el jugador/screenshots Steam.
+    // La atribución ODbL se muestra SIEMPRE, pero en un chip DOM de la leyenda del mapa
+    // (build-vanilla.mjs .map-legend), no aquí: el Text del canvas se cortaba con el resize.
+    if (DEBUG_OVERLAY) {
+      const idleC = state.mechanics.filter((m) => m.state === "Idle").length;
+      const onShiftC = state.mechanics.filter((m) => m.state !== "OffShift" && m.state !== "Training").length;
+      const diag = new Text({
+        text: `t=${state.minute} · ${state.timeOfDay} · stage ${state.mroStage} · aviones=${state.airplanes.length} · mecs ${idleC}/${onShiftC}`,
+        style: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, fill: 0x5da0e0 },
+      });
+      diag.position.set(20, H - 26);
+      this.layerOverlay!.addChild(diag);
 
-    // Atribución OSM esquina inf-dcha (ODbL obligatorio)
-    const attr = new Text({
-      text: "© OpenStreetMap contributors",
-      style: { fontFamily: "Inter, sans-serif", fontSize: 11, fill: 0x3d6f9d },
-    });
-    attr.anchor.set(1, 1);
-    attr.position.set(W - 12, H - 10);
-    this.layerOverlay!.addChild(attr);
+      const fps = this.app.ticker.FPS;
+      const fpsCol = fps >= 55 ? 0x3aa9ff : fps >= 30 ? 0xf5b945 : 0xff6b6b;
+      const fpsLbl = new Text({
+        text: `${fps.toFixed(0)} fps`,
+        style: { fontFamily: "JetBrains Mono, monospace", fontSize: 11, fontWeight: "bold", fill: fpsCol },
+      });
+      fpsLbl.anchor.set(1, 0);
+      fpsLbl.position.set(W - 12, 50);
+      this.layerOverlay!.addChild(fpsLbl);
 
-    // Indicador skin
-    const fps = this.app.ticker.FPS;
-    const fpsCol = fps >= 55 ? 0x3aa9ff : fps >= 30 ? 0xf5b945 : 0xff6b6b;
-    const fpsLbl = new Text({
-      text: `${fps.toFixed(0)} fps`,
-      style: { fontFamily: "JetBrains Mono, monospace", fontSize: 11, fontWeight: "bold", fill: fpsCol },
-    });
-    fpsLbl.anchor.set(1, 0);
-    fpsLbl.position.set(W - 12, 50);
-    this.layerOverlay!.addChild(fpsLbl);
-
-    const skinLbl = new Text({
-      text: `skin: f5d · OSM ${activeAirportPaths.icao} · zoom ${this.camera.zoom.toFixed(2)}× · WASD/wheel`,
-      style: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, fill: 0x3d6f9d },
-    });
-    skinLbl.anchor.set(0, 1);
-    skinLbl.position.set(12, H - 10);
-    this.layerOverlay!.addChild(skinLbl);
+      const skinLbl = new Text({
+        text: `skin: f5d · OSM ${activeAirportPaths.icao} · zoom ${this.camera.zoom.toFixed(2)}× · WASD/wheel`,
+        style: { fontFamily: "JetBrains Mono, monospace", fontSize: 10, fill: 0x3d6f9d },
+      });
+      skinLbl.anchor.set(0, 1);
+      skinLbl.position.set(12, H - 10);
+      this.layerOverlay!.addChild(skinLbl);
+    }
 
     // Minimapa
     this.drawF5DMinimap(state);

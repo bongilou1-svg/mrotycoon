@@ -135,6 +135,13 @@ const CSS = `:root{--bg:#090d15;--bg-grid:rgba(120,150,200,.035);--panel:#161b22
 /* Tutorial GuidedTour: overlay click-through salvo la tarjeta → los pasos hands-on dejan tocar la app debajo (gate). */
 #gt-tour{pointer-events:none}
 #gt-tour .gt-pop{pointer-events:auto}
+/* Badge 🌙 Pernocta (deep pass 2026-07-01): antes reusaba .kpi (flex column) y el número caía
+   a una 2ª línea desbordando la cápsula. Fila propia, una línea, no rompe. */
+.ovn-badge{display:inline-flex;align-items:center;gap:.3rem;white-space:nowrap;cursor:pointer;margin-left:.5rem;padding:.2rem .55rem;border:1px solid var(--border-s);border-radius:999px;background:var(--panel-solid);font-size:.72rem;color:var(--muted)}
+.ovn-badge strong{color:var(--text);font-family:var(--mono)}
+.ovn-badge:hover{border-color:var(--accent)}
+/* Atribución OSM (ODbL) como chip DOM de la leyenda — el Text del canvas se cortaba ilegible. */
+.map-legend .lg.attr{color:#41536e;text-transform:none;letter-spacing:0;opacity:.85}
 /* Botón «?» de repasar el tutorial en la barra superior. */
 .tut-help{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid var(--border-s);background:var(--panel-solid);color:var(--muted);font:700 15px/1 var(--disp);cursor:pointer;transition:.14s}
 /* "Por qué" del paso: segunda línea muted bajo el cuerpo de la tarjeta del tour. */
@@ -1303,7 +1310,7 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 const BODY = `<div class="app">
   <header class="hud">
     <div class="hud-l"><span class="brand">✈</span><span class="name">MRO <b>TYCOON</b></span><span class="ver">v0.7</span><ovd-user-badge style="margin-left:12px"></ovd-user-badge></div>
-    <div class="hud-c"><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="clock" id="clock">Día 1 · 00:00</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="kpi" style="display:none;cursor:pointer;margin-left:.5rem" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
+    <div class="hud-c"><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="clock" id="clock">Día 1 · 00:00</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="ovn-badge" style="display:none" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
     <div class="hud-r">
       <div class="kpi"><span class="klbl">Balance</span><strong id="bal">250.000 €</strong></div>
       <div class="kpi compliance-kpi" id="kpi-rep" title="Reputación media — click para detalle por aerolínea"><span class="klbl">Reputación</span><span><strong id="rep">50</strong><s>/100</s></span></div>
@@ -1799,6 +1806,7 @@ function renderMap(){
       <span class="lg" style="color:#3ad6c5" data-tip-title="Cerrando" data-tip="Trabajo casi listo: en prueba funcional o esperando la firma de aptitud (release)."><i></i>Cerrando</span>
       <span class="lg" style="color:#3fb950" data-tip-title="Listo" data-tip="Trabajo cerrado y firmado: el avión está apto para volver al servicio."><i></i>Listo</span>
       <span class="lg" style="color:#3d6f9d" data-tip-title="Libre" data-tip="Avión en tierra sin trabajo pendiente contigo."><i></i>Libre</span>
+      <span class="lg attr">© OpenStreetMap contributors · ODbL</span>
     </div>
     <div id="map-office" class="map-office"></div>
     <div id="map-mini" class="map-mini"></div>
