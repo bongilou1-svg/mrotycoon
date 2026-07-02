@@ -993,7 +993,8 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 .st-pill.lead{color:var(--dim);border-color:var(--line-2)}
 @media(max-width:1180px){.frow{grid-template-columns:60px 48px 1fr 120px}.frow .fstatus{display:none}}
 /* -- Log de actividad (reskin de .notifs) -- */
-.notifs h3{font:600 .66rem var(--disp);text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.notifs h3{display:flex;align-items:center;gap:.45rem;font:600 .66rem var(--disp);text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.notifs h3 #notif-all:hover{border-color:var(--accent);color:var(--accent)}
 .log-live{display:inline-flex;align-items:center;gap:.3rem;font:600 .56rem var(--mono);color:var(--ok);float:right}
 .notif{position:relative;padding-left:.7rem}
 .notif::before{content:"";position:absolute;left:0;top:.4rem;bottom:.4rem;width:3px;border-radius:3px;background:var(--line-2)}
@@ -1232,7 +1233,7 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
       <button data-tab="economy"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="12.5" rx="2.5"/><path d="M3.5 10h17"/><circle cx="16.5" cy="13.5" r="1.25" fill="currentColor" stroke="none"/></svg></span><span class="nt">Economía</span></button>
     </aside>
     <main class="panel" id="panel-content"></main>
-    <aside class="notifs"><h3>Log de actividad <span class="log-live"><span class="led pulse" style="color:var(--ok);background:var(--ok)"></span>LIVE</span></h3><div id="notif-list"></div></aside>
+    <aside class="notifs"><h3>Log de actividad <span class="log-live"><span class="led pulse" style="color:var(--ok);background:var(--ok)"></span>LIVE</span><button id="notif-all" title="Historial completo de avisos" style="margin-left:auto;background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:.62rem;padding:.12rem .45rem;cursor:pointer">Ver todo ▸</button></h3><div id="notif-list"></div></aside>
   </div>
   <div class="modal-back" id="modal-back"><div class="modal" id="modal-content"></div></div>
 </div>
@@ -10100,6 +10101,8 @@ var Sim = (() => {
           a.aogEscalatedAtMinute = nowMinute;
           const rootCause2 = inferDelayRootCause(g, a, nowMinute);
           const evitable2 = isDelayCauseEvitable(rootCause2);
+          a.aogEvitable = evitable2;
+          a.aogRootCause = rootCause2;
           const penaltyMult = evitable2 ? AOG_EVITABLE_PENALTY_MULT : 1;
           const repMult = evitable2 ? AOG_EVITABLE_REP_MULT : 1;
           const penaltyAmount = Math.round(AOG_ESCALATION_PENALTY_EUR * penaltyMult);
@@ -10128,6 +10131,10 @@ var Sim = (() => {
       if (delay >= AOG_DELAY_THRESHOLD_MIN) a.aogEscalated = true;
       const rootCause = delay > 0 ? inferDelayRootCause(g, a, nowMinute) : void 0;
       const evitable = a.aogEscalated && isDelayCauseEvitable(rootCause);
+      if (a.aogEscalated && a.aogEvitable === void 0) {
+        a.aogEvitable = evitable;
+        a.aogRootCause = rootCause;
+      }
       const imputable = delay > 0 && isDelayCauseEvitable(rootCause);
       const impDelay = imputable ? delay : 0;
       const techFail = impDelay >= DISPATCH_COTA_15;
@@ -10230,7 +10237,7 @@ var Sim = (() => {
   function pushNotification(g, text, type = "info") {
     g.notifCounter += 1;
     g.notifications.push({ id: g.notifCounter, minute: g.clock.minute, text, type });
-    if (g.notifications.length > 12) g.notifications = g.notifications.slice(-12);
+    if (g.notifications.length > 200) g.notifications = g.notifications.slice(-200);
   }
   function advanceGame(g, stepMinutes) {
     if (g.gameOver.isOver) return g;
@@ -10413,9 +10420,13 @@ var Sim = (() => {
         const tpl = g.templates.find((t) => t.id === ev.templateId) || g.dailyCheckTemplates.find((t) => t.id === ev.templateId);
         const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : void 0;
         const c = ap ? g.contracts.find((cc) => cc.id === ap.contractId) : void 0;
+        let woPaidEur = 0;
         if (wo && tpl && c) {
           const txs = payForCompletedWo(tpl, wo, c, g.balance, ev.onTime, next);
-          for (const tx of txs) g.economy = addTransaction(g.economy, tx);
+          for (const tx of txs) {
+            g.economy = addTransaction(g.economy, tx);
+            if (tx.amount > 0) woPaidEur += tx.amount;
+          }
           recordWoCompletionInHoursKPI(
             g.hoursKPI,
             c.airlineId,
@@ -10460,7 +10471,7 @@ var Sim = (() => {
         );
         pushNotification(
           g,
-          `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " \xB7 AOG" : ""}`,
+          `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " \xB7 AOG" : ""}${woPaidEur > 0 ? ` \xB7 +${Math.round(woPaidEur).toLocaleString("es-ES")} \u20AC` : ""}`,
           ev.onTime ? "success" : "warning"
         );
       } else if (ev.type === "phase_change" && ev.from === "Inspection" && (ev.to === "MainTask" || ev.to === "Test") && g.lineModeEnabled) {
@@ -98125,6 +98136,7 @@ let detailContractId = null; // F5C extra: id de contrato para modal
 let detailFlightId = null;   // Rediseño CIC (2026-05-30): "callsign|type|min" del vuelo para el cajón
 let detailStandId = null;    // Handoff mapa (2026-06-01): simId del stand para la ficha de stand
 let overnightModalOpen = false; // Pivot línea pura · P4: modal vista pernocta
+let notifHistoryOpen = false;   // Deep pass 2026-07-01: modal "Ver todo" del log de actividad
 let detailDailyAirplaneId = null; // Pivot 2026-05-24: instanceId avión para modal daily check detallado
 let detailAirplaneType = null;    // Pivot 2026-05-24: "MODEL/ENGINE" para modal tipo avión
 let scheduleFilter = "all";  // Pivot línea pura · P3: filtro panel schedule "all"|"arrival"|"departure"
@@ -98152,6 +98164,7 @@ let pmPrevSpeed = 0;
 let eventQueue = [];     // [{type,title,icon,color,lines:[],standId}]
 let eventSkip = {};      // {tipo:true} persistido
 let evPrevSpeed = -1;    // velocidad antes de pausar por evento (-1 = no pausado por evento)
+let evPrevTab = null;    // pestaña donde estaba el jugador antes del secuestro al mapa (deep pass 2026-07-01)
 let evCamDone = false;   // si ya enfoque el mapa para el evento actual
 let evWO = null, evAog = null; // evWO: tracker por WO (null = 1er tick init) · evAog: aviones ya AOG
 
@@ -98163,7 +98176,7 @@ let evWO = null, evAog = null; // evWO: tracker por WO (null = 1er tick init) ·
 function resetEventUiState(){
   eventQueue = [];
   evWO = null; evAog = null;
-  evPrevSpeed = -1; evCamDone = false;
+  evPrevSpeed = -1; evPrevTab = null; evCamDone = false;
   popoutSeenWoIds = null;
 }
 try { const _es = (typeof localStorage !== "undefined") ? localStorage.getItem("mro_event_skip") : null; if (_es) eventSkip = JSON.parse(_es) || {}; } catch (e) {}
@@ -100655,6 +100668,30 @@ function renderOvernightModal(){
   return inner;
 }
 
+// Deep pass 2026-07-01: historial COMPLETO de avisos (el HUD enseña 12; el motor retiene 200).
+// A 25× el feed rotaba en ~3s y avisos accionables (oferta, auditoría, MEL) se perdían sin rastro.
+function renderNotifHistory(){
+  if (!notifHistoryOpen) return null;
+  var all = (game.notifications || []).slice().reverse();
+  var inner = '<header class="modal-head"><h3>📜 Historial de avisos (' + all.length + ')</h3><button class="close" id="notif-history-close">×</button></header><div class="modal-body">';
+  if (!all.length) { inner += '<p class="muted">Sin avisos todavía.</p>'; }
+  else {
+    inner += '<p class="muted" style="margin-bottom:.5rem">Últimos ' + all.length + ' avisos de la partida (el log del lateral enseña solo los 12 recientes).</p>';
+    inner += '<div style="display:flex;flex-direction:column;gap:.22rem;max-height:60vh;overflow:auto;font-size:.82rem">';
+    for (var i = 0; i < all.length; i++) {
+      var n = all[i];
+      var col = n.type === "danger" ? "var(--danger)" : n.type === "warning" ? "var(--warn)" : n.type === "success" ? "var(--ok)" : "var(--muted)";
+      inner += '<div style="display:flex;gap:.55rem;align-items:baseline;padding:.18rem .3rem;border-radius:5px;background:rgba(255,255,255,.02)">'
+        + '<span class="mono" style="color:var(--subtle);flex:none">' + fmtClock(n.minute) + '</span>'
+        + '<span style="width:7px;height:7px;border-radius:50%;background:' + col + ';flex:none;align-self:center"></span>'
+        + '<span>' + esc(n.text || "") + '</span></div>';
+    }
+    inner += '</div>';
+  }
+  inner += '</div>';
+  return inner;
+}
+
 function renderEconomy(){
   const startBal = game.balance.startingBalance;
   const delta = game.economy.balance - startBal;
@@ -101263,6 +101300,16 @@ function renderModal(){
   // Pivot línea pura · P4: modal pernocta
   if (overnightModalOpen) {
     const html = renderOvernightModal();
+    if (html !== null && html !== lastModalHtml) {
+      document.getElementById("modal-content").innerHTML = html;
+      lastModalHtml = html;
+    }
+    back.classList.add("open");
+    return;
+  }
+  // Deep pass 2026-07-01: historial completo de avisos ("Ver todo" del log)
+  if (notifHistoryOpen) {
+    const html = renderNotifHistory();
     if (html !== null && html !== lastModalHtml) {
       document.getElementById("modal-content").innerHTML = html;
       lastModalHtml = html;
@@ -102226,6 +102273,8 @@ document.body.addEventListener("click", (e) => {
   // Pivot línea pura · P4: badge pernocta abre modal
   if (e.target.closest("#overnight-badge")) { overnightModalOpen = true; invalidateModalCache(); render(); return; }
   if (e.target.id === "overnight-modal-close") { overnightModalOpen = false; invalidateModalCache(); render(); return; }
+  if (e.target.closest("#notif-all")) { notifHistoryOpen = true; invalidateModalCache(); render(); return; }
+  if (e.target.id === "notif-history-close") { notifHistoryOpen = false; invalidateModalCache(); render(); return; }
   // Pivot línea pura · P3: filtro panel schedule
   const schedFilter = e.target.closest("[data-schedule-filter]");
   if (schedFilter) { scheduleFilter = schedFilter.dataset.scheduleFilter; invalidatePanelCache(); render(); return; }
@@ -102327,6 +102376,7 @@ document.body.addEventListener("click", (e) => {
     detailCheckId = null;
     detailContractId = null;
     overnightModalOpen = false;
+    notifHistoryOpen = false;
     detailDailyAirplaneId = null;
     detailAirplaneType = null;
     detailFlightId = null;
@@ -102732,12 +102782,25 @@ function detectEvents(){
     var delay = 0;
     if (w && w.releaseMinute != null && s.etd != null) delay = Math.max(0, Math.floor(w.releaseMinute - s.etd));
     else if (s.etd != null) delay = Math.max(0, Math.floor(game.clock.minute - s.etd));
+    // Deep pass 2026-07-01: el momento-victoria del core loop no enseñaba DINERO (los checks
+    // sí lo celebran — inconsistente). Buscar cobro/penalty de ESTA WO en el ledger.
+    var moneyLines = [];
+    if (w && w.instanceId){
+      var led = (game.economy && game.economy.ledger) || [];
+      var feeSum = 0, penSum = 0;
+      for (var li = led.length - 1; li >= 0; li--){ var t = led[li];
+        if (!t.description || t.description.indexOf(w.instanceId) < 0) continue;
+        if (t.amount > 0) feeSum += t.amount; else penSum += -t.amount;
+      }
+      if (feeSum > 0) moneyLines.push('<span style="color:var(--ok);font-weight:700">Cobrado: +' + Math.round(feeSum).toLocaleString("es-ES") + ' €</span>');
+      if (penSum > 0) moneyLines.push('<span style="color:var(--danger);font-weight:600">Penalización: -' + Math.round(penSum).toLocaleString("es-ES") + ' €</span>');
+    }
     if (s.isAOG) enq({ type: "release-aog", icon: "✅", color: "#3fb950", title: "Release · AOG despachado", standId: s.standId,
-      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Avería: " + s.desc, (delay > 0 ? ("Salió con " + delay + " min de retraso") : "A tiempo ✓"), "El avión vuelve a volar."] });
+      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Avería: " + s.desc, (delay > 0 ? ("Salió con " + delay + " min de retraso") : "A tiempo ✓")].concat(moneyLines, ["El avión vuelve a volar."]) });
     else if (delay > 0) enq({ type: "release-late", icon: "🕒", color: "#d29922", title: "Despacho con retraso", standId: s.standId,
-      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Trabajo: " + s.desc, "Retraso: " + delay + " min" + (delay >= 15 ? " (cuenta contra tu KPI)" : " (<15 min, no penaliza)")] });
+      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Trabajo: " + s.desc, "Retraso: " + delay + " min" + (delay >= 15 ? " (cuenta contra tu KPI)" : " (<15 min, no penaliza)")].concat(moneyLines) });
     else enq({ type: "release-ontime", icon: "🟢", color: "#3fb950", title: "Despacho puntual", standId: s.standId,
-      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Trabajo: " + s.desc, "Cerrada a tiempo ✓ — dispatch fiable"] });
+      lines: ["Matrícula: " + s.reg, "Aerolínea: " + s.airline, "Trabajo: " + s.desc, "Cerrada a tiempo ✓ — dispatch fiable"].concat(moneyLines) });
   };
   if (evWO === null){ // 1er tick: baseline. Marca como ya-disparados los hitos alcanzados (no suelta historial).
     evWO = {};
@@ -102793,7 +102856,12 @@ function detectEvents(){
   // AOG por escalado (interrupción, por avión — fuera del flujo normal).
   for (var j = 0; j < aps.length; j++){ var a = aps[j];
     if (a.aogEscalated && !evAog.has(a.instanceId)){
-      var evit = woAll.some(function(w2){ return w2.airplaneInstanceId === a.instanceId && w2.phase !== "Completed" && w2.phase !== "Failed"; });
+      // Deep pass 2026-07-01: leer la clasificación SELLADA por el sim al escalar (a.aogEvitable).
+      // El recompute post-hoc mentía si la WO se completaba entre la escalación y el popup
+      // (decía "no imputable" mientras el log decía EVITABLE). Fallback al recompute solo
+      // para saves de versión anterior sin el campo.
+      var evit = (a.aogEvitable !== undefined) ? !!a.aogEvitable
+        : woAll.some(function(w2){ return w2.airplaneInstanceId === a.instanceId && w2.phase !== "Completed" && w2.phase !== "Failed"; });
       enq({ type: evit ? "aog-evitable" : "aog", icon: evit ? "⛔" : "🛑", color: "#ff4757",
         title: evit ? "AOG EVITABLE · por tu gestión" : "AOG · escalado por retraso", standId: a.standId,
         lines: ["Matrícula: " + a.registration + " · " + a.model, "Aerolínea: " + alName(a.contractId), "Stand: " + (a.standId || "—"),
@@ -102807,12 +102875,16 @@ function detectEvents(){
 function pumpEvents(){
   if (!eventQueue.length){
     if (evPrevSpeed !== -1){ var sp = evPrevSpeed; evPrevSpeed = -1; if (sp > 0) S.setGameSpeed(game, sp); }
+    // Deep pass 2026-07-01: devolver al jugador a la pestaña donde estaba (simetría con la
+    // velocidad). Antes el popup forzaba el mapa y al pulsar Entendido te dejaba allí,
+    // perdiendo el contexto (p.ej. asignando cuadrillas en Operaciones) — 4 hitos por WO.
+    if (evPrevTab !== null){ var tb = evPrevTab; evPrevTab = null; if (activeTab !== tb){ activeTab = tb; invalidatePanelCache(); } }
     return;
   }
   if (evPrevSpeed === -1){ evPrevSpeed = game.clock.speed; S.setGameSpeed(game, 0); }
   if (!evCamDone){
     evCamDone = true;
-    if (activeTab !== "map"){ activeTab = "map"; invalidatePanelCache(); }
+    if (activeTab !== "map"){ if (evPrevTab === null) evPrevTab = activeTab; activeTab = "map"; invalidatePanelCache(); }
     focusMapOnStand(eventQueue[0] && eventQueue[0].standId);
   }
 }

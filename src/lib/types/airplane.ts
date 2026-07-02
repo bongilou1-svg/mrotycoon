@@ -70,4 +70,9 @@ export interface AirplaneInstance {
    *  está bloqueado. Sirve de flag idempotente para no doblar el cobro de penalty en el
    *  departure final. */
   aogEscalatedAtMinute?: number;
+  /** Deep pass 2026-07-01: clasificación SELLADA al escalar. El popup la recomputaba post-hoc
+   *  → si la WO cerraba entre la escalación y el popup, decía "no imputable" contradiciendo
+   *  al log de actividad. undefined = save de versión anterior (la UI cae al recompute). */
+  aogEvitable?: boolean;
+  aogRootCause?: string;
 }

@@ -748,6 +748,10 @@ function processDepartures(g: GameState, nowMinute: number, stepMinutes: number)
         a.aogEscalatedAtMinute = nowMinute;
         const rootCause = inferDelayRootCause(g, a, nowMinute);
         const evitable = isDelayCauseEvitable(rootCause);
+        // Sellar la clasificación EN el avión (deep pass 2026-07-01): el popup de la UI la
+        // leía recomputando post-hoc y podía contradecir a esta notificación.
+        a.aogEvitable = evitable;
+        a.aogRootCause = rootCause;
         const penaltyMult = evitable ? AOG_EVITABLE_PENALTY_MULT : 1.0;
         const repMult = evitable ? AOG_EVITABLE_REP_MULT : 1.0;
         const penaltyAmount = Math.round(AOG_ESCALATION_PENALTY_EUR * penaltyMult);
@@ -793,6 +797,11 @@ function processDepartures(g: GameState, nowMinute: number, stepMinutes: number)
     // Pivot Fase 2: determinar causa raíz si hay delay
     const rootCause: DelayRootCause | undefined = delay > 0 ? inferDelayRootCause(g, a, nowMinute) : undefined;
     const evitable = a.aogEscalated && isDelayCauseEvitable(rootCause);
+    // Deep pass 2026-07-01: sellar también en el path de departure (por si escaló aquí y no en vivo).
+    if (a.aogEscalated && a.aogEvitable === undefined) {
+      a.aogEvitable = evitable;
+      a.aogRootCause = rootCause;
+    }
 
     // TDR = Technical Dispatch Reliability (refactor 2026-05-31). Un departure es FALLO
     // TÉCNICO solo si el retraso es IMPUTABLE (causa raíz evitable: mec_busy/offshift/
@@ -931,8 +940,11 @@ function tryRollCalloutFinding(g: GameState, parentWo: WorkOrderInstance, ap: Ai
 function pushNotification(g: GameState, text: string, type: NotificationItem["type"] = "info"): void {
   g.notifCounter += 1;
   g.notifications.push({ id: g.notifCounter, minute: g.clock.minute, text, type });
-  // Mantener solo las últimas 12
-  if (g.notifications.length > 12) g.notifications = g.notifications.slice(-12);
+  // Deep pass 2026-07-01: el motor truncaba a 12 — a 25× el feed rotaba en ~3s y avisos
+  // accionables de un solo disparo (oferta, auditoría, MEL expirada) desaparecían sin rastro.
+  // Retención 200 en el estado (KBs triviales en el save); el LOG del HUD sigue enseñando 12
+  // y el modal "Ver todo" pagina el historial completo.
+  if (g.notifications.length > 200) g.notifications = g.notifications.slice(-200);
 }
 
 /**
@@ -1182,9 +1194,13 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
         || g.dailyCheckTemplates.find((t) => t.id === ev.templateId);
       const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : undefined;
       const c = ap ? g.contracts.find((cc) => cc.id === ap.contractId) : undefined;
+      let woPaidEur = 0; // deep pass 2026-07-01: el cobro era invisible en la notificación
       if (wo && tpl && c) {
         const txs = payForCompletedWo(tpl, wo, c, g.balance, ev.onTime, next);
-        for (const tx of txs) g.economy = addTransaction(g.economy, tx);
+        for (const tx of txs) {
+          g.economy = addTransaction(g.economy, tx);
+          if (tx.amount > 0) woPaidEur += tx.amount;
+        }
         // Pivot línea pura · Fase A: registrar HH-book facturadas + HH-actual reales
         recordWoCompletionInHoursKPI(
           g.hoursKPI,
@@ -1252,7 +1268,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       );
       pushNotification(
         g,
-        `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " · AOG" : ""}`,
+        `WO ${ev.woInstanceId} completada${ev.onTime ? " (on-time)" : " (LATE)"}${ev.isAOG ? " · AOG" : ""}${woPaidEur > 0 ? ` · +${Math.round(woPaidEur).toLocaleString("es-ES")} €` : ""}`,
         ev.onTime ? "success" : "warning",
       );
     } else if (ev.type === "phase_change" && ev.from === "Inspection" && (ev.to === "MainTask" || ev.to === "Test") && g.lineModeEnabled) {
