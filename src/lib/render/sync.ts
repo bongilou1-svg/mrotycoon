@@ -283,19 +283,39 @@ export function buildRenderState(g: GameState): RenderState {
     // se eliminó — el juego refleja SOLO datos reales del schedule. Si Volotea no tiene
     // un arrival nocturno en el dataset, no se inventa. Cuando el dataset real (API)
     // muestre overnighters de V7, aparecerán naturalmente.
-    for (const f of flights) {
+    //
+    // Deep pass 2026-07-01: los vuelos de AYER cuya estancia cruza la medianoche (la pernocta
+    // que sale ~06:30, el turnaround tardío) se esfumaban del mapa a las 00:00 en seco, porque
+    // solo se iteraba el schedule de HOY (medido: lineTraffic 23:00→passthrough=1, 00:05→0).
+    // Hasta la hora de salida overnight iteramos TAMBIÉN el día anterior (patrón semanal
+    // recurrente; día 0 = domingo) — el filtro [arrAbs, depAbs) descarta lo ya salido.
+    const daySets: Array<{ legDayStart: number; legFlights: typeof flights; legLastArr: Map<string, number> }> = [];
+    if (g.clock.minute - dayStart < PASSTHROUGH_OVERNIGHT_DEPARTURE_MIN) {
+      const yFlights = getFlightsForGameDay(today - 1);
+      const yLastArr = new Map<string, number>();
+      for (const f of yFlights) {
+        if (f.type !== "arrival") continue;
+        const prev = yLastArr.get(f.airlineCode) ?? -1;
+        if (f.scheduledMinute > prev) yLastArr.set(f.airlineCode, f.scheduledMinute);
+      }
+      daySets.push({ legDayStart: dayStart - DAY_MINUTES, legFlights: yFlights, legLastArr: yLastArr });
+    }
+    daySets.push({ legDayStart: dayStart, legFlights: flights, legLastArr: lastArrivalByCode });
+
+    outer: for (const set of daySets)
+    for (const f of set.legFlights) {
       if (f.type !== "arrival") continue;
-      const arrAbs = dayStart + f.scheduledMinute;
+      const arrAbs = set.legDayStart + f.scheduledMinute;
       const isOvernight =
         f.scheduledMinute >= PASSTHROUGH_OVERNIGHT_THRESHOLD_MIN &&
-        lastArrivalByCode.get(f.airlineCode) === f.scheduledMinute &&
+        set.legLastArr.get(f.airlineCode) === f.scheduledMinute &&
         isBaseByCode.get(f.airlineCode) === true; // solo basadas pernoctan
       const depAbs = isOvernight
-        ? dayStart + DAY_MINUTES + PASSTHROUGH_OVERNIGHT_DEPARTURE_MIN
+        ? set.legDayStart + DAY_MINUTES + PASSTHROUGH_OVERNIGHT_DEPARTURE_MIN
         : arrAbs + PASSTHROUGH_TURNAROUND_MIN;
       if (g.clock.minute < arrAbs || g.clock.minute >= depAbs) continue;
       if (realCallsigns.has(f.callsign)) continue; // ya es real, no doblar
-      if (standIdx >= passthroughStands.length) break; // overflow, los extras se saltan
+      if (standIdx >= passthroughStands.length) break outer; // overflow, los extras se saltan
       const taxiAge = g.clock.minute - arrAbs;
       const taxiing = taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN;
       const taxiProgress = TAXIING_DURATION_MIN > 0

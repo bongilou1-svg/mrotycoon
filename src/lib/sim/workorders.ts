@@ -16,9 +16,30 @@ import { randPick, randBool, type Rng } from "./rng.ts";
 
 let _instanceCounter = 0;
 
-/** Reset del contador interno (para tests reproducibles). */
-export function _resetInstanceCounter(): void {
-  _instanceCounter = 0;
+/** Reset del contador interno (tests reproducibles / restore de save). */
+export function _resetInstanceCounter(value: number = 0): void {
+  _instanceCounter = value;
+}
+/** Deep pass 2026-07-01: el contador NO se serializaba → tras recargar y Continuar, las WO
+ *  nuevas re-emitían WI-00001.. colisionando con las del save (workOrderByInstance abría la
+ *  WO equivocada; el modal cruzaba fees del ledger por substring del id). save.ts lo persiste. */
+export function getWoInstanceCounter(): number {
+  return _instanceCounter;
+}
+
+// Contador de findings (FND-XXXXXX). Vivía en game.ts SIN serializar — misma colisión de ids
+// que el de WI al recargar. Movido aquí para que save.ts pueda persistirlo sin import circular
+// (game.ts importa save.ts para el autosave).
+let _findingCounter = 0;
+export function nextFindingId(): string {
+  _findingCounter += 1;
+  return `FND-${_findingCounter.toString().padStart(6, "0")}`;
+}
+export function getFindingCounter(): number {
+  return _findingCounter;
+}
+export function resetFindingCounter(value: number = 0): void {
+  _findingCounter = value;
 }
 
 /**

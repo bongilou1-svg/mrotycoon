@@ -5783,12 +5783,19 @@ window.addEventListener("beforeunload", function(){
 });
 async function doLoad() {
   try {
+    // Deep pass 2026-07-01: btn-load pisa la partida en curso — confirmar como hace doNewGame.
+    if (newGameStep === null && game && game.clock && !confirm("¿Cargar la partida guardada? Se perderá el progreso no guardado de la partida actual.")) return;
     const payload = await S.getStorage().load();
     if (!payload) { alert("No hay partida guardada."); return; }
     const loaded = S.deserializeGame(payload, S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, S.DATA.maintenanceChecks, S.DATA.dailyChecks);
     swapRuntimeForGame(loaded);
     Object.assign(game, loaded);
     resetEventUiState(); // re-armar baseline de eventos con el estado cargado (sin avalancha)
+    // Simetría con doContinueFromIntro (deep pass 2026-07-01): sin esto, cargar un save rico
+    // re-disparaba el modal PRIMER MILLÓN, y el cierre semanal saltaba espurio (lastKpiLen=stale).
+    msMillionShown = game.economy.balance >= 1000000;
+    lastKpiLen = (game.kpiHistory && game.kpiHistory.length) || 0;
+    lastProductionPackageDay = 0;
     saveIndicator = "loaded";
     render();
     setTimeout(() => { saveIndicator = ""; render(); }, 2000);
@@ -5810,6 +5817,8 @@ async function doContinueFromIntro() {
     Object.assign(game, loaded);
     resetEventUiState(); // re-armar baseline de eventos con el estado cargado (sin avalancha)
     msMillionShown = game.economy.balance >= 1000000; // partida ya rica: no re-saltar el hito
+    lastKpiLen = (game.kpiHistory && game.kpiHistory.length) || 0; // sin Cierre Semanal espurio
+    lastProductionPackageDay = 0;
     newGameStep = null;
     saveIndicator = "loaded";
     render();
@@ -5868,6 +5877,7 @@ async function startGameFromPreset(presetFile) {
   lastProductionPackageDay = 0;
   Object.assign(game, fresh);
   msMillionShown = false; // partida nueva: el primer millón vuelve a estar por lograr
+  lastKpiLen = 0; // partida nueva: sin Cierre Semanal espurio del boot/partida anterior
   hasSavedSlot = false;
   selectedWoId = null;
   resetEventUiState(); // sin popups fantasma de la partida anterior

@@ -14,6 +14,7 @@ import { getMaintenanceCheckCounter, resetMaintenanceCheckCounter } from "./main
 import { getCandidateCounter, resetCandidateCounter } from "./labor.ts";
 import { migrateLegacyReputation } from "./reputation.ts";
 import { _getContractCounter, _resetContractCounter } from "./contracts.ts";
+import { getWoInstanceCounter, _resetInstanceCounter, getFindingCounter, resetFindingCounter } from "./workorders.ts";
 import { buildDefaultCrews } from "./crews.ts";
 
 /** v1 = pre-Fase3. v2 = añade fleet + aliCounter + AirplaneInstance.{instanceId,flightHoursThisLeg}.
@@ -106,6 +107,11 @@ export interface GameSavePayload {
   weeklyWoStats?: { completed: number; late: number; failed: number };
   // v18 (cuadrillas): oficial(es)+helpers por cuadrilla. Saves viejos → buildDefaultCrews al cargar.
   crews?: GameState["crews"];
+  // Deep pass 2026-07-01: contadores de ids de WO (WI-) y findings (FND-). Sin ellos, tras
+  // recargar la página y Continuar, las WO nuevas re-emitían WI-00001.. colisionando con las
+  // del save. Opcionales: saves viejos los derivan del máximo id presente al deserializar.
+  woCounter?: number;
+  findingCounter?: number;
 }
 
 /** Serializa el game state a un objeto JSON-able. */
@@ -136,6 +142,8 @@ export function serializeGame(g: GameState): GameSavePayload {
     candidateCounter: getCandidateCounter(),
     contractMarketLastTickMinute: g.contractMarketLastTickMinute,
     contractCounter: _getContractCounter(),
+    woCounter: getWoInstanceCounter(),
+    findingCounter: getFindingCounter(),
     shiftGatingEnabled: g.shiftGatingEnabled,
     autoAssignEnabled: g.autoAssignEnabled,
     mroStage: g.mroStage,
@@ -185,6 +193,21 @@ export function deserializeGame(
   resetMaintenanceCheckCounter(payload.mcCounter);
   resetCandidateCounter(payload.candidateCounter);
   _resetContractCounter(payload.contractCounter ?? 1000);
+  // Deep pass 2026-07-01: restaurar contadores de WO/finding. Saves sin el campo (pre-fix):
+  // derivar del máximo id presente en workOrders + archive para no re-emitir ids ya usados.
+  const maxIdIn = (prefix: string, arrs: Array<readonly { instanceId: string }[] | undefined>): number => {
+    let max = 0;
+    const re = new RegExp(`^${prefix}-(\\d+)$`);
+    for (const arr of arrs) {
+      for (const w of arr ?? []) {
+        const m = re.exec(w.instanceId);
+        if (m) max = Math.max(max, parseInt(m[1], 10));
+      }
+    }
+    return max;
+  };
+  _resetInstanceCounter(payload.woCounter ?? maxIdIn("WI", [payload.workOrders, payload.archive?.workOrders]));
+  resetFindingCounter(payload.findingCounter ?? maxIdIn("FND", [payload.workOrders, payload.archive?.workOrders]));
   return {
     clock: payload.clock,
     contracts: payload.contracts,

@@ -33,7 +33,7 @@ import { currentLineStandIds, currentBaseStandIds } from "./sim/stands.ts";
 import { generateInitialFleet, ageInitialFleet, seedFleetForAirline, resetAirplaneInstanceCounter } from "./sim/fleet.ts";
 import { scheduleDueChecks, resetMaintenanceCheckCounter, tickMaintenanceChecks, detectChecksUpcoming } from "./sim/maintenance.ts";
 import { setFleetWarnedFlag } from "./sim/fleet.ts";
-import { rollWoOnLanding, rollDailyChecksOnOvernight } from "./sim/workorders.ts";
+import { rollWoOnLanding, rollDailyChecksOnOvernight, nextFindingId } from "./sim/workorders.ts";
 import { tickMel, deferWorkOrder, unDeferWorkOrder, MEL_EXPIRY_PENALTY_EUR } from "./sim/mel.ts";
 import { createCompliance, tickCompliance } from "./sim/compliance.ts";
 import {
@@ -874,12 +874,8 @@ export const DAILY_FINDING_PROB = 0.15;
  *  mete picos de carga impredecibles en el mid-game. Más bajo que el daily (un callout ya es
  *  trabajo reactivo; el finding es la guinda). */
 export const CALLOUT_FINDING_PROB = 0.10;
-/** ID counter para WOs finding (FND-XXXXXX). */
-let _findingCounter = 0;
-function nextFindingId(): string {
-  _findingCounter += 1;
-  return `FND-${_findingCounter.toString().padStart(6, "0")}`;
-}
+// ID counter para WOs finding (FND-XXXXXX): vive en workorders.ts desde el deep pass
+// 2026-07-01 para que save.ts lo serialice (aquí creaba import circular con el autosave).
 
 /** Crea una sub-WO "finding" (trabajo no-rutinario) sobre el avión, colgando de parentWo.
  *  Template plausible: severity Minor/Major, NO AOG, compatible con modelo+motor. SLA =

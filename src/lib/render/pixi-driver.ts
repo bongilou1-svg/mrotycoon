@@ -561,7 +561,7 @@ export class PixiDriver {
           this.camera.y += dy;
           this.clampCamera();
           this.applyCamera();
-          if (this.lastState) this.drawCEOMinimap(this.lastState);
+          if (this.lastState) this.redrawMinimap(this.lastState);
         }
       }
       this.kbLoopId = requestAnimationFrame(tick);
@@ -605,7 +605,7 @@ export class PixiDriver {
     this.camera.y = this.dragState.cy + dy;
     this.clampCamera();
     this.applyCamera();
-    if (this.lastState) this.drawCEOMinimap(this.lastState);
+    if (this.lastState) this.redrawMinimap(this.lastState);
   };
   private onCanvasPointerUp = (): void => { this.dragState.active = false; };
   private onCanvasWheel = (ev: WheelEvent): void => {
@@ -628,7 +628,7 @@ export class PixiDriver {
     this.camera.y = my / newZoom - wyBefore;
     this.clampCamera();
     this.applyCamera();
-    if (this.lastState) this.drawCEOMinimap(this.lastState);
+    if (this.lastState) this.redrawMinimap(this.lastState);
   };
 
   private clampCamera(): void {
@@ -2323,6 +2323,15 @@ export class PixiDriver {
       c.anchor.set(0.5, 0.5); c.position.set(W / 2, 43);
       root.addChild(c);
     }
+  }
+
+  /** Deep pass 2026-07-01: los handlers de pan/zoom/WASD llamaban SIEMPRE drawCEOMinimap —
+   *  en el skin f5d pintaba el minimapa del layout CEO (bloques grises, escala WORLD_W=3000
+   *  vs 6000×4800) con el rect de viewport desbordado. Despacho por theme. */
+  private redrawMinimap(state: RenderState): void {
+    if (this.theme === "f5d") this.drawF5DMinimap(state);
+    else if (this.theme === "huge") this.drawHugeMinimap(state);
+    else this.drawCEOMinimap(state);
   }
 
   private drawCEOMinimap(state: RenderState): void {

@@ -210,7 +210,7 @@
       "difficultyOverall": 4,
       "shortDesc": "Aeropuerto turístico grande, ~250 movs/día. Mix LCC + handlers + estacional. Modo Pro+.",
       "available": false,
-      "comingSoonReason": "Pendiente bajar data + presets. Sprint posterior a ALC.",
+      "comingSoonReason": "Próximamente — la costa te espera cuando domines el norte.",
       "operators": []
     },
     {
@@ -222,7 +222,7 @@
       "difficultyOverall": 5,
       "shortDesc": "Hub gigante Vueling, ~700 movs/día. Compite con MROs gigantes. Modo experto.",
       "available": false,
-      "comingSoonReason": "Pendiente. Modo experto, requiere haber dominado aeropuertos pequeños primero.",
+      "comingSoonReason": "Próximamente — modo experto: domina antes los aeropuertos pequeños.",
       "operators": []
     },
     {
@@ -234,7 +234,7 @@
       "difficultyOverall": 5,
       "shortDesc": "Hub Iberia mainline + intercontinentales, ~1100 movs/día. Modo dios.",
       "available": false,
-      "comingSoonReason": "Modo dios. Pendiente. Iberia mainline + intercontinentales + carga. El reto definitivo.",
+      "comingSoonReason": "Próximamente — Iberia mainline, intercontinentales y carga. El reto definitivo.",
       "operators": []
     }
   ]
