@@ -2537,9 +2537,15 @@ function renderSitbar(feed){
   const tilesHtml = tiles.map(t => \`<div class="tile \${t.cls} \${sitFilter===t.k?'sel':''}" data-sit-filter="\${t.k}"><div class="tnum">\${t.num}</div><div class="tlbl">\${t.led?\`<span class="led \${t.pulse?'pulse':''}" style="color:\${t.led};background:\${t.led}"></span>\`:""}\${t.lbl}</div></div>\`).join("");
   const aogE = feed.find(e => e.aog && e.open);
   const crit = feed.filter(e => e.assignState==="unassigned" && (e.sev==="Critical"||e.sev==="Major") && e.slaMin!=null && e.slaMin<=45);
+  // Deep pass 2026-07-01: el banner solo miraba Critical/Major<45 → una Minor sin asignar YA
+  // VENCIDA quedaba en el grupo "EN RIESGO" pero el banner decía "sin alertas activas". Ahora
+  // el resumen se alinea con el tile de riesgo: vencidas de CUALQUIER severidad + fallback.
+  const overdue = feed.filter(e => e.open && e.assignState==="unassigned" && e.slaMin!=null && e.slaMin<0);
   let sum = "";
   if (aogE) sum += \`<span class="sig">PRIORIDAD</span> <b>AOG</b> en <span class="reg">\${esc(aogE.reg||"—")}</span> bloquea <b>\${esc(aogE.flight||aogE.descShort||"")}</b>\`;
-  if (crit.length) sum += \` \${aogE?'· ':''}<b>\${crit.length} callout\${crit.length>1?'s':''}</b> sin técnico con SLA &lt;45 min\`;
+  if (overdue.length) sum += \` \${sum?'· ':''}<span class="sig">VENCIDO</span> <b>\${overdue.length}</b> aviso\${overdue.length>1?'s':''} sin técnico\`;
+  else if (crit.length) sum += \` \${sum?'· ':''}<b>\${crit.length} callout\${crit.length>1?'s':''}</b> sin técnico con SLA &lt;45 min\`;
+  else if (risk > 0) sum += \` \${sum?'· ':''}<b>\${risk}</b> aviso\${risk>1?'s':''} con SLA en riesgo (&lt;45 min)\`;
   return \`<div class="sitbar"><div class="sit-tiles">\${tilesHtml}</div><div class="sit-summary">\${sum||"Operación estable — sin alertas activas."}</div></div>\`;
 }
 function renderEventFeed(){
@@ -3434,9 +3440,11 @@ function renderSchedule(){
   const nextMov = flights.filter(f => f.scheduledMinute >= minOfDay).sort((a,b) => a.scheduledMinute - b.scheduledMinute)[0] || null;
   const arr = flights.filter(f => f.type === "arrival").length;
   const dep = flights.filter(f => f.type === "departure").length;
-  const notHandled = flights.filter(f => f.notHandled).length;
-  const handled = flights.length - notHandled;
-  const leads = flights.filter(f => !contractsActive.has(f.airlineCode)).length;
+  // Deep pass 2026-07-01: el tile "Contratados" mostraba `handled` (serviciables A320/A321),
+  // no contratados reales → Contratados+Leads no sumaban Movimientos. Ahora partición limpia:
+  // contratados = vuelos de aerolíneas con contrato activo; leads = el resto.
+  const contracted = flights.filter(f => contractsActive.has(f.airlineCode)).length;
+  const leads = flights.length - contracted;
 
   let h = \`<div class="eyebrow">Operación · Programación del día</div>
     <div class="title-row"><div><h1>Schedule</h1><div class="sub">Asturias (OVD/LEAS) · Día \${gd} · \${dayName(gd)}</div></div>
@@ -3449,7 +3457,7 @@ function renderSchedule(){
     {cls:"c-ground", num:flights.length, lbl:"✈ Movimientos"},
     {cls:"c-closed", num:arr, lbl:"🛬 Llegadas", led:"var(--ok)"},
     {cls:"c-unassigned", num:dep, lbl:"🛫 Salidas", led:"var(--warn)"},
-    {cls:"c-progress", num:handled, lbl:"🟢 Contratados", led:"var(--accent)"},
+    {cls:"c-progress", num:contracted, lbl:"🟢 Contratados", led:"var(--accent)"},
     {cls:"c-aog", num:leads, lbl:"○ Leads (sin contrato)", led:"var(--dim)"},
     {cls:"c-progress", num:nextMov?fmtHHMM(nextMov.scheduledMinute):"—", lbl:"📡 Próximo mov."},
   ];

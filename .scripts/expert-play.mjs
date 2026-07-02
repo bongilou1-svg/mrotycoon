@@ -94,6 +94,8 @@ function rebuildCrews(reason) {
 
 // === Contadores de la partida ===
 let hires = 0, accepts = 0, defers = 0, assigns = 0, lates = 0, aogs = 0, nightMoved = false;
+let melRescued = 0, melExpired = 0, lastNotifId = 0; // deep pass 2026-07-01: telemetría de MEL diferidas
+const deferredIds = new Set(); // instanceIds que el bot difirió (para clasificar desenlace al final)
 const hitoDay = { volotea: null, caja: null, rep: null, hangares: null }; // 1er día en que cae cada gate
 const seenAog = new Set(); const seenDeparted = new Set();
 let lateRecent = []; // ventana de despachos para el juicio de aceptar contratos
@@ -168,7 +170,7 @@ for (let t = 0; t < totalMin; t += STEP) {
       const tpl = g.templates.find((t) => t.id === wo.templateId);
       if (tpl && !tpl.isAOG && slaLeft < 120 && slaLeft > 0) {
         const r = deferWoManually(g, wo.instanceId);
-        if (r && r.ok) { defers++; note(`📋 diferida ${wo.instanceId} (${tpl.id} MEL) — nadie llegaba al SLA`); }
+        if (r && r.ok) { defers++; deferredIds.add(wo.instanceId); note(`📋 diferida ${wo.instanceId} (${tpl.id} MEL) — nadie llegaba al SLA`); }
       }
     }
   }
@@ -195,6 +197,14 @@ for (let t = 0; t < totalMin; t += STEP) {
     }
     if (a.aogEscalated && !seenAog.has(a.instanceId)) { seenAog.add(a.instanceId); aogs++; note(`🛑 AOG escalado: ${a.registration}`); }
   }
+
+  // 5b) Telemetría de MEL diferidas (rescatadas vs vencidas) desde las notificaciones nuevas.
+  for (const n of g.notifications) {
+    if (n.id <= lastNotifId) continue;
+    if (n.text.includes("MEL rectificada")) melRescued++;
+    else if (n.text.includes("MEL expirada")) melExpired++;
+  }
+  if (g.notifications.length) lastNotifId = g.notifications[g.notifications.length - 1].id;
 
   // 6) Snapshot diario + tracking de PROGRESIÓN (deep pass 2026-07-01): día en que cae cada
   // hito de carrera (media de rep sobre CONTRATADAS, como la UI) y el gate de hangares.
@@ -239,6 +249,20 @@ console.log("Balance final: " + Math.round(g.economy.balance).toLocaleString("es
 console.log("Game over: " + (g.gameOver.isOver ? "SÍ — " + g.gameOver.reason : "no") + " · TDR " + tdr + "% · AOGs " + aogs);
 console.log("WOs: " + done + " completadas · " + failed + " failed · " + deferredOpen + " deferred vivas · " + lates + " despachos late(≥15m)");
 console.log("Acciones bot: " + assigns + " asignaciones · " + hires + " fichajes · " + accepts + " contratos aceptados · " + defers + " defers");
+// Desenlace REAL de cada WO que el bot difirió (busca en workOrders + archive por instanceId).
+const woIndex = new Map();
+for (const w of woAll) woIndex.set(w.instanceId, w);
+let defDone = 0, defFailed = 0, defStillDeferred = 0, defOther = 0;
+for (const id of deferredIds) {
+  const w = woIndex.get(id);
+  if (!w) { defOther++; continue; }
+  if (w.phase === "Completed") defDone++;
+  else if (w.phase === "Failed") defFailed++;
+  else if (w.phase === "Deferred") defStillDeferred++;
+  else defOther++;
+}
+console.log("MEL diferidas (" + deferredIds.size + " únicas): " + defDone + " RECTIFICADAS (avión volvió+rescate) · " + defFailed + " vencidas (-10k) · " + defStillDeferred + " vivas · " + defOther + " en curso/archivadas");
+console.log("  (eventos: " + melRescued + " rescates · " + melExpired + " expiraciones notificadas)");
 console.log("Rep por aerolínea: " + reps);
 console.log("Contratos activos: " + g.contracts.filter((c) => c.status === "active").map((c) => (g.airlines.find((a) => a.id === c.airlineId)?.iataCode) + (c.withOvernight ? "(noche)" : "")).join(", "));
 console.log("Plantilla: " + g.mechanics.map((m) => `${m.name.split(" ")[0]}[${m.base ?? "H"}·${m.shift ?? "?"}]`).join(" "));

@@ -86,7 +86,7 @@ import { generateInitialMechanics, generateInitialDualCandidates, eligibleCertif
 import { buildDefaultCrews, addCrewMember, crewShiftOf } from "./sim/crews.ts";
 import { assignMechanicsToWo, tickMechanicTravel } from "./sim/assignment.ts";
 import { computeStandTravelMinutes } from "./sim/travel.ts";
-import { tickAutoAssign, hasActiveLead, findHandoffReplacement } from "./sim/foreman.ts";
+import { tickAutoAssign, hasActiveLead, findHandoffReplacement, tickDeferredRescue } from "./sim/foreman.ts";
 import { tickWorkOrders } from "./sim/wo_state_machine.ts";
 import {
   type EconomyState, createEconomy, addTransaction, applyWeeklyClose, payForCompletedWo, createTransaction,
@@ -1279,6 +1279,28 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       const wo = g.workOrders.find((w) => w.instanceId === ev.woInstanceId);
       const ap = wo ? g.airplanes.find((a) => a.instanceId === wo.airplaneInstanceId) : undefined;
       if (wo && ap) tryRollCalloutFinding(g, wo, ap, next);
+    }
+  }
+
+  // 5a0. Deep pass 2026-07-01 — RESCATE de MEL diferidas: si la matrícula ha vuelto a tierra
+  // con margen y hay cuadrilla libre, se rectifica en el acto (diferir = ganar tiempo, no multa
+  // automática). Corre ANTES de tickMel para que una WO rescatable no venza el mismo tick.
+  if (g.lineModeEnabled) {
+    const rescue = tickDeferredRescue(g.mechanics, g.workOrders, g.templates, g.airplanes, g.balance, next, g.standTravelMinutes ?? {});
+    g.mechanics = rescue.mechanics;
+    g.workOrders = rescue.workOrders;
+    for (const ev of rescue.events) {
+      pushNotification(g, `🔧 MEL rectificada a tiempo: ${ev.airplaneRegistration} volvió y ${ev.certifierName} la atiende (evitas la multa de expiración)`, "success");
+    }
+  }
+
+  // 5a1. Aviso fuerte al cruzar las 24h de vencimiento de una MEL (one-shot por cruce de umbral,
+  // sin flag persistente): antes las diferidas vencían EN SILENCIO. Da margen a "Reparar ya".
+  for (const w of g.workOrders) {
+    if (w.phase !== "Deferred" || w.deferralExpiryMinute === undefined) continue;
+    const warnAt = w.deferralExpiryMinute - DAY_MINUTES;
+    if (now < warnAt && next >= warnAt && warnAt > 0) {
+      pushNotification(g, `⏳ MEL ${w.melCategory ?? ""} de ${w.airplaneRegistration} vence en 24h — si no se rectifica: -${MEL_EXPIRY_PENALTY_EUR.toLocaleString()} € + rep`, "warning");
     }
   }
 
