@@ -2,6 +2,10 @@
 // canUnlockHangars + el gate de startBuild/hireCandidate estaban vivos y cableados pero SIN
 // cobertura de test (el test de stage existente corre en legacy → lineModeEnabled=false →
 // la guarda se cortocircuita y nunca se evalúa). Esto blinda el contrato del gating.
+//
+// Deep pass 2026-07-01: la media de rep pasa a ser SOLO sobre aerolíneas con contrato activo.
+// Antes promediaba las 10 del dataset con ~6 clavadas a 50 (sin vuelos serviciables) → máximo
+// teórico ≈75 y el gate de 80 era matemáticamente imposible (medido a 84 días: plateau 57).
 
 import { readFileSync } from "node:fs";
 import {
@@ -60,10 +64,18 @@ console.log("\n=== sim/hangar unlock gate (lineMode endgame) ===");
   expect(g.mroStage === 2, "mroStage sigue 2 hasta que el build complete");
 }
 
-// 4. Sin reputación por aerolínea → false (no dividir por cero).
+// 4. Sin reputación por aerolínea → false (contratadas caen al default 50 < 80).
 {
   const g = lineGame(); g.reputation.perAirline = {};
   expect(canUnlockHangars(g) === false, "sin reputación por aerolínea → false");
+}
+
+// 4b. Deep pass 2026-07-01: las NO contratadas no arrastran la media. 3 clientes a 80 con el
+// resto del dataset hundido a 0 → desbloquea igual (la rep que cuentas es la de tus clientes).
+{
+  const g = lineGame(); setUnlock(g, {});
+  airlines.slice(4).forEach((a) => { g.reputation.perAirline[a.id] = 0; }); // no-clientes por los suelos
+  expect(canUnlockHangars(g) === true, "media SOLO sobre contratadas: no-clientes a 0 no bloquean");
 }
 
 // 5. Solo aplica en lineMode: en legacy (lineModeEnabled=false) startBuild a stage 3 NO mira el gate.

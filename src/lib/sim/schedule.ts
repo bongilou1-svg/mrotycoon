@@ -71,6 +71,22 @@ function isFlightHandled(f: { model: string; engineVariant: string; notHandled?:
 const PATTERN_KEYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 type PatternKey = typeof PATTERN_KEYS[number];
 
+/** Códigos IATA de aerolíneas con ≥1 vuelo SERVICIABLE (handled) en el schedule activo.
+ *  Deep pass 2026-07-01: el mercado ofertaba contratos de aerolíneas sin un solo vuelo que
+ *  el MRO pueda atender (IB/U2 sin vuelos en OVD; YW/NT/KL solo CRJ/E195/E175) → fee semanal
+ *  íntegro por cero trabajo y cero riesgo ("dinero gratis", estrategia dominante degenerada).
+ *  Este set alimenta el filtro de ofertas de tickLineCompetition. */
+export function servedAirlineCodes(): Set<string> {
+  const codes = new Set<string>();
+  for (const key of PATTERN_KEYS) {
+    const flights = (scheduleData.patterns as Record<string, ScheduledFlight[]>)[key] ?? [];
+    for (const f of flights) {
+      if (isFlightHandled(f)) codes.add(f.airlineCode);
+    }
+  }
+  return codes;
+}
+
 /** Devuelve los vuelos planeados para el game day N (cycle 7 días). */
 export function getFlightsForGameDay(gameDay: number): ScheduledFlight[] {
   // gameDay 1 → lunes, gameDay 8 → lunes, gameDay 6 → sábado, etc.

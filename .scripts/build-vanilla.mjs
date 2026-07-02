@@ -1416,6 +1416,18 @@ let eventSkip = {};      // {tipo:true} persistido
 let evPrevSpeed = -1;    // velocidad antes de pausar por evento (-1 = no pausado por evento)
 let evCamDone = false;   // si ya enfoque el mapa para el evento actual
 let evWO = null, evAog = null; // evWO: tracker por WO (null = 1er tick init) · evAog: aviones ya AOG
+
+// Deep pass 2026-07-01: el sistema de eventos NO se reseteaba al cambiar de partida → popups de
+// la partida MUERTA sobre la nueva (con paneo de cámara a un stand equivocado y evPrevSpeed stale),
+// y al cargar un save viejo cada WO sin snapshot disparaba callout+mecánico+diagnóstico+release
+// encadenados (avalancha). Llamar SIEMPRE al cruzar un ciclo de vida: nueva partida, load,
+// continue y salir al menú. evWO=null / popoutSeenWoIds=null re-arman el baseline silencioso.
+function resetEventUiState(){
+  eventQueue = [];
+  evWO = null; evAog = null;
+  evPrevSpeed = -1; evCamDone = false;
+  popoutSeenWoIds = null;
+}
 try { const _es = (typeof localStorage !== "undefined") ? localStorage.getItem("mro_event_skip") : null; if (_es) eventSkip = JSON.parse(_es) || {}; } catch (e) {}
 function saveEventSkip(){ try { if (typeof localStorage !== "undefined") localStorage.setItem("mro_event_skip", JSON.stringify(eventSkip)); } catch (e) {} }
 // Coords OSM normalizadas de los 7 stands del juego (para centrar el mapa en el evento).
@@ -1455,7 +1467,7 @@ function saveProfile(){ try { if (typeof localStorage !== "undefined") localStor
 const PROFILE_GOALS = [
   ["volotea", "Firma el contrato de Volotea"],
   ["caja", "Llega a 400.000 € de caja"],
-  ["rep", "Rep media ≥ 60 con 2+ semanas operadas"],
+  ["rep", "Rep media de tus clientes ≥ 60 con 2+ semanas operadas"],
 ];
 function profileGoalsDone(){ var n = 0; for (var i = 0; i < PROFILE_GOALS.length; i++) if (playerProfile.ovd[PROFILE_GOALS[i][0]]) n++; return n; }
 function isMedio(){ return playerProfile.level === "medio"; }
@@ -4415,6 +4427,29 @@ function crewAssignSection(wo, tpl, ap){
   return h;
 }
 
+// Deep pass 2026-07-01: cronología de una WO cerrada/diferida a partir de los sellos reales del
+// state machine (emission → T-shoot/tshootCompleteMinute → fix/fixCompleteMinute) + SLA. Antes el
+// modal llamaba a esta función SIN existir → ReferenceError al clicar cualquier WO del histórico
+// o una MEL diferida (el cajón nunca abría). Concatenación pura (regla APP_JS).
+function woTimelineHtml(wo){
+  var steps = [];
+  steps.push({ min: wo.emissionMinute, icon: '📞', label: 'Aviso emitido' });
+  if (wo.tshootCompleteMinute != null) steps.push({ min: wo.tshootCompleteMinute, icon: '🔍', label: 'Inspección cerrada (T-shoot) — avería identificada' });
+  if (wo.fixCompleteMinute != null) steps.push({ min: wo.fixCompleteMinute, icon: '🔧', label: 'Tarea principal completada' });
+  steps.push({ min: wo.slaMinute, icon: '🛫', label: 'SLA — salida programada del avión' });
+  if (wo.deferralExpiryMinute != null) steps.push({ min: wo.deferralExpiryMinute, icon: '⏳', label: 'MEL — límite para rectificar' });
+  steps.sort(function(a, b){ return (a.min ?? 0) - (b.min ?? 0); });
+  var h = '<div style="border-left:2px solid var(--line-2);margin:.3rem 0 .2rem .35rem;padding-left:.75rem;display:flex;flex-direction:column;gap:.32rem">';
+  for (var i = 0; i < steps.length; i++) {
+    var st = steps[i];
+    h += '<div style="font-size:.78rem;display:flex;gap:.5rem;align-items:baseline">'
+      + '<strong class="mono" style="color:var(--accent-2)">' + fmtClock(st.min) + '</strong>'
+      + '<span>' + st.icon + ' ' + esc(st.label) + '</span></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
 function renderModal(){
   const back = document.getElementById("modal-back");
   if (repModalOpen) {
@@ -5383,13 +5418,13 @@ document.body.addEventListener("click", (e) => {
     (async () => {
       try { await S.getStorage().save(S.serializeGame(game)); hasSavedSlot = true; }
       catch (err) { alert("Error al guardar: " + err.message); return; }
-      pauseMenuOpen = false; newGameStep = "intro"; saveIndicator = ""; render();
+      pauseMenuOpen = false; newGameStep = "intro"; saveIndicator = ""; resetEventUiState(); render();
     })();
     return;
   }
   if (e.target.closest("#pm-quit")) {
     if (!confirm("¿Volver al menú principal sin guardar? Se perderá el progreso desde el último guardado.")) return;
-    pauseMenuOpen = false; newGameStep = "intro"; render(); return;
+    pauseMenuOpen = false; newGameStep = "intro"; resetEventUiState(); render(); return;
   }
   // Pivot iteración 2026-05-25 — New Game wizard handlers
   // Intro step
@@ -5733,6 +5768,19 @@ async function doSave() {
     alert("Error al guardar: " + e.message);
   }
 }
+
+// Deep pass 2026-07-01: guardado best-effort al cerrar la ventana. El backend es localStorage
+// (setItem síncrono por debajo), así que el write llega aunque el Promise no resuelva. Guard:
+// solo con partida en curso (no en el menú, no game over) y con ≥1h ingame jugada — así un
+// experimento de 2 minutos con partida nueva NO machaca el save bueno del slot único.
+window.addEventListener("beforeunload", function(){
+  try {
+    if (newGameStep !== null) return;
+    if (!game || !game.clock || (game.gameOver && game.gameOver.isOver)) return;
+    if (game.clock.minute < 360 + 60) return;
+    S.getStorage().save(S.serializeGame(game));
+  } catch (e) { /* best-effort */ }
+});
 async function doLoad() {
   try {
     const payload = await S.getStorage().load();
@@ -5740,6 +5788,7 @@ async function doLoad() {
     const loaded = S.deserializeGame(payload, S.DATA.balance, S.DATA.airlines, S.DATA.workOrders, S.DATA.maintenanceChecks, S.DATA.dailyChecks);
     swapRuntimeForGame(loaded);
     Object.assign(game, loaded);
+    resetEventUiState(); // re-armar baseline de eventos con el estado cargado (sin avalancha)
     saveIndicator = "loaded";
     render();
     setTimeout(() => { saveIndicator = ""; render(); }, 2000);
@@ -5759,6 +5808,7 @@ async function doContinueFromIntro() {
     // pixi-driver y schedule.ts arranquen con los assets correctos del aeropuerto).
     swapRuntimeForGame(loaded);
     Object.assign(game, loaded);
+    resetEventUiState(); // re-armar baseline de eventos con el estado cargado (sin avalancha)
     msMillionShown = game.economy.balance >= 1000000; // partida ya rica: no re-saltar el hito
     newGameStep = null;
     saveIndicator = "loaded";
@@ -5820,6 +5870,7 @@ async function startGameFromPreset(presetFile) {
   msMillionShown = false; // partida nueva: el primer millón vuelve a estar por lograr
   hasSavedSlot = false;
   selectedWoId = null;
+  resetEventUiState(); // sin popups fantasma de la partida anterior
   newGameStep = null;
   newGameSelectedIcao = null;
   // Tutorial Rookie (2026-05-30): ON por defecto en dificultad 1 (Rookie). El primer paso
@@ -5859,9 +5910,14 @@ function checkProfileProgress(){
     hit("caja", { icon: "💰", kicker: "Hito de carrera · Caja", titlePre: "", titleHl: "400.000 € de caja",
       descPre: " — tu MRO ya es un negocio de verdad. Los hitos de carrera te acercan al nivel MEDIO.", rewards: [] });
   }
+  // Deep pass 2026-07-01: la media era sobre las 10 aerolíneas del dataset, con ~6 clavadas a 50
+  // (sin vuelos serviciables) → plateau medido 57-59 a 84 días: el hito era INALCANZABLE incluso
+  // jugando perfecto. La rep que reflejas tú es la de TUS CLIENTES: media sobre contratadas.
   var repsObj = (game.reputation && game.reputation.perAirline) || {};
-  var repKeys = Object.keys(repsObj);
-  var repAvg = repKeys.length ? repKeys.reduce(function(s, k){ return s + repsObj[k]; }, 0) / repKeys.length : 0;
+  var contractedIds = {};
+  (game.contracts || []).forEach(function(c){ if (c.status === "active") contractedIds[c.airlineId] = true; });
+  var repKeys = Object.keys(contractedIds);
+  var repAvg = repKeys.length ? repKeys.reduce(function(s, k){ return s + (repsObj[k] ?? 50); }, 0) / repKeys.length : 0;
   if (repAvg >= 60 && game.clock.minute >= 2 * 7 * 1440) {
     hit("rep", { icon: "⭐", kicker: "Hito de carrera · Marca", titlePre: "", titleHl: "Reputación consolidada",
       descPre: " — media ≥ 60 tras dos semanas operando. El sector empieza a hablar de ti.", rewards: [] });

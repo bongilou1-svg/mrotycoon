@@ -20,7 +20,7 @@
 import { readFileSync } from "node:fs";
 import {
   createGame, advanceGame, assignCrewToWo, acceptContractOffer, hireCandidate,
-  deferWoManually, setMechanicShift,
+  deferWoManually, setMechanicShift, canUnlockHangars,
 } from "../src/lib/game.ts";
 import { buildDefaultCrews } from "../src/lib/sim/crews.ts";
 import { DAY_MINUTES } from "../src/lib/sim/time.ts";
@@ -94,6 +94,7 @@ function rebuildCrews(reason) {
 
 // === Contadores de la partida ===
 let hires = 0, accepts = 0, defers = 0, assigns = 0, lates = 0, aogs = 0, nightMoved = false;
+const hitoDay = { volotea: null, caja: null, rep: null, hangares: null }; // 1er día en que cae cada gate
 const seenAog = new Set(); const seenDeparted = new Set();
 let lateRecent = []; // ventana de despachos para el juicio de aceptar contratos
 
@@ -195,14 +196,22 @@ for (let t = 0; t < totalMin; t += STEP) {
     if (a.aogEscalated && !seenAog.has(a.instanceId)) { seenAog.add(a.instanceId); aogs++; note(`🛑 AOG escalado: ${a.registration}`); }
   }
 
-  // 6) Snapshot diario.
+  // 6) Snapshot diario + tracking de PROGRESIÓN (deep pass 2026-07-01): día en que cae cada
+  // hito de carrera (media de rep sobre CONTRATADAS, como la UI) y el gate de hangares.
   const day = Math.floor(now / DAY_MINUTES) + 1;
   if (day !== lastDay) {
     lastDay = day;
     const reps = Object.values(g.reputation.perAirline ?? {});
     const repAvg = reps.length ? Math.round(reps.reduce((s, v) => s + v, 0) / reps.length) : 0;
-    const active = g.contracts.filter((c) => c.status === "active").length;
-    dayRows.push({ day: day - 1, bal: Math.round(g.economy.balance), rep: repAvg, contracts: active, mechs: g.mechanics.length });
+    const activeIds = g.contracts.filter((c) => c.status === "active").map((c) => c.airlineId);
+    const ctrReps = activeIds.map((id) => g.reputation.perAirline[id] ?? 50);
+    const ctrRepAvg = ctrReps.length ? Math.round(ctrReps.reduce((s, v) => s + v, 0) / ctrReps.length) : 0;
+    dayRows.push({ day: day - 1, bal: Math.round(g.economy.balance), rep: repAvg, ctrRep: ctrRepAvg, contracts: activeIds.length, mechs: g.mechanics.length });
+    const v7 = g.airlines.find((a) => a.iataCode === "V7");
+    if (!hitoDay.volotea && v7 && g.contracts.some((c) => c.status === "active" && c.airlineId === v7.id)) hitoDay.volotea = day - 1;
+    if (!hitoDay.caja && g.economy.balance >= 400000) hitoDay.caja = day - 1;
+    if (!hitoDay.rep && ctrRepAvg >= 60 && now >= 2 * 7 * DAY_MINUTES) hitoDay.rep = day - 1;
+    if (!hitoDay.hangares && canUnlockHangars(g)) hitoDay.hangares = day - 1;
   }
 }
 
@@ -233,10 +242,12 @@ console.log("Acciones bot: " + assigns + " asignaciones · " + hires + " fichaje
 console.log("Rep por aerolínea: " + reps);
 console.log("Contratos activos: " + g.contracts.filter((c) => c.status === "active").map((c) => (g.airlines.find((a) => a.id === c.airlineId)?.iataCode) + (c.withOvernight ? "(noche)" : "")).join(", "));
 console.log("Plantilla: " + g.mechanics.map((m) => `${m.name.split(" ")[0]}[${m.base ?? "H"}·${m.shift ?? "?"}]`).join(" "));
+const hd = (v) => (v ? "D" + v : "NO en " + DAYS + "d");
+console.log("Progresión: Volotea " + hd(hitoDay.volotea) + " · caja400k " + hd(hitoDay.caja) + " · repClientes≥60 " + hd(hitoDay.rep) + " · GATE HANGARES " + hd(hitoDay.hangares));
 console.log("\n— Ledger por tipo —");
 for (const [k, v] of Object.entries(tx).sort((a, b) => a[1] - b[1])) console.log("  " + k.padEnd(26) + Math.round(v).toLocaleString("es-ES").padStart(12) + " €");
 console.log("\n— Evolución diaria (día: balance · repAvg · contratos · mecs) —");
-for (const r of dayRows.filter((_, i) => i % 2 === 0 || i === dayRows.length - 1)) console.log(`  D${String(r.day).padStart(2)}  ${String(r.bal.toLocaleString("es-ES")).padStart(10)} €   rep ${r.rep}   ctr ${r.contracts}   mecs ${r.mechs}`);
+for (const r of dayRows.filter((_, i) => i % 2 === 0 || i === dayRows.length - 1)) console.log(`  D${String(r.day).padStart(2)}  ${String(r.bal.toLocaleString("es-ES")).padStart(10)} €   rep ${r.rep} (clientes ${r.ctrRep ?? "—"})   ctr ${r.contracts}   mecs ${r.mechs}`);
 console.log("\n— Diario de a bordo (acciones del bot) —");
 for (const l of log.slice(0, 60)) console.log("  " + l);
 if (log.length > 60) console.log("  … (+" + (log.length - 60) + " entradas más)");

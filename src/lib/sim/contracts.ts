@@ -494,6 +494,11 @@ export function tickLineCompetition(
    *  individual estática que nunca cambia). Mantiene backwards-compat: si undefined,
    *  comportamiento antiguo. */
   brandRepForOutsiders?: number,
+  /** Deep pass 2026-07-01: códigos IATA con ≥1 vuelo serviciable en el aeropuerto activo
+   *  (schedule.servedAirlineCodes()). Si se pasa, NO se ofertan aerolíneas fuera del set —
+   *  cierra la degeneración "dinero gratis" (fee semanal íntegro de aerolíneas sin un solo
+   *  vuelo que el MRO pueda atender: cero trabajo, cero riesgo de rep). undefined = legacy. */
+  servedCodes?: ReadonlySet<string>,
 ): LineCompetitionResult {
   const newOffers: Contract[] = [];
   const cancellations: Array<{ contractId: string; airlineId: string }> = [];
@@ -528,6 +533,7 @@ export function tickLineCompetition(
     ).length;
     if (pendingOffers >= MAX_PENDING_OFFERS) break;
     if (!al.iataCode) continue; // solo aerolíneas reales del schedule
+    if (servedCodes && !servedCodes.has(al.iataCode)) continue; // solo con vuelos serviciables aquí
     const repIndividual = reputationByAirline[al.id] ?? 50;
     const repToEvaluate = brandRepForOutsiders ?? repIndividual;
     const threshold = al.brandThreshold ?? LINE_OFFER_REP_THRESHOLD;

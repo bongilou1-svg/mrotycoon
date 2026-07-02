@@ -27,7 +27,7 @@ import {
 import { tierLabel } from "./types/contract.ts";
 import { generateDailyArrivals, assignStand } from "./sim/airplanes.ts";
 import { nextAirplaneInstanceId } from "./sim/fleet.ts";
-import { getFlightsForGameDay, pickPoolStatsForCallsign } from "./sim/schedule.ts";
+import { getFlightsForGameDay, pickPoolStatsForCallsign, servedAirlineCodes } from "./sim/schedule.ts";
 import { generateScheduledArrivals } from "./sim/schedule.ts";
 import { currentLineStandIds, currentBaseStandIds } from "./sim/stands.ts";
 import { generateInitialFleet, ageInitialFleet, seedFleetForAirline, resetAirplaneInstanceCounter } from "./sim/fleet.ts";
@@ -57,14 +57,25 @@ export const HANGAR_UNLOCK_MIN_BALANCE_EUR = 1_000_000;
 export const HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS = 3;
 
 export function canUnlockHangars(g: GameState): boolean {
-  const reps = Object.values(g.reputation.perAirline);
-  if (reps.length === 0) return false;
+  // Deep pass 2026-07-01: la media era sobre las 10 aerolíneas del dataset, pero ~6 no pueden
+  // mover su rep NUNCA (sin vuelos serviciables en el schedule → clavadas a 50) → máximo
+  // teórico ≈75 y el gate de 80 era matemáticamente imposible. Además, medir TODAS las
+  // contratadas castigaba expandirse (un cliente nuevo de poco volumen — EI/UX con 4 vuelos/sem
+  // — entra a ~50 y sube lentísimo → más negocio = endgame más lejos, perverso; medido: 5
+  // contratos a 84d = media 68). El gate mide tus 3 MEJORES relaciones: profundidad de servicio
+  // sin penalizar la cartera. (≥3 contratos activos + balance se mantienen como estaban.)
+  const activeIds = new Set(
+    g.contracts.filter((c) => c.status === "active").map((c) => c.airlineId),
+  );
+  if (activeIds.size < HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS) return false;
+  const reps = [...activeIds]
+    .map((id) => g.reputation.perAirline[id] ?? 50)
+    .sort((a, b) => b - a)
+    .slice(0, HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS);
   const avg = reps.reduce((s, v) => s + v, 0) / reps.length;
-  const actives = g.contracts.filter((c) => c.status === "active").length;
   return (
     avg >= HANGAR_UNLOCK_MIN_REP_AVG &&
-    g.economy.balance >= HANGAR_UNLOCK_MIN_BALANCE_EUR &&
-    actives >= HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS
+    g.economy.balance >= HANGAR_UNLOCK_MIN_BALANCE_EUR
   );
 }
 import {
@@ -1367,6 +1378,19 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
     archiveStaleEntries(g);
   }
 
+  // 6c. Autosave DIARIO (deep pass 2026-07-01): el único autosave era el del cierre semanal —
+  // a 1× una semana ingame son ~2,8 HORAS reales; un cierre de ventana perdía todo eso.
+  // Silencioso (sin notificación, para no spamear a 25×); el semanal mantiene su aviso.
+  // Se salta el día que también cruza semana (el cierre semanal ya guarda).
+  if (
+    Math.floor(next / DAY_MINUTES) > Math.floor(now / DAY_MINUTES) &&
+    Math.floor(next / WEEK_MINUTES) === Math.floor(now / WEEK_MINUTES)
+  ) {
+    getStorage()
+      .save(serializeGame(g))
+      .catch(() => { /* best-effort: si falla, el semanal y el manual siguen cubriendo */ });
+  }
+
   // 7. Cierre semanal si cruzamos
   if (Math.floor(next / WEEK_MINUTES) > Math.floor(now / WEEK_MINUTES)) {
     // Fase 5A X: pasar extraHangars del stage actual (escala fixed cost).
@@ -1538,7 +1562,9 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       totalAog: g.departureKPI.totalAog,
       contractedReps,
     });
-    const lcRes = tickLineCompetition(g.marketRng, g.contracts, g.airlines, g.reputation.perAirline, g.clock.minute, brand);
+    // Deep pass 2026-07-01: solo se ofertan aerolíneas con ≥1 vuelo serviciable en el
+    // aeropuerto activo (cierra "dinero gratis": fee semanal de aerolíneas sin trabajo posible).
+    const lcRes = tickLineCompetition(g.marketRng, g.contracts, g.airlines, g.reputation.perAirline, g.clock.minute, brand, servedAirlineCodes());
     g.contracts = lcRes.contracts;
     g.lineCompetitionLastTickMinute = g.clock.minute;
     for (const offer of lcRes.newOffers) {
@@ -1869,7 +1895,7 @@ export function startBuild(g: GameState): { ok: boolean; error?: string } {
   const target = (g.mroStage + 1) as MroStage;
   // Pivot MRO línea pura: stages 3-4 bloqueados en lineMode hasta endgame. Legacy: libre.
   if (g.lineModeEnabled && target > 2 && !canUnlockHangars(g)) {
-    return { ok: false, error: "Hangares bloqueados hasta endgame (rep≥80 · balance≥1M · ≥3 aerolíneas)" };
+    return { ok: false, error: "Hangares bloqueados hasta endgame (rep≥80 con tus 3 mejores clientes · balance≥1M · ≥3 aerolíneas)" };
   }
   const cfg = STAGE_CONFIG[target];
   if (g.economy.balance < cfg.costEur) {
