@@ -93,11 +93,19 @@ export function buildRenderState(g: GameState): RenderState {
   }
 
   const airplanes: RenderAirplane[] = g.airplanes
-    .filter((a) => a.arrivalMinute <= now && (a.actualDepartureMinute === undefined || a.actualDepartureMinute > now))
+    // Deep pass 2026-07-01 (pulido, low #6): antes el filtro de presencia cortaba en seco al
+    // cruzar actualDepartureMinute — el avión se esfumaba en un frame justo en EL momento de
+    // recompensa (despacho puntual). Ventana simétrica: sigue presente TAXIING_DURATION_MIN
+    // más allá de la salida oficial, para poder animar la salida (ver outbound abajo).
+    .filter((a) => a.arrivalMinute <= now && (a.actualDepartureMinute === undefined || now < a.actualDepartureMinute + TAXIING_DURATION_MIN))
     .map((a) => {
       const contract = contractById.get(a.contractId);
-      const taxiAge = now - a.arrivalMinute;
-      const taxiing = taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN;
+      // outbound: ventana de SALIDA (tras actualDepartureMinute) — recorre la ruta al revés
+      // (stand→taxi→pista) en vez de la de llegada (pista→taxi→stand).
+      const outboundAge = a.actualDepartureMinute !== undefined ? now - a.actualDepartureMinute : -1;
+      const outbound = outboundAge >= 0 && outboundAge < TAXIING_DURATION_MIN;
+      const taxiAge = outbound ? outboundAge : now - a.arrivalMinute;
+      const taxiing = outbound || (taxiAge >= 0 && taxiAge < TAXIING_DURATION_MIN);
       const taxiProgress = TAXIING_DURATION_MIN > 0
         ? Math.max(0, Math.min(1, taxiAge / TAXIING_DURATION_MIN))
         : 1;
@@ -150,6 +158,7 @@ export function buildRenderState(g: GameState): RenderState {
         overnight: a.overnight ?? false,
         taxiing,
         taxiProgress,
+        ...(outbound ? { outbound: true } : {}),
         displayState,
         woStatus,
         ...(activeWoInstanceId ? { activeWoInstanceId } : {}),

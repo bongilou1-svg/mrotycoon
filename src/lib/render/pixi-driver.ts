@@ -2940,13 +2940,19 @@ export class PixiDriver {
       if (!PixiDriver.F5D_STAND_CODE[ap.standId]) continue;
       // Avión por la ruta en dos fases (aterrizaje pista → taxi → stand), nariz en avance. Sin
       // línea per-plane: con todo el tráfico serían demasiadas; el movimiento ya traza el camino.
-      const at = transitAt(ap.taxiProgress, standPos);
+      // Deep pass 2026-07-01 (pulido, low #6): outbound recorre la MISMA polilínea al revés
+      // (stand→taxi→pista) invirtiendo el progress — antes el avión se esfumaba en un frame al
+      // cruzar su hora de salida, justo el momento de recompensa del despacho. ptAlong da la
+      // tangente siempre "hacia adelante" en el array original, así que el morro se invierte
+      // sumando π extra (equivalente a restar π/2 en vez de sumarlo).
+      const at = transitAt(ap.outbound ? 1 - ap.taxiProgress : ap.taxiProgress, standPos);
       const col = PixiDriver.acColor(ap);
       // Delta 2026-06-11: el avión INBOUND (aún en la fase de aterrizaje del tránsito) se pinta
       // más brillante (azul claro) para destacar que acaba de tocar pista; en taxi va normal.
-      const inbound = ap.taxiProgress < LANDING_FRAC;
+      const inbound = !ap.outbound && ap.taxiProgress < LANDING_FRAC;
       const livery = inbound ? 0xdceaff : (ap.airlineColor ?? col);
-      drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, livery, col, ap.registration);
+      const ang = at.ang + (ap.outbound ? -Math.PI / 2 : Math.PI / 2);
+      drawPlane(at.p.x, at.p.y, ang, livery, col, ap.registration);
     }
 
     // ── Aviones parados en stand · avioncito vectorial tamaño furgo + matrícula ──

@@ -51,6 +51,11 @@ export interface RenderAirplane {
   /** P-γ: 0..1 — progreso del taxi (arrival → arrival + TAXIING_DURATION_MIN). 1 una vez
    *  terminado el taxi. El driver interpola la posición. */
   taxiProgress: number;
+  /** Deep pass 2026-07-01 (pulido, low #6): true si `taxiing` corresponde a la ventana de
+   *  SALIDA (tras actualDepartureMinute), no a la de llegada. El driver recorre la ruta
+   *  stand→taxi→pista (al revés que en la llegada) para animar el despacho en vez de que
+   *  el avión se esfume instantáneamente al cruzar su hora de salida. */
+  outbound?: boolean;
   /** Pivot 2026-05-24: estado visual semántico — el driver lo mapea a paleta. */
   displayState: AirplaneDisplayState;
   /** Delta 2026-06-11: estado de WO para el color del mapa (aog/unassigned/working/closing/ready).
