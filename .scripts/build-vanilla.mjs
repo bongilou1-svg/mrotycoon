@@ -579,6 +579,7 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .go-reason{max-width:560px;margin-bottom:26px}
 .go-reason .rt{font-size:clamp(17px,2.3vw,23px);font-weight:700;color:var(--danger);margin-bottom:6px}
 .go-reason .rs{font-size:clamp(13px,1.5vw,15px);color:var(--muted);line-height:1.5}
+.go-coach{max-width:560px;margin:-14px 0 26px;padding:.6rem .85rem;border:1px solid rgba(210,153,34,.35);border-radius:9px;background:rgba(210,153,34,.08);font-size:13px;line-height:1.5;color:#e6c878}
 .go-stats{display:grid;grid-template-columns:repeat(4,minmax(96px,1fr));gap:12px;width:100%;max-width:620px;margin-bottom:22px}
 .go-stat{background:rgba(22,27,34,.7);border:1px solid var(--border-s);border-radius:6px;padding:14px 10px}
 .go-stat .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-bottom:8px}
@@ -6729,6 +6730,53 @@ function renderCatalogBody(){
 
 // Game Over post-mortem (handoff entrega-menu 3). Escrito con concatenacion de strings
 // (sin backticks ni interpolacion) para insertarse seguro en el template gigante APP_JS.
+// Deep pass 2026-07-01 (pulido, low #14): renderGameOver mostraba una pantalla digna
+// (post-mortem con sparkline+KPIs+causa) pero CERO consejo accionable. Un jugador que quiebra
+// dos veces seguidas no sabe si el problema fue plantilla, contratos o compliance. Coach: 1
+// línea derivada de datos que YA están en el estado (ledger, reputación por aerolínea,
+// findings de compliance) — nunca inventa nada, si no hay datos suficientes no dice nada.
+function gameOverCoach(reason){
+  try {
+    if (reason === "bankruptcy") {
+      const hist = game.kpiHistory || [];
+      if (hist.length === 0) return null;
+      const lastWeeks = hist.slice(-4);
+      const wkStart = (lastWeeks[0].week - 1) * S.WEEK_MINUTES;
+      const led = (game.economy.ledger || []).filter(t => t.minute >= wkStart);
+      let salary = 0, fixed = 0, woPay = 0;
+      for (const t of led) {
+        if (t.type === "salary") salary += t.amount;
+        else if (t.type === "weeklyFixedCost") fixed += t.amount;
+        else if (t.type === "workOrderPayment") woPay += t.amount;
+      }
+      const nomina = Math.abs(salary + fixed);
+      if (nomina > woPay) {
+        var wkTxt = lastWeeks.length === 1 ? "la última semana" : "las últimas " + lastWeeks.length + " semanas";
+        return "Tu nómina + costes fijos (" + fmt(Math.round(nomina)) + " €) superaron los ingresos por trabajos (" + fmt(Math.round(woPay)) + " €) en " + wkTxt + ". Ficha solo si el trabajo ya lo justifica.";
+      }
+      return "Tu nómina cabía en los ingresos, pero un gasto puntual grande (penalty AOG o MEL expirada) drenó la caja de golpe. Deja más colchón antes de fichar o firmar contratos nuevos.";
+    }
+    if (reason === "reputation") {
+      const reps = (game.reputation && game.reputation.perAirline) || {};
+      let worstId = null;
+      for (const id in reps) { if (worstId === null || reps[id] < reps[worstId]) worstId = id; }
+      if (worstId !== null) {
+        const al = (game.airlines || []).find(a => a.id === worstId);
+        return "Tu peor relación era con " + (al ? al.name : worstId) + " (rep " + Math.round(reps[worstId]) + "/100). Antes de firmar otro contrato con poco margen, asegúrate de poder cerrar sus WOs a tiempo.";
+      }
+      return null;
+    }
+    if (reason === "compliance") {
+      const findings = (game.compliance && game.compliance.openFindings) || [];
+      if (findings.length > 0) {
+        return "Última auditoría: " + findings.slice(0, 2).join(" · ") + ". Ciérralos antes de la próxima auditoría — son la causa directa del score.";
+      }
+      return null;
+    }
+  } catch (e) { /* sin dato suficiente: sin coach, mejor callar que inventar */ }
+  return null;
+}
+
 function renderGameOver(){
   var dayN = Math.floor(game.clock.minute / S.DAY_MINUTES) + 1;
   var wk = S.getWeek(game.clock.minute);
@@ -6764,12 +6812,15 @@ function renderGameOver(){
   }
   var repColor = rep >= 50 ? "#3fb950" : rep >= 25 ? "#d29922" : "#f85149";
   var cashColor = cash >= 0 ? "#e6e9ef" : "#f85149";
+  var coach = gameOverCoach(reason);
+  var coachHtml = coach ? '<div class="go-coach">💡 ' + esc(coach) + '</div>' : "";
   return '<div class="go-root">'
     + '<div class="go-bg"></div><div class="go-grid"></div><div class="go-scan"></div>'
     + '<div class="go-screen">'
     +   '<div class="go-eyebrow">Operación finalizada · Día ' + dayN + '</div>'
     +   '<h1 class="go-title">FIN DE LA <span>PARTIDA</span></h1>'
     +   '<div class="go-reason"><div class="rt">' + reasonTxt + '</div><div class="rs">' + reasonSub + '</div></div>'
+    +   coachHtml
     +   '<div class="go-stats">'
     +     '<div class="go-stat"><div class="k">Días operados</div><div class="v">' + dayN + '</div></div>'
     +     '<div class="go-stat"><div class="k">Semanas</div><div class="v">' + wk + '</div></div>'
