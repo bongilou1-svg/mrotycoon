@@ -2808,8 +2808,13 @@ export class PixiDriver {
 
     // ── Parking positions (stands) ──
     // Cada parking_position es un way con 2-3 puntos: el último es la posición del avión.
+    // Deep pass 2026-07-01 (pulido, low #4): antes indexaba TODOS los aviones con standId sin
+    // filtrar ap.taxiing → el pill se marcaba "ocupado" (elevado+halo, sin "libre") durante los
+    // ~7min de taxi con el stand visiblemente vacío (el avión se dibuja en tránsito, no aquí) y
+    // el minimapa F5D (que sí filtra taxiing) decía lo contrario. Mismo criterio que el loop de
+    // aviones parados de abajo, que también salta los taxiing.
     const apByStand = new Map<string, typeof state.airplanes[number]>();
-    for (const ap of state.airplanes) if (ap.standId) apByStand.set(ap.standId, ap);
+    for (const ap of state.airplanes) if (ap.standId && !ap.taxiing) apByStand.set(ap.standId, ap);
 
     // Index parking refs por código (refs OSM "01"-"09" + sintéticos "vp-NNN" generados
     // por osm_to_pixi.mjs para aeropuertos sin refs OSM disponibles).

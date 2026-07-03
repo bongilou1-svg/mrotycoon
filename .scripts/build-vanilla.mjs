@@ -419,6 +419,10 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .map-legend{position:absolute;left:12px;bottom:12px;z-index:10;display:flex;gap:.7rem;flex-wrap:wrap;max-width:58%;background:rgba(7,13,24,.82);backdrop-filter:blur(8px);border:1px solid rgba(77,163,255,.25);border-radius:6px;padding:.4rem .62rem;font-family:var(--sans);font-size:.62rem;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .map-legend .lg{display:flex;align-items:center;gap:.32rem;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
 .map-legend .lg i{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor;flex:none}
+/* Deep pass 2026-07-01 (pulido, low #11): glifos de forma (no solo color) en la leyenda —
+   CERRANDO (cian) y LISTO (verde) colapsan a luminancia similar con deuteranopia. Reusa las
+   mismas siluetas que ya dibuja Pixi (drawBadgeGlyph) como redundancia de forma, cero arte nuevo. */
+.map-legend .lg svg.lgi{width:9px;height:9px;flex:none;color:currentColor;overflow:visible}
 .map-ctrl{position:absolute;top:12px;right:12px;z-index:10;display:flex;flex-direction:column;gap:.4rem;align-items:flex-end}
 .map-ctrl .zoom{display:flex;flex-direction:column;border:1px solid rgba(77,163,255,.25);border-radius:6px;overflow:hidden;background:rgba(7,13,24,.82);backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .map-ctrl .zoom button{width:32px;height:30px;color:var(--text);font-size:1.05rem;line-height:1;background:transparent;border:none;border-bottom:1px solid rgba(77,163,255,.18);cursor:pointer;display:grid;place-items:center;font-family:var(--sans)}
@@ -1872,11 +1876,11 @@ function renderMap(){
       <div class="map-daynight" id="map-daynight">— · --:--</div>
     </div>
     <div class="map-legend">
-      <span class="lg" style="color:#ff4757" data-tip-title="AOG" data-tip="Aircraft On Ground: el avión no puede volar. Penalización fuerte y reputación por los suelos hasta arreglarlo."><i></i>AOG</span>
-      <span class="lg" style="color:#f5b945" data-tip-title="Sin asignar" data-tip="Hay un aviso abierto en ese avión y todavía no le has puesto cuadrilla. El reloj corre contra su hora de salida."><i></i>Sin asignar</span>
-      <span class="lg" style="color:#4da3ff" data-tip-title="En trabajo" data-tip="Tu cuadrilla está reparando: inspección → tarea → prueba. Vigila que termine antes de la salida."><i></i>En trabajo</span>
-      <span class="lg" style="color:#3ad6c5" data-tip-title="Cerrando" data-tip="Trabajo casi listo: en prueba funcional o esperando la firma de aptitud (release)."><i></i>Cerrando</span>
-      <span class="lg" style="color:#3fb950" data-tip-title="Listo" data-tip="Trabajo cerrado y firmado: el avión está apto para volver al servicio."><i></i>Listo</span>
+      <span class="lg" style="color:#ff4757" data-tip-title="AOG" data-tip="Aircraft On Ground: el avión no puede volar. Penalización fuerte y reputación por los suelos hasta arreglarlo."><svg class="lgi" viewBox="0 0 10 10"><path d="M5 1.3 8.8 8H1.2Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="5" cy="6.3" r=".6" fill="currentColor"/></svg>AOG</span>
+      <span class="lg" style="color:#f5b945" data-tip-title="Sin asignar" data-tip="Hay un aviso abierto en ese avión y todavía no le has puesto cuadrilla. El reloj corre contra su hora de salida."><svg class="lgi" viewBox="0 0 10 10"><path d="M5 1.5v7M1.5 5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Sin asignar</span>
+      <span class="lg" style="color:#4da3ff" data-tip-title="En trabajo" data-tip="Tu cuadrilla está reparando: inspección → tarea → prueba. Vigila que termine antes de la salida."><svg class="lgi" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3.1" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>En trabajo</span>
+      <span class="lg" style="color:#3ad6c5" data-tip-title="Cerrando" data-tip="Trabajo casi listo: en prueba funcional o esperando la firma de aptitud (release)."><svg class="lgi" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M5 3v2.2l1.6 1" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>Cerrando</span>
+      <span class="lg" style="color:#3fb950" data-tip-title="Listo" data-tip="Trabajo cerrado y firmado: el avión está apto para volver al servicio."><svg class="lgi" viewBox="0 0 10 10"><path d="M1.6 5.3 3.9 7.6 8.4 2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Listo</span>
       <span class="lg" style="color:#3d6f9d" data-tip-title="Libre" data-tip="Avión en tierra sin trabajo pendiente contigo."><i></i>Libre</span>
       <span class="lg attr">© OpenStreetMap contributors · ODbL</span>
     </div>
