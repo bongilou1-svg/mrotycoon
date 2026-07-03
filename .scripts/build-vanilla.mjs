@@ -1308,9 +1308,14 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 .awo-manual-t{background:none;border:none;color:var(--dim);font:.72rem var(--sans);cursor:pointer;padding:.2rem 0;text-decoration:underline dotted}
 .awo-manual-t:hover{color:var(--accent)}`;
 
+// Deep pass 2026-07-01 (pulido, low #7): el HUD in-game decía v0.7 mientras el menú y ajustes
+// decían v0.6 — una sola constante de build interpolada en los 3 sitios (BODY y APP_JS son
+// template literals de NODE, evaluados en build time: ${...} sin escapar sustituye aquí mismo).
+const MRO_VERSION_STR = "v0.7";
+
 const BODY = `<div class="app">
   <header class="hud">
-    <div class="hud-l"><span class="brand">✈</span><span class="name">MRO <b>TYCOON</b></span><span class="ver">v0.7</span><ovd-user-badge style="margin-left:12px"></ovd-user-badge></div>
+    <div class="hud-l"><span class="brand">✈</span><span class="name">MRO <b>TYCOON</b></span><span class="ver">${MRO_VERSION_STR}</span><ovd-user-badge style="margin-left:12px"></ovd-user-badge></div>
     <div class="hud-c"><span id="daynight" class="daynight" title="Día u Noche según hora ingame">☀️</span><span class="clock" id="clock">Día 1 · 00:00</span><span class="wk" id="week">Semana 1</span><span id="overnight-badge" class="ovn-badge" style="display:none" title="Aviones que pernoctan esta noche · click para detalle"></span></div>
     <div class="hud-r">
       <div class="kpi"><span class="klbl">Balance</span><strong id="bal">250.000 €</strong></div>
@@ -1342,8 +1347,8 @@ const BODY = `<div class="app">
       <div class="side-grp">Operación</div>
       <button data-tab="map" class="active"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.3"/></svg></span><span class="nt">Mapa</span></button>
       <button data-tab="operations"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.9"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><path d="M12 12 18.2 5.8"/></svg></span><span class="nt">Operaciones</span><span class="badge" id="badge-wo">0</span></button>
-      <button data-tab="schedule"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v3.4M16 3v3.4"/><path d="M7 13h2.2M11 13h2.2M15 13h2.2M7 16.6h2.2M11 16.6h2.2"/></svg></span><span class="nt">Schedule</span><span class="badge" id="badge-schedule">0</span></button>
-      <button data-tab="planning"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="8.5" y="2.4" width="7" height="3.3" rx="1.2"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg></span><span class="nt">Production Planning</span><span class="badge" id="badge-planning">0</span></button>
+      <button data-tab="schedule"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v3.4M16 3v3.4"/><path d="M7 13h2.2M11 13h2.2M15 13h2.2M7 16.6h2.2M11 16.6h2.2"/></svg></span><span class="nt">Programación</span><span class="badge" id="badge-schedule">0</span></button>
+      <button data-tab="planning"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="8.5" y="2.4" width="7" height="3.3" rx="1.2"/><path d="M9 11h6M9 14.5h6M9 18h3.5"/></svg></span><span class="nt">Plan nocturno</span><span class="badge" id="badge-planning">0</span></button>
       <div class="side-grp">Gestión</div>
       <button data-tab="office"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17.5" rx="1.3"/><path d="M9 7.5h2M13 7.5h2M9 11.5h2M13 11.5h2M9 15.5h2M13 15.5h2"/></svg></span><span class="nt">Oficina</span><span class="badge" id="badge-office">0</span></button>
       <button data-tab="contracts"><span class="ic"><svg viewBox="0 0 24 24"><path d="M7 3.2h6.5L17.5 7v13.8H7Z"/><path d="M13.5 3.2v3.9h4"/><path d="M9.5 12h5M9.5 15.5h5"/></svg></span><span class="nt">Contratos</span><span class="badge" id="badge-offers">2</span></button>
@@ -3686,7 +3691,7 @@ function nextPlanningPublishMinute(){
 
 function renderProductionPlanning(){
   const overnights = pendingNightOvernighters();
-  let h = '<h2>📋 Production Planning · Noche</h2>';
+  let h = '<h2>📋 Plan nocturno</h2>';
   h += '<p class="muted" style="margin-bottom:.5rem">Paquete de trabajo nocturno PLANIFICADO que las aerolíneas contratadas envían al MRO a las <strong>12:00 del día</strong>. Incluye <strong>1 daily check</strong> por avión (con sus subtareas), cierre opcional de WO diferidas vivas y (futuro) ítems MPD facilitados. Click en la tarjeta para detalle del daily, en la matrícula para detalle del avión, en el tipo para detalle del modelo. Los callouts NO planificados viven en Operaciones · Event Tracking.</p>';
   if (overnights.length === 0) {
     const next = nextPlanningPublishMinute();
@@ -4902,7 +4907,11 @@ function tweenNumber(el, target, duration = 400, formatter = (v) => v.toLocaleSt
   if (prev) cancelAnimationFrame(prev);
   const start = performance.now();
   function step(now) {
-    const t = Math.min(1, (now - start) / duration);
+    // Deep pass 2026-07-01 (pulido, low #9): sin clamp inferior, un rAF con timestamp anterior a
+    // 'start' (desfase rAF/performance.now bajo virtual-time o un frame stall largo) producía t
+    // negativo → overshoot ilimitado en 'v' (HUD con cifras disparatadas, p.ej. balance negativo
+    // de millones o reputación >100 mientras la vista real mostraba el valor correcto).
+    const t = Math.max(0, Math.min(1, (now - start) / duration));
     const eased = 1 - Math.pow(1 - t, 3);
     const v = Math.round(from + (intTarget - from) * eased);
     el.textContent = formatter(v);
@@ -5639,7 +5648,16 @@ document.body.addEventListener("click", (e) => {
   // Oficina del mapa (delta 2026-06-11): click → ir a Oficina · Cuadrillas (a cubrir turnos).
   if (e.target.closest("#map-office")) { activeTab = "office"; officeSubtab = "crews"; invalidatePanelCache(); render(); return; }
   const speedBtn = e.target.closest(".speeds button");
-  if (speedBtn) { S.setGameSpeed(game, parseInt(speedBtn.dataset.speed)); render(); return; }
+  if (speedBtn) {
+    const spd = parseInt(speedBtn.dataset.speed);
+    S.setGameSpeed(game, spd);
+    // Deep pass 2026-07-01 (pulido, low #2): con un popup de evento abierto el backdrop es
+    // click-through y la barra de velocidades sigue activa; al cerrar el último popup, pumpEvents
+    // restauraba evPrevSpeed (la velocidad de ANTES del popup), pisando lo que el jugador acaba
+    // de elegir. Si hay popup vivo, la nueva elección pasa a ser la "velocidad a restaurar".
+    if (eventQueue.length && evPrevSpeed !== -1) evPrevSpeed = spd;
+    render(); return;
+  }
   const tabBtn = e.target.closest(".side button[data-tab]");
   if (tabBtn && tabBtn.dataset.tab) { activeTab = tabBtn.dataset.tab; invalidatePanelCache(); render(); return; }
   // Pivot iteración 2026-05-25: sub-tabs de Oficina (Equipo / Contratación / Management).
@@ -6229,7 +6247,10 @@ function pumpEvents(){
 }
 function renderEventPopup(ev){
   if (!ev) return "";
-  var lines = ev.lines.map(function(l){ return '<li style="margin:.18rem 0">' + l + '</li>'; }).join("");
+  // Deep pass 2026-07-01 (pulido, low #1): las lines viajan datos sellados del save (matrícula,
+  // nombre de mecánico/aerolínea) sin esc() — el toast hermano (spawnCalloutToast) sí escapa. Un
+  // save manipulado a mano podía inyectar HTML/JS en el webview. esc() en cada línea.
+  var lines = ev.lines.map(function(l){ return '<li style="margin:.18rem 0">' + esc(l) + '</li>'; }).join("");
   var h = '<div style="position:fixed;inset:0;background:rgba(6,10,18,.42);z-index:1100;display:flex;align-items:flex-start;justify-content:center;pointer-events:none">';
   h += '<div style="margin-top:13vh;width:min(430px,92vw);background:linear-gradient(180deg,rgba(27,35,48,.98),rgba(18,23,32,.98));border:1px solid var(--border-strong);border-left:5px solid ' + ev.color + ';border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.6);padding:1rem 1.1rem;pointer-events:auto">';
   h += '<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem"><span style="font-size:1.6rem">' + ev.icon + '</span><strong style="font-size:1.08rem;color:' + ev.color + '">' + ev.title + '</strong></div>';
@@ -6278,7 +6299,7 @@ function renderNewGameWizard() {
     const exitItem = isTauri ? \`<div class="foh-mi danger" id="ng-exit"><span class="idx">05</span><span class="label">Salir</span><span class="arrow"></span></div>\` : "";
     const clearItem = hasSavedSlot ? \`<div class="foh-mi danger" id="ng-clear-save"><span class="idx">\${isTauri ? "06" : "05"}</span><span class="label">Borrar guardado</span><span class="arrow"></span></div>\` : "";
     const saveCard = hasSavedSlot ? \`<a class="foh-savecard" id="ng-continue-card"><div class="foh-sc-head"><span>💾 Partida guardada</span></div><div class="foh-sc-body"><div class="foh-sc-icao">▶<span class="x"> reanudar</span></div><div class="foh-sc-name">Tu partida guardada</div></div><div class="foh-sc-cta"><span>Continuar partida</span><span class="foh-ar"></span></div></a>\` : "";
-    body = \`<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · Centro de control</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · v0.6</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>\${continueItem}<div class="foh-mi" id="ng-settings"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Audio · juego · A11y</span><span class="arrow"></span></div><div class="foh-mi" id="ng-howto"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Manual · 4 pasos</span><span class="arrow"></span></div><div class="foh-mi" id="ng-catalog"><span class="idx">05</span><span class="label">Catálogo</span><span class="hint">Todo el contenido del juego</span><span class="arrow"></span></div>\${exitItem}\${clearItem}</nav></div>\${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> v0.6 · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>\`;
+    body = \`<div class="foh-mover"><span class="trail"></span></div><div class="foh-screen"><div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO · Centro de control</div><div class="foh-livetag"><span class="d"></span> Sistema en línea · ${MRO_VERSION_STR}</div></div><div class="foh-menubody"><div class="foh-hero"><div class="foh-eyebrow">Aviation Maintenance · Repair · Overhaul</div><div class="foh-lockup"><div class="foh-bigmark"><i></i></div><h1 class="foh-wordmark">MRO<br><span class="t">TYCOON</span></h1></div><div class="foh-subline">Tú diriges el taller. Cada Work Order es real.</div><nav class="foh-nav" id="foh-menu"><div class="foh-mi primary sel" id="ng-start"><span class="idx">01</span><span class="label">Nueva partida</span><span class="hint">Elegir base</span><span class="arrow"></span></div>\${continueItem}<div class="foh-mi" id="ng-settings"><span class="idx">03</span><span class="label">Ajustes</span><span class="hint">Audio · juego · A11y</span><span class="arrow"></span></div><div class="foh-mi" id="ng-howto"><span class="idx">04</span><span class="label">Cómo se juega</span><span class="hint">Manual · 4 pasos</span><span class="arrow"></span></div><div class="foh-mi" id="ng-catalog"><span class="idx">05</span><span class="label">Catálogo</span><span class="hint">Todo el contenido del juego</span><span class="arrow"></span></div>\${exitItem}\${clearItem}</nav></div>\${saveCard}</div><div class="foh-foot"><div class="chip"><span class="sq"></span> ${MRO_VERSION_STR} · línea pura · datos reales AeroDataBox · mayo 2026</div><div class="right"><span>SINGLE-PLAYER · OFFLINE</span></div></div></div>\`;
   } else if (newGameStep === "airport") {
     const avail = catalog.airports.filter(a => a.available !== false);
     const availCount = avail.length;
@@ -6383,7 +6404,7 @@ function renderSettingsBody(){
     + opt("Alto contraste", "Bordes y texto más marcados en paneles densos.", sw("contrast"))
     + '</div>';
   return '<div class="foh-screen">'
-    + '<div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO Tycoon · Configuración</div><div class="foh-livetag"><span class="d"></span> v0.6 · cambios en vivo</div></div>'
+    + '<div class="foh-top"><div class="foh-id"><span class="foh-mark"></span> MRO Tycoon · Configuración</div><div class="foh-livetag"><span class="d"></span> ${MRO_VERSION_STR} · cambios en vivo</div></div>'
     + '<div class="foh-head"><div class="foh-eyebrow">Configuración</div><h1>Ajustes</h1></div>'
     + '<div class="set-panel"><div class="set-cats">' + cats + '</div><div class="set-content">' + audio + video + play + lang + a11y + '</div></div>'
     + '<div class="foh-foot"><button class="foh-btn back ghost" id="ng-settings-back"><span class="foh-ar"></span> Menú principal</button><div class="right"><button class="foh-btn ghost" id="ng-settings-reset">Restablecer valores</button></div></div>'

@@ -466,6 +466,7 @@ export class PixiDriver {
   private camera = { x: 0, y: 0, zoom: 0.5 };
   private cameraInitialized = false;
   private dragState: { active: boolean; sx: number; sy: number; cx: number; cy: number } = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 };
+  private _wheelApplyRAF: number | null = null;
   private assetsLoaded = false;
   private assetsLoading = false;
   // Huge skin: keyboard navigation
@@ -582,6 +583,21 @@ export class PixiDriver {
       this.kbLoopId = null;
     }
   }
+  /** Deep pass 2026-07-01 (pulido, low #3): wheel/kb-loop solo movían la cámara (applyCamera,
+   *  un simple transform pan/zoom) sin volver a pasar por apply(state) — pero el tamaño de
+   *  aviones/labels/furgo se calcula por CONTRA-escala respecto a camera.zoom EN EL MOMENTO
+   *  del draw (legible a cualquier zoom). Resultado: tras un wheel quedaban con el tamaño del
+   *  zoom viejo (demasiado grandes al acercar / ilegibles al alejar) hasta el siguiente tick —
+   *  indefinidamente con el juego en pausa. Throttle a 1 re-render completo por frame.
+   */
+  private scheduleFullApply(): void {
+    if (this._wheelApplyRAF != null) return;
+    this._wheelApplyRAF = requestAnimationFrame(() => {
+      this._wheelApplyRAF = null;
+      if (this.lastState) this.apply(this.lastState);
+    });
+  }
+
   private zoomBy(factor: number): void {
     if (!this.app) return;
     const W = this.app.screen.width, H = this.app.screen.height;
@@ -598,6 +614,8 @@ export class PixiDriver {
     this.camera.y = cy / newZ - wy;
     this.clampCamera();
     this.applyCamera();
+    if (this.lastState) this.redrawMinimap(this.lastState);
+    this.scheduleFullApply(); // low #3: re-escala aviones/labels/furgo al zoom nuevo (kb-loop +/-)
   }
 
   private onCanvasPointerDown = (ev: PointerEvent): void => {
@@ -637,6 +655,7 @@ export class PixiDriver {
     this.clampCamera();
     this.applyCamera();
     if (this.lastState) this.redrawMinimap(this.lastState);
+    this.scheduleFullApply(); // low #3: re-escala aviones/labels/furgo al zoom nuevo (wheel)
   };
 
   private clampCamera(): void {
@@ -2982,12 +3001,18 @@ export class PixiDriver {
       const pos = standPositions.get(pt.standOsmRef);
       if (!pos) continue;
       const col = PixiDriver.F5D_STAND_STATE_COL.idle; // todos igual (sin distinguir contrato)
+      // Deep pass 2026-07-01 (pulido, low #5): el halo/anillo (stateCol, 5º arg) es el MISMO
+      // canal que en aviones reales codifica woStatus contra la leyenda (aog=rojo, sin
+      // asignar=ámbar…). Pasarle airlineColor colisionaba — un passthrough de una aerolínea con
+      // color ámbar/rojizo se leía como "sin asignar"/"AOG". El livery (4º arg, silueta) SÍ
+      // puede llevar el color de aerolínea; el anillo de estado va siempre neutro fijo.
+      const livery = pt.airlineColor ?? col;
       if (pt.taxiing) {
         const at = transitAt(pt.taxiProgress, pos);
-        drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, pt.airlineColor ?? col, pt.airlineColor ?? col, pt.callsign);
+        drawPlane(at.p.x, at.p.y, at.ang + Math.PI / 2, livery, PixiDriver.F5D_STAND_FREE_COL, pt.callsign);
       } else {
         const ang = f5dRunwayMid ? Math.atan2(f5dRunwayMid.y - pos.y, f5dRunwayMid.x - pos.x) + Math.PI / 2 : 0;
-        drawPlane(pos.x, pos.y, ang, pt.airlineColor ?? col, pt.airlineColor ?? col, pt.callsign);
+        drawPlane(pos.x, pos.y, ang, livery, PixiDriver.F5D_STAND_FREE_COL, pt.callsign);
       }
     }
 
