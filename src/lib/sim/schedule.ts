@@ -87,6 +87,23 @@ export function servedAirlineCodes(): Set<string> {
   return codes;
 }
 
+/** Deep pass 2026-07-01 (pulido, low #13): vuelos SERVICIABLES/semana por código IATA. Alimenta
+ *  la amortiguación de deltas de reputación — sin ella, una aerolínea de bajo volumen (4
+ *  vuelos/semana) pesaba IGUAL que una de 146: cada WO tardía o MEL vencida (-5) hundía su rep
+ *  mucho más rápido y con muchas menos oportunidades de recuperarla (medido: EI 50→40 en 84d
+ *  con contrato activo, mientras V7 subía a 84-99). Firmar un cliente pequeño no debe ser
+ *  estrictamente peor que ignorarlo. */
+export function flightsPerWeekByAirline(): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const key of PATTERN_KEYS) {
+    const flights = (scheduleData.patterns as Record<string, ScheduledFlight[]>)[key] ?? [];
+    for (const f of flights) {
+      if (isFlightHandled(f)) counts[f.airlineCode] = (counts[f.airlineCode] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
 /** Devuelve los vuelos planeados para el game day N (cycle 7 días). */
 export function getFlightsForGameDay(gameDay: number): ScheduledFlight[] {
   // gameDay 1 → lunes, gameDay 8 → lunes, gameDay 6 → sábado, etc.

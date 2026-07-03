@@ -390,8 +390,13 @@ export const LINE_OFFER_MAX_PROB = 0.6;
  *  la prob era (rep-threshold)*slope → 0% exacto en el umbral, así una aerolínea recién cruzada
  *  casi nunca ofertaba (Volotea +2 sobre umbral ≈ 2%/tick). Con piso 0.4, en el umbral ya hay
  *  40% por tick semanal → tras ~1 mes de mantener la rep, la oferta es casi segura ("prob que
- *  sube rápido", no garantía dura — no requiere estado de cruce). Subir = mercado más generoso. */
-export const LINE_OFFER_BASE_PROB = 0.4;
+ *  sube rápido", no garantía dura — no requiere estado de cruce). Subir = mercado más generoso.
+ *  Deep pass 2026-07-01 (pulido, low #12): bajado a 0.25 — con varias aerolíneas elegibles por
+ *  tick, el piso 0.4 hacía P(≥1 oferta) ≈ 1 (medido: 12/12 ticks semanales con oferta en 3
+ *  seeds×28d + 84d, exactamente D8/D15/D22/D29 — un metrónomo, no un mercado). 0.25 deja
+ *  semanas sin oferta con más frecuencia sin tocar el orden narrativo (Volotea→IB→VY→U2,
+ *  cada candidata sigue con su propio roll independiente cada tick). */
+export const LINE_OFFER_BASE_PROB = 0.25;
 
 let _contractCounter = 1000; // empezamos en 1000 para no chocar con C-001..C-003 iniciales
 export function _resetContractCounter(v = 1000): void { _contractCounter = v; }

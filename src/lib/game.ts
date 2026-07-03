@@ -27,7 +27,7 @@ import {
 import { tierLabel } from "./types/contract.ts";
 import { generateDailyArrivals, assignStand } from "./sim/airplanes.ts";
 import { nextAirplaneInstanceId } from "./sim/fleet.ts";
-import { getFlightsForGameDay, pickPoolStatsForCallsign, servedAirlineCodes } from "./sim/schedule.ts";
+import { getFlightsForGameDay, pickPoolStatsForCallsign, servedAirlineCodes, flightsPerWeekByAirline } from "./sim/schedule.ts";
 import { generateScheduledArrivals } from "./sim/schedule.ts";
 import { currentLineStandIds, currentBaseStandIds } from "./sim/stands.ts";
 import { generateInitialFleet, ageInitialFleet, seedFleetForAirline, resetAirplaneInstanceCounter } from "./sim/fleet.ts";
@@ -55,6 +55,29 @@ import { MECHANIC_CAP_INITIAL } from "./sim/mechanics.ts";
 export const HANGAR_UNLOCK_MIN_REP_AVG = 80;
 export const HANGAR_UNLOCK_MIN_BALANCE_EUR = 1_000_000;
 export const HANGAR_UNLOCK_MIN_ACTIVE_CONTRACTS = 3;
+
+/** Deep pass 2026-07-01 (pulido, low #13): factor de amortiguación de deltas de reputación
+ *  según el volumen de vuelos serviciables/semana de la aerolínea. Sin él, una aerolínea de
+ *  bajo volumen (p.ej. 4 vuelos/sem) pesaba IGUAL que una de 146: cada WO tardía o MEL vencida
+ *  hundía su rep mucho más rápido y con muchas menos oportunidades de recuperarla (medido: EI
+ *  50→40 en 84d con contrato activo, mientras V7 subía a 84-99) — firmar un cliente pequeño no
+ *  debe ser estrictamente peor que ignorarlo. Solo aplica en modo línea; legacy sin cambio. */
+const REP_DAMPING_REFERENCE_FLIGHTS_PER_WEEK = 20;
+const REP_DAMPING_MIN_FACTOR = 0.35;
+function repDampingFactor(g: GameState, airlineId: string): number {
+  if (!g.lineModeEnabled) return 1;
+  const al = g.airlines.find((a) => a.id === airlineId);
+  const iataCode = (al as { iataCode?: string } | undefined)?.iataCode;
+  if (!iataCode) return 1;
+  const vol = flightsPerWeekByAirline()[iataCode];
+  if (!vol) return 1; // sin dato de vuelos → sin amortiguar (comportamiento previo)
+  return Math.max(REP_DAMPING_MIN_FACTOR, Math.min(1, vol / REP_DAMPING_REFERENCE_FLIGHTS_PER_WEEK));
+}
+/** applyDelta amortiguado por volumen — sustituye a applyDelta(g.reputation, airlineId, delta)
+ *  en los puntos donde el delta viene de un evento de WO/AOG/MEL sobre una aerolínea concreta. */
+function applyRepDeltaDamped(g: GameState, airlineId: string, rawDelta: number): ReputationState {
+  return applyDelta(g.reputation, airlineId, rawDelta * repDampingFactor(g, airlineId));
+}
 
 export function canUnlockHangars(g: GameState): boolean {
   // Deep pass 2026-07-01: la media era sobre las 10 aerolíneas del dataset, pero ~6 no pueden
@@ -770,7 +793,7 @@ function processDepartures(g: GameState, nowMinute: number, stepMinutes: number)
           g.economy,
           createTransaction("penalty", -penaltyAmount, nowMinute, `AOG en curso ${a.registration} (delay ${currentDelay}m · ${rootCauseLabel})`),
         );
-        if (c) g.reputation = applyDelta(g.reputation, c.airlineId, Math.round(g.balance.reputation.aogFailed * repMult));
+        if (c) g.reputation = applyRepDeltaDamped(g, c.airlineId, Math.round(g.balance.reputation.aogFailed * repMult));
       }
       continue;
     }
@@ -863,7 +886,7 @@ function processDepartures(g: GameState, nowMinute: number, stepMinutes: number)
         g.economy,
         createTransaction("penalty", -penaltyAmount, nowMinute, `AOG ${evitableTag} ${a.registration} (delay ${delay}m · ${rootCauseLabel})`),
       );
-      if (c) g.reputation = applyDelta(g.reputation, c.airlineId, Math.round(g.balance.reputation.aogFailed * repMult));
+      if (c) g.reputation = applyRepDeltaDamped(g, c.airlineId, Math.round(g.balance.reputation.aogFailed * repMult));
     } else if (a.aogEscalated && wasAlreadyEscalated) {
       pushNotification(g, `✈️ ${a.registration} finalmente sale tras AOG (+${delay}m total)`, "warning");
     } else if (delay > 0) {
@@ -1253,7 +1276,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       // Bloque M: aplica solo a la aerolínea del contrato del avión. Si no hay contrato resoluble,
       // aplica como global (fallback raro — la WO sin contrato es una situación de error).
       if (c) {
-        g.reputation = applyDelta(g.reputation, c.airlineId, repDelta);
+        g.reputation = applyRepDeltaDamped(g, c.airlineId, repDelta);
       } else {
         g.reputation = applyDeltaGlobal(g.reputation, repDelta);
       }
@@ -1326,7 +1349,7 @@ export function advanceGame(g: GameState, stepMinutes: number): GameState {
       const expiredAp = expiredWo ? g.airplanes.find((a) => a.instanceId === expiredWo.airplaneInstanceId) : undefined;
       const expiredContract = expiredAp ? g.contracts.find((cc) => cc.id === expiredAp.contractId) : undefined;
       if (expiredContract) {
-        g.reputation = applyDelta(g.reputation, expiredContract.airlineId, ev.repDelta);
+        g.reputation = applyRepDeltaDamped(g, expiredContract.airlineId, ev.repDelta);
       } else {
         g.reputation = applyDeltaGlobal(g.reputation, ev.repDelta);
       }
