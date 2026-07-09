@@ -10,10 +10,11 @@
 // La sync layer no cambia entre themes; solo el dibujado.
 // P-Î³ motion paths (aviÃ³n taxiing + furgo mec) funcionan en todos los themes.
 
-import { Application, Container, Graphics, Sprite, Text, FederatedPointerEvent } from "pixi.js";
+import { Application, Container, Graphics, Sprite, Text, Texture, FederatedPointerEvent } from "pixi.js";
 import type { RenderMechanic, RenderState } from "./types.ts";
 import { bakeJetSprite } from "./sprite-bakery.ts";
 import { loadAssets, getTexture } from "./assets.ts";
+import { SPRITE_A320, SPRITE_VAN } from "./sprite-data.ts";
 // Duraciones del tránsito (aterrizaje + taxi) para repartir el movimiento por TIEMPO, no por
 // longitud de la ruta. Fuente única en sync.ts (mismo bundle Render).
 import { TAXIING_DURATION_MIN, LANDING_DURATION_MIN } from "./sync.ts";
@@ -32,6 +33,17 @@ let activeAirportPaths: AirportPathsData = defaultOvdPaths;
 export function setActiveAirportPaths(paths: AirportPathsData): void {
   activeAirportPaths = paths;
 }
+
+// Texturas de sprites top-down (Nano Banana) embebidas base64 → Texture.from(dataURI), sin CORS
+// (funciona en file:// y http). Lazy singletons: se crean al dibujar el primer avión/furgo.
+let _acTex: Texture | null = null;
+let _vanTex: Texture | null = null;
+function aircraftTexture(): Texture { if (!_acTex) _acTex = Texture.from(SPRITE_A320); return _acTex; }
+function vanTexture(): Texture { if (!_vanTex) _vanTex = Texture.from(SPRITE_VAN); return _vanTex; }
+// Tamaños nativos (px) tras el thumbnail en el generador — para escalar sin depender de que la
+// textura ya haya decodificado (evita escala infinita en el primer frame).
+const AC_TEX_NATIVE = 176;
+const VAN_TEX_NATIVE = 132;
 
 // ============================================================================
 // Pivot iteración 2026-05-25 — MEMORY LEAK FIX para Pixi v8
@@ -2638,12 +2650,15 @@ export class PixiDriver {
       const W = this.worldDynamic!;
       W.addChild(new Graphics().circle(px, py, 15 * s).fill({ color: stateCol, alpha: 0.20 }));
       W.addChild(new Graphics().circle(px, py, 11.5 * s).fill({ color: 0x080d15, alpha: 0.32 }).stroke({ width: Math.max(1, 1.6 * s), color: stateCol, alpha: 0.92 }));
-      const pl = new Container();
-      pl.addChild(new Graphics().poly([0, -3, 10.8, 3, 10.8, 5.1, 0, 0.6, -10.8, 5.1, -10.8, 3]).fill({ color: livery }));   // alas en flecha
-      pl.addChild(new Graphics().poly([0, 5.4, 4.8, 7.8, 4.8, 9.3, 0, 7.2, -4.8, 9.3, -4.8, 7.8]).fill({ color: livery })); // cola
-      pl.addChild(new Graphics().roundRect(-2.05, -9, 4.1, 18, 2.05).fill({ color: livery }));                                // fuselaje
-      pl.addChild(new Graphics().circle(0, -5.6, 1.1).fill({ color: 0x081018, alpha: 0.72 }));                                // cabina
-      pl.position.set(px, py); pl.rotation = ang; pl.scale.set(s);
+      // Sprite top-down (Nano Banana) — sustituye el vector. Morro del sprite = arriba (-y),
+      // igual que el convenio del vector, así que rotation = ang sin offset. Neutro (sin tinte):
+      // el color de estado lo lleva el halo; la matrícula, la identidad.
+      const pl = new Sprite(aircraftTexture());
+      pl.anchor.set(0.5, 0.5);
+      const acScale = (30 / AC_TEX_NATIVE) * s;   // ~30 uds de mundo de largo a s=1 (tunable)
+      pl.scale.set(acScale);
+      pl.position.set(px, py);
+      pl.rotation = ang;
       W.addChild(pl);
       if (badge) {
         const bx = px + 8.5 * s, by = py - 8.5 * s, br = 4.4 * s;
@@ -3135,13 +3150,15 @@ export class PixiDriver {
       W.addChild(new Graphics().circle(px, py, 8 * s).fill({ color: vanCol, alpha: 0.30 }));
       // Furgo del DISEÑO (handoff MAPICON.van): caja redondeada + parabrisas oscuro. Silueta
       // orientada con el morro a +x (mismo convenio que el rotado de abajo). Dani 2026-06-11.
-      const van = new Container();
-      van.addChild(new Graphics().roundRect(-7, -4.3, 14, 8.6, 2.6).fill({ color: vanCol }).stroke({ width: 1.2, color: 0xa8dafc, alpha: 0.9 }));
-      van.addChild(new Graphics().roundRect(2.4, -3.0, 3.4, 6.0, 1.3).fill({ color: 0x06101a, alpha: 0.58 })); // parabrisas (morro a +x)
+      // Sprite de furgo (Nano Banana) — servicio neutro; el color de cuadrilla lo lleva el halo.
+      // Morro del sprite = arriba (-y); el convenio del mapa es morro a +x → +90°.
+      const van = new Sprite(vanTexture());
+      van.anchor.set(0.5, 0.5);
+      const vanSc = (16 / VAN_TEX_NATIVE) * s;
       van.position.set(px, py);
       const flip = Math.abs(ang) > Math.PI / 2;
-      van.rotation = flip ? ang + Math.PI : ang;
-      van.scale.set(flip ? -s : s, s);
+      van.rotation = (flip ? ang + Math.PI : ang) + Math.PI / 2;
+      van.scale.set((flip ? -1 : 1) * vanSc, vanSc);
       W.addChild(van);
       if (label) {
         const vlbl = new Text({ text: label, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } }, resolution: 3 });

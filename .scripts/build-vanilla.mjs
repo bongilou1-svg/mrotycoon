@@ -109,10 +109,18 @@ const FONTS_CSS = (() => {
   return existsSync(p) ? readFileSync(p, "utf-8") : "";
 })();
 
+// Key-art del menú (Nano Banana Pro) embebido base64 → fondo del menú principal (solo intro),
+// con velo oscuro para legibilidad. Si no existe el fichero, el menú cae a su fondo atmosférico.
+const KEYART_DATA = (() => {
+  const p = join(root, ".scripts", "keyart-embedded.txt");
+  return existsSync(p) ? readFileSync(p, "utf-8").trim() : "";
+})();
+const KEYART_CSS = KEYART_DATA ? `.foh-keyart{background-image:url(${KEYART_DATA})}` : "";
+
 function renderHtml(simBundle, renderBundle) {
   return `<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>MRO Tycoon — Fase 3 Bloque H</title>
 <style>
-${FONTS_CSS}${CSS}
+${FONTS_CSS}${CSS}${KEYART_CSS}
 </style></head><body>
 ${BODY}
 <script>
@@ -217,7 +225,7 @@ button.primary{background:var(--accent-d);border-color:var(--accent)}
 .sit-tiles .tnum{font:700 1.5rem/1 var(--mono);letter-spacing:-.02em;color:var(--text)}
 .sit-tiles .tlbl{display:flex;align-items:center;gap:.35rem;font:.6rem/1.1 var(--disp);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .sit-tiles .tile.c-progress .tnum{color:var(--accent)} .sit-tiles .tile.c-unassigned .tnum{color:var(--warn)} .sit-tiles .tile.c-aog .tnum{color:var(--warn)}
-.sit-tiles .led{width:8px;height:8px;border-radius:50%;flex:none;box-shadow:0 0 8px currentColor}
+.sit-tiles .led{width:8px;height:8px;border-radius:50%;flex:none;background:currentColor;box-shadow:0 0 8px currentColor}
 .feed-wrap{padding:1rem 1.5rem 1.5rem}
 .grp-head{display:flex;align-items:center;gap:.6rem;margin:1.4rem 0 .7rem;font:600 .82rem var(--disp);color:var(--text)}
 .grp-head .gdot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
@@ -484,6 +492,9 @@ td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}tr:hover{backgroun
 .foh-root{position:fixed;inset:0;z-index:1000;overflow:hidden;color:var(--text);font-family:var(--sans);user-select:none;background:radial-gradient(120% 120% at 50% 50%,#0a0f17 0%,#04070c 100%);--bg-deep:#070b12;--border-strong:var(--border-s);--accent-hover:#6db5ff}
 .foh-root *{box-sizing:border-box}
 .foh-bg{position:absolute;inset:0;background:radial-gradient(900px 520px at 78% 8%,rgba(77,163,255,.10) 0%,transparent 62%),radial-gradient(700px 600px at 12% 100%,rgba(77,163,255,.06) 0%,transparent 60%),linear-gradient(180deg,#0e141d 0%,#0a0e16 100%)}
+/* Key-art de Banana como fondo del menú (solo intro), con velo para legibilidad del título/menú. */
+.foh-keyart{position:absolute;inset:0;background-position:center right;background-size:cover;background-repeat:no-repeat}
+.foh-keyart::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,10,18,.95) 0%,rgba(6,10,18,.66) 46%,rgba(6,10,18,.34) 100%),linear-gradient(180deg,rgba(6,10,18,.48) 0%,rgba(6,10,18,.84) 100%)}
 .foh-gridbg{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(58,66,86,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(58,66,86,.10) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(120% 100% at 70% 30%,#000 30%,transparent 85%);mask-image:radial-gradient(120% 100% at 70% 30%,#000 30%,transparent 85%)}
 .foh-svg{position:absolute;left:0;bottom:6%;width:100%;height:42%;opacity:.55;pointer-events:none}
 .foh-radar{position:absolute;width:min(46vw,560px);aspect-ratio:1;right:-6vw;top:-12vh;border-radius:50%;opacity:.5;-webkit-mask-image:radial-gradient(closest-side,#000 60%,transparent 100%);mask-image:radial-gradient(closest-side,#000 60%,transparent 100%);pointer-events:none}
@@ -1234,7 +1245,7 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 .cov-cnt{margin-left:auto;font:700 1.1rem var(--mono)}
 .cov-chip.cov-ok .cov-cnt{color:var(--ok)}.cov-chip.cov-warn .cov-cnt{color:var(--warn)}.cov-chip.cov-bad .cov-cnt{color:var(--bad)}
 .cov-badge{font:.56rem var(--mono);padding:1px 5px;border-radius:4px;background:rgba(248,81,73,.13);color:var(--bad);border:1px solid rgba(248,81,73,.3)}
-.sb-wrap{display:grid;grid-template-columns:1fr 1fr 1fr 220px;height:calc(100vh - 210px);min-height:380px;overflow:hidden}
+.sb-wrap{display:grid;grid-template-columns:1fr 1fr 1fr 220px;height:calc(100vh - 172px);min-height:380px;overflow:hidden}
 .sb-col{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
 .sb-col-h{display:flex;align-items:center;gap:.45rem;padding:.5rem .75rem;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:2;font:700 .85rem var(--sans)}
 .sh-ic{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;font-size:.82rem;flex:none}
@@ -1270,6 +1281,44 @@ html.hi-contrast .panel,html.hi-contrast .wo-card,html.hi-contrast .dash-card{bo
 .bench-sep{font:.58rem var(--disp);text-transform:uppercase;letter-spacing:.09em;color:var(--subtle);margin:.3rem .1rem .05rem}
 .bench-m{display:flex;align-items:center;gap:.38rem;padding:.3rem .42rem;border-radius:7px;background:var(--panel);border:1px solid var(--border)}
 .fm-card{background:linear-gradient(180deg,#1a2740,#111825);border:1px solid #2c456b;border-radius:8px;padding:.42rem .58rem;display:flex;align-items:center;gap:.42rem;margin-bottom:.35rem}
+/* ===== Sistema visual unificado (2026-07-08) — iconos monoline + subtabs en cabecera ===== */
+.mi{width:1.05em;height:1.05em;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.16em;flex:none}
+.main-head .eyebrow .mi{width:.95em;height:.95em;vertical-align:-.1em}
+/* Sub-tabs integradas en la cabecera CIC (antes barra suelta con emoji sueltos) */
+.head-tabs{display:flex;gap:.34rem;flex-wrap:wrap;align-items:center}
+.head-tabs button{display:inline-flex;align-items:center;gap:.42rem;padding:.36rem .72rem;border:1px solid var(--border);border-radius:999px;background:var(--panel-solid);color:var(--muted);font:600 .78rem var(--sans);cursor:pointer;transition:background .13s,border-color .13s,color .13s}
+.head-tabs button:hover{border-color:var(--border-s);color:var(--text)}
+.head-tabs button.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-2)}
+.head-tabs button .cnt{font:600 .66rem var(--mono);padding:.02rem .34rem;border-radius:999px;background:rgba(255,255,255,.06)}
+.head-tabs button.active .cnt{background:rgba(77,163,255,.22);color:#cfe6ff}
+/* Cuadrilla: punto de color en vez de barra completa (menos estímulos) */
+.cr-dot{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 7px currentColor}
+.cr-head .cr-del-btn{opacity:0;transition:opacity .12s}
+.cr-card:hover .cr-del-btn{opacity:1}
+.cr-slot-st{margin-left:auto;font:.56rem var(--mono);color:var(--dim);white-space:nowrap}
+.cr-slot-st.working{color:var(--accent)}
+.cr-mecs .cr-slot .cr-xbtn{margin-left:0}
+/* Board de la Oficina a sangre completa bajo la cabecera CIC */
+.office-board{margin:.35rem -1.5rem 0}
+.sb-bench-h .mi,.bench-sep .mi{opacity:.85}
+/* ===== Dashboard — KPI hero + secciones + charts ===== */
+.dash-hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.7rem;margin:.1rem 0 .3rem}
+.kpi-tile{position:relative;border:1px solid var(--line);border-radius:var(--rad);background:linear-gradient(180deg,#121b28,#0e1620);padding:.72rem .85rem .58rem;overflow:hidden}
+.kpi-tile .kt-lbl{display:flex;align-items:center;gap:.42rem;font:600 .6rem var(--disp);text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.kpi-tile .kt-big{font:700 1.75rem/1.05 var(--mono);letter-spacing:-.02em;margin-top:.4rem;color:var(--text)}
+.kpi-tile .kt-big small{font:600 .9rem var(--mono);color:var(--muted)}
+.kpi-tile .kt-sub{font:.63rem/1.3 var(--mono);color:var(--dim);margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-tile .kt-spark{margin-top:.45rem}
+.kpi-tile .kt-bar{height:5px;border-radius:3px;background:#1a2431;overflow:hidden;margin-top:.55rem}
+.kpi-tile .kt-bar i{display:block;height:100%;border-radius:3px}
+.dash-sec{display:flex;align-items:center;gap:.55rem;margin:1.7rem 0 .55rem;font:600 .96rem var(--disp);color:var(--text)}
+.dash-sec .mi{color:var(--accent);width:1.15em;height:1.15em}
+.dash-sec .sec-line{flex:1;height:1px;background:var(--line)}
+.dash-info{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--border-s);color:var(--muted);font:700 .6rem var(--disp);cursor:help;flex:none}
+.dash-info:hover{border-color:var(--accent);color:var(--accent)}
+.spark-fill{opacity:.13}
+.spark-empty{display:flex;align-items:center;justify-content:center;height:44px;font:.62rem var(--mono);color:var(--dim);border-bottom:1px dashed var(--line);opacity:.7}
+.dash-lead{font:.8rem/1.5 var(--sans);color:var(--muted);margin:.1rem 0 .3rem;max-width:74ch}
 /* ===== Asignar WO · cajón crew-first (diseño cloud 2026-06-11) ===== */
 .awo-sla{display:flex;align-items:center;justify-content:space-between;font:.68rem var(--mono);color:var(--muted);margin:.2rem 0 .25rem}
 .awo-sla b{font-size:.95rem;font-weight:600}
@@ -2676,7 +2725,7 @@ function renderCoverageGantt(){
   const band = (k, emoji, lbl) => \`<div class="cov-band"><div class="cb-fill" style="background:linear-gradient(180deg,\${C[k]}33,\${C[k]}11)"></div><span class="cb-l">\${emoji} \${lbl} <b class="\${nominal[k]===0?'zero':''}">\${nominal[k]}</b></span></div>\`;
   return \`<div class="cov">
     <div class="cov-head"><span class="ck">Cobertura 24h</span><span class="cov-now-lbl mono">▾ ahora \${fmtClock(game.clock.minute)}</span></div>
-    <div class="cov-track">\${band('morning','☀️','Mañana')}\${band('afternoon','🌅','Tarde')}\${band('night','🌙','Noche')}<div class="cov-now" style="left:\${nowPct}%"></div></div>
+    <div class="cov-track">\${band('morning',ic('sun'),'Mañana')}\${band('afternoon',ic('sunset'),'Tarde')}\${band('night',ic('moon'),'Noche')}<div class="cov-now" style="left:\${nowPct}%"></div></div>
     <div class="cov-legend"><span><b class="zero">0</b> sin cobertura</span><span class="dim">·</span><span>Sin contrato de pernocta nocturna, la noche puede ir a 0 sin penalización</span></div>
   </div>\`;
 }
@@ -2750,6 +2799,31 @@ function renderOfficeManagement(){
   return h;
 }
 
+// Iconos monoline SVG (mismo lenguaje que el sidebar) — sustituyen a los emoji del chrome
+// para el acabado "centro de control". Escrito con concatenacion (cero backticks en APP_JS).
+function ic(name){
+  var P = {
+    office:'<rect x="4" y="8.5" width="16" height="11.5" rx="1.2"/><path d="M9 20v-4h6v4M8 12.5h.01M12 12.5h.01M16 12.5h.01M4 8.5l8-4 8 4"/>',
+    team:'<circle cx="9" cy="9" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 8.6a3 3 0 0 1 0 5.8M20.5 19a5.5 5.5 0 0 0-3.2-5"/>',
+    crew:'<path d="M3 15V9h10l4 3.2V15M3 15h18M3 15v2.2h1.7M18.4 15v2.2h-1.6"/><circle cx="7.4" cy="17.6" r="1.6"/><circle cx="16.6" cy="17.6" r="1.6"/>',
+    hire:'<circle cx="9" cy="8.4" r="3.1"/><path d="M3.6 19a5.4 5.4 0 0 1 10.8 0M18.5 7.5v6M15.5 10.5h6"/>',
+    gear:'<circle cx="12" cy="12" r="3.1"/><path d="M12 3v2.6M12 18.4V21M3 12h2.6M18.4 12H21M5.6 5.6l1.85 1.85M16.55 16.55l1.85 1.85M18.4 5.6l-1.85 1.85M7.45 16.55L5.6 18.4"/>',
+    sun:'<circle cx="12" cy="12" r="3.8"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/>',
+    sunset:'<path d="M17.5 18a5.5 5.5 0 0 0-11 0M12 3v6.5M9.4 6.6 12 9.2l2.6-2.6M2.5 18h19M5.5 21.5h13"/>',
+    moon:'<path d="M20 14.6A8 8 0 0 1 9.4 4 6.6 6.6 0 1 0 20 14.6z"/>',
+    trash:'<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l1 12h9l1-12M10 10.5v5.5M14 10.5v5.5"/>',
+    plus:'<path d="M12 5.5v13M5.5 12h13"/>',
+    bench:'<path d="M4 11h16M5 11v6M19 11v6M4 14.5h16M6 11V9.2A1.2 1.2 0 0 1 7.2 8h9.6A1.2 1.2 0 0 1 18 9.2V11"/>',
+    star:'<path d="M12 3.6l2.55 5.17 5.7.83-4.12 4.02.97 5.68L12 16.6l-5.1 2.7.97-5.68L3.75 9.6l5.7-.83z"/>',
+    chart:'<path d="M4 4v16h16M8 15.5v2.5M12 10v8M16 6.5v11.5"/>',
+    shield:'<path d="M12 3.2l7 3v4.8c0 4.3-3 7.6-7 8.8-4-1.2-7-4.5-7-8.8V6.2z"/><path d="M9.2 12l2 2 3.6-3.8"/>',
+    clock:'<circle cx="12" cy="12" r="8.2"/><path d="M12 7.4V12l3 1.9"/>',
+    cash:'<rect x="3" y="6.4" width="18" height="11.2" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.4 9.6h.01M17.6 14.4h.01"/>',
+    alert:'<path d="M12 4 21 19.5H3z"/><path d="M12 10v4.2M12 17h.01"/>'
+  };
+  return '<svg class="mi" viewBox="0 0 24 24" aria-hidden="true">'+(P[name]||'')+'</svg>';
+}
+
 function renderCrews(){
   var crews = game.crews || [];
   var mechs = game.mechanics;
@@ -2777,7 +2851,7 @@ function renderCrews(){
   var hourNow = Math.floor((game.clock.minute % 1440) / 60);
   var liveShift = hourNow>=6 && hourNow<14 ? 'morning' : hourNow>=14 && hourNow<22 ? 'afternoon' : 'night';
 
-  var SDEFS = [['morning','☀️','Mañana','06-14h'],['afternoon','🌅','Tarde','14-22h'],['night','🌙','Noche','22-06h']];
+  var SDEFS = [['morning','sun','Mañana','06-14h'],['afternoon','sunset','Tarde','14-22h'],['night','moon','Noche','22-06h']];
 
   // Build crew → shift map
   var byShift = { morning:[], afternoon:[], night:[] };
@@ -2794,30 +2868,20 @@ function renderCrews(){
     return hasOff ? 'ok' : 'warn';
   };
 
-  // ── Coverage strip ──
-  var h = '<div class="cov-strip">';
-  SDEFS.forEach(function(sd){
-    var sh=sd[0], icon=sd[1], label=sd[2], hrs=sd[3];
-    var cs = byShift[sh]||[];
-    var st = shiftStatus(sh);
-    var hasB1 = cs.some(function(c){ return c.officerIds.map(mById).filter(Boolean).some(function(m){return m.base==='B1';}); });
-    var hasB2 = cs.some(function(c){ return c.officerIds.map(mById).filter(Boolean).some(function(m){return m.base==='B2';}); });
-    var badge = cs.length===0 ? '<span class="cov-badge">sin cubrir</span>'
-               : !hasB1&&!hasB2 ? '<span class="cov-badge">sin oficial</span>'
-               : !hasB2 ? '<span class="cov-badge" style="color:var(--warn);background:rgba(230,169,58,.13);border-color:rgba(230,169,58,.35)">sin B2</span>' : '';
-    h += '<div class="cov-chip cov-'+st+'"><span class="cov-ic">'+icon+'</span><div><div class="cov-lbl">'+label+' '+badge+'</div><div class="cov-hrs">'+hrs+'</div></div><span class="cov-cnt">'+cs.length+'</span></div>';
-  });
-  h += '</div>';
-
-  // ── Shift board ──
-  h += '<div class="sb-wrap">';
+  // ── Shift board ── (la tira de cobertura redundante se plegó en las cabeceras de columna)
+  var h = '<div class="sb-wrap">';
 
   SDEFS.forEach(function(sd){
     var sh=sd[0], icon=sd[1], label=sd[2], hrs=sd[3];
     var cs = byShift[sh]||[];
     var isLive = sh===liveShift;
+    var hasB1 = cs.some(function(c){ return c.officerIds.map(mById).filter(Boolean).some(function(m){return m.base==='B1';}); });
+    var hasB2 = cs.some(function(c){ return c.officerIds.map(mById).filter(Boolean).some(function(m){return m.base==='B2';}); });
+    var cbadge = cs.length===0 ? '<span class="cov-badge">sin cubrir</span>'
+               : !hasB1&&!hasB2 ? '<span class="cov-badge">sin oficial</span>'
+               : !hasB2 ? '<span class="cov-badge" style="color:var(--warn);background:rgba(230,169,58,.13);border-color:rgba(230,169,58,.35)">sin B2</span>' : '';
     h += '<div class="sb-col '+sh+(isLive?' live-shift':'')+'">'+
-      '<div class="sb-col-h"><span class="sh-ic">'+icon+'</span><span>'+label+'</span><span class="sh-hrs">'+hrs+'</span>'+
+      '<div class="sb-col-h"><span class="sh-ic">'+ic(icon)+'</span><span>'+label+'</span><span class="sh-hrs">'+hrs+'</span>'+cbadge+
       (isLive?'<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse-alert 1.2s infinite;margin-left:.2rem"></span>':'')+
       '<span class="sh-ct">'+cs.length+' cuadrilla'+(cs.length!==1?'s':'')+'</span></div>'+
       '<div class="sb-col-body">';
@@ -2836,10 +2900,9 @@ function renderCrews(){
         members.forEach(function(m){ (m.typeRatings||[]).forEach(function(r){ var k=r.model+'/'+r.engineVariant; if(!ratings.includes(k)) ratings.push(k); }); });
 
         h += '<div class="cr-card">'+
-          '<div class="cr-top" style="background:'+colorHex+'"></div>'+
-          '<div class="cr-head"><span class="cr-nm">'+esc(c.name)+'</span>'+
-          '<button class="cr-del-btn" data-crew-delete="'+c.id+'" title="Eliminar">🗑</button>'+
-          '<span class="cr-moral">'+avgMoral+'%</span></div>'+
+          '<div class="cr-head"><span class="cr-dot" style="color:'+colorHex+';background:'+colorHex+'"></span><span class="cr-nm">'+esc(c.name)+'</span>'+
+          '<span class="cr-moral">moral '+avgMoral+'%</span>'+
+          '<button class="cr-del-btn" data-crew-delete="'+c.id+'" title="Eliminar cuadrilla">'+ic('trash')+'</button></div>'+
           '<div class="cr-caps">'+ratings.slice(0,2).map(function(r){return '<span class="cr-cap">'+esc(r)+'</span>';}).join('')+(c.officerIds.length>0&&!hasB2?'<span class="cr-cap miss">B2 ✕</span>':'')+'</div>'+
           '<div class="cr-mecs">';
 
@@ -2851,7 +2914,7 @@ function renderCrews(){
           h += '<div class="cr-slot"><span class="cr-av '+avCls(m)+'">'+ini(m.name)+'</span>'+
             '<span class="cr-nm2" title="'+esc(m.name)+'">'+esc(m.name)+'</span>'+
             '<span class="cr-lic '+licCls(m)+'">'+licLbl(m)+'</span>'+
-            '<span class="cr-lic" style="background:rgba(255,255,255,.04);color:var(--dim);font-size:.52rem">'+woLbl+'</span>'+
+            '<span class="cr-slot-st '+woCls+'">'+woLbl+'</span>'+
             '<button class="cr-xbtn" data-crew-remove="'+c.id+':'+id+'" title="Quitar">×</button></div>';
         });
         // Helpers
@@ -2881,7 +2944,7 @@ function renderCrews(){
   });
 
   // ── Bench ──
-  h += '<div class="sb-bench"><div class="sb-bench-h">💤 Banco <span style="margin-left:auto;font:.65rem var(--mono)">'+(freeOfficers.length+freeHelpers.length+(foreman?1:0))+'</span></div><div class="sb-bench-body">';
+  h += '<div class="sb-bench"><div class="sb-bench-h">'+ic('bench')+' Banco <span style="margin-left:auto;font:.65rem var(--mono)">'+(freeOfficers.length+freeHelpers.length+(foreman?1:0))+'</span></div><div class="sb-bench-body">';
 
   if (foreman){
     h += '<div class="fm-card"><span class="cr-av fm">'+ini(foreman.name)+'</span>'+
@@ -2889,14 +2952,14 @@ function renderCrews(){
       '<div style="font:.58rem var(--mono);color:var(--warn)">TMA · auto-asigna</div></div></div>';
   }
   if (freeOfficers.length){
-    h += '<div class="bench-sep">👷 Oficiales libres</div>';
+    h += '<div class="bench-sep">'+ic('team')+' Oficiales libres</div>';
     freeOfficers.forEach(function(m){
       h += '<div class="bench-m"><span class="cr-av '+avCls(m)+'">'+ini(m.name)+'</span>'+
         '<span class="cr-nm2">'+esc(m.name)+'</span><span class="cr-lic '+licCls(m)+'">'+licLbl(m)+'</span></div>';
     });
   }
   if (freeHelpers.length){
-    h += '<div class="bench-sep">🤝 Helpers libres</div>';
+    h += '<div class="bench-sep">'+ic('hire')+' Helpers libres</div>';
     freeHelpers.forEach(function(m){
       h += '<div class="bench-m"><span class="cr-av h">'+ini(m.name)+'</span>'+
         '<span class="cr-nm2">'+esc(m.name)+'</span><span class="cr-lic h">H</span></div>';
@@ -2936,44 +2999,43 @@ function renderOffice(){
   const workingCount = mechs.filter(m => m.state === "Working" || m.state === "ToPlane" || m.state === "Returning").length;
   const offshiftCount = mechs.filter(m => m.state === "OffShift").length;
 
-  let h = '<h2>🏢 Oficina</h2>';
-  // Pivot iteración 2026-05-25: sub-tabs para no saturar la vista. "Equipo" = panel
-  // operacional (capacidad + mecs + cobertura horaria). "Contratación" = pool de
-  // candidatos (antes tab "Mercado" top-level). Conceptualmente todo es RRHH del MRO,
-  // tiene sentido bajo un solo paraguas.
+  // Cabecera CIC unificada (mismo patrón que Contratos/Schedule) + sub-tabs en pill dentro
+  // de la cabecera. Escrito con concatenación (cero backticks en APP_JS).
   const candCount = (game.candidates ?? []).length;
-  h += \`<div class="subtabs" style="display:flex;gap:.5rem;margin-bottom:.75rem;border-bottom:1px solid var(--border);padding-bottom:.4rem">
-    <button class="subtab\${officeSubtab === 'team' ? ' active' : ''}" data-office-subtab="team" style="padding:.3rem .8rem;background:\${officeSubtab === 'team' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'team' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">👷 Equipo</button>
-    <button class="subtab\${officeSubtab === 'crews' ? ' active' : ''}" data-office-subtab="crews" style="padding:.3rem .8rem;background:\${officeSubtab === 'crews' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'crews' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">🚐 Cuadrillas <span class="badge" style="margin-left:.3rem">\${(game.crews||[]).length}</span></button>
-    <button class="subtab\${officeSubtab === 'hiring' ? ' active' : ''}" data-office-subtab="hiring" style="padding:.3rem .8rem;background:\${officeSubtab === 'hiring' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'hiring' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">🤝 Contratación <span class="badge" style="margin-left:.3rem">\${candCount}</span></button>
-    <button class="subtab\${officeSubtab === 'management' ? ' active' : ''}" data-office-subtab="management" style="padding:.3rem .8rem;background:\${officeSubtab === 'management' ? 'var(--accent)' : 'transparent'};color:\${officeSubtab === 'management' ? '#fff' : 'var(--text)'};border:1px solid var(--border);border-radius:4px;cursor:pointer">⚙️ Management</button>
-  </div>\`;
+  function offTab(id,label,icon,badge){ return '<button class="'+(officeSubtab===id?'active':'')+'" data-office-subtab="'+id+'">'+ic(icon)+'<span>'+label+'</span>'+(badge!=null?'<span class="cnt">'+badge+'</span>':'')+'</button>'; }
+  let h = '<div class="cic-panel"><div class="main-head"><div class="eyebrow">Gestión · Plantilla y cuadrillas</div>'
+    + '<div class="title-row"><div><h1>Oficina</h1><div class="sub">Sede del MRO · técnicos, cuadrillas y contratación</div></div>'
+    + '<div class="head-tabs">'
+    + offTab('team','Equipo','team',null)
+    + offTab('crews','Cuadrillas','crew',(game.crews||[]).length)
+    + offTab('hiring','Contratación','hire',candCount)
+    + offTab('management','Management','gear',null)
+    + '</div></div></div>';
   // Subseción "Contratación" delega a renderMarket (pool de candidatos)
   if (officeSubtab === "hiring") {
-    h += renderMarket();
-    return h;
+    return h + '<div class="feed-wrap">' + renderMarket() + '</div></div>';
   }
   // Subseción "Management" = normas operativas de la oficina
   if (officeSubtab === "management") {
-    h += renderOfficeManagement();
-    return h;
+    return h + '<div class="feed-wrap">' + renderOfficeManagement() + '</div></div>';
   }
   // Subseción "Cuadrillas" = composición manual de equipos (oficial + helpers, una furgo c/u)
   if (officeSubtab === "crews") {
-    return h + '<div style="margin:-1rem -1.5rem;border-top:1px solid var(--border)">' + renderCrews() + '</div>';
+    return h + '<div class="office-board">' + renderCrews() + '</div></div>';
   }
   // === Resto = subseción "Equipo" === (rediseño CIC 2026-05-30: tiles + bandas + mcards)
-  h += '<p class="muted" style="margin-bottom:.6rem">Sede física del MRO · OVD/LEAS · los técnicos esperan aquí y viajan al stand (~2 min). Click en una tarjeta para detalle, ratings y acciones (formar, turno, despedir).</p>';
+  h += '<div class="feed-wrap">';
+  h += '<p class="muted" style="margin-bottom:.6rem">Los técnicos esperan en la oficina y viajan al stand (~2 min). Click en una tarjeta para ratings y acciones (formar, turno, despedir).</p>';
   const transitCount = mechs.filter(m => m.state === "ToPlane" || m.state === "Returning").length;
   const workingOnly = mechs.filter(m => m.state === "Working").length;
   const moralLed = avgMoral >= 70 ? "var(--ok)" : avgMoral >= 40 ? "var(--warn)" : "var(--bad)";
   const offTiles = [
-    {cls:"c-ground", num:capLabel, lbl:"👥 Plantilla"},
-    {cls:"c-progress", num:workingOnly, lbl:"⚙️ En trabajo", led:"var(--accent)"},
-    {cls:"c-unassigned", num:transitCount, lbl:"🚐 En tránsito", led:"var(--cyan)"},
-    {cls:"c-closed", num:idleCount, lbl:"✅ Disponibles", led:"var(--ok)"},
-    {cls:"c-aog", num:avgMoral, lbl:"🙂 Moral media", led:moralLed},
-    {cls:"c-progress", num:\`\${(totalSalary/1000).toFixed(1)}k\`, lbl:"💼 €/sem"},
+    {cls:"c-ground", num:capLabel, lbl:"Plantilla"},
+    {cls:"c-progress", num:workingOnly, lbl:"En trabajo", led:"var(--accent)"},
+    {cls:"c-unassigned", num:transitCount, lbl:"En tránsito", led:"var(--cyan)"},
+    {cls:"c-closed", num:idleCount, lbl:"Disponibles", led:"var(--ok)"},
+    {cls:"c-aog", num:avgMoral, lbl:"Moral media", led:moralLed},
+    {cls:"c-progress", num:\`\${(totalSalary/1000).toFixed(1)}k\`, lbl:"€/sem"},
   ];
   h += \`<div class="sitbar" style="margin-bottom:.7rem"><div class="sit-tiles">\${offTiles.map(t=>\`<div class="tile \${t.cls}" style="cursor:default"><div class="tnum" style="\${typeof t.num==='string'&&t.num.length>4?'font-size:1.15rem':''}">\${t.num}</div><div class="tlbl">\${t.led?\`<span class="led" style="color:\${t.led};background:\${t.led}"></span>\`:""}\${t.lbl}</div></div>\`).join("")}</div></div>\`;
   h += renderCoverageGantt();
@@ -2995,7 +3057,7 @@ function renderOffice(){
     else task = \`<span style="color:var(--dim)">Sin asignación · \${m.shift ?? "morning"}</span>\`;
     // Dani 2026-06-11: el turno individual YA NO se edita aquí — lo fija la cuadrilla a la que
     // pertenece (añadir a una cuadrilla = heredar su turno, en la pestaña Cuadrillas).
-    const shLbl = s => s==="morning"?"☀️ mañana":s==="afternoon"?"🌅 tarde":s==="night"?"🌙 noche":"💤 libre";
+    const shLbl = s => s==="morning"?"mañana":s==="afternoon"?"tarde":s==="night"?"noche":"libre";
     const shiftHtml = \`<span class="tag shift-\${m.shift==="afternoon"?"afternoon":m.shift==="night"?"night":m.shift==="off"?"off":"morning"}" title="El turno lo fija su cuadrilla (pestaña Cuadrillas)">\${shLbl(m.shift ?? "morning")}</span>\`;
     h += \`<article class="mcard" data-mech-id="\${m.id}" title="Click para detalle">
       <div class="mcard-top">
@@ -3011,7 +3073,7 @@ function renderOffice(){
       <div class="mc-foot">\${shiftHtml}<span class="mono" style="color:var(--muted);font-size:.72rem">\${fmt(S.effectiveWeeklySalary(m))} €/sem\${m.shift==="night"?" ×1.5":""}</span></div>
     </article>\`;
   }
-  return h + '</div>';
+  return h + '</div></div>';
 }
 
 function renderMarket(){
@@ -3167,33 +3229,33 @@ function renderContracts(){
 }
 
 /** Sparkline SVG simple. data = array de números. width/height en px. color = stroke. */
+// Sparkline con relleno de área. FIX: el color va en style="stroke:..." (los atributos SVG
+// de presentación NO resuelven var() de CSS → antes salía sin trazo = invisible). Concat pura.
 function sparkline(data, opts = {}){
-  const { width = 280, height = 60, color = "var(--primary)", showRange = true } = opts;
-  if (!data || data.length === 0) return '<div class="muted" style="font-size:.85rem;padding:1rem">Sin datos aún. Llega un cierre semanal para empezar.</div>';
-  if (data.length === 1) {
-    return \`<div class="muted" style="font-size:.85rem;padding:.5rem">Solo 1 punto (\${data[0].toFixed(0)}). Esperando próximas semanas...</div>\`;
+  var o = opts || {};
+  var width = o.width || 280, height = o.height || 46;
+  var color = o.color || "var(--accent)";
+  var showRange = o.showRange !== false && !o.compact;
+  var vals = (data || []).filter(function(v){ return typeof v === "number" && isFinite(v); });
+  if (vals.length < 2) return '<div class="spark-empty">— sin datos aún —</div>';
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  var range = (max - min) || 1;
+  var stepX = width / (vals.length - 1);
+  var yOf = function(v){ return (height - ((v - min) / range) * (height * 0.84) - height * 0.09).toFixed(1); };
+  var pts = vals.map(function(v,i){ return (i*stepX).toFixed(1) + ',' + yOf(v); });
+  var line = pts.join(' ');
+  var area = 'M0,' + height + ' L' + pts.join(' L') + ' L' + width.toFixed(1) + ',' + height + ' Z';
+  var lastX = ((vals.length-1)*stepX).toFixed(1), lastY = yOf(vals[vals.length-1]);
+  var h = '<div class="sparkline"><svg viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none" style="width:100%;height:' + height + 'px;display:block">';
+  h += '<path d="' + area + '" class="spark-fill" style="fill:' + color + '"/>';
+  h += '<polyline points="' + line + '" vector-effect="non-scaling-stroke" style="fill:none;stroke:' + color + ';stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"/>';
+  h += '<circle cx="' + lastX + '" cy="' + lastY + '" r="2.4" style="fill:' + color + '"/></svg>';
+  if (showRange){
+    var delta = vals[vals.length-1] - vals[0];
+    var dc = delta>0?'var(--success)':delta<0?'var(--danger)':'var(--muted)';
+    h += '<div class="spark-meta"><span class="mono">min ' + min.toFixed(0) + '</span> <span class="mono" style="color:' + dc + '">' + (delta>0?'+':'') + delta.toFixed(0) + '</span> <span class="mono">max ' + max.toFixed(0) + '</span></div>';
   }
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const stepX = width / (data.length - 1);
-  const points = data.map((v, i) => {
-    const x = i * stepX;
-    const y = height - ((v - min) / range) * height;
-    return \`\${x.toFixed(1)},\${y.toFixed(1)}\`;
-  }).join(" ");
-  const lastVal = data[data.length - 1];
-  const firstVal = data[0];
-  const delta = lastVal - firstVal;
-  const deltaColor = delta > 0 ? "var(--success)" : delta < 0 ? "var(--danger)" : "var(--muted)";
-  const deltaSign = delta > 0 ? "+" : "";
-  return \`<div class="sparkline">
-    <svg width="\${width}" height="\${height}" viewBox="0 0 \${width} \${height}" preserveAspectRatio="none">
-      <polyline points="\${points}" fill="none" stroke="\${color}" stroke-width="1.5" />
-      <circle cx="\${(data.length - 1) * stepX}" cy="\${height - ((lastVal - min) / range) * height}" r="2.5" fill="\${color}" />
-    </svg>
-    \${showRange ? \`<div class="spark-meta"><span class="mono">min \${min.toFixed(0)}</span> <span class="mono" style="color:\${deltaColor}">\${deltaSign}\${delta.toFixed(0)}</span> <span class="mono">max \${max.toFixed(0)}</span></div>\` : ''}
-  </div>\`;
+  return h + '</div>';
 }
 
 function renderActiveEvents(){
@@ -3297,35 +3359,45 @@ function renderDashboard(){
         ? \`Necesitas ≥10 departures gestionados para tener fama (\${kpi.totalDepartures}/10).\`
         : "Mejora rep media + on-time + reduce AOG para subir el brand.";
 
+  // KPI hero row — los números de titular de un vistazo (forma correcta: stat-tiles + sparkline).
+  const repAvgHero = Math.round(S.getAverageRep(game.reputation));
+  const heroKpis = [
+    { lbl:"Caja", big: fmt(game.economy.balance)+' €', sub:"balance operativo", spark: balances, col:"var(--accent)" },
+    { lbl:"Brand del MRO", big: brand+'<small>/100</small>', bar:{pct:brand, col:brandColor}, sub:(brand>=brandThreshold?'ofertas externas abiertas':'umbral '+brandThreshold+' para ofertas'), col:brandColor },
+    { lbl:"TDR", big: tdrPct.toFixed(1)+'<small>%</small>', sub:"fiabilidad de despacho", col:tdrColor },
+    { lbl:"Reputación", big: repAvgHero+'<small>/100</small>', spark: reps, sub:"media de clientes", col:"var(--warn)" },
+    { lbl:"AOG acumulados", big: String(kpi.totalAog), sub: aogPct.toFixed(1)+'% de salidas', col:(kpi.totalAog>0?'var(--danger)':'var(--muted)') },
+  ];
+  let heroHtml = '<div class="dash-hero">';
+  heroKpis.forEach(function(k){
+    heroHtml += '<div class="kpi-tile"><div class="kt-lbl">'+k.lbl+'</div>'
+      + '<div class="kt-big" style="color:'+(k.col||'var(--text)')+'">'+k.big+'</div>'
+      + '<div class="kt-sub">'+(k.sub||'')+'</div>';
+    if (k.bar) heroHtml += '<div class="kt-bar"><i style="width:'+Math.max(2,Math.min(100,k.bar.pct))+'%;background:'+k.bar.col+'"></i></div>';
+    else if (k.spark) heroHtml += '<div class="kt-spark">'+sparkline(k.spark, {compact:true, height:34})+'</div>';
+    heroHtml += '</div>';
+  });
+  heroHtml += '</div>';
+
   return \`<div class="cic-panel"><div class="main-head"><div class="eyebrow">Análisis · Rendimiento del MRO</div><div class="title-row"><div><h1>Dashboard</h1><div class="sub">KPIs reales · TDR · brand · horas-hombre</div></div></div></div><div class="dash-wrap">
-  <p class="muted" style="margin-bottom:.75rem">Series semanales (último año ingame, max 52 semanas). Cada punto = cierre de semana.</p>
+  \${heroHtml}
 
-  <h3 style="margin-top:1rem">🌟 Brand Reputation del MRO</h3>
-  <p class="muted" style="margin-bottom:.5rem">Score objetivo que las aerolíneas SIN contrato observan. Deriva de tus KPIs (50% rep media de contratadas · 30% on-time · 20% (1-AOG)). Cada aerolínea tiene su propio umbral — ver <strong>Contratos</strong> para el pipeline completo de aerolíneas interesadas + próxima evaluación.</p>
+  <div class="dash-lead">\${brandHint} El brand deriva 50% de la rep media de contratadas · 30% on-time · 20% (1−AOG); ver <strong>Contratos</strong> para el pipeline de aerolíneas interesadas.</div>
+
+  <div class="dash-sec">\${ic('chart')}TDR — Technical Dispatch Reliability<span class="dash-info" title="% de salidas despachadas sin fallo técnico imputable. Solo cuenta un retraso ≥15 min por avería que NO resolviste a tiempo (mec ocupado / sin técnico / sin habilitación). Sin avería, causa externa o <15 min → dispatch fiable. Cotas D-15 · D-60 · AOG ≥3h. Benchmark sector 98,5–99,5%.">i</span><span class="sec-line"></span></div>
   <div class="dash-grid">
     <div class="dash-card">
-      <div class="dash-title">🌟 Brand del MRO</div>
-      <div class="dash-big" style="color:\${brandColor}">\${brand}<span style="font-size:.85rem;color:var(--muted)"> /100</span></div>
-      <div class="bar" style="height:6px;margin-top:.4rem"><div class="fill" style="width:\${brand}%;background:\${brandColor}"></div><div style="position:relative;width:\${brandThreshold}%;border-right:2px dashed var(--text);height:6px;margin-top:-6px"></div></div>
-      <div class="muted" style="font-size:.72rem;margin-top:.3rem">\${brandHint}</div>
-    </div>
-  </div>
-
-  <h3 style="margin-top:1.5rem">📈 TDR — Technical Dispatch Reliability</h3>
-  <p class="muted" style="margin-bottom:.5rem">Tu KPI principal: <strong>% de salidas despachadas sin fallo técnico imputable</strong>. Solo cuenta contra ti un retraso <strong>≥15 min causado por una avería que NO resolviste a tiempo</strong> (mecánico ocupado, sin técnico, sin habilitación). Si el avión no tenía avería, o el retraso es por causa externa, o fue &lt;15 min → dispatch fiable. Cotas: D-15 (fallo) · D-60 (serio) · ≥3h (AOG). Benchmark sector: 98,5-99,5%.</p>
-  <div class="dash-grid">
-    <div class="dash-card">
-      <div class="dash-title">📊 TDR Global</div>
+      <div class="dash-title">TDR Global</div>
       <div class="dash-big" style="color:\${tdrColor}">\${tdrPct.toFixed(1)}<span style="font-size:.85rem;color:var(--muted)">%</span></div>
       <div class="muted" style="font-size:.75rem">\${kpi.totalReliable ?? kpi.totalDepartures}/\${kpi.totalDepartures} departures fiables · delay imputable medio \${tdrMin.toFixed(1)} min/dep</div>
     </div>
     <div class="dash-card">
-      <div class="dash-title">⚠️ Fallos de dispatch (técnicos)</div>
+      <div class="dash-title">Fallos de dispatch (técnicos)</div>
       <div class="dash-big" style="color:\${fail15 > 0 ? 'var(--warning)' : 'var(--success)'}">\${fail15}</div>
       <div class="muted" style="font-size:.75rem">D-15 (≥15m imputable) · de ellos \${fail60} serios (D-60, ≥60m)</div>
     </div>
     <div class="dash-card">
-      <div class="dash-title">🛑 AOG (delay ≥3h)</div>
+      <div class="dash-title">AOG (delay ≥3h)</div>
       <div class="dash-big" style="color:\${aogPct > 5 ? 'var(--danger)' : 'var(--muted)'}">\${kpi.totalAog}</div>
       <div class="muted" style="font-size:.75rem">\${aogPct.toFixed(1)}% de departures · penalty €\${S.AOG_ESCALATION_PENALTY_EUR.toLocaleString("es-ES")} c/u</div>
     </div>
@@ -3337,21 +3409,20 @@ function renderDashboard(){
     <tbody>\${perAirlineRows}</tbody>
   </table>
 
-  <h3 style="margin-top:1.5rem">💼 Horas-hombre (modelo MRO real)</h3>
-  <p class="muted" style="margin-bottom:.5rem">Cada tarea se factura por <strong>HH-book</strong> (referencia AMM/MPD del fabricante). El mecánico tarda más o menos según skill/moral/rating → <strong>HH-actual</strong>. Ratio book/actual mide tu eficiencia operativa (&gt;1 mecs rápidos, margen alto · &lt;1 lentos, margen comido).</p>
+  <div class="dash-sec">\${ic('clock')}Horas-hombre (modelo MRO real)<span class="dash-info" title="Cada tarea se factura por HH-book (referencia AMM/MPD del fabricante). El mecánico tarda más o menos según skill/moral/rating → HH-actual. Ratio book/actual mide tu eficiencia operativa (>1 mecs rápidos · <1 lentos).">i</span><span class="sec-line"></span></div>
   <div class="dash-grid">
     <div class="dash-card">
-      <div class="dash-title">📘 HH-book facturadas</div>
+      <div class="dash-title">HH-book facturadas</div>
       <div class="dash-big">\${hkpi.totalBookHoursBilled.toFixed(1)} <span style="font-size:.85rem;color:var(--muted)">h</span></div>
       <div class="muted" style="font-size:.75rem">Sobre \${kpi.totalDepartures} departures · cobro = HH-book × tarifa €/HH</div>
     </div>
     <div class="dash-card">
-      <div class="dash-title">⏱️ HH-actual dedicadas</div>
+      <div class="dash-title">HH-actual dedicadas</div>
       <div class="dash-big">\${hkpi.totalActualHoursWorked.toFixed(1)} <span style="font-size:.85rem;color:var(--muted)">h</span></div>
       <div class="muted" style="font-size:.75rem">Tiempo real entre emisión y completion de cada WO</div>
     </div>
     <div class="dash-card">
-      <div class="dash-title">📊 Eficiencia HH (book/actual)</div>
+      <div class="dash-title">Eficiencia HH (book/actual)</div>
       <div class="dash-big" style="color:\${effColor}">\${eff.toFixed(2)}×</div>
       <div class="muted" style="font-size:.75rem">\${eff >= 1.0 ? "Mecs rápidos · margen alto" : eff >= 0.85 ? "Cerca del book · OK" : "Mecs lentos · margen comido"}</div>
     </div>
@@ -3380,35 +3451,35 @@ function renderDashboard(){
     })()}</tbody>
   </table>
 
-  <h3 style="margin-top:1.5rem">📊 Series semanales</h3>
+  <div class="dash-sec">\${ic('chart')}Series semanales<span class="sec-line"></span></div>
   <div class="dash-grid">
     <div class="dash-card">
-      <div class="dash-title">💰 Balance</div>
+      <div class="dash-title">Balance</div>
       <div class="dash-big">\${fmt(game.economy.balance)} €</div>
       \${sparkline(balances, { color: "var(--primary)" })}
     </div>
     <div class="dash-card">
-      <div class="dash-title">⭐ Reputación media</div>
+      <div class="dash-title">Reputación media</div>
       <div class="dash-big">\${Math.round(S.getAverageRep(game.reputation))}/100</div>
       \${sparkline(reps, { color: "var(--success)" })}
     </div>
     <div class="dash-card">
-      <div class="dash-title">✅ WOs completadas (acumuladas)</div>
+      <div class="dash-title">WOs completadas (acumuladas)</div>
       <div class="dash-big">\${allWorkOrders().filter(w => w.phase === "Completed").length}</div>
       \${sparkline(woComp, { color: "var(--success)" })}
     </div>
     <div class="dash-card">
-      <div class="dash-title">⏰ WOs late (acumuladas)</div>
+      <div class="dash-title">WOs late (acumuladas)</div>
       <div class="dash-big">\${woLate.length > 0 ? woLate[woLate.length - 1] : 0}</div>
       \${sparkline(woLate, { color: "var(--warning)" })}
     </div>
     <div class="dash-card">
-      <div class="dash-title">🛡️ Compliance Part-145</div>
+      <div class="dash-title">Compliance Part-145</div>
       <div class="dash-big">\${game.compliance?.score ?? 80}/100</div>
       \${sparkline(compliance, { color: "var(--warning)" })}
     </div>
     <div class="dash-card">
-      <div class="dash-title">⚙️ Mecánicos contratados</div>
+      <div class="dash-title">Mecánicos contratados</div>
       <div class="dash-big">\${game.mechanics.length}</div>
       \${sparkline(mechs, { color: "var(--muted)" })}
     </div>
@@ -6297,7 +6368,7 @@ function renderNewGameWizard() {
   const catalog = newGameCatalog ?? S.DATA.airportCatalog;
   // Fondo atmosférico compartido (CSS/SVG puro, sin assets). deep = scrim más opaco para
   // pantallas con cartas.
-  const bg = (deep) => \`<div class="foh-bg"></div><div class="foh-gridbg"></div><svg class="foh-svg" viewBox="0 0 1280 300" preserveAspectRatio="none" aria-hidden="true"><g opacity="0.6"><rect x="120" y="60" width="1010" height="34" fill="none" stroke="#2f3a4f"/><line x1="140" y1="77" x2="1110" y2="77" stroke="#3d4a63" stroke-width="1.6" stroke-dasharray="20 16"/><line x1="124" y1="60" x2="124" y2="94" stroke="#46d08a" stroke-width="2" opacity="0.7"/><line x1="1126" y1="60" x2="1126" y2="94" stroke="#46d08a" stroke-width="2" opacity="0.7"/><text x="150" y="82" fill="#5d6677" font-family="JetBrains Mono,monospace" font-size="13">11</text><text x="1098" y="82" fill="#5d6677" font-family="JetBrains Mono,monospace" font-size="13" text-anchor="end">29</text></g><line x1="150" y1="150" x2="1108" y2="150" stroke="#283041" stroke-width="1" stroke-dasharray="14 12" opacity="0.6"/></svg><div class="foh-radar"><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div><div class="sweep"></div></div><div class="foh-blip" style="left:64%;top:30%"></div><div class="foh-scrim\${deep ? " deep" : ""}"></div><div class="foh-scan"></div>\`;
+  const bg = (deep) => \`<div class="foh-bg"></div>\${deep ? "" : '<div class="foh-keyart"></div>'}<div class="foh-gridbg"></div><svg class="foh-svg" viewBox="0 0 1280 300" preserveAspectRatio="none" aria-hidden="true"><g opacity="0.6"><rect x="120" y="60" width="1010" height="34" fill="none" stroke="#2f3a4f"/><line x1="140" y1="77" x2="1110" y2="77" stroke="#3d4a63" stroke-width="1.6" stroke-dasharray="20 16"/><line x1="124" y1="60" x2="124" y2="94" stroke="#46d08a" stroke-width="2" opacity="0.7"/><line x1="1126" y1="60" x2="1126" y2="94" stroke="#46d08a" stroke-width="2" opacity="0.7"/><text x="150" y="82" fill="#5d6677" font-family="JetBrains Mono,monospace" font-size="13">11</text><text x="1098" y="82" fill="#5d6677" font-family="JetBrains Mono,monospace" font-size="13" text-anchor="end">29</text></g><line x1="150" y1="150" x2="1108" y2="150" stroke="#283041" stroke-width="1" stroke-dasharray="14 12" opacity="0.6"/></svg><div class="foh-radar"><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div><div class="sweep"></div></div><div class="foh-blip" style="left:64%;top:30%"></div><div class="foh-scrim\${deep ? " deep" : ""}"></div><div class="foh-scan"></div>\`;
   let body = "";
   if (newGameStep === "intro") {
     const isTauri = typeof window !== "undefined" && !!window.__TAURI__;
