@@ -34,12 +34,34 @@ export function setActiveAirportPaths(paths: AirportPathsData): void {
   activeAirportPaths = paths;
 }
 
-// Texturas de sprites top-down (Nano Banana) embebidas base64 → Texture.from(dataURI), sin CORS
-// (funciona en file:// y http). Lazy singletons: se crean al dibujar el primer avión/furgo.
+// Texturas de sprites top-down (Nano Banana) embebidas base64. ⚠️ Pixi v8: Texture.from(string)
+// SOLO consulta la caché de Assets (no carga URLs ni data-URIs) → devolvía undefined y el sprite
+// no pintaba nada (solo se veía el halo = "punto de color"). Decodificamos el data-URI a un
+// HTMLImageElement y creamos la textura de la imagen ya cargada. Lazy: la primera llamada dispara
+// la decodificación (local, <1 frame) y devuelve null; el bucle de render lo pinta al tick
+// siguiente. Sin CORS (funciona en file:// y http).
 let _acTex: Texture | null = null;
 let _vanTex: Texture | null = null;
-function aircraftTexture(): Texture { if (!_acTex) _acTex = Texture.from(SPRITE_A320); return _acTex; }
-function vanTexture(): Texture { if (!_vanTex) _vanTex = Texture.from(SPRITE_VAN); return _vanTex; }
+let _acLoading = false;
+let _vanLoading = false;
+function aircraftTexture(): Texture | null {
+  if (!_acTex && !_acLoading && typeof Image !== "undefined") {
+    _acLoading = true;
+    const img = new Image();
+    img.onload = () => { _acTex = Texture.from(img); };
+    img.src = SPRITE_A320;
+  }
+  return _acTex;
+}
+function vanTexture(): Texture | null {
+  if (!_vanTex && !_vanLoading && typeof Image !== "undefined") {
+    _vanLoading = true;
+    const img = new Image();
+    img.onload = () => { _vanTex = Texture.from(img); };
+    img.src = SPRITE_VAN;
+  }
+  return _vanTex;
+}
 // Tamaños nativos (px) tras el thumbnail en el generador — para escalar sin depender de que la
 // textura ya haya decodificado (evita escala infinita en el primer frame).
 const AC_TEX_NATIVE = 176;
@@ -2653,13 +2675,16 @@ export class PixiDriver {
       // Sprite top-down (Nano Banana) — sustituye el vector. Morro del sprite = arriba (-y),
       // igual que el convenio del vector, así que rotation = ang sin offset. Neutro (sin tinte):
       // el color de estado lo lleva el halo; la matrícula, la identidad.
-      const pl = new Sprite(aircraftTexture());
-      pl.anchor.set(0.5, 0.5);
-      const acScale = (30 / AC_TEX_NATIVE) * s;   // ~30 uds de mundo de largo a s=1 (tunable)
-      pl.scale.set(acScale);
-      pl.position.set(px, py);
-      pl.rotation = ang;
-      W.addChild(pl);
+      const acTex = aircraftTexture();
+      if (acTex) {
+        const pl = new Sprite(acTex);
+        pl.anchor.set(0.5, 0.5);
+        const acScale = (30 / AC_TEX_NATIVE) * s;   // ~30 uds de mundo de largo a s=1 (tunable)
+        pl.scale.set(acScale);
+        pl.position.set(px, py);
+        pl.rotation = ang;
+        W.addChild(pl);
+      }
       if (badge) {
         const bx = px + 8.5 * s, by = py - 8.5 * s, br = 4.4 * s;
         W.addChild(new Graphics().circle(bx, by, br).fill({ color: stateCol }).stroke({ width: Math.max(1, 1.4 * s), color: 0x080d15 }));
@@ -3152,14 +3177,17 @@ export class PixiDriver {
       // orientada con el morro a +x (mismo convenio que el rotado de abajo). Dani 2026-06-11.
       // Sprite de furgo (Nano Banana) — servicio neutro; el color de cuadrilla lo lleva el halo.
       // Morro del sprite = arriba (-y); el convenio del mapa es morro a +x → +90°.
-      const van = new Sprite(vanTexture());
-      van.anchor.set(0.5, 0.5);
-      const vanSc = (16 / VAN_TEX_NATIVE) * s;
-      van.position.set(px, py);
-      const flip = Math.abs(ang) > Math.PI / 2;
-      van.rotation = (flip ? ang + Math.PI : ang) + Math.PI / 2;
-      van.scale.set((flip ? -1 : 1) * vanSc, vanSc);
-      W.addChild(van);
+      const vTex = vanTexture();
+      if (vTex) {
+        const van = new Sprite(vTex);
+        van.anchor.set(0.5, 0.5);
+        const vanSc = (16 / VAN_TEX_NATIVE) * s;
+        van.position.set(px, py);
+        const flip = Math.abs(ang) > Math.PI / 2;
+        van.rotation = (flip ? ang + Math.PI : ang) + Math.PI / 2;
+        van.scale.set((flip ? -1 : 1) * vanSc, vanSc);
+        W.addChild(van);
+      }
       if (label) {
         const vlbl = new Text({ text: label, style: { fontFamily: "JetBrains Mono, monospace", fontSize: Math.round(9 * s), fontWeight: "600", fill: vanCol, stroke: { color: 0x0a1428, width: Math.max(2, 3 * s) } }, resolution: 3 });
         vlbl.anchor.set(0.5, 0); vlbl.position.set(px, py + 9 * s + 3);
